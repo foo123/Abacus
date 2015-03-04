@@ -279,18 +279,24 @@ Combinatorial[PROTO] = {
     constructor: Combinatorial
     
     ,_init: null
+    ,_index: null,
     ,_total: 0
+    ,_prev: false
     ,_next: false
     ,_current: null
     
     ,dispose: function( ) {
         var self = this;
         self._init = null;
+        self._index = null;
         self._total = 0;
+        self._prev = false;
         self._next = false;
         self._current = null;
         return self;
     }
+    
+    ,forward: function( ) { return this; }
     
     ,rewind: function( ) { return this; }
     
@@ -298,7 +304,21 @@ Combinatorial[PROTO] = {
     
     ,hasNext: function( ) { return this._next; }
     
+    ,hasPrev: function( ) { return this._prev; }
+    
+    ,prev: function( ) { return this._current; }
+    
     ,next: function( ) { return this._current; }
+    
+    ,index: function( index ) {
+        var self = this;
+        if ( arguments.length )
+        {
+            self._index = index;
+            return self;
+        }
+        return self._index;
+    }
     
     ,get: function( index ) { return this._current; }
     
@@ -315,9 +335,11 @@ Combinatorial[PROTO] = {
 var Permutation = Abacus.Permutation = function Permutation( n ) {
     var self = this;
     if ( !(self instanceof Permutation) ) return new Permutation(n);
-    self._init = range(n);
-    self._current = self._init.slice( );
+    self._init = range( n );
     self._total = Permutation.count( n );
+    self._index = 0;
+    self._current = self._init.slice( );
+    self._prev = false;
     self._next = true;
 };
 Permutation = Merge(Permutation, {
@@ -335,8 +357,19 @@ Permutation[PROTO] = Extend(Combinatorial[PROTO]);
 Permutation[PROTO] = Merge(Permutation[PROTO], {
     rewind: function( ) {
         var self = this;
+        self._index = 0; 
         self._current = self._init.slice( );
         self._next = true; 
+        self._prev = false; 
+        return self;
+    }
+    
+    ,forward: function( ) {
+        var self = this;
+        self._index = self._total-1; 
+        self._current = self._init.slice( ).reverse();
+        self._prev = true; 
+        self._next = false; 
         return self;
     }
     
@@ -377,8 +410,10 @@ var Combination = Abacus.Combination = function Combination( n, k ) {
     var self = this;
     if ( !(self instanceof Combination) ) return new Combination(n, k);
     self._init = [n, k]; 
-    self._current = range(k);
     self._total = Combination.count( n, k );
+    self._index = 0;
+    self._current = range(k);
+    self._prev = false;
     self._next = true;
 };
 Combination = Merge(Combination, {
@@ -396,8 +431,19 @@ Combination[PROTO] = Extend(Combinatorial[PROTO]);
 Combination[PROTO] = Merge(Combination[PROTO], {
     rewind: function( ) {
         var self = this;
+        self._index = 0;
         self._current = range(self._init[1]);
         self._next = true;
+        self._prev = false;
+        return self;
+    }
+    
+    ,forward: function( ) {
+        var self = this;
+        self._index = self._total-1;
+        self._current = range(self._init[1], {start:self._init[0]-self._init[1]-1});
+        self._prev = true;
+        self._next = false;
         return self;
     }
     
@@ -446,8 +492,10 @@ var Partition = Abacus.Partition = function Partition( n ) {
     var self = this;
     if ( !(self instanceof Partition) ) return new Partition(n);
     self._init = n; 
-    self._current = [ n ];
     self._total = Partition.count( n );
+    self._index = 0; 
+    self._current = [ n ];
+    self._prev = false;
     self._next = true;
 };
 Partition = Merge(Partition, {
@@ -494,8 +542,19 @@ Partition[PROTO] = Extend(Combinatorial[PROTO]);
 Partition[PROTO] = Merge(Partition[PROTO], {
     rewind: function( ) {
         var self = this;
+        self._index = 0; 
         self._current = [ self._init ]; 
         self._next = true; 
+        self._prev = false; 
+        return self;
+    }
+    
+    ,forward: function( ) {
+        var self = this;
+        self._index = self._total-1; 
+        self._current = range(self._init, {value: 1}); 
+        self._prev = true; 
+        self._next = false; 
         return self;
     }
     
@@ -582,8 +641,10 @@ var PowerSet = Abacus.PowerSet = function PowerSet( n ) {
     var self = this;
     if ( !(self instanceof PowerSet) ) return new PowerSet(n);
     self._init = n; 
-    self._current = 0;
     self._total = PowerSet.count( n );
+    self._index = 0;
+    self._current = [];
+    self._prev = false;
     self._next = true;
 };
 PowerSet = Merge(PowerSet, {
@@ -595,15 +656,49 @@ PowerSet[PROTO] = Extend(Combinatorial[PROTO]);
 PowerSet[PROTO] = Merge(PowerSet[PROTO], {
     rewind: function( ) {
         var self = this;
-        self._current = 0;
+        self._index = 0;
+        self._current = [];
+        self._prev = false;
         self._next = true;
         return self;
     }
     
+    ,forward: function( ) {
+        var self = this;
+        self._index = self._total-1;
+        self._current = bin2index(self._index);
+        self._prev = true;
+        self._next = false;
+        return self;
+    }
+    
+    ,prev: function( ) {
+        var self = this, subset = self._current;
+        // compute prev sub set
+        if ( self._index-1 >= 0 ) 
+        {
+            self._prev = true;
+            self._current = bin2index(--self._index)
+        }
+        else
+        {
+            self._prev = false;
+        }
+        return subset;
+    }
+    
     ,next: function( ) {
-        var self = this, subset = bin2index(self._current);
+        var self = this, subset = self._current;
         // compute next sub set
-        if ( self._next ) self._next = (++self._current) < self._total;
+        if ( self._index+1 < self._total ) 
+        {
+            self._next = true;
+            self._current = bin2index(++self._index);
+        }
+        else
+        {
+            self._next = false;
+        }
         return subset;
     }
     

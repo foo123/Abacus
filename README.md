@@ -46,7 +46,7 @@ echo(perm.next());
 //[0,2,1]
 
 // permute an array, using the permutation
-var arr = ["a","b","c"];
+var arr = ["a","b","c","d","e"];
 echo(Abacus.permute(arr, perm.next()));
 //
 //sample  output:
@@ -144,7 +144,7 @@ echo(comb.next());
 //true
 //[0,2]
 
-// permute an array, using the permutation
+// choose from array, using the combination
 var arr = ["a","b","c","d","e"];
 echo(Abacus.choose(arr, comb.next()));
 //
