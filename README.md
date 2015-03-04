@@ -1,9 +1,11 @@
 # Abacus
 A combinatorics library for Node/JS, PHP, Python, ActionScript
 
-(php/python implementatins in progress)
+(php/python implementations in progress)
 
 **version 0.1**
+
+![abacus numbers](/abacus.jpg)
 
 Abacus is a small library containing methods and associated math utilities for (fast) combinatorial scientific computation. It builds on (and extends) a [previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
 
@@ -120,7 +122,7 @@ echo(part.random());
 part.dispose();
 
 // Combinations
-var comb = Abacus.Combination(5, 2);
+var comb = Abacus.Combination(3, 2);
 
 echo('Combination(3, 2)');
 echo(comb.total());
