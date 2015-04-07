@@ -40,12 +40,12 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty', Extend = Object.create,
     
     // utils
     random = Math.random, round = Math.round, ceil = Math.ceil,
-    floor = Math.floor, exp = Math.exp, log = Math.log,
+    floor = Math.floor, exp = Math.exp, log = Math.log, min = Math.min,
     rnd = function( m, M ) { return round( (M-m)*random() + m ); },
-    clamp = function( v, m, M ) { return ( v < m ) ? m : ((v > M) ? M : v); },
+    clamp = function clamp( v, m, M ) { return ( v < m ) ? m : ((v > M) ? M : v); },
     summation = function(s, a) { return s+a },
     array = function( n ) { return new Array(n); },
-    range = function( n, options )  {
+    range = function range( n, options )  {
         var a, i;
         options = options || {};
         a = new Array( n );
@@ -64,7 +64,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty', Extend = Object.create,
         return a;
     },
     // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
-    shuffle = function( a, copied ) {
+    shuffle = function shuffle( a, copied ) {
         var N, perm, swap, ac;
         ac = true === copied ? a.slice() : a;
         N = ac.length;
@@ -78,20 +78,86 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty', Extend = Object.create,
         // in-place or copy
         return ac;
     },
+    // Array multi - sorter utility
+    // returns a sorter that can (sub-)sort by multiple (nested) fields 
+    // each ascending or descending independantly
+    // https://github.com/foo123/sinful.js
+    sorter = function () {
+
+        var arr = this, i, args = arguments, l = args.length,
+            a, b, step, lt, gt,
+            field, filter_args, sorter_args, desc, dir, sorter,
+            ASC = '|^', DESC = '|v';
+        // |^ after a (nested) field indicates ascending sorting (default), 
+        // example "a.b.c|^"
+        // |v after a (nested) field indicates descending sorting, 
+        // example "b.c.d|v"
+        if ( l )
+        {
+            step = 1;
+            sorter = [];
+            sorter_args = [];
+            filter_args = []; 
+            for (i=l-1; i>=0; i--)
+            {
+                field = args[i];
+                // if is array, it contains a filter function as well
+                filter_args.unshift('f'+i);
+                if ( field.push )
+                {
+                    sorter_args.unshift(field[1]);
+                    field = field[0];
+                }
+                else
+                {
+                    sorter_args.unshift(null);
+                }
+                dir = field.slice(-2);
+                if ( DESC === dir ) 
+                {
+                    desc = true;
+                    field = field.slice(0,-2);
+                }
+                else if ( ASC === dir )
+                {
+                    desc = false;
+                    field = field.slice(0,-2);
+                }
+                else
+                {
+                    // default ASC
+                    desc = false;
+                }
+                field = field.length ? '["' + field.split('.').join('"]["') + '"]' : '';
+                a = "a"+field; b = "b"+field;
+                if ( sorter_args[0] ) 
+                {
+                    a = filter_args[0] + '(' + a + ')';
+                    b = filter_args[0] + '(' + b + ')';
+                }
+                lt = desc ?(''+step):('-'+step); gt = desc ?('-'+step):(''+step);
+                sorter.unshift("("+a+" < "+b+" ? "+lt+" : ("+a+" > "+b+" ? "+gt+" : 0))");
+                step <<= 1;
+            }
+            // use optional custom filters as well
+            return (new Function(
+                    filter_args.join(','), 
+                    'return function(a,b) { return ('+sorter.join(' + ')+'); };'
+                    ))
+                    .apply(null, sorter_args);
+        }
+        else
+        {
+            a = "a"; b = "b"; lt = '-1'; gt = '1';
+            sorter = ""+a+" < "+b+" ? "+lt+" : ("+a+" > "+b+" ? "+gt+" : 0)";
+            return new Function("a,b", 'return ('+sorter+');');
+        }
+    },
     // fast binary bitwise logarithm (most significant bit)
     binary_logarithm_msb = function( x ) {
         // assume x is 32-bit unsigned integer
         if ( 0 === x ) return -1;
         return 0xFFFF0000&x?(0xFF000000&x?24+BINLOG_256[x>>>24]:16+BINLOG_256[x>>>16]):(0x0000FF00&x?8+BINLOG_256[x>>>8]:BINLOG_256[x/*&0xFF*/]);
-    },
-    bin2index = function( x ) {
-        var indices = [], i;
-        while ( 0 !== x )
-        {
-            indices.push( i=binary_logarithm_msb( x ) );
-            x = (x & (~((1<<i)>>>0)>>>0))>>>0;
-        }
-        return indices;
     }
 ;
 
@@ -104,11 +170,7 @@ var Abacus = {
     
     ,clamp: clamp
     
-    ,sum: summation
-    
     ,binary_logarithm_msb: binary_logarithm_msb
-    
-    ,bin2index: bin2index
     
     ,array: array
 
@@ -152,6 +214,8 @@ var Abacus = {
         for (i=0; i<l; i++) chosen[i] = arr[comb[i]];
         return chosen;
     }
+    
+    ,sorter: sorter
     
     ,shuffle: shuffle
     
@@ -210,6 +274,12 @@ var Abacus = {
         }
         // in-place or copy
         return ac;
+    }
+    
+    ,sum: function sum( arr ) {
+        var s = 0, i, l = arr.length;
+        for (i=0; i<l; i++) s += arr[i];
+        return s;
     }
     
     ,intersection: function intersect_sorted2( a, b ) {
@@ -273,26 +343,33 @@ var Abacus = {
     }
 };
 
-// Abacus.Combinatorial Base Class and Interface
-var Combinatorial = Abacus.Combinatorial = function(){};
-Combinatorial[PROTO] = {
-    constructor: Combinatorial
+// Abacus.CombinatorialIterator, Combinatorial Base Class and Iterator Interface
+var CombinatorialIterator = Abacus.CombinatorialIterator = function CombinatorialIterator( ) {
+    if ( !(this instanceof CombinatorialIterator) ) return new CombinatorialIterator();
+};
+CombinatorialIterator = Merge(CombinatorialIterator, {
+    count: function( ) { return 0; }
+    ,index: function( item ) { return -1; }
+    ,item: function( index ) { return null; }
+});
+CombinatorialIterator[PROTO] = {
+    constructor: CombinatorialIterator
     
     ,_init: null
-    ,_index: null,
     ,_total: 0
+    ,_index: null
+    ,_current: null
     ,_prev: false
     ,_next: false
-    ,_current: null
     
     ,dispose: function( ) {
         var self = this;
         self._init = null;
-        self._index = null;
         self._total = 0;
+        self._index = null;
+        self._current = null;
         self._prev = false;
         self._next = false;
-        self._current = null;
         return self;
     }
     
@@ -333,9 +410,10 @@ Combinatorial[PROTO] = {
 
 // https://en.wikipedia.org/wiki/Permutations
 var Permutation = Abacus.Permutation = function Permutation( n ) {
-    var self = this;
+    var self = this, i;
     if ( !(self instanceof Permutation) ) return new Permutation(n);
-    self._init = range( n );
+    self._init = new Array(n);
+    for (i=0; i<n; i++) self._init[i] = i;
     self._total = Permutation.count( n );
     self._index = 0;
     self._current = self._init.slice( );
@@ -348,13 +426,11 @@ Permutation = Merge(Permutation, {
         while ( n > 1 ) log_fact += log(n--);
         return floor(0.5+exp(log_fact));
     }
-    ,count_approximate: function( n ) {
-        // Stirling's Gamma function approximation
-        return 0;
-    }
+    ,index: function( item, n ) { return -1; }
+    ,item: function( index, n ) { return null; }
 });
-Permutation[PROTO] = Extend(Combinatorial[PROTO]);
-Permutation[PROTO] = Merge(Permutation[PROTO], {
+// extends and implements CombinatorialIterator
+Permutation[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
     rewind: function( ) {
         var self = this;
         self._index = 0; 
@@ -407,12 +483,13 @@ Permutation[PROTO] = Merge(Permutation[PROTO], {
 
 // https://en.wikipedia.org/wiki/Combinations
 var Combination = Abacus.Combination = function Combination( n, k ) {
-    var self = this;
+    var self = this, i;
     if ( !(self instanceof Combination) ) return new Combination(n, k);
     self._init = [n, k]; 
     self._total = Combination.count( n, k );
     self._index = 0;
-    self._current = range(k);
+    self._current = new Array(k);
+    for (i=0; i<k; i++) self._current[i] = i;
     self._prev = false;
     self._next = true;
 };
@@ -421,27 +498,31 @@ Combination = Merge(Combination, {
         // http://en.wikipedia.org/wiki/Binomial_coefficient
         if (k < 0 || k > n) return 0;
         if (0 === k || k === n) return 1;
-        k = Math.min(k, n - k) // take advantage of symmetry
+        k = min(k, n - k) // take advantage of symmetry
         var log_fact = 0, i;
         for (i=0; i<k; i++) log_fact += log(n - i) - log(i + 1);
         return floor(0.5+exp(log_fact));
     }
+    ,index: function( item, n, k ) { return -1; }
+    ,item: function( index, n, k ) { return null; }
 });
-Combination[PROTO] = Extend(Combinatorial[PROTO]);
-Combination[PROTO] = Merge(Combination[PROTO], {
+// extends and implements CombinatorialIterator
+Combination[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
     rewind: function( ) {
-        var self = this;
+        var self = this, i, k = self._init[1], n = self._init[0];
         self._index = 0;
-        self._current = range(self._init[1]);
+        self._current = new Array(k);
+        for (i=0; i<k; i++) self._current[i] = i;
         self._next = true;
         self._prev = false;
         return self;
     }
     
     ,forward: function( ) {
-        var self = this;
+        var self = this, i, k = self._init[1], n = self._init[0];
         self._index = self._total-1;
-        self._current = range(self._init[1], {start:self._init[0]-self._init[1]-1});
+        self._current = new Array(k);
+        for (i=0; i<k; i++) self._current[i] = n-k-1+i;
         self._prev = true;
         self._next = false;
         return self;
@@ -529,17 +610,11 @@ Partition = Merge(Partition, {
             return tbl[index];
         }
     }
-    
-    // http://en.wikipedia.org/wiki/Partition_%28number_theory%29
-    ,count_approximate: function( n ) {
-        // Hardy-Ramanujan 1st order approximation
-        /*var factor = 1.0/(4*n*SQRT3);
-        return factor*Math.exp(Math.PI*Math.sqrt(0.3333*(n+n)));*/
-        return 0;
-    }
+    ,index: function( item, n ) { return -1; }
+    ,item: function( index, n ) { return null; }
 });
-Partition[PROTO] = Extend(Combinatorial[PROTO]);
-Partition[PROTO] = Merge(Partition[PROTO], {
+// extends and implements CombinatorialIterator
+Partition[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
     rewind: function( ) {
         var self = this;
         self._index = 0; 
@@ -550,9 +625,10 @@ Partition[PROTO] = Merge(Partition[PROTO], {
     }
     
     ,forward: function( ) {
-        var self = this;
+        var self = this, i, n = self._init;
         self._index = self._total-1; 
-        self._current = range(self._init, {value: 1}); 
+        self._current = new Array(n); 
+        for (i=0; i<n; i++) self._current[i] = 1;
         self._prev = true; 
         self._next = false; 
         return self;
@@ -649,11 +725,25 @@ var PowerSet = Abacus.PowerSet = function PowerSet( n ) {
 };
 PowerSet = Merge(PowerSet, {
     count: function( n ) {
-        return (1 << n);
+        return (1 << n)>>>0;
+    }
+    ,index: function( subset/*, n*/ ) { 
+        var index = 0, i = 0, l = subset.length;
+        while ( i < l ) index += (1<<subset[i++])>>>0;
+        return index;
+    }
+    ,item: function( index/*, n*/ ) { 
+        var subset = [], i, x = index>>>0;
+        while ( 0 !== x )
+        {
+            subset.push( i=binary_logarithm_msb( x ) );
+            x = (x & (~((1<<i)>>>0)>>>0))>>>0;
+        }
+        return subset;
     }
 });
-PowerSet[PROTO] = Extend(Combinatorial[PROTO]);
-PowerSet[PROTO] = Merge(PowerSet[PROTO], {
+// extends and implements CombinatorialIterator
+PowerSet[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
     rewind: function( ) {
         var self = this;
         self._index = 0;
@@ -664,9 +754,10 @@ PowerSet[PROTO] = Merge(PowerSet[PROTO], {
     }
     
     ,forward: function( ) {
-        var self = this;
+        var self = this, i, n = self._init;
         self._index = self._total-1;
-        self._current = bin2index(self._index);
+        self._current = new Array(n); 
+        for (i=0; i<n; i++) self._current[i] = i;
         self._prev = true;
         self._next = false;
         return self;
@@ -678,7 +769,7 @@ PowerSet[PROTO] = Merge(PowerSet[PROTO], {
         if ( self._index-1 >= 0 ) 
         {
             self._prev = true;
-            self._current = bin2index(--self._index)
+            self._current = PowerSet.item( --self._index );
         }
         else
         {
@@ -693,7 +784,7 @@ PowerSet[PROTO] = Merge(PowerSet[PROTO], {
         if ( self._index+1 < self._total ) 
         {
             self._next = true;
-            self._current = bin2index(++self._index);
+            self._current = PowerSet.item( ++self._index );
         }
         else
         {
@@ -703,11 +794,12 @@ PowerSet[PROTO] = Merge(PowerSet[PROTO], {
     }
     
     ,get: function( index ) {
-        return bin2index(index);
+        index = arguments.length<1 ? this._index : index;
+        return 0<=index&&index<this._total?PowerSet.item( index ):null;
     }
     
     ,random: function( ) {
-        return bin2index(rnd(0, this._total-1));
+        return PowerSet.item( rnd(0, this._total-1) );
     }
 });
 

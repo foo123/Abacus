@@ -1,5 +1,5 @@
-var Abacus = require('../src/js/Abacus.js'),
- echo = console.log;
+var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
+var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
 // Note: Due to the large number of combinatorial samples,
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
