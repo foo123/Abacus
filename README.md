@@ -455,5 +455,6 @@ most algorithms are linear time algorithms and the author hopes to remain so
 
 * add ranking / unranking algorithms and associated methods (preferably of O(n) or O(nlgn) complexity) both for lexicographic order, random order and reverse-lexicographic order (IN PROGRESS)
 * add Fibonacci, Catalan, Bell number computations
-* make sure the .random methods uniformyl and unbiasedly sample the combinatorila object space (Partition.random is not unbiased right now, in progress)
+* make sure the .random methods uniformly and unbiasedly sample the combinatorial object space (Partition.random is not unbiased right now, in progress)
+* allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) (IN PROGRESS)
 * add Combinadic, Factoradic transformations
