@@ -39,46 +39,73 @@ Abacus uses (for the most part) self-contained and standalone methods, so they c
 ###Example API
 **(javascript)**
 ```javascript
-var Abacus = require('../src/js/Abacus.js'),
- echo = console.log;
+var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
+var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
 // Note: Due to the large number of combinatorial samples,
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
 
+echo('Note: Due to the large number of combinatorial samples,');
+echo('Abacus combinatorics use an Iterator pattern to succesively and consistently');
+echo('generate all combinatorial objects without storing all of them in memory at once');
+echo("\n\n");
+
+echo("\n\n");
+echo('Abacus.Permutations');
+echo('---');
 
 // Permutations
+echo('perm = Abacus.Permutation(3)');
 var perm = Abacus.Permutation(3);
 
-echo('Permutation(3)');
+echo('perm.total()'); 
 echo(perm.total());
 //
 //output 6 = 3!:
 //6
 
-
+echo('perm.next()'); 
 echo(perm.next());
 //
 //output:
 //[0,1,2]
 
 
+echo('perm.hasNext()');
 echo(perm.hasNext());
+echo('perm.next()');
 echo(perm.next());
 //
 //output:
 //true
 //[0,2,1]
 
+// compute inverse permutation (http://mathworld.wolfram.com/InversePermutation.html)
+echo('compute inverse permutation');
+echo('p = [2,7,4,9,8,3,5,0,6,1]')
+p = [2,7,4,9,8,3,5,0,6,1];
+echo('Abacus.Permutation.inverse(10, p)');
+echo(Abacus.Permutation.inverse(10, p));
+//
+//output:
+//[ 2, 7, 4, 9, 8, 3, 5, 0, 6, 1 ]
+//[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
+
 // permute an array, using the permutation
-var arr = ["a","b","c","d","e"];
-echo(Abacus.permute(arr, perm.next()));
+echo('permute an array, using the permutation');
+echo('arr = ["a","b","c"]');
+var arr = ["a","b","c"];
+echo('Abacus.Permutation.permute(arr, perm.next())');
+echo(Abacus.Permutation.permute(arr, perm.next()));
 //
 //sample  output:
 //["b","a","c"]
 
 
+echo('perm.rewind()');
 perm.rewind();
+echo('perm.all()');
 echo(perm.all());
 //
 //output (in index-lexicographic order):
@@ -92,33 +119,48 @@ echo(perm.all());
 //]
 
 
+echo('perm.random()');
 echo(perm.random());
 //
 //sample output:
 //[2,0,1]
 
+echo('Abacus.Permutation.shuffle(arr)');
+echo(Abacus.Permutation.shuffle(arr));
+//
+//sample  output:
+//["b","c","a"]
 
 // dispose
+echo('perm.dispose()');
 perm.dispose();
 
 
+echo("\n\n");
+echo('Abacus.Partitions');
+echo('---');
+
 // Partitions
+echo('part = Abacus.Partition(3)');
 var part = Abacus.Partition(3);
 
-echo('Partition(3)');
+echo('part.total()');
 echo(part.total());
 //
 //output 3 = num of (distinct) partitions of 3:
 //3
 
 
+echo('part.next()');
 echo(part.next());
 //
 //output:
 //[3]
 
 
+echo('part.hasNext()');
 echo(part.hasNext());
+echo('part.next()');
 echo(part.next());
 //
 //output:
@@ -126,7 +168,9 @@ echo(part.next());
 //[2,1]
 
 
+echo('part.rewind()');
 part.rewind();
+echo('part.all()');
 echo(part.all());
 //
 //output (in index-lexicographic order):
@@ -137,6 +181,7 @@ echo(part.all());
 //]
 
 
+echo('part.random()');
 echo(part.random());
 //
 //sample output:
@@ -144,25 +189,34 @@ echo(part.random());
 
 
 // dispose
+echo('part.dispose()');
 part.dispose();
 
+echo("\n\n");
+echo('Abacus.Combinations');
+echo('---');
+
 // Combinations
+echo('comb = Abacus.Combination(3, 2)');
 var comb = Abacus.Combination(3, 2);
 
-echo('Combination(3, 2)');
+echo('comb.total()');
 echo(comb.total());
 //
 //output 3 = num of (distinct) combinations 3!/2!x1!:
 //3
 
 
+echo('comb.next()');
 echo(comb.next());
 //
 //output:
 //[0,1]
 
 
+echo('comb.hasNext()');
 echo(comb.hasNext());
+echo('comb.next()');
 echo(comb.next());
 //
 //output:
@@ -170,13 +224,25 @@ echo(comb.next());
 //[0,2]
 
 // choose from array, using the combination
-var arr = ["a","b","c","d","e"];
-echo(Abacus.choose(arr, comb.next()));
+echo('choose from array, using the combination');
+echo('arr = ["a","b","c"]');
+echo('c = comb.next()');
+var arr = ["a","b","c"], c = comb.next();
+echo('Abacus.Combination.choose(arr, c)');
+echo(Abacus.Combination.choose(arr, c));
+echo('c');
+echo(c);
+echo('Abacus.Combination.complement(3, 2, c)');
+echo(Abacus.Combination.complement(3, 2, c));
 //
 //sample  output:
 //["b","c"]
+//[1,2]
+//[0]
 
+echo('comb.rewind()');
 comb.rewind();
+echo('comb.all()');
 echo(comb.all());
 //
 //output (in index-lexicographic order):
@@ -187,6 +253,7 @@ echo(comb.all());
 //]
 
 
+echo('comb.random()');
 echo(comb.random());
 //
 //sample output:
@@ -194,26 +261,35 @@ echo(comb.random());
 
 
 // dispose
+echo('comb.dispose()');
 comb.dispose();
 
 
+echo("\n\n");
+echo('Abacus.PowerSets');
+echo('---');
+
 // PowerSets
+echo('pset = Abacus.PowerSet(3)');
 var pset = Abacus.PowerSet(3);
 
-echo('PowerSet(3)');
+echo('pset.total()');
 echo(pset.total());
 //
 //output 8 = cardinality of power set 2^3:
 //8
 
 
+echo('pset.next()');
 echo(pset.next());
 //
 //output i.e empty set:
 //[]
 
 
+echo('pset.hasNext()');
 echo(pset.hasNext());
+echo('pset.next()');
 echo(pset.next());
 //
 //output:
@@ -221,7 +297,9 @@ echo(pset.next());
 //[0]
 
 
+echo('pset.rewind()');
 pset.rewind();
+echo('pset.all()');
 echo(pset.all());
 //
 //output (in index-lexicographic order):
@@ -237,6 +315,7 @@ echo(pset.all());
 //]
 
 
+echo('pset.random()');
 echo(pset.random());
 //
 //sample output:
@@ -244,7 +323,122 @@ echo(pset.random());
 
 
 // dispose
+echo('pset.dispose()');
 pset.dispose();
+```
+
+**output** (see test/test.js)
+```text
+Note: Due to the large number of combinatorial samples,
+Abacus combinatorics use an Iterator pattern to succesively and consistently
+generate all combinatorial objects without storing all of them in memory at once
+
+
+
+
+
+
+Abacus.Permutations
+---
+perm = Abacus.Permutation(3)
+perm.total()
+6
+perm.next()
+[ 0, 1, 2 ]
+perm.hasNext()
+true
+perm.next()
+[ 0, 2, 1 ]
+compute inverse permutation
+p = [2,7,4,9,8,3,5,0,6,1]
+Abacus.Permutation.inverse(10, p)
+[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
+permute an array, using the permutation
+arr = ["a","b","c"]
+Abacus.Permutation.permute(arr, perm.next())
+[ 'b', 'a', 'c' ]
+perm.rewind()
+perm.all()
+[ [ 0, 1, 2 ],
+  [ 0, 2, 1 ],
+  [ 1, 0, 2 ],
+  [ 1, 2, 0 ],
+  [ 2, 0, 1 ],
+  [ 2, 1, 0 ] ]
+perm.random()
+[ 0, 2, 1 ]
+Abacus.Permutation.shuffle(arr)
+[ 'b', 'c', 'a' ]
+perm.dispose()
+
+
+
+Abacus.Partitions
+---
+part = Abacus.Partition(3)
+part.total()
+3
+part.next()
+[ 3 ]
+part.hasNext()
+true
+part.next()
+[ 2, 1 ]
+part.rewind()
+part.all()
+[ [ 3 ], [ 2, 1 ], [ 1, 1, 1 ] ]
+part.random()
+[ 2, 1 ]
+part.dispose()
+
+
+
+Abacus.Combinations
+---
+comb = Abacus.Combination(3, 2)
+comb.total()
+3
+comb.next()
+[ 0, 1 ]
+comb.hasNext()
+true
+comb.next()
+[ 0, 2 ]
+choose from array, using the combination
+arr = ["a","b","c"]
+c = comb.next()
+Abacus.Combination.choose(arr, c)
+[ 'b', 'c' ]
+c
+[ 1, 2 ]
+Abacus.Combination.complement(3, 2, c)
+[ 0 ]
+comb.rewind()
+comb.all()
+[ [ 0, 1 ], [ 0, 2 ], [ 1, 2 ] ]
+comb.random()
+[ 0, 1 ]
+comb.dispose()
+
+
+
+Abacus.PowerSets
+---
+pset = Abacus.PowerSet(3)
+pset.total()
+8
+pset.next()
+[]
+pset.hasNext()
+true
+pset.next()
+[ 0 ]
+pset.rewind()
+pset.all()
+[ [], [ 0 ], [ 1 ], [ 1, 0 ], [ 2 ], [ 2, 0 ], [ 2, 1 ], [ 2, 1, 0 ] ]
+pset.random()
+[ 1, 0 ]
+pset.dispose()
 ```
 
 ###Tests

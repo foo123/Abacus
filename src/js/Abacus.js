@@ -187,94 +187,7 @@ var Abacus = {
         return a;
     }
 
-    ,reassign: function( arr, perm ) {
-        var i, l = arr.length, reassigned = new Array(l);
-        for (i=0; i<l; i++) reassigned[i] = perm[arr[i]];
-        return reassigned;
-    }
-    
-    ,permute: function( arr, perm, copied ) {
-        var i, l = arr.length, p, a;
-        if ( true === copied )
-        {
-            p = new Array(l);
-            a = arr;
-        }
-        else
-        {
-            p = arr;
-            a = arr.slice();
-        }
-        for (i=0; i<l; i++) p[i] = a[perm[i]];
-        return p;
-    }
-    
-    ,choose: function( arr, comb ) {
-        var i, l = comb.length, chosen = new Array(l);
-        for (i=0; i<l; i++) chosen[i] = arr[comb[i]];
-        return chosen;
-    }
-    
     ,sorter: sorter
-    
-    ,shuffle: shuffle
-    
-    // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
-    // eXtended shuffle variation to shuffle only parts of array
-    // while leaving other parts unaltered
-    ,xshuffle: function( a, o, copied ) {
-        var i, j, N, perm, swap, inc, ac;
-        ac = true === copied ? a.slice() : a;
-        o = o || {};
-        if ( o[HAS]('included') && o.included.length )
-        {
-            inc = o.included;
-        }
-        else if ( o[HAS]('included_range') && o.included_range.length )
-        {
-            inc = []; i=0; j=0;
-            while (i < a.length)
-            {
-                if (j<o.included_range.length && (i>=o.included_range[j] && (j+1 >=o.included_range.length || i<=o.included_range[j+1]))) inc.push( i );
-                else j+=2;
-                i++;
-            }
-        }
-        else if ( o[HAS]('excluded') && o.excluded.length )
-        {
-            inc = []; i=0; j=0;
-            while (i < a.length)
-            {
-                if (j>=o.excluded.length || i<o.excluded[j]) inc.push( i );
-                else j++;
-                i++;
-            }
-        }
-        else if ( o[HAS]('excluded_range') && o.excluded_range.length )
-        {
-            inc = []; i=0; j=0;
-            while (i < a.length)
-            {
-                if (j<o.excluded_range.length && i>=o.excluded_range[j]) {i = j+1<o.excluded_range.length ? o.excluded_range[j+1] : i; j+=2;}
-                else inc.push( i );
-                i++;
-            }
-        }
-        else
-        {
-            inc = [];
-        }
-        N = inc.length;
-        while ( N-- )
-        { 
-            perm = rnd( 0, N ); 
-            swap = ac[ inc[N] ]; 
-            ac[ inc[N] ] = ac[ inc[perm] ]; 
-            ac[ inc[perm] ] = swap; 
-        }
-        // in-place or copy
-        return ac;
-    }
     
     ,sum: function sum( arr ) {
         var s = 0, i, l = arr.length;
@@ -428,6 +341,88 @@ Permutation = Merge(Permutation, {
     }
     ,index: function( item, n ) { return -1; }
     ,item: function( index, n ) { return null; }
+    ,inverse: function( n, perm ) {
+        var i, iperm = new Array(n);
+        for (i=0; i<n; i++) iperm[perm[i]] = i;
+        return iperm;
+    }
+    ,reassign: function( arr, perm ) {
+        var i, l = arr.length, reassigned = new Array(l);
+        for (i=0; i<l; i++) reassigned[i] = perm[arr[i]];
+        return reassigned;
+    }
+    ,permute: function( arr, perm, copied ) {
+        var i, l = arr.length, p, a;
+        if ( true === copied )
+        {
+            p = new Array(l);
+            a = arr;
+        }
+        else
+        {
+            p = arr;
+            a = arr.slice();
+        }
+        for (i=0; i<l; i++) p[i] = a[perm[i]];
+        return p;
+    }
+    ,shuffle: shuffle
+    // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    // eXtended shuffle variation to shuffle only parts of array
+    // while leaving other parts unaltered
+    ,xshuffle: function( a, o, copied ) {
+        var i, j, N, perm, swap, inc, ac;
+        ac = true === copied ? a.slice() : a;
+        o = o || {};
+        if ( o[HAS]('included') && o.included.length )
+        {
+            inc = o.included;
+        }
+        else if ( o[HAS]('included_range') && o.included_range.length )
+        {
+            inc = []; i=0; j=0;
+            while (i < a.length)
+            {
+                if (j<o.included_range.length && (i>=o.included_range[j] && (j+1 >=o.included_range.length || i<=o.included_range[j+1]))) inc.push( i );
+                else j+=2;
+                i++;
+            }
+        }
+        else if ( o[HAS]('excluded') && o.excluded.length )
+        {
+            inc = []; i=0; j=0;
+            while (i < a.length)
+            {
+                if (j>=o.excluded.length || i<o.excluded[j]) inc.push( i );
+                else j++;
+                i++;
+            }
+        }
+        else if ( o[HAS]('excluded_range') && o.excluded_range.length )
+        {
+            inc = []; i=0; j=0;
+            while (i < a.length)
+            {
+                if (j<o.excluded_range.length && i>=o.excluded_range[j]) {i = j+1<o.excluded_range.length ? o.excluded_range[j+1] : i; j+=2;}
+                else inc.push( i );
+                i++;
+            }
+        }
+        else
+        {
+            inc = [];
+        }
+        N = inc.length;
+        while ( N-- )
+        { 
+            perm = rnd( 0, N ); 
+            swap = ac[ inc[N] ]; 
+            ac[ inc[N] ] = ac[ inc[perm] ]; 
+            ac[ inc[perm] ] = swap; 
+        }
+        // in-place or copy
+        return ac;
+    }
 });
 // extends and implements CombinatorialIterator
 Permutation[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
@@ -505,6 +500,21 @@ Combination = Merge(Combination, {
     }
     ,index: function( item, n, k ) { return -1; }
     ,item: function( index, n, k ) { return null; }
+    ,complement: function( n, k, comb ) {
+        var i = 0, i1 = 0, i2 = 0, comp = new Array(n-k);
+        while (i < n)
+        {
+            if (i1>=k || i<comb[i1]) comp[i2++] = i;
+            else i1++;
+            i++;
+        }
+        return comp;
+    }
+    ,choose: function( arr, comb ) {
+        var i, l = comb.length, chosen = new Array(l);
+        for (i=0; i<l; i++) chosen[i] = arr[comb[i]];
+        return chosen;
+    }
 });
 // extends and implements CombinatorialIterator
 Combination[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {

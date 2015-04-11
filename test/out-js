@@ -1,35 +1,110 @@
-Permutation(3)
+Note: Due to the large number of combinatorial samples,
+Abacus combinatorics use an Iterator pattern to succesively and consistently
+generate all combinatorial objects without storing all of them in memory at once
+
+
+
+
+
+
+Abacus.Permutations
+---
+perm = Abacus.Permutation(3)
+perm.total()
 6
+perm.next()
 [ 0, 1, 2 ]
+perm.hasNext()
 true
+perm.next()
 [ 0, 2, 1 ]
+compute inverse permutation
+p = [2,7,4,9,8,3,5,0,6,1]
+Abacus.Permutation.inverse(10, p)
+[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
+permute an array, using the permutation
+arr = ["a","b","c"]
+Abacus.Permutation.permute(arr, perm.next())
 [ 'b', 'a', 'c' ]
+perm.rewind()
+perm.all()
 [ [ 0, 1, 2 ],
   [ 0, 2, 1 ],
   [ 1, 0, 2 ],
   [ 1, 2, 0 ],
   [ 2, 0, 1 ],
   [ 2, 1, 0 ] ]
-[ 0, 1, 2 ]
-Partition(3)
+perm.random()
+[ 0, 2, 1 ]
+Abacus.Permutation.shuffle(arr)
+[ 'b', 'c', 'a' ]
+perm.dispose()
+
+
+
+Abacus.Partitions
+---
+part = Abacus.Partition(3)
+part.total()
 3
+part.next()
 [ 3 ]
+part.hasNext()
 true
+part.next()
 [ 2, 1 ]
+part.rewind()
+part.all()
 [ [ 3 ], [ 2, 1 ], [ 1, 1, 1 ] ]
+part.random()
 [ 2, 1 ]
-Combination(3, 2)
+part.dispose()
+
+
+
+Abacus.Combinations
+---
+comb = Abacus.Combination(3, 2)
+comb.total()
 3
+comb.next()
 [ 0, 1 ]
+comb.hasNext()
 true
+comb.next()
 [ 0, 2 ]
+choose from array, using the combination
+arr = ["a","b","c"]
+c = comb.next()
+Abacus.Combination.choose(arr, c)
 [ 'b', 'c' ]
-[ [ 0, 1 ], [ 0, 2 ], [ 1, 2 ] ]
+c
 [ 1, 2 ]
-PowerSet(3)
-8
-[]
-true
+Abacus.Combination.complement(3, 2, c)
 [ 0 ]
+comb.rewind()
+comb.all()
+[ [ 0, 1 ], [ 0, 2 ], [ 1, 2 ] ]
+comb.random()
+[ 0, 1 ]
+comb.dispose()
+
+
+
+Abacus.PowerSets
+---
+pset = Abacus.PowerSet(3)
+pset.total()
+8
+pset.next()
+[]
+pset.hasNext()
+true
+pset.next()
+[ 0 ]
+pset.rewind()
+pset.all()
 [ [], [ 0 ], [ 1 ], [ 1, 0 ], [ 2 ], [ 2, 0 ], [ 2, 1 ], [ 2, 1, 0 ] ]
-[ 1 ]
+pset.random()
+[ 1, 0 ]
+pset.dispose()
