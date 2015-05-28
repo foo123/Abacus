@@ -6,26 +6,22 @@
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ) {
-    "use strict";
-    
-    //
-    // export the module, umd-style (no other dependencies)
-    var isCommonJS = ("object" === typeof(module)) && module.exports, 
-        isAMD = ("function" === typeof(define)) && define.amd, m;
-    
-    // CommonJS, node, etc..
-    if ( isCommonJS ) 
-        module.exports = (module.$deps = module.$deps || {})[ name ] = module.$deps[ name ] || (factory.call( root, {NODE:module} ) || 1);
-    
-    // AMD, requireJS, etc..
-    else if ( isAMD && ("function" === typeof(require)) && ("function" === typeof(require.specified)) && require.specified(name) ) 
-        define( name, ['require', 'exports', 'module'], function( require, exports, module ){ return factory.call( root, {AMD:module} ); } );
-    
-    // browser, web worker, etc.. + AMD, other loaders
-    else if ( !(name in root) ) 
-        (root[ name ] = (m=factory.call( root, {} ) || 1)) && isAMD && define( name, [], function( ){ return m; } );
+"use strict";
+// export the module, umd-style (no other dependencies)
+var isCommonJS = ("object" === typeof(module)) && module.exports, 
+    isAMD = ("function" === typeof(define)) && define.amd, m;
 
+// CommonJS, node, etc..
+if ( isCommonJS ) 
+    module.exports = (module.$deps = module.$deps || {})[ name ] = module.$deps[ name ] || (factory.call( root, {NODE:module} ) || 1);
 
+// AMD, requireJS, etc..
+else if ( isAMD && ("function" === typeof(require)) && ("function" === typeof(require.specified)) && require.specified(name) ) 
+    define( name, ['require', 'exports', 'module'], function( require, exports, module ){ return factory.call( root, {AMD:module} ); } );
+
+// browser, web worker, etc.. + AMD, other loaders
+else if ( !(name in root) ) 
+    (root[ name ] = (m=factory.call( root, {} ) || 1)) && isAMD && define( name, [], function( ){ return m; } );
 }(  /* current root */          this, 
     /* module name */           "Abacus",
     /* module factory */        function( exports, undef ) {
@@ -345,6 +341,50 @@ Permutation = Merge(Permutation, {
         var i, iperm = new Array(n);
         for (i=0; i<n; i++) iperm[perm[i]] = i;
         return iperm;
+    }
+    ,cycles: function( n, perm ) {
+        var i, cycles = [], current, cycle, 
+            visited = new Array( n ),
+            unvisited = new Array(n);
+        for(i=0; i<n; i++) 
+        {
+            unvisited[ i ] = i;
+            visited[ i ] = 0;
+        }
+        cycle = [current = unvisited.shift( )]; visited[ current ] = 1;
+        while ( unvisited.length ) 
+        {
+            current = perm[ current ];
+            if ( visited[current] )
+            {
+                cycles.push( cycle );
+                cycle = [ ];
+                while ( unvisited.length && visited[current=unvisited.shift()] ) ;
+            }
+            if ( !visited[current] )
+            {
+                cycle.push( current );
+                visited[ current ] = 1; 
+            }
+        }
+        if ( cycle.length ) cycles.push( cycle );
+        return cycles;
+    }
+    ,cycle2swaps: function( cycle ) {
+        var swaps = [], c = cycle.length, j;
+        if ( c > 1 ) for (j=c-1; j>=1; j--) swaps.push([cycle[0],cycle[j]])
+        return swaps;
+    }
+    ,swaps: function( n, perm ) {
+        var i, l, swaps = [], cycle,
+            cycles = Permutation.cycles( n, perm );
+        for (i=0,l=cycles.length; i<l; i++)
+        {
+            cycle = cycles[i];
+            if ( cycle.length > 1 )
+                swaps = swaps.concat( Permutation.cycle2swaps( cycle ) );
+        }
+        return swaps;
     }
     ,reassign: function( arr, perm ) {
         var i, l = arr.length, reassigned = new Array(l);

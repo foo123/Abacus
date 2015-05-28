@@ -51,6 +51,34 @@ echo(Abacus.Permutation.inverse(10, p));
 //[ 2, 7, 4, 9, 8, 3, 5, 0, 6, 1 ]
 //[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
 
+// factor permutation into cycles
+echo('factor permutation into cycles');
+echo('p = [2,7,5,6,3,0,4,1]')
+p = [2,7,5,6,3,0,4,1];
+echo('Abacus.Permutation.cycles(8, p)');
+echo(Abacus.Permutation.cycles(8, p));
+//
+//output:
+//[ [0,2,5], [1,7], [3,6,4] ]
+
+echo('p = [5,4,1,3,2,0]')
+p = [5,4,1,3,2,0];
+echo('Abacus.Permutation.cycles(6, p)');
+echo(Abacus.Permutation.cycles(6, p));
+//
+//output:
+//[ [0,5], [1,4,2], [3] ]
+
+// factor permutation into swaps
+echo('factor permutation into swaps');
+echo('p = [2,7,5,6,3,0,4,1]')
+p = [2,7,5,6,3,0,4,1];
+echo('Abacus.Permutation.swaps(8, p)');
+echo(Abacus.Permutation.swaps(8, p));
+//
+//output:
+//[ [0,5], [0,2], [1,7], [3,4], [3,6] ]
+
 // permute an array, using the permutation
 echo('permute an array, using the permutation');
 echo('arr = ["a","b","c"]');

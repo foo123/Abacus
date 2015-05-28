@@ -93,6 +93,34 @@ echo(Abacus.Permutation.inverse(10, p));
 //[ 2, 7, 4, 9, 8, 3, 5, 0, 6, 1 ]
 //[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
 
+// factor permutation into cycles
+echo('factor permutation into cycles');
+echo('p = [2,7,5,6,3,0,4,1]')
+p = [2,7,5,6,3,0,4,1];
+echo('Abacus.Permutation.cycles(8, p)');
+echo(Abacus.Permutation.cycles(8, p));
+//
+//output:
+//[ [0,2,5], [1,7], [3,6,4] ]
+
+echo('p = [5,4,1,3,2,0]')
+p = [5,4,1,3,2,0];
+echo('Abacus.Permutation.cycles(6, p)');
+echo(Abacus.Permutation.cycles(6, p));
+//
+//output:
+//[ [0,5], [1,4,2], [3] ]
+
+// factor permutation into swaps
+echo('factor permutation into swaps');
+echo('p = [2,7,5,6,3,0,4,1]')
+p = [2,7,5,6,3,0,4,1];
+echo('Abacus.Permutation.swaps(8, p)');
+echo(Abacus.Permutation.swaps(8, p));
+//
+//output:
+//[ [0,5], [0,2], [1,7], [3,4], [3,6] ]
+
 // permute an array, using the permutation
 echo('permute an array, using the permutation');
 echo('arr = ["a","b","c"]');
@@ -354,6 +382,17 @@ compute inverse permutation
 p = [2,7,4,9,8,3,5,0,6,1]
 Abacus.Permutation.inverse(10, p)
 [ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
+factor permutation into cycles
+p = [2,7,5,6,3,0,4,1]
+Abacus.Permutation.cycles(8, p)
+[ [ 0, 2, 5 ], [ 1, 7 ], [ 3, 6, 4 ] ]
+p = [5,4,1,3,2,0]
+Abacus.Permutation.cycles(6, p)
+[ [ 0, 5 ], [ 1, 4, 2 ], [ 3 ] ]
+factor permutation into swaps
+p = [2,7,5,6,3,0,4,1]
+Abacus.Permutation.swaps(8, p)
+[ [ 0, 5 ], [ 0, 2 ], [ 1, 7 ], [ 3, 4 ], [ 3, 6 ] ]
 permute an array, using the permutation
 arr = ["a","b","c"]
 Abacus.Permutation.permute(arr, perm.next())
@@ -367,9 +406,9 @@ perm.all()
   [ 2, 0, 1 ],
   [ 2, 1, 0 ] ]
 perm.random()
-[ 0, 2, 1 ]
+[ 1, 2, 0 ]
 Abacus.Permutation.shuffle(arr)
-[ 'b', 'c', 'a' ]
+[ 'b', 'a', 'c' ]
 perm.dispose()
 
 
@@ -389,7 +428,7 @@ part.rewind()
 part.all()
 [ [ 3 ], [ 2, 1 ], [ 1, 1, 1 ] ]
 part.random()
-[ 2, 1 ]
+[ 1, 1, 1 ]
 part.dispose()
 
 
@@ -418,7 +457,7 @@ comb.rewind()
 comb.all()
 [ [ 0, 1 ], [ 0, 2 ], [ 1, 2 ] ]
 comb.random()
-[ 0, 1 ]
+[ 0, 2 ]
 comb.dispose()
 
 
@@ -438,7 +477,7 @@ pset.rewind()
 pset.all()
 [ [], [ 0 ], [ 1 ], [ 1, 0 ], [ 2 ], [ 2, 0 ], [ 2, 1 ], [ 2, 1, 0 ] ]
 pset.random()
-[ 1, 0 ]
+[ 1 ]
 pset.dispose()
 ```
 
