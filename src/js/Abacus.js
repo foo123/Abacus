@@ -342,8 +342,9 @@ Permutation = Merge(Permutation, {
         for (i=0; i<n; i++) iperm[perm[i]] = i;
         return iperm;
     }
-    ,cycles: function( n, perm ) {
+    ,toCycles: function( n, perm, strict ) {
         var i, cycles = [], current, cycle, 
+            min_cycle = true === strict ? 1 : 0,
             visited = new Array( n ),
             unvisited = new Array(n);
         for(i=0; i<n; i++) 
@@ -357,7 +358,7 @@ Permutation = Merge(Permutation, {
             current = perm[ current ];
             if ( visited[current] )
             {
-                cycles.push( cycle );
+                if ( cycle.length > min_cycle ) cycles.push( cycle );
                 cycle = [ ];
                 while ( unvisited.length && visited[current=unvisited.shift()] ) ;
             }
@@ -367,22 +368,33 @@ Permutation = Merge(Permutation, {
                 visited[ current ] = 1; 
             }
         }
-        if ( cycle.length ) cycles.push( cycle );
+        if ( cycle.length > min_cycle ) cycles.push( cycle );
         return cycles;
+    }
+    ,fromCycles: function( n, cycles ) {
+        var perm = new Array(n), c, l = cycles.length, i, cl, cycle;
+        for (i=0; i<n; i++) perm[ i ] = i;
+        for (c=0; c<l; c++)
+        {
+            cycle = cycles[c]; cl = cycle.length;
+            if ( cl < 2 ) continue;
+            for (i=0; i<cl-1; i++) perm[cycle[i]] = cycle[i+1];
+            perm[cycle[cl-1]] = cycle[0];
+        }
+        return perm;
     }
     ,cycle2swaps: function( cycle ) {
         var swaps = [], c = cycle.length, j;
         if ( c > 1 ) for (j=c-1; j>=1; j--) swaps.push([cycle[0],cycle[j]])
         return swaps;
     }
-    ,swaps: function( n, perm ) {
+    ,toSwaps: function( n, perm ) {
         var i, l, swaps = [], cycle,
-            cycles = Permutation.cycles( n, perm );
+            cycles = Permutation.toCycles( n, perm, true );
         for (i=0,l=cycles.length; i<l; i++)
         {
             cycle = cycles[i];
-            if ( cycle.length > 1 )
-                swaps = swaps.concat( Permutation.cycle2swaps( cycle ) );
+            swaps = swaps.concat( Permutation.cycle2swaps( cycle ) );
         }
         return swaps;
     }
@@ -660,9 +672,29 @@ Partition = Merge(Partition, {
             return tbl[index];
         }
     }
+    // http://www.artofproblemsolving.com/wiki/index.php/Partition_%28combinatorics%29
+    // http://mathworld.wolfram.com/ConjugatePartition.html
+    ,conjugate: function( partition ) {
+        var l = partition.length, 
+            n = partition[0], i, j, p,
+            conjugate = new Array(n);
+        for (i=0; i<n; i++) conjugate[ i ] = 1;
+        for (j=1; j<l; j++)
+        {
+            i = 0; p = partition[j];
+            while ( i < n && p > 0 )
+            {
+                conjugate[i++]++;
+                p--;
+            }
+        }
+        return conjugate;
+    }
     ,index: function( item, n ) { return -1; }
     ,item: function( index, n ) { return null; }
 });
+// aliases
+Partition.transpose = Partition.conjugate;
 // extends and implements CombinatorialIterator
 Partition[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
     rewind: function( ) {
@@ -727,11 +759,11 @@ Partition[PROTO] = Merge(Extend(CombinatorialIterator[PROTO]), {
     }
     
     ,random: function( ) {
-        var self = this, n = self._init, p,
-            parts, nparts = rnd(1, n), partition
+        var self = this, n = self._init, tot = self._total, p,
+            parts, nparts = rnd(1, n/*tot*/), partition
         ;
         
-        // try to generate partitions that have the uniform property
+        // try to generate partitions that sample uniformly the combinatorial object space
         // i.e. every possible partition is equi-likely to be output (NEEDS CHECK) 
         if ( 1 === nparts ) 
         {  

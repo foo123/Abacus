@@ -97,26 +97,34 @@ echo(Abacus.Permutation.inverse(10, p));
 echo('factor permutation into cycles');
 echo('p = [2,7,5,6,3,0,4,1]')
 p = [2,7,5,6,3,0,4,1];
-echo('Abacus.Permutation.cycles(8, p)');
-echo(Abacus.Permutation.cycles(8, p));
+echo('Abacus.Permutation.toCycles(8, p)');
+echo(Abacus.Permutation.toCycles(8, p));
 //
 //output:
 //[ [0,2,5], [1,7], [3,6,4] ]
 
 echo('p = [5,4,1,3,2,0]')
 p = [5,4,1,3,2,0];
-echo('Abacus.Permutation.cycles(6, p)');
-echo(Abacus.Permutation.cycles(6, p));
+echo('Abacus.Permutation.toCycles(6, p)');
+echo(Abacus.Permutation.toCycles(6, p));
 //
 //output:
 //[ [0,5], [1,4,2], [3] ]
+
+echo('cycles = [ [0,5], [1,4,2], [3] ]')
+var cycles = [ [0,5], [1,4,2], [3] ];
+echo('Abacus.Permutation.fromCycles(6, cycles)');
+echo(Abacus.Permutation.fromCycles(6, cycles));
+//
+//output:
+//[5,4,1,3,2,0]
 
 // factor permutation into swaps
 echo('factor permutation into swaps');
 echo('p = [2,7,5,6,3,0,4,1]')
 p = [2,7,5,6,3,0,4,1];
-echo('Abacus.Permutation.swaps(8, p)');
-echo(Abacus.Permutation.swaps(8, p));
+echo('Abacus.Permutation.toSwaps(8, p)');
+echo(Abacus.Permutation.toSwaps(8, p));
 //
 //output:
 //[ [0,5], [0,2], [1,7], [3,4], [3,6] ]
@@ -215,6 +223,30 @@ echo(part.random());
 //
 //sample output:
 //[2,1]
+
+echo('Abacus.Partition.conjugate([6,4,3,1])');
+echo(Abacus.Partition.conjugate([6,4,3,1]));
+//
+//output:
+//[4,3,3,2,1,1]
+
+echo('Abacus.Partition.conjugate([4,3,3,2,1,1])');
+echo(Abacus.Partition.conjugate([4,3,3,2,1,1]));
+//
+//output:
+//[6,4,3,1]
+
+echo('Abacus.Partition.conjugate([4])');
+echo(Abacus.Partition.conjugate([4]));
+//
+//output:
+//[1,1,1,1]
+
+echo('Abacus.Partition.conjugate([1,1,1,1])');
+echo(Abacus.Partition.conjugate([1,1,1,1]));
+//
+//output:
+//[4]
 
 
 // dispose
@@ -384,14 +416,17 @@ Abacus.Permutation.inverse(10, p)
 [ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
 factor permutation into cycles
 p = [2,7,5,6,3,0,4,1]
-Abacus.Permutation.cycles(8, p)
+Abacus.Permutation.toCycles(8, p)
 [ [ 0, 2, 5 ], [ 1, 7 ], [ 3, 6, 4 ] ]
 p = [5,4,1,3,2,0]
-Abacus.Permutation.cycles(6, p)
+Abacus.Permutation.toCycles(6, p)
 [ [ 0, 5 ], [ 1, 4, 2 ], [ 3 ] ]
+cycles = [ [0,5], [1,4,2], [3] ]
+Abacus.Permutation.fromCycles(6, cycles)
+[ 5, 4, 1, 3, 2, 0 ]
 factor permutation into swaps
 p = [2,7,5,6,3,0,4,1]
-Abacus.Permutation.swaps(8, p)
+Abacus.Permutation.toSwaps(8, p)
 [ [ 0, 5 ], [ 0, 2 ], [ 1, 7 ], [ 3, 4 ], [ 3, 6 ] ]
 permute an array, using the permutation
 arr = ["a","b","c"]
@@ -406,7 +441,7 @@ perm.all()
   [ 2, 0, 1 ],
   [ 2, 1, 0 ] ]
 perm.random()
-[ 1, 2, 0 ]
+[ 2, 1, 0 ]
 Abacus.Permutation.shuffle(arr)
 [ 'b', 'a', 'c' ]
 perm.dispose()
@@ -429,6 +464,14 @@ part.all()
 [ [ 3 ], [ 2, 1 ], [ 1, 1, 1 ] ]
 part.random()
 [ 1, 1, 1 ]
+Abacus.Partition.conjugate([6,4,3,1])
+[ 4, 3, 3, 2, 1, 1 ]
+Abacus.Partition.conjugate([4,3,3,2,1,1])
+[ 6, 4, 3, 1 ]
+Abacus.Partition.conjugate([4])
+[ 1, 1, 1, 1 ]
+Abacus.Partition.conjugate([1,1,1,1])
+[ 4 ]
 part.dispose()
 
 
@@ -477,7 +520,7 @@ pset.rewind()
 pset.all()
 [ [], [ 0 ], [ 1 ], [ 1, 0 ], [ 2 ], [ 2, 0 ], [ 2, 1 ], [ 2, 1, 0 ] ]
 pset.random()
-[ 1 ]
+[ 1, 0 ]
 pset.dispose()
 ```
 

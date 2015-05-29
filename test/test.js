@@ -55,26 +55,34 @@ echo(Abacus.Permutation.inverse(10, p));
 echo('factor permutation into cycles');
 echo('p = [2,7,5,6,3,0,4,1]')
 p = [2,7,5,6,3,0,4,1];
-echo('Abacus.Permutation.cycles(8, p)');
-echo(Abacus.Permutation.cycles(8, p));
+echo('Abacus.Permutation.toCycles(8, p)');
+echo(Abacus.Permutation.toCycles(8, p));
 //
 //output:
 //[ [0,2,5], [1,7], [3,6,4] ]
 
 echo('p = [5,4,1,3,2,0]')
 p = [5,4,1,3,2,0];
-echo('Abacus.Permutation.cycles(6, p)');
-echo(Abacus.Permutation.cycles(6, p));
+echo('Abacus.Permutation.toCycles(6, p)');
+echo(Abacus.Permutation.toCycles(6, p));
 //
 //output:
 //[ [0,5], [1,4,2], [3] ]
+
+echo('cycles = [ [0,5], [1,4,2], [3] ]')
+var cycles = [ [0,5], [1,4,2], [3] ];
+echo('Abacus.Permutation.fromCycles(6, cycles)');
+echo(Abacus.Permutation.fromCycles(6, cycles));
+//
+//output:
+//[5,4,1,3,2,0]
 
 // factor permutation into swaps
 echo('factor permutation into swaps');
 echo('p = [2,7,5,6,3,0,4,1]')
 p = [2,7,5,6,3,0,4,1];
-echo('Abacus.Permutation.swaps(8, p)');
-echo(Abacus.Permutation.swaps(8, p));
+echo('Abacus.Permutation.toSwaps(8, p)');
+echo(Abacus.Permutation.toSwaps(8, p));
 //
 //output:
 //[ [0,5], [0,2], [1,7], [3,4], [3,6] ]
@@ -173,6 +181,30 @@ echo(part.random());
 //
 //sample output:
 //[2,1]
+
+echo('Abacus.Partition.conjugate([6,4,3,1])');
+echo(Abacus.Partition.conjugate([6,4,3,1]));
+//
+//output:
+//[4,3,3,2,1,1]
+
+echo('Abacus.Partition.conjugate([4,3,3,2,1,1])');
+echo(Abacus.Partition.conjugate([4,3,3,2,1,1]));
+//
+//output:
+//[6,4,3,1]
+
+echo('Abacus.Partition.conjugate([4])');
+echo(Abacus.Partition.conjugate([4]));
+//
+//output:
+//[1,1,1,1]
+
+echo('Abacus.Partition.conjugate([1,1,1,1])');
+echo(Abacus.Partition.conjugate([1,1,1,1]));
+//
+//output:
+//[4]
 
 
 // dispose
