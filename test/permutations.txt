@@ -1,0 +1,101 @@
+Note: Due to the large number of combinatorial samples,
+Abacus combinatorics use an Iterator pattern to succesively and consistently
+generate all combinatorial objects without storing all of them in memory at once
+
+
+
+
+
+
+Abacus.Permutations
+---
+perm = Abacus.Permutation(4)
+perm.total()
+24
+perm.next()
+[ 0, 1, 2, 3 ]
+perm.hasNext()
+true
+perm.next()
+[ 0, 1, 3, 2 ]
+perm.rewind()
+[ [ 0, 1, 2, 3 ], 0, [ 0, 1, 2, 3 ] ]
+[ [ 0, 1, 3, 2 ], 1, [ 0, 1, 3, 2 ] ]
+[ [ 0, 2, 1, 3 ], 2, [ 0, 2, 1, 3 ] ]
+[ [ 0, 2, 3, 1 ], 3, [ 0, 2, 3, 1 ] ]
+[ [ 0, 3, 1, 2 ], 4, [ 0, 3, 1, 2 ] ]
+[ [ 0, 3, 2, 1 ], 5, [ 0, 3, 2, 1 ] ]
+[ [ 1, 0, 2, 3 ], 6, [ 1, 0, 2, 3 ] ]
+[ [ 1, 0, 3, 2 ], 7, [ 1, 0, 3, 2 ] ]
+[ [ 1, 2, 0, 3 ], 8, [ 1, 2, 0, 3 ] ]
+[ [ 1, 2, 3, 0 ], 9, [ 1, 2, 3, 0 ] ]
+[ [ 1, 3, 0, 2 ], 10, [ 1, 3, 0, 2 ] ]
+[ [ 1, 3, 2, 0 ], 11, [ 1, 3, 2, 0 ] ]
+[ [ 2, 0, 1, 3 ], 12, [ 2, 0, 1, 3 ] ]
+[ [ 2, 0, 3, 1 ], 13, [ 2, 0, 3, 1 ] ]
+[ [ 2, 1, 0, 3 ], 14, [ 2, 1, 0, 3 ] ]
+[ [ 2, 1, 3, 0 ], 15, [ 2, 1, 3, 0 ] ]
+[ [ 2, 3, 0, 1 ], 16, [ 2, 3, 0, 1 ] ]
+[ [ 2, 3, 1, 0 ], 17, [ 2, 3, 1, 0 ] ]
+[ [ 3, 0, 1, 2 ], 18, [ 3, 0, 1, 2 ] ]
+[ [ 3, 0, 2, 1 ], 19, [ 3, 0, 2, 1 ] ]
+[ [ 3, 1, 0, 2 ], 20, [ 3, 1, 0, 2 ] ]
+[ [ 3, 1, 2, 0 ], 21, [ 3, 1, 2, 0 ] ]
+[ [ 3, 2, 0, 1 ], 22, [ 3, 2, 0, 1 ] ]
+[ [ 3, 2, 1, 0 ], 23, [ 3, 2, 1, 0 ] ]
+perm.forward()
+while (perm.hasPrev()) echo(perm.prev())
+[ [ 3, 2, 1, 0 ], 23 ]
+[ [ 3, 2, 0, 1 ], 22 ]
+[ [ 3, 1, 2, 0 ], 21 ]
+[ [ 3, 1, 0, 2 ], 20 ]
+[ [ 3, 0, 2, 1 ], 19 ]
+[ [ 3, 0, 1, 2 ], 18 ]
+[ [ 2, 3, 1, 0 ], 17 ]
+[ [ 2, 3, 0, 1 ], 16 ]
+[ [ 2, 1, 3, 0 ], 15 ]
+[ [ 2, 1, 0, 3 ], 14 ]
+[ [ 2, 0, 3, 1 ], 13 ]
+[ [ 2, 0, 1, 3 ], 12 ]
+[ [ 1, 3, 2, 0 ], 11 ]
+[ [ 1, 3, 0, 2 ], 10 ]
+[ [ 1, 2, 3, 0 ], 9 ]
+[ [ 1, 2, 0, 3 ], 8 ]
+[ [ 1, 0, 3, 2 ], 7 ]
+[ [ 1, 0, 2, 3 ], 6 ]
+[ [ 0, 3, 2, 1 ], 5 ]
+[ [ 0, 3, 1, 2 ], 4 ]
+[ [ 0, 2, 3, 1 ], 3 ]
+[ [ 0, 2, 1, 3 ], 2 ]
+[ [ 0, 1, 3, 2 ], 1 ]
+[ [ 0, 1, 2, 3 ], 0 ]
+perm.random()
+[ 1, 2, 0, 3 ]
+perm.dispose()
+permute an array, using a permutation
+Abacus.Permutation.permute(["a","b","c"], [2,0,1])
+[ 'c', 'a', 'b' ]
+Abacus.Permutation.shuffle(["a","b","c"])
+[ 'b', 'c', 'a' ]
+compute inverse permutation
+Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)
+[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
+factor permutation into cycles
+Abacus.Permutation.toCycles([2,7,5,6,3,0,4,1], 8)
+[ [ 0, 2, 5 ], [ 1, 7 ], [ 3, 6, 4 ] ]
+Abacus.Permutation.toCycles([5,4,1,3,2,0], 6)
+[ [ 0, 5 ], [ 1, 4, 2 ], [ 3 ] ]
+Abacus.Permutation.fromCycles([ [0,5], [1,4,2], [3] ], 6)
+[ 5, 4, 1, 3, 2, 0 ]
+factor permutation into swaps
+Abacus.Permutation.toSwaps([2,7,5,6,3,0,4,1], 8)
+[ [ 0, 5 ], [ 0, 2 ], [ 1, 7 ], [ 3, 4 ], [ 3, 6 ] ]
+permutation from swaps
+Abacus.Permutation.fromSwaps([ [0,5], [0,2], [1,7], [3,4], [3,6] ], 8)
+[ 2, 7, 5, 6, 3, 0, 4, 1 ]
+permutation to permutation matrix
+Abacus.Permutation.toMatrix([2,0,1], 3)
+[ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]
+permutation matrix to permutation
+Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ], 3)
+[ 2, 0, 1 ]
