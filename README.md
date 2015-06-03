@@ -322,6 +322,7 @@ see: `test/test.bat`
 
 * `test/permutations.js`
 * `test/combinations.js`
+* `test/combinations_repeats.js`
 * `test/powersets.js`
 * `test/partitions.js`
 
@@ -334,7 +335,7 @@ most algorithms are linear (or log-linear) time algorithms and the author hopes 
 ###Todo
 
 * add ranking / unranking algorithms and associated methods (preferably of O(n) or O(nlgn) complexity) both for lexicographic order, random order and reverse-lexicographic order (IN PROGRESS)
-* add `Derangement`, `RestrictedPartition`, `CombinationWithDuplicates` [IN PROGRESS]
+* add `Derangement`, `RestrictedPartition` [IN PROGRESS]
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * add `Fibonacci`, `Catalan`, `Bell` number computations [IN PROGRESS]
 * make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (Partition.random is not unbiased right now, in progress)
