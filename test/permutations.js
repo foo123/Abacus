@@ -94,6 +94,17 @@ echo(perm.random());
 echo('perm.dispose()');
 perm.dispose();
 
+echo('perm = Abacus.Permutation(15)');
+perm = Abacus.Permutation(15);
+
+echo('perm.total()'); 
+echo(perm.total());
+
+echo('get just last 5 permutations'); 
+echo('perm.range(-5,-1)');
+echo(perm.range(-5,-1));
+
+
 // permute an array, using a permutation
 echo('permute an array, using a permutation');
 echo('Abacus.Permutation.permute(["a","b","c"], [2,0,1])');

@@ -18,7 +18,6 @@ perm.hasNext()
 true
 perm.next()
 [ 0, 1, 3, 2 ]
-perm.rewind()
 [ [ 0, 1, 2, 3 ], 0, [ 0, 1, 2, 3 ] ]
 [ [ 0, 1, 3, 2 ], 1, [ 0, 1, 3, 2 ] ]
 [ [ 0, 2, 1, 3 ], 2, [ 0, 2, 1, 3 ] ]
@@ -70,13 +69,23 @@ while (perm.hasPrev()) echo(perm.prev())
 [ [ 0, 1, 3, 2 ], 1 ]
 [ [ 0, 1, 2, 3 ], 0 ]
 perm.random()
-[ 1, 2, 0, 3 ]
+[ 2, 3, 0, 1 ]
 perm.dispose()
+perm = Abacus.Permutation(15)
+perm.total()
+1307674368000
+get just last 5 permutations
+perm.range(-5,-1)
+[ [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 2, 1 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 0, 2 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ] ]
 permute an array, using a permutation
 Abacus.Permutation.permute(["a","b","c"], [2,0,1])
 [ 'c', 'a', 'b' ]
 Abacus.Permutation.shuffle(["a","b","c"])
-[ 'b', 'c', 'a' ]
+[ 'a', 'c', 'b' ]
 compute inverse permutation
 Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)
 [ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]

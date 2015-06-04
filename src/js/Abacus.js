@@ -440,30 +440,38 @@ var Abacus = {
     ,intersection: intersection
     
     ,union: union
+    
+    ,Factorial: factorial
+    ,SubFactorial: subfactorial
+    ,Binomial: binomial
+    ,Fibonacci: function(){}
+    ,Bell: function(){}
+    ,Catalan: function(){}
 };
 
 // Abacus.CombinatorialIterator, Combinatorial Base Class and Iterator Interface
 var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
-    constructor: function CombinatorialIterator( n, k ) {
+    constructor: function CombinatorialIterator( n, k, m ) {
         var self = this;
-        if ( !(self instanceof CombinatorialIterator) ) return new CombinatorialIterator(n, k);
-        self.$n = n||0; self.$k = k||0;
-        self.$total = self.constructor.count( self.$n, self.$k );
+        if ( !(self instanceof CombinatorialIterator) ) return new CombinatorialIterator(n, k, m);
+        self.$n = n||0; self.$k = k||0; self.$m = m||0;
+        self.$total = self.constructor.count( self.$n, self.$k, self.$m );
         self.rewind( );
     }
     
     ,__static__: {
-         count: function( n, k ) { return 0; }
-        ,index: function( item, n, k ) { return -1; }
-        ,item: function( index, n, k ) { return null; }
-        ,adjacent: function( offset, item, n, k ) {
+         count: function( n, k, m ) { return 0; }
+        ,index: function( item, n, k, m ) { return -1; }
+        ,item: function( index, n, k, m ) { return null; }
+        ,rand: function( n, k, m ) { return null; }
+        ,adjacent: function( offset, item, n, k, m ) {
             if ( -1 !== offset && 1 !== offset ) offset = 1;
-            return item ? this.item( this.index(item, n, k)+offset, n, k ) : null;
+            return item ? this.item( this.index(item, n, k, m)+offset, n, k, m ) : null;
         }
     }
     
-    ,$n: 0,$k: 0
+    ,$n: 0,$k: 0,$m: 0
     ,$init: null
     ,$total: 0
     ,$index: null
@@ -475,6 +483,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this;
         self.$n = null;
         self.$k = null;
+        self.$m = null;
         self.$init = null;
         self.$total = 0;
         self.$index = null;
@@ -508,7 +517,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( self.$index+1 < self.$total ) 
         {
             self.$next = true;
-            self.$current = item( ++self.$index, self.$n, self.$k );
+            self.$current = item( ++self.$index, self.$n, self.$k, self.$m );
         }
         else
         {
@@ -537,7 +546,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( self.$index-1 >= 0 ) 
         {
             self.$prev = true;
-            self.$current = item( --self.$index, self.$n, self.$k );
+            self.$current = item( --self.$index, self.$n, self.$k, self.$m );
         }
         else
         {
@@ -550,7 +559,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this, 
             adjacent = self.constructor.adjacent, 
             item = self.$current;
-        var next = adjacent(1, item, self.$n, self.$k);
+        var next = adjacent(1, item, self.$n, self.$k, self.$m);
         if ( !next ) 
         {
             self.$next = false;
@@ -567,7 +576,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this, 
             adjacent = self.constructor.adjacent, 
             item = self.$current;
-        var next = adjacent(-1, item, self.$n, self.$k);
+        var next = adjacent(-1, item, self.$n, self.$k, self.$m);
         if ( !next ) 
         {
             self.$prev = false;
@@ -580,15 +589,31 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return item;
     }
     
-    ,random: function( ) {
+    ,randomIndex: function( ) {
         var self = this;
-        return self.constructor.item( rnd(0, self.$total-1), self.$n, self.$k );
+        return /*self.constructor.item(*/ rnd(0, self.$total-1)/*, self.$n, self.$k )*/;
     }
     
+    
+    ,random: function( ) {
+        var self = this;
+        return self.constructor.rand( self.$n, self.$k, self.$m );
+    }
+    
+    /*,current: function( ) {
+        return this.$current;
+    }*/
+    
     ,get: function( index ) {
-        var self = this, item = self.constructor.item;
+        var self = this, tot = self.$total, item = self.constructor.item;
         if ( !arguments.length ) return self.$current;
-        else if ( index >= 0 && index < self.$total ) return item( index, self.$n, self.$k );
+        if ( 0 > index ) index += tot;
+        if ( index >= 0 && index < tot )
+        {            
+            if ( 0 === index ) return self.first();
+            else if ( tot-1 === index ) return self.last();
+            return item( index, self.$n, self.$k, self.$m );
+        }
         return null;
     }
     
@@ -596,10 +621,37 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this;
         if ( arguments.length )
         {
+            if ( 0 > index ) index += self.$total;
             if ( index >=0 && index < self.$total ) self.$index = index;
             return self;
         }
         return self.$index;
+    }
+    
+    ,range: function( start, end ) {
+        var self = this, tot = self.$total, range = [];
+        if ( arguments.length < 1 )
+        {
+            start = 0;
+            end = tot-1;
+        }
+        else if ( arguments.length < 2 )
+        {
+            end = tot-1;
+        }
+        if ( start < 0 ) start += tot;
+        if ( end < 0 ) end += tot;
+        if ( start<=end && start>=0 && end<tot )
+        {
+            self.$index = start; 
+            self.$current = self.get( start );
+            while ( start<=end && self.hasNext() ) 
+            {
+                range.push( self.next() );
+                start++;
+            }
+        }
+        return range;
     }
     
     ,all: function( ) {
@@ -736,6 +788,11 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             return null;
         }
+        ,rand: function( n ) { 
+            var perm = new Array(n), i;
+            for (i=0; i<n; i++) perm[i] = i;
+            return shuffle( perm, false );
+        }
         ,inverse: function( perm, n ) {
             var i, iperm = new Array(n);
             for (i=0; i<n; i++) iperm[perm[i]] = i;
@@ -782,7 +839,6 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             return perm;
         }
-        ,cycle2swaps: cycle2swaps
         ,toSwaps: function( perm, n ) {
             var i, l, swaps = [], cycle,
                 cycles = Permutation.toCycles( perm, n, true );
@@ -874,10 +930,6 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
     ,next: CombinatorialIterator[PROTO].adjacent_next
     
     ,prev: CombinatorialIterator[PROTO].adjacent_prev
-    
-    ,random: function( ) {
-        return shuffle(this.$init, false, true);
-    }
 });
 
 // http://en.wikipedia.org/wiki/Derangement
@@ -894,6 +946,7 @@ var Derangement = Abacus.Derangement = Class(CombinatorialIterator, {
          count: subfactorial
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
+        ,rand: CombinatorialIterator.rand
         ,adjacent: CombinatorialIterator.adjacent
     }
 });
@@ -946,6 +999,17 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 }
             }
             return item;
+        }
+        ,rand: function( n, k ) {
+            var combination = new Array(k), m, M, i, index;
+            i = k; m = 0; M = k-1;
+            while ( 0 < i-- ) 
+            { 
+                index = rnd(m, M); 
+                combination[k-i-1] = index; 
+                m = index+1;  M = (M<n-1)?M+1:M; 
+            }
+            return combination;
         }
         ,adjacent: function( offset, item, n, k ) {
             if ( item )
@@ -1061,19 +1125,6 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
     ,next: CombinatorialIterator[PROTO].adjacent_next
     
     ,prev: CombinatorialIterator[PROTO].adjacent_prev
-    
-    ,random: function( ) {
-        var self = this, n = self.$n, k = self.$k,
-            combination = new Array(k), m, M, i, index;
-        i = k; m = 0; M = k-1;
-        while ( 0 < i-- ) 
-        { 
-            index = rnd(m, M); 
-            combination[k-i-1] = index; 
-            m = index+1;  M = (M<n-1)?M+1:M; 
-        }
-        return combination;
-    }
 });
 // aliases
 Combination.conjugate = Combination.complement;
@@ -1091,6 +1142,17 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
          count: powNK
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
+        ,rand: function( n, k ) {
+            var combination = new Array(k), m, M, i, index;
+            m=0;  M=n-1;
+            for (i=0; i<k; i++)
+            { 
+                index = rnd(m, M); 
+                combination[i] = index; 
+                m = index; 
+            }
+            return combination;
+        }
         ,adjacent: function( offset, item, n, k ) {
             if ( item )
             {
@@ -1160,19 +1222,6 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
     ,next: CombinatorialIterator[PROTO].adjacent_next
     
     ,prev: CombinatorialIterator[PROTO].adjacent_prev
-    
-    ,random: function( ) {
-        var self = this, n = self.$n, k = self.$k,
-            combination = new Array(k), m, M, i, index;
-        m=0;  M=n-1;
-        for (i=0; i<k; i++)
-        { 
-            index = rnd(m, M); 
-            combination[i] = index; 
-            m = index; 
-        }
-        return combination;
-    }
 });
 
 // https://en.wikipedia.org/wiki/Partitions
@@ -1244,6 +1293,40 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,toCycles: partition2cycles
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
+        ,rand: function( n ) {
+            var p, parts, partition,
+                nparts = rnd(1, n)
+            ;
+            
+            // try to generate partitions that sample uniformly the combinatorial object space
+            // i.e. every possible partition is equi-likely to be output (UNBIASED???) 
+            if ( 1 === nparts ) // 1 part
+            {  
+                partition = [n]; 
+            }
+            else if ( n > nparts ) // k parts
+            {
+                parts = new Array(n);
+                while ( nparts > 1 )
+                {
+                    p = rnd(1, n-nparts+1);
+                    if ( !parts[p-1] ) parts[p-1] = [p];
+                    else parts[p-1].push(p);
+                    n -= p; 
+                    nparts--;
+                }
+                if ( !parts[n-1] ) parts[n-1] = [n];
+                else parts[n-1].push(n);
+                partition = [ ];
+                for (p=parts.length-1; p>=0; p--) if ( parts[p] ) partition = partition.concat(parts[p]);
+            }
+            else // n parts
+            { 
+                partition = new Array(n);
+                for (p=0; p<n; p++) partition[p] = 1;
+            }
+            return partition;
+        }
         ,adjacent: function( offset, item, n ) {
             if ( item )
             {
@@ -1332,41 +1415,6 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,next: CombinatorialIterator[PROTO].adjacent_next
     
     ,prev: CombinatorialIterator[PROTO].adjacent_prev
-    
-    ,random: function( ) {
-        var self = this, n = self.$n, tot = self.$total, p,
-            parts, nparts = rnd(1, n/*tot*/), partition
-        ;
-        
-        // try to generate partitions that sample uniformly the combinatorial object space
-        // i.e. every possible partition is equi-likely to be output (NEEDS CHECK) 
-        if ( 1 === nparts ) 
-        {  
-            partition = [n]; 
-        }
-        else if ( n === nparts ) 
-        { 
-            partition = new Array(n);
-            for (p=0; p<n; p++) partition[p] = 1;
-        }
-        else
-        {
-            parts = new Array(n);
-            while ( nparts > 1 )
-            {
-                p = rnd(1, n-nparts+1);
-                if ( !parts[p-1] ) parts[p-1] = [p];
-                else parts[p-1].push(p);
-                n -= p; 
-                nparts--;
-            }
-            if ( !parts[n-1] ) parts[n-1] = [n];
-            else parts[n-1].push(n);
-            partition = [ ];
-            for (p=parts.length-1; p>=0; p--) if ( parts[p] ) partition = partition.concat(parts[p]);
-        }
-        return partition;
-    }
 });
 // aliases
 Partition.transpose = Partition.conjugate;
@@ -1377,14 +1425,14 @@ var RestrictedPartition = Abacus.RestrictedPartition = Class(CombinatorialIterat
     constructor: function RestrictedPartition( n, k, m ) {
         var self = this, i;
         if ( !(self instanceof RestrictedPartition) ) return new RestrictedPartition(n, k, m);
-        self.$m = m;
-        CombinatorialIterator.call(self, n, k);
+        CombinatorialIterator.call(self, n, k, m);
     }
     
     ,__static__: {
          count: partitions
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
+        ,rand: CombinatorialIterator.rand
         ,adjacent: CombinatorialIterator.adjacent
     }
 });
@@ -1415,6 +1463,9 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
             }
             return subset;
         }
+        ,rand: function( n ) {
+            return this.item( rnd(0, (1<<n)-1) );
+        }
         ,adjacent: CombinatorialIterator.adjacent
     }
     
@@ -1426,6 +1477,11 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
         var self = this, i, n = self.$n, item = new Array( n ); 
         for (i=0; i<n; i++) item[ i ] = i;
         return item;
+    }
+    
+    ,random: function( ) {
+        var self = this;
+        return self.constructor.item( rnd(0, self.$total-1) );
     }
 });
 
