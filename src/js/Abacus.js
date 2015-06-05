@@ -449,6 +449,44 @@ var Abacus = {
     ,Catalan: function(){}
 };
 
+var BitVector = Abacus.BitVector = Class({
+    
+    constructor: function BitVector(n) {
+        var self = this;
+        if ( !(self instanceof BitVector) ) return new BitVector(n);
+        self.length = n;
+        self.bits = new Uint8Array( ceil(n/8) );
+    }
+    
+    ,length: 0
+    ,bits: null
+    
+    ,dispose: function( ) {
+        var self = this;
+        self.length = null;
+        self.bits = null;
+        return self;
+    }
+    
+    ,reset: function( ) {
+        var self = this, bits = self.bits, len = bits.length, i;
+        for (i=0; i<len; i++) bits[i] = 0;
+        return self;
+    }
+    
+    ,get: function( bit ) {
+        return this.bits[~~(bit/8)]&(1<<(bit % 8));
+    }
+    
+    ,set: function( bit ) {
+        return this.bits[~~(bit/8)] |= (1<<(bit % 8));
+    }
+    
+    ,unset: function( bit ) {
+        return this.bits[~~(bit/8)] &= ~(1<<(bit % 8));
+    }
+});
+
 // Abacus.CombinatorialIterator, Combinatorial Base Class and Iterator Interface
 var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
@@ -462,9 +500,9 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
     ,__static__: {
          count: function( n, k, m ) { return 0; }
-        ,index: function( item, n, k, m ) { return -1; }
-        ,item: function( index, n, k, m ) { return null; }
-        ,rand: function( n, k, m ) { return null; }
+        ,index: function( item, n, k, m, total ) { return -1; }
+        ,item: function( index, n, k, m, total ) { return null; }
+        ,rand: function( n, k, m, total ) { return null; }
         ,adjacent: function( offset, item, n, k, m ) {
             if ( -1 !== offset && 1 !== offset ) offset = 1;
             return item ? this.item( this.index(item, n, k, m)+offset, n, k, m ) : null;
@@ -478,6 +516,8 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,$current: null
     ,$prev: false
     ,$next: false
+    ,$bitvector: null
+    ,$rindex: 0
     
     ,dispose: function( ) {
         var self = this;
@@ -490,12 +530,33 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self.$current = null;
         self.$prev = false;
         self.$next = false;
+        self.$rindex = null;
+        if ( self.$bitvector )
+        {
+            self.$bitvector.dispose( );
+            self.$bitvector = null;
+        }
+        return self;
+    }
+    
+    ,$store: function( ) {
+        var self = this;
+        return [self.$index, self.$current, self.$prev, self.$next];
+    }
+    
+    ,$restore: function( state ) {
+        var self = this;
+        if ( state )
+        {
+        self.$index = state[0];
+        self.$current = state[1];
+        self.$prev = state[2];
+        self.$next = state[3];
+        }
         return self;
     }
     
     ,total: function( ) { return this.$total; }
-    
-    ,randomise: function( ) { return this; }
     
     ,first: function( ) { return this.$current; }
     
@@ -517,7 +578,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( self.$index+1 < self.$total ) 
         {
             self.$next = true;
-            self.$current = item( ++self.$index, self.$n, self.$k, self.$m );
+            self.$current = item( ++self.$index, self.$n, self.$k, self.$m, self.$total );
         }
         else
         {
@@ -546,7 +607,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( self.$index-1 >= 0 ) 
         {
             self.$prev = true;
-            self.$current = item( --self.$index, self.$n, self.$k, self.$m );
+            self.$current = item( --self.$index, self.$n, self.$k, self.$m, self.$total );
         }
         else
         {
@@ -555,7 +616,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return current;
     }
     
-    ,adjacent_next: function( ) {
+    ,adjacentNext: function( ) {
         var self = this, 
             adjacent = self.constructor.adjacent, 
             item = self.$current;
@@ -572,7 +633,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return item;
     }
     
-    ,adjacent_prev: function( ) {
+    ,adjacentPrev: function( ) {
         var self = this, 
             adjacent = self.constructor.adjacent, 
             item = self.$current;
@@ -589,20 +650,48 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return item;
     }
     
-    ,randomIndex: function( ) {
+    ,randomise: function( ) {
         var self = this;
-        return /*self.constructor.item(*/ rnd(0, self.$total-1)/*, self.$n, self.$k )*/;
+        // lazy init
+        if ( !self.$bitvector )
+            self.$bitvector = new BitVector( self.$total );
+        else
+            self.$bitvector.reset( );
+        self.$rindex = 0;
+        return self;
     }
     
+    ,randomIndex: function( ) {
+        var self = this;
+        return /*self.constructor.item(*/ rnd(0, self.$total-1)/*, self.$n, self.$k, self.$m )*/;
+    }
+    
+    ,hasRandomNext: function( ) { return this.$rindex < this.$total; }
+    
+    // http://stackoverflow.com/questions/28990820/iterator-to-produce-unique-random-order
+    ,randomNext: function( ) {
+        var self = this, r, bvec = self.$bitvector;
+        if ( self.$rindex < self.$total )
+        {
+            //console.log(Array.prototype.slice.call(bvec.bits));
+            // get next un-traversed index, reject if needed
+            while ( bvec.get( r = self.randomIndex( ) ) ) ;
+            bvec.set( r );
+            self.$rindex++;
+            return self.get( r );
+        }
+        else if ( self.$bitvector )
+        {
+            self.$bitvector.dispose( );
+            self.$bitvector = null;
+        }
+        return null;
+    }
     
     ,random: function( ) {
         var self = this;
-        return self.constructor.rand( self.$n, self.$k, self.$m );
+        return self.constructor.rand( self.$n, self.$k, self.$m, self.$total );
     }
-    
-    /*,current: function( ) {
-        return this.$current;
-    }*/
     
     ,get: function( index ) {
         var self = this, tot = self.$total, item = self.constructor.item;
@@ -612,7 +701,7 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         {            
             if ( 0 === index ) return self.first();
             else if ( tot-1 === index ) return self.last();
-            return item( index, self.$n, self.$k, self.$m );
+            return item( index, self.$n, self.$k, self.$m, self.$total );
         }
         return null;
     }
@@ -628,8 +717,9 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return self.$index;
     }
     
-    ,range: function( start, end ) {
-        var self = this, tot = self.$total, range = [];
+    ,range: function( start, end, overwrite ) {
+        var self = this, item, tot = self.$total, 
+        range = [], dir = 1, prev;
         if ( arguments.length < 1 )
         {
             start = 0;
@@ -641,23 +731,45 @@ var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         }
         if ( start < 0 ) start += tot;
         if ( end < 0 ) end += tot;
+        if ( start > end )
+        {
+            var tmp = start;
+            start = end;
+            end = tmp;
+            dir = -1;
+        }
+        overwrite = true === overwrite;
         if ( start<=end && start>=0 && end<tot )
         {
+            // store current iterator state
+            if ( !overwrite ) prev = self.$store();
             self.$index = start; 
             self.$current = self.get( start );
-            while ( start<=end && self.hasNext() ) 
+            while ( start<=end /*&& self.hasNext()*/ ) 
             {
-                range.push( self.next() );
+                item = self.next();
+                if ( 0 > dir ) range.unshift( item )
+                else range.push( item );
                 start++;
             }
+            // restore previous iterator state
+            if ( !overwrite ) self.$restore( prev );
         }
         return range;
     }
     
-    ,all: function( ) {
-        var self = this, all = [];
+    ,all: function( dir, overwrite ) {
+        var self = this, all = [], prev;
+        dir = dir || 1;
+        overwrite = true === overwrite;
+        // store current iterator state
+        if ( !overwrite ) prev = self.$store();
         self.rewind();
-        while ( self.hasNext() ) all.push( self.next() );
+        while ( self.hasNext() ) 
+            if ( 0 > dir ) all.unshift( self.next() );
+            else all.push( self.next() );
+        // restore previous iterator state
+        if ( !overwrite ) self.$restore( prev );
         return all;
     }
 });
@@ -699,8 +811,8 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         // http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf
         // O(n log n) uniform lexicographic unranking.
-        ,item: function( index, n ) {
-            var perm = new Array(n), fn = factorial(n-1),
+        ,item: function( index, n, a1, a2, total ) {
+            var perm = new Array(n), fn = total ? total/n : factorial(n-1),
                 i, j, i2, digit, node, rem,
                 k = ceil(log2(n)), Tl = (1<<(1+k))-1,
                 T = new Array(Tl), twok = 1<<k;
@@ -927,9 +1039,9 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         return self.$init.slice( ).reverse( );
     }
     
-    ,next: CombinatorialIterator[PROTO].adjacent_next
+    ,next: CombinatorialIterator[PROTO].adjacentNext
     
-    ,prev: CombinatorialIterator[PROTO].adjacent_prev
+    ,prev: CombinatorialIterator[PROTO].adjacentPrev
 });
 
 // http://en.wikipedia.org/wiki/Derangement
@@ -949,6 +1061,8 @@ var Derangement = Abacus.Derangement = Class(CombinatorialIterator, {
         ,rand: CombinatorialIterator.rand
         ,adjacent: CombinatorialIterator.adjacent
     }
+    
+    ,last: Permutation[PROTO].last
 });
 
 // https://en.wikipedia.org/wiki/Combinations
@@ -963,9 +1077,9 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
     
     ,__static__: {
          count: binomial
-        ,index: function( item, n, k ) {
-            var index = 0, i, c, j, 
-                Cnk = binomial(n, k);
+        ,index: function( item, n, k, m, total ) {
+            var index = 0, i, c, j, binom,
+                Cnk = total ? total : binomial(n, k);
             for (i=1; i<=k; i++)
             {
                 // adjust the order to match MSB to LSB 
@@ -1001,13 +1115,31 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return item;
         }
         ,rand: function( n, k ) {
-            var combination = new Array(k), m, M, i, index;
-            i = k; m = 0; M = k-1;
-            while ( 0 < i-- ) 
+            var combination, 
+                potential_choices = new Array(n),
+                choices = new Array(n),
+                m, M, i, index;
+            for (i=0; i<n; i++) 
+            {
+                potential_choices[ i ] = i;
+                choices[ i ] = 0;
+            }
+            shuffle(potential_choices, false, false);
+            m = 0; M = k-1;
+            for (i=0; i<k; i++) 
             { 
-                index = rnd(m, M); 
-                combination[k-i-1] = index; 
-                m = index+1;  M = (M<n-1)?M+1:M; 
+                /*index = rnd(m, M); 
+                combination[i] = index; 
+                m = index+1;  M = (M<n-1)?M+1:M;*/
+                // make it unbiased
+                index = potential_choices[ i ];
+                choices[ index ]++;
+            }
+            combination = [];
+            for (i=0; i<n; i++)
+            {
+                m = choices[ i ];
+                if ( m > 0 ) combination.push( i );
             }
             return combination;
         }
@@ -1122,9 +1254,9 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
         return item;
     }
     
-    ,next: CombinatorialIterator[PROTO].adjacent_next
+    ,next: CombinatorialIterator[PROTO].adjacentNext
     
-    ,prev: CombinatorialIterator[PROTO].adjacent_prev
+    ,prev: CombinatorialIterator[PROTO].adjacentPrev
 });
 // aliases
 Combination.conjugate = Combination.complement;
@@ -1139,17 +1271,33 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
     }
     
     ,__static__: {
-         count: powNK
+         // http://en.wikipedia.org/wiki/Combination#Number_of_combinations_with_repetition
+         count: function( n, k ) {
+             return binomial(n+k-1,k);
+         }
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
         ,rand: function( n, k ) {
-            var combination = new Array(k), m, M, i, index;
+            var combination, choices = new Array(n), 
+                m, M, i, index;
+            for (i=0; i<n; i++) choices[ i ] = 0;
             m=0;  M=n-1;
             for (i=0; i<k; i++)
             { 
-                index = rnd(m, M); 
+                /*index = rnd(m, M); 
                 combination[i] = index; 
-                m = index; 
+                m = index;*/
+                // make it unbiased
+                index = rnd(m, M); 
+                choices[ index ]++;
+            }
+            combination = [];
+            for (i=0; i<n; i++)
+            { 
+                m = choices[ i ];
+                if ( m > 0 ) 
+                    for (index=0; index<m; index++) 
+                        combination.push( i );
             }
             return combination;
         }
@@ -1219,9 +1367,9 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
         return item;
     }
     
-    ,next: CombinatorialIterator[PROTO].adjacent_next
+    ,next: CombinatorialIterator[PROTO].adjacentNext
     
-    ,prev: CombinatorialIterator[PROTO].adjacent_prev
+    ,prev: CombinatorialIterator[PROTO].adjacentPrev
 });
 
 // https://en.wikipedia.org/wiki/Partitions
@@ -1293,19 +1441,20 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,toCycles: partition2cycles
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
-        ,rand: function( n ) {
-            var p, parts, partition,
-                nparts = rnd(1, n)
+        ,rand: function( n, k, m, total ) {
+            var p, parts, partition, tot = total ? total : this.count(n),
+                dice = rnd(0, tot-1), nparts
             ;
             
             // try to generate partitions that sample uniformly the combinatorial object space
             // i.e. every possible partition is equi-likely to be output (UNBIASED???) 
-            if ( 1 === nparts ) // 1 part
+            if ( 0 === dice ) // 1 part
             {  
                 partition = [n]; 
             }
-            else if ( n > nparts ) // k parts
+            else if ( tot-1 > dice ) // k parts
             {
+                nparts = rnd(2, n-1);
                 parts = new Array(n);
                 while ( nparts > 1 )
                 {
@@ -1412,9 +1561,9 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
         return item;
     }
     
-    ,next: CombinatorialIterator[PROTO].adjacent_next
+    ,next: CombinatorialIterator[PROTO].adjacentNext
     
-    ,prev: CombinatorialIterator[PROTO].adjacent_prev
+    ,prev: CombinatorialIterator[PROTO].adjacentPrev
 });
 // aliases
 Partition.transpose = Partition.conjugate;
@@ -1463,8 +1612,9 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
             }
             return subset;
         }
-        ,rand: function( n ) {
-            return this.item( rnd(0, (1<<n)-1) );
+        ,rand: function( n, k, m, total ) {
+            var tot = total ? total : (1<<n);
+            return this.item( rnd(0, tot-1) );
         }
         ,adjacent: CombinatorialIterator.adjacent
     }
@@ -1477,11 +1627,6 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
         var self = this, i, n = self.$n, item = new Array( n ); 
         for (i=0; i<n; i++) item[ i ] = i;
         return item;
-    }
-    
-    ,random: function( ) {
-        var self = this;
-        return self.constructor.item( rnd(0, self.$total-1) );
     }
 });
 

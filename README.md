@@ -49,7 +49,6 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
 var p, c, perm;
-var arr = ["a","b","c"];
 
 echo('Note: Due to the large number of combinatorial samples,');
 echo('Abacus combinatorics use an Iterator pattern to succesively and consistently');
@@ -134,6 +133,12 @@ echo(perm.random());
 //sample output:
 //[2,0,1]
 
+echo('get permutations in unique random order')
+echo('perm.randomise()');
+echo('while(perm.hasRandomNext()) echo(perm.randomNext())');
+perm.randomise();
+while(perm.hasRandomNext()) echo(perm.randomNext());
+
 // dispose
 echo('perm.dispose()');
 perm.dispose();
@@ -148,6 +153,11 @@ echo('get just last 5 permutations');
 echo('perm.range(-5,-1)');
 echo(perm.range(-5,-1));
 
+echo('get just last 5 permutations in reverse order'); 
+echo('perm.range(-1,-5)');
+echo(perm.range(-1,-5));
+
+perm.dispose();
 
 // permute an array, using a permutation
 echo('permute an array, using a permutation');
@@ -299,7 +309,34 @@ while (perm.hasPrev()) echo(perm.prev())
 [ [ 0, 1, 3, 2 ], 1 ]
 [ [ 0, 1, 2, 3 ], 0 ]
 perm.random()
+[ 1, 3, 2, 0 ]
+get permutations in unique random order
+perm.randomise()
+while(perm.hasRandomNext()) echo(perm.randomNext())
+[ 2, 1, 0, 3 ]
+[ 0, 3, 1, 2 ]
+[ 3, 1, 0, 2 ]
+[ 0, 3, 2, 1 ]
 [ 2, 3, 0, 1 ]
+[ 2, 0, 1, 3 ]
+[ 2, 0, 3, 1 ]
+[ 1, 2, 3, 0 ]
+[ 2, 3, 1, 0 ]
+[ 3, 1, 2, 0 ]
+[ 3, 0, 1, 2 ]
+[ 0, 1, 2, 3 ]
+[ 3, 2, 0, 1 ]
+[ 1, 3, 2, 0 ]
+[ 0, 2, 3, 1 ]
+[ 2, 1, 3, 0 ]
+[ 0, 2, 1, 3 ]
+[ 3, 2, 1, 0 ]
+[ 1, 0, 3, 2 ]
+[ 1, 3, 0, 2 ]
+[ 0, 1, 3, 2 ]
+[ 3, 0, 2, 1 ]
+[ 1, 0, 2, 3 ]
+[ 1, 2, 0, 3 ]
 perm.dispose()
 perm = Abacus.Permutation(15)
 perm.total()
@@ -311,11 +348,18 @@ perm.range(-5,-1)
   [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
   [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
   [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ] ]
+get just last 5 permutations in reverse order
+perm.range(-1,-5)
+[ [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 0, 2 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 2, 1 ] ]
 permute an array, using a permutation
 Abacus.Permutation.permute(["a","b","c"], [2,0,1])
 [ 'c', 'a', 'b' ]
 Abacus.Permutation.shuffle(["a","b","c"])
-[ 'a', 'c', 'b' ]
+[ 'b', 'a', 'c' ]
 compute inverse permutation
 Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)
 [ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
@@ -361,6 +405,6 @@ most algorithms are linear (or log-linear) time algorithms and the author hopes 
 * add ranking / unranking algorithms and associated methods (preferably of O(n) or O(nlgn) complexity) both for lexicographic order, random order and reverse-lexicographic order (IN PROGRESS)
 * add `Derangement`, `RestrictedPartition` [IN PROGRESS]
 * add `Combinadic`, `Factoradic` transformations [DONE]
+* allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) [DONE, see reference]
 * add `Fibonacci`, `Catalan`, `Bell` number computations [IN PROGRESS]
-* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (Partition.random is not unbiased right now, in progress)
-* allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) (IN PROGRESS)
+* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (`Partition.random` is **not unbiased** right now, in progress)

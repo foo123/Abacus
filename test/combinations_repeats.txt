@@ -11,7 +11,7 @@ Abacus.Combinations with Repeats
 ---
 comb = Abacus.CombinationRepeat(6, 3)
 comb.total()
-216
+56
 comb.next()
 [ 0, 0, 0 ]
 comb.hasNext()
@@ -75,5 +75,5 @@ comb.next()
 [ [ 4, 5, 5 ] ]
 [ [ 5, 5, 5 ] ]
 comb.random()
-[ 4, 5, 5 ]
+[ 0, 0, 2 ]
 comb.dispose()

@@ -39,7 +39,7 @@ comb.next()
 [ [ 2, 4, 5 ], 18, [ 2, 4, 5 ] ]
 [ [ 3, 4, 5 ], 19, [ 3, 4, 5 ] ]
 comb.random()
-[ 1, 2, 3 ]
+[ 0, 4, 5 ]
 comb.dispose()
 choose from array, using a combination
 Abacus.Combination.choose(["a","b","c"], [1,2])

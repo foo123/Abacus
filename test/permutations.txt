@@ -69,7 +69,34 @@ while (perm.hasPrev()) echo(perm.prev())
 [ [ 0, 1, 3, 2 ], 1 ]
 [ [ 0, 1, 2, 3 ], 0 ]
 perm.random()
+[ 1, 3, 2, 0 ]
+get permutations in unique random order
+perm.randomise()
+while(perm.hasRandomNext()) echo(perm.randomNext())
+[ 2, 1, 0, 3 ]
+[ 0, 3, 1, 2 ]
+[ 3, 1, 0, 2 ]
+[ 0, 3, 2, 1 ]
 [ 2, 3, 0, 1 ]
+[ 2, 0, 1, 3 ]
+[ 2, 0, 3, 1 ]
+[ 1, 2, 3, 0 ]
+[ 2, 3, 1, 0 ]
+[ 3, 1, 2, 0 ]
+[ 3, 0, 1, 2 ]
+[ 0, 1, 2, 3 ]
+[ 3, 2, 0, 1 ]
+[ 1, 3, 2, 0 ]
+[ 0, 2, 3, 1 ]
+[ 2, 1, 3, 0 ]
+[ 0, 2, 1, 3 ]
+[ 3, 2, 1, 0 ]
+[ 1, 0, 3, 2 ]
+[ 1, 3, 0, 2 ]
+[ 0, 1, 3, 2 ]
+[ 3, 0, 2, 1 ]
+[ 1, 0, 2, 3 ]
+[ 1, 2, 0, 3 ]
 perm.dispose()
 perm = Abacus.Permutation(15)
 perm.total()
@@ -81,11 +108,18 @@ perm.range(-5,-1)
   [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
   [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
   [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ] ]
+get just last 5 permutations in reverse order
+perm.range(-1,-5)
+[ [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 0, 2 ],
+  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 2, 1 ] ]
 permute an array, using a permutation
 Abacus.Permutation.permute(["a","b","c"], [2,0,1])
 [ 'c', 'a', 'b' ]
 Abacus.Permutation.shuffle(["a","b","c"])
-[ 'a', 'c', 'b' ]
+[ 'b', 'a', 'c' ]
 compute inverse permutation
 Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)
 [ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]

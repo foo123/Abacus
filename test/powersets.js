@@ -65,6 +65,13 @@ echo(pset.random());
 //sample output:
 //[0,2]
 
+echo('get subsets in unique random order')
+echo('pset.randomise()');
+echo('while(pset.hasRandomNext()) echo(pset.randomNext())');
+pset.randomise();
+while(pset.hasRandomNext()) echo(pset.randomNext());
+
+
 
 // dispose
 echo('pset.dispose()');

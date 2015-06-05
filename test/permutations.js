@@ -5,7 +5,6 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
 var p, c, perm;
-var arr = ["a","b","c"];
 
 echo('Note: Due to the large number of combinatorial samples,');
 echo('Abacus combinatorics use an Iterator pattern to succesively and consistently');
@@ -90,6 +89,12 @@ echo(perm.random());
 //sample output:
 //[2,0,1]
 
+echo('get permutations in unique random order')
+echo('perm.randomise()');
+echo('while(perm.hasRandomNext()) echo(perm.randomNext())');
+perm.randomise();
+while(perm.hasRandomNext()) echo(perm.randomNext());
+
 // dispose
 echo('perm.dispose()');
 perm.dispose();
@@ -104,6 +109,11 @@ echo('get just last 5 permutations');
 echo('perm.range(-5,-1)');
 echo(perm.range(-5,-1));
 
+echo('get just last 5 permutations in reverse order'); 
+echo('perm.range(-1,-5)');
+echo(perm.range(-1,-5));
+
+perm.dispose();
 
 // permute an array, using a permutation
 echo('permute an array, using a permutation');
