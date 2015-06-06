@@ -408,3 +408,4 @@ most algorithms are linear (or log-linear) time algorithms and the author hopes 
 * allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) [DONE, see reference]
 * add `Fibonacci`, `Catalan`, `Bell` number computations [IN PROGRESS]
 * make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (`Partition.random` is **not unbiased** right now, in progress)
+* add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, `RegularExpression`, `Probabilistic` and so on (TODO)

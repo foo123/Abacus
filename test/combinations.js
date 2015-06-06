@@ -55,8 +55,8 @@ comb.rewind();
 while (comb.hasNext()) 
     echo([
     c=comb.next(), 
-    p=Abacus.Combination.index(c,6,3),
-    p=Abacus.Combination.item(p,6,3)
+    p=Abacus.Combination.index(c,6, 3),
+    Abacus.Combination.item(p,6, 3)
     ]);
 
 echo('comb.random()');
@@ -65,6 +65,19 @@ echo(comb.random());
 //sample output:
 //[0,2]
 
+echo('get combinations in unique random order')
+echo('comb.randomise()');
+echo('while(comb.hasRandomNext()) echo(comb.randomNext())');
+comb.randomise();
+while(comb.hasRandomNext()) echo(comb.randomNext());
+
+echo('get just last 5 combinations'); 
+echo('comb.range(-5,-1)');
+echo(comb.range(-5,-1));
+
+echo('get just last 5 combinations in reverse order'); 
+echo('comb.range(-1,-5)');
+echo(comb.range(-1,-5));
 
 // dispose
 echo('comb.dispose()');

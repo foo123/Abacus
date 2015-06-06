@@ -58,6 +58,14 @@ echo(pset.all());
 //[ 2, 1, 0 ]
 //]
 
+echo('get just last 5 subsets'); 
+echo('pset.range(-5,-1)');
+echo(pset.range(-5,-1));
+
+echo('get just last 5 subsets in reverse order'); 
+echo('pset.range(-1,-5)');
+echo(pset.range(-1,-5));
+
 
 echo('pset.random()');
 echo(pset.random());
