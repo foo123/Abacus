@@ -402,10 +402,11 @@ most algorithms are linear (or log-linear) time algorithms and the author hopes 
 
 ###Todo
 
-* add ranking / unranking algorithms and associated methods (preferably of O(n) or O(nlgn) complexity) both for lexicographic order, random order and reverse-lexicographic order (IN PROGRESS)
+* add ranking/unranking algorithms and associated methods (preferably of O(n) or O(nlgn) complexity) both for lexicographic order, random order and reverse-lexicographic order [ALMOST DONE]
 * add `Derangement`, `RestrictedPartition` [IN PROGRESS]
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) [DONE, see reference]
-* add `Fibonacci`, `Catalan`, `Bell` number computations [IN PROGRESS]
 * make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (`Partition.random` is **not unbiased** right now, in progress)
-* add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, `RegularExpression`, `Probabilistic` and so on (TODO)
+* add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, `Probabilistic` and so on (TODO)
+* add `Fibonacci`, `Catalan`, `Bell` number computations (TODO)
+* add support for `biginteger` computations like factorials etc??

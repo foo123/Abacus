@@ -16,8 +16,8 @@ echo('Abacus.Partitions');
 echo('---');
 
 // Partitions
-echo('part = Abacus.Partition(12)');
-var part = Abacus.Partition(12);
+echo('part = Abacus.Partition(10)');
+var part = Abacus.Partition(10);
 
 echo('part.total()');
 echo(part.total());
@@ -52,10 +52,10 @@ echo(part.all());
 //[1,1,1]
 //]
 
-/*echo('part.forward()');
+echo('part.forward()');
 echo('while(part.hasPrev()) echo(part.prev())');
 part.forward();
-while(part.hasPrev()) echo(part.prev());*/
+while(part.hasPrev()) echo(part.prev());
 
 echo('part.random()');
 echo(part.random());

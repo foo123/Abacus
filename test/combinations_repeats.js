@@ -21,43 +21,17 @@ comb = Abacus.CombinationRepeat(6, 3);
 
 echo('comb.total()');
 echo(comb.total());
-//
-//output 3 = num of (distinct) combinations 3!/2!x1!:
-//3
 
 
-echo('comb.next()');
-echo(comb.next());
-//
-//output:
-//[0,1]
-
-
-echo('comb.hasNext()');
-echo(comb.hasNext());
-echo('comb.next()');
-echo(comb.next());
-//
-//output:
-//true
-//[0,2]
-
-/*echo('comb.all()');
-echo(comb.all());*/
-//
-//output (in index-lexicographic order):
-//[
-//[0,1]
-//[0,2]
-//[1,2]
-//]
+echo('comb.rewind()');
+/*comb.rewind();
+while (comb.hasNext()) echo([c=comb.next(),p=Abacus.CombinationRepeat.index(c,6,3),Abacus.CombinationRepeat.item(p,6,3)]);*/
 comb.rewind();
-while (comb.hasNext()) 
-    echo([
-    c=comb.next(), 
-    p=Abacus.CombinationRepeat.index(c,6,3)
-    ,Abacus.CombinationRepeat.item(p,6,3)
-    ]);
+while (comb.hasNext()) echo(comb.next());
+
+echo('comb.forward()');
+comb.forward();
+while (comb.hasPrev()) echo(comb.prev());
 
 echo('comb.random()');
 echo(comb.random());
