@@ -189,3 +189,18 @@ echo(Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]/*[ 
 //
 //output:
 //[2,0,1]
+
+// permutation from stochastic matrix
+echo('permutation from stochastic matrix');
+echo('Abacus.Permutation.fromStochasticMatrix([ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], 3)');
+for(var i=0; i<=5; i++)
+echo(Abacus.Permutation.fromStochasticMatrix([ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], 3));
+//
+//sample output:
+//[1,0,2]
+//[1,2,0]
+//[1,0,2]
+//[1,2,0]
+//[1,0,2]
+//[1,2,0]
+// ..

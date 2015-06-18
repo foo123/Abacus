@@ -16,8 +16,8 @@ echo('Abacus.Partitions');
 echo('---');
 
 // Partitions
-echo('part = Abacus.Partition(10)');
-var part = Abacus.Partition(10);
+echo('part = Abacus.Partition(13)');
+var part = Abacus.Partition(13);
 
 echo('part.total()');
 echo(part.total());

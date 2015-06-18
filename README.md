@@ -233,6 +233,21 @@ echo(Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]/*[ 
 //
 //output:
 //[2,0,1]
+
+// permutation from stochastic matrix
+echo('permutation from stochastic matrix');
+echo('Abacus.Permutation.fromStochasticMatrix([ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], 3)');
+for(var i=0; i<=5; i++)
+echo(Abacus.Permutation.fromStochasticMatrix([ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], 3));
+//
+//sample output:
+//[1,0,2]
+//[1,2,0]
+//[1,0,2]
+//[1,2,0]
+//[1,0,2]
+//[1,2,0]
+// ..
 ```
 
 **output** (see `test/permutations.js`)
@@ -382,6 +397,15 @@ Abacus.Permutation.toMatrix([2,0,1], 3)
 permutation matrix to permutation
 Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ], 3)
 [ 2, 0, 1 ]
+
+permutation from stochastic matrix
+Abacus.Permutation.fromStochasticMatrix([ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], 3)
+[ 1, 2, 0 ]
+[ 1, 2, 0 ]
+[ 1, 2, 0 ]
+[ 1, 2, 0 ]
+[ 1, 0, 2 ]
+[ 1, 0, 2 ]
 ```
 
 ###Tests
@@ -407,6 +431,7 @@ most algorithms are linear (or log-linear) time algorithms and the author hopes 
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) [DONE, see reference]
 * make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (`Partition.random` is **not unbiased** right now, in progress)
-* add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, `Probabilistic` and so on (TODO)
+* add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, and so on (TODO)
 * add `Fibonacci`, `Catalan`, `Bell` number computations (TODO)
+* add generic number field computations e.g `Integer`, `Rational`, `Real`, `Polynomial` etc.. [IN PROGRESS]
 * add support for `biginteger` computations like factorials etc??
