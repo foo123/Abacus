@@ -167,81 +167,6 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         // in-place or copy
         return ac;
     }
-    // Array multi - sorter utility
-    // returns a sorter that can (sub-)sort by multiple (nested) fields 
-    // each ascending or descending independantly
-    // https://github.com/foo123/sinful.js
-    ,sorter = function sorter( ) {
-
-        var arr = this, i, args = arguments, l = args.length,
-            a, b, step, lt, gt,
-            field, filter_args, sorter_args, desc, dir, sorter,
-            ASC = '|^', DESC = '|v';
-        // |^ after a (nested) field indicates ascending sorting (default), 
-        // example "a.b.c|^"
-        // |v after a (nested) field indicates descending sorting, 
-        // example "b.c.d|v"
-        if ( l )
-        {
-            step = 1;
-            sorter = [];
-            sorter_args = [];
-            filter_args = []; 
-            for (i=l-1; i>=0; i--)
-            {
-                field = args[i];
-                // if is array, it contains a filter function as well
-                filter_args.unshift('f'+i);
-                if ( field.push )
-                {
-                    sorter_args.unshift(field[1]);
-                    field = field[0];
-                }
-                else
-                {
-                    sorter_args.unshift(null);
-                }
-                dir = field.slice(-2);
-                if ( DESC === dir ) 
-                {
-                    desc = true;
-                    field = field.slice(0,-2);
-                }
-                else if ( ASC === dir )
-                {
-                    desc = false;
-                    field = field.slice(0,-2);
-                }
-                else
-                {
-                    // default ASC
-                    desc = false;
-                }
-                field = field.length ? '["' + field.split('.').join('"]["') + '"]' : '';
-                a = "a"+field; b = "b"+field;
-                if ( sorter_args[0] ) 
-                {
-                    a = filter_args[0] + '(' + a + ')';
-                    b = filter_args[0] + '(' + b + ')';
-                }
-                lt = desc ?(''+step):('-'+step); gt = desc ?('-'+step):(''+step);
-                sorter.unshift("("+a+" < "+b+" ? "+lt+" : ("+a+" > "+b+" ? "+gt+" : 0))");
-                step <<= 1;
-            }
-            // use optional custom filters as well
-            return (new Function(
-                    filter_args.join(','), 
-                    'return function(a,b) { return ('+sorter.join(' + ')+'); };'
-                    ))
-                    .apply(null, sorter_args);
-        }
-        else
-        {
-            a = "a"; b = "b"; lt = '-1'; gt = '1';
-            sorter = ""+a+" < "+b+" ? "+lt+" : ("+a+" > "+b+" ? "+gt+" : 0)";
-            return new Function("a,b", 'return ('+sorter+');');
-        }
-    }
     ,sum = function sum( arr ) {
         var s = 0, i, l = arr.length;
         for (i=0; i<l; i++) s += arr[i];
@@ -469,7 +394,6 @@ var Abacus = {
     ,n_array: n_array
     ,range: range
 
-    ,sorter: sorter
     ,shuffle: shuffle
     ,xshuffle: xshuffle
     
