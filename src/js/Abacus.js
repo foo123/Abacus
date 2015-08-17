@@ -73,6 +73,12 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         }
         return a;
     }
+    ,numeric_asc = function( a, b ) {
+        return a-b;
+    }
+    ,numeric_desc = function( a, b ) {
+        return b-a;
+    }
     ,range = function range( n, options )  {
         var a, i;
         options = options || {};
@@ -203,26 +209,27 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
     ,random_pick = function random_pick( a, n ) {
         // take initial n values from a
         var picked, backup, i, selected, value, N = a.length;
-            n = Math.min(n, N); N--;
+            n = Math.min(n, N);
             picked = new Array( n ); backup = new Array( n );
         // partially shuffle the array, and generate unbiased selection simultaneously
         // this is a variation on fisher-yates-knuth shuffle
         for (i=0; i<n; i++) // O(n) times
         { 
-            selected = rint( 0, N-i ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
+            selected = rint( 0, --N ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
             value = a[ selected ];
-            a[ selected ] = a[ N-i ];
-            a[ N-i ] = value;
-            backup[ i ] = [selected, value];
+            a[ selected ] = a[ N ];
+            a[ N ] = value;
+            backup[ i ] = selected;
             picked[ i ] = value;
         }
         // restore partially shuffled input array from backup
         for (i=n-1; i>=0; i--) // O(n) times
         { 
-            selected = backup[ i ][ 0 ];
-            value = backup[ i ][ 1 ];
-            a[ N-i ] = a[ selected ];
+            selected = backup[ i ];
+            value = a[ N ];
+            a[ N ] = a[ selected ];
             a[ selected ] = value;
+            N++;
         }
         return picked;
     }
@@ -455,6 +462,7 @@ var Abacus = {
 
     ,shuffle: shuffle
     ,xshuffle: xshuffle
+    ,random_pick: random_pick
     
     ,sum: sum
     ,intersection: intersection
@@ -1511,11 +1519,11 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             while( m > 0 );
             return item;
         }
-        ,rand: function( n, k ) {
+        /*,rand: function( n, k ) {
             var combination = new Array(k), 
                 choices = new Array(n),
                 chosen = new Array(n),
-                /*m, M,*/ i, index, selected;
+                /*m, M,* / i, index, selected;
             for (index=0; index<n; index++) 
             {
                 choices[ index ] = index;
@@ -1541,12 +1549,89 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 // make it unbiased
                 chosen[ choices[ i ] ]++;
             }
-            */
+            * /
             i = 0;
             for (index=0; index<n; index++)
             {
                 if ( chosen[ index ] ) 
                     combination[ i++ ] = index;
+            }
+            return combination;
+        }*/
+        ,rand: function( n, k ) {
+            var combination, choices, chosen,
+                i, index, selected, nc, kc;
+            if ( n === k ) 
+            {
+                // O(k)
+                combination = new Array(k);
+                for (index=0; index<k; index++) combination[ index ] = index;
+            }
+            else if ( 1 === k )
+            {
+                // O(k)
+                combination = [rint(0, n-1)];
+            }
+            else if ( n-1 === k )
+            {
+                // O(k)
+                combination = new Array(k);
+                selected = rint(0, n-1);
+                for (i=0,index=0; index<n; index++) if ( selected !== index ) combination[ i++ ] = index;
+            }
+            else if ( n-k < k )
+            {
+                // O(n)
+                combination = new Array(k);
+                choices = new Array(n);
+                chosen = new Array(n);
+                for (index=0; index<n; index++) 
+                {
+                    choices[ index ] = index;
+                    chosen[ index ] = 1;
+                }
+                kc = n-k; nc = n;
+                // partial shuffling O(n-k) times
+                for (i=0; i<kc; i++)
+                { 
+                    selected = rint( 0, --nc );
+                    index = choices[ selected ];
+                    choices[ selected ] = choices[ nc ];
+                    choices[ nc ] = index;
+                    chosen[ index ] = 0;
+                }
+                for (i=0,index=0; index<n; index++)
+                {
+                    if ( chosen[ index ] ) 
+                        combination[ i++ ] = index;
+                }
+            }
+            else
+            {
+                // O(n)
+                combination = new Array(k);
+                choices = new Array(n);
+                chosen = new Array(n);
+                for (index=0; index<n; index++) 
+                {
+                    choices[ index ] = index;
+                    chosen[ index ] = 0;
+                }
+                nc = n;
+                // partial shuffling O(k) times
+                for (i=0; i<k; i++)
+                { 
+                    selected = rint( 0, --nc );
+                    index = choices[ selected ];
+                    choices[ selected ] = choices[ nc ];
+                    choices[ nc ] = index;
+                    chosen[ index ] = 1;
+                }
+                for (i=0,index=0; index<n; index++)
+                {
+                    if ( chosen[ index ] ) 
+                        combination[ i++ ] = index;
+                }
             }
             return combination;
         }
