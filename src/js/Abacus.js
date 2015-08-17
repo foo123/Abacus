@@ -173,39 +173,6 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         // in-place or copy
         return ac;
     }
-    /*,random_pick = function random_pick( a, n ) {
-        // take initial n values from a
-        var picked = new Array( n ),
-            backup = new Array( n ),
-            N = a.length-1, i, perm, swap;
-        // partially shuffle the array, and generate unbiased selection simultaneously
-        // this is a variation on fisher0yates-knuth shuffle
-        for (i=0; i<n; i++ ) // O(n) times
-        { 
-            perm = rint( 0, N-i ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
-            // warp the swap index to 0..n-1 range
-            //swap = Math.round( n * perm / N );
-            //swap = perm % n;
-            // this is the variation on the partial shuffle
-            swap = a[ perm ];
-            a[ perm ] = a[ N-i ];
-            a[ N-i ] = swap;
-            backup[ i ] = [perm, swap];
-            picked[ i ] = swap;
-        }
-        // restore partially shuffled array from backup
-        for (i=n-1; i>=0; i-- ) // O(n) times
-        { 
-            perm = backup[ i ][0];
-            swap = backup[ i ][1];
-            a[ perm ] = a[ N-i ];
-            a[ N-i ] = swap;
-            swap = a[ perm ];
-        }
-        // optionaly the 'picked' can be shuffled, in O(n) time as well
-        // picked = shuffle(picked);
-        return picked;
-    }*/
     ,random_pick = function random_pick( a, n ) {
         // take initial n values from a
         var picked, backup, i, selected, value, N = a.length;
@@ -263,8 +230,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
     ,union = function merge_unique_sorted2( a, b ) {
         var ai = 0, bi = 0, merged = [ ], last,
             al = a.length, bl = b.length;
-        // assume a, b lists are sorted ascending 
-        // <DEL>and each one does NOT contain duplicates</DEL>
+        // assume a, b lists are sorted ascending, even with duplicate values
         while( ai < al && bi < bl )
         {
             if      (merged.length) // handle any possible duplicates inside SAME list
@@ -462,7 +428,7 @@ var Abacus = {
 
     ,shuffle: shuffle
     ,xshuffle: xshuffle
-    ,random_pick: random_pick
+    ,pick: random_pick
     
     ,sum: sum
     ,intersection: intersection
@@ -987,7 +953,7 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,randomIndex: function( ) {
         var self = this;
-        return /*self.constructor.item(*/ rint(0, self.$total-1)/*, self.$n, self.$k, self.$m )*/;
+        return rint(0, self.$total-1);
     }
     
     ,hasRandomNext: function( ) { return this.$rindex < this.$total; }
@@ -1519,45 +1485,6 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             while( m > 0 );
             return item;
         }
-        /*,rand: function( n, k ) {
-            var combination = new Array(k), 
-                choices = new Array(n),
-                chosen = new Array(n),
-                /*m, M,* / i, index, selected;
-            for (index=0; index<n; index++) 
-            {
-                choices[ index ] = index;
-                chosen[ index ] = 0;
-            }
-            // partial shuffling O(k) times
-            for (i=0; i<k; i++)
-            { 
-                selected = rint( 0, n-1-i );
-                index = choices[ selected ];
-                choices[ selected ] = choices[ n-1-i ];
-                choices[ n-1-i ] = index;
-                chosen[ index ]++;
-            }
-            /*
-            shuffle(choices, false, false);
-            //m = 0; M = k-1;
-            for (i=0; i<k; i++) 
-            { 
-                /*index = rint(m, M); 
-                combination[i] = index; 
-                m = index+1;  M = (M<n-1)?M+1:M;* /
-                // make it unbiased
-                chosen[ choices[ i ] ]++;
-            }
-            * /
-            i = 0;
-            for (index=0; index<n; index++)
-            {
-                if ( chosen[ index ] ) 
-                    combination[ i++ ] = index;
-            }
-            return combination;
-        }*/
         ,rand: function( n, k ) {
             var combination, choices, chosen,
                 i, index, selected, nc, kc;
@@ -1735,6 +1662,7 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             for (i=0; i<l; i++) chosen[i] = arr[comb[i]];
             return chosen;
         }
+        ,pick: random_pick
         ,toMatrix: function( comb, n, k, bycolumns ) {
             var mat = new Array(n), i, j;
             bycolumns = true === bycolumns;
@@ -1850,25 +1778,11 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
         }
         ,rand: function( n, k ) {
             var combination = new Array(k), 
-                chosen = new Array(n), 
-                m, M, i, index;
-            for (index=0; index<n; index++) chosen[ index ] = 0;
-            m=0;  M=n-1;
-            for (i=0; i<k; i++)
-            { 
-                /*index = rint(m, M); 
-                combination[i] = index; 
-                m = index;*/
-                // make it unbiased
-                chosen[ rint(m, M) ]++;
-            }
-            i = 0;
-            for (index=0; index<n; index++)
-            { 
-                m = chosen[ index ];
-                while ( m > 0 ) { combination[ i++ ] = index; m--; }
-            }
-            return combination;
+                m = 0, M = n-1, i;
+            // O(klogk)
+            // make it unbiased
+            for (i=0; i<k; i++) combination[ i ] = rint( m, M );
+            return combination.sort( numeric_asc );
         }
         ,fromStochasticMatrix: function( P, n, k ) {
             var combination = new Array(k), 
@@ -1995,18 +1909,18 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,item: CombinatorialIterator.item
         ,rand: function( n, k, m, total ) {
             var p, parts, partition, tot = total ? total : this.count(n),
-                dice = rint(0, tot-1), nparts
+                dice = rint(1, n), nparts
             ;
             
             // try to generate partitions that sample uniformly the combinatorial object space
             // i.e. every possible partition is equi-likely to be output (NOT UNBIASED) 
-            if ( 0 === dice ) // 1 part
+            if ( 1 === dice ) // 1 part
             {  
                 partition = [n]; 
             }
-            else if ( tot-1 > dice ) // k parts
+            else if ( n > dice ) // k parts
             {
-                nparts = rint(2, n-1);
+                nparts = dice; //rint(2, n-1);
                 parts = new Array(n);
                 while ( nparts > 1 )
                 {
@@ -2244,15 +2158,6 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
             while ( i < l ) index += (1<<subset[i++])>>>0;
             return index;
         }
-        /*,item: function( index ) { 
-            var subset = [], i, x = index>>>0;
-            while ( 0 !== x )
-            {
-                subset.push( i=log2msb( x ) );
-                x = (x & (~((1<<i)>>>0)>>>0))>>>0;
-            }
-            return subset;
-        }*/
         ,item: function( index ) { 
             var subset = [], i = 0;
             while ( 0 !== index )
