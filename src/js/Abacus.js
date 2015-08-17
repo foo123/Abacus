@@ -167,6 +167,65 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         // in-place or copy
         return ac;
     }
+    /*,random_pick = function random_pick( a, n ) {
+        // take initial n values from a
+        var picked = new Array( n ),
+            backup = new Array( n ),
+            N = a.length-1, i, perm, swap;
+        // partially shuffle the array, and generate unbiased selection simultaneously
+        // this is a variation on fisher0yates-knuth shuffle
+        for (i=0; i<n; i++ ) // O(n) times
+        { 
+            perm = rint( 0, N-i ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
+            // warp the swap index to 0..n-1 range
+            //swap = Math.round( n * perm / N );
+            //swap = perm % n;
+            // this is the variation on the partial shuffle
+            swap = a[ perm ];
+            a[ perm ] = a[ N-i ];
+            a[ N-i ] = swap;
+            backup[ i ] = [perm, swap];
+            picked[ i ] = swap;
+        }
+        // restore partially shuffled array from backup
+        for (i=n-1; i>=0; i-- ) // O(n) times
+        { 
+            perm = backup[ i ][0];
+            swap = backup[ i ][1];
+            a[ perm ] = a[ N-i ];
+            a[ N-i ] = swap;
+            swap = a[ perm ];
+        }
+        // optionaly the 'picked' can be shuffled, in O(n) time as well
+        // picked = shuffle(picked);
+        return picked;
+    }*/
+    ,random_pick = function random_pick( a, n ) {
+        // take initial n values from a
+        var picked, backup, i, selected, value, N = a.length;
+            n = Math.min(n, N); N--;
+            picked = new Array( n ); backup = new Array( n );
+        // partially shuffle the array, and generate unbiased selection simultaneously
+        // this is a variation on fisher-yates-knuth shuffle
+        for (i=0; i<n; i++) // O(n) times
+        { 
+            selected = rint( 0, N-i ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
+            value = a[ selected ];
+            a[ selected ] = a[ N-i ];
+            a[ N-i ] = value;
+            backup[ i ] = [selected, value];
+            picked[ i ] = value;
+        }
+        // restore partially shuffled input array from backup
+        for (i=n-1; i>=0; i--) // O(n) times
+        { 
+            selected = backup[ i ][ 0 ];
+            value = backup[ i ][ 1 ];
+            a[ N-i ] = a[ selected ];
+            a[ selected ] = value;
+        }
+        return picked;
+    }
     ,sum = function sum( arr ) {
         var s = 0, i, l = arr.length;
         for (i=0; i<l; i++) s += arr[i];
@@ -1456,22 +1515,33 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             var combination = new Array(k), 
                 choices = new Array(n),
                 chosen = new Array(n),
-                /*m, M,*/ i, index;
+                /*m, M,*/ i, index, selected;
             for (index=0; index<n; index++) 
             {
                 choices[ index ] = index;
                 chosen[ index ] = 0;
             }
+            // partial shuffling O(k) times
+            for (i=0; i<k; i++)
+            { 
+                selected = rint( 0, n-1-i );
+                index = choices[ selected ];
+                choices[ selected ] = choices[ n-1-i ];
+                choices[ n-1-i ] = index;
+                chosen[ index ]++;
+            }
+            /*
             shuffle(choices, false, false);
             //m = 0; M = k-1;
             for (i=0; i<k; i++) 
             { 
                 /*index = rint(m, M); 
                 combination[i] = index; 
-                m = index+1;  M = (M<n-1)?M+1:M;*/
+                m = index+1;  M = (M<n-1)?M+1:M;* /
                 // make it unbiased
                 chosen[ choices[ i ] ]++;
             }
+            */
             i = 0;
             for (index=0; index<n; index++)
             {
