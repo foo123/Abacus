@@ -173,11 +173,15 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         // in-place or copy
         return ac;
     }
-    ,random_pick = function random_pick( a, n ) {
+    // http://stackoverflow.com/a/32035986/3591273
+    ,random_pick = function random_pick( a, n, non_destructive ) {
         // take initial n values from a
         var picked, backup, i, selected, value, N = a.length;
             n = Math.min(n, N);
-            picked = new Array( n ); backup = new Array( n );
+            picked = new Array( n ); 
+            backup = new Array( n );
+        
+        non_destructive = false !== non_destructive;
         // partially shuffle the array, and generate unbiased selection simultaneously
         // this is a variation on fisher-yates-knuth shuffle
         for (i=0; i<n; i++) // O(n) times
@@ -189,14 +193,50 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
             backup[ i ] = selected;
             picked[ i ] = value;
         }
-        // restore partially shuffled input array from backup
-        for (i=n-1; i>=0; i--) // O(n) times
+        if ( non_destructive )
+        {
+            // restore partially shuffled input array from backup
+            for (i=n-1; i>=0; i--) // O(n) times
+            { 
+                selected = backup[ i ];
+                value = a[ N ];
+                a[ N ] = a[ selected ];
+                a[ selected ] = value;
+                N++;
+            }
+        }
+        return picked;
+    }
+    ,random_pick_include = function random_pick_include( a, n, included, non_destructive ) {
+        // take initial n values from a
+        var picked, backup, i, selected, value, N = a.length, index, Ni = included.length;
+            n = Math.min(n, N);
+            picked = new Array( n ); backup = new Array( n );
+        
+        non_destructive = false !== non_destructive;
+        // partially shuffle the array, and generate unbiased selection simultaneously
+        // this is a variation on fisher-yates-knuth shuffle
+        for (i=0; i<n; i++) // O(n) times
         { 
-            selected = backup[ i ];
-            value = a[ N ];
-            a[ N ] = a[ selected ];
-            a[ selected ] = value;
-            N++;
+            index = rint( 0, --Ni ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
+            selected = included[ index ];
+            value = a[ selected ];
+            included[ index ] = included[ Ni ];
+            included[ Ni ] = selected;
+            backup[ i ] = index;
+            picked[ i ] = value;
+        }
+        if ( non_destructive )
+        {
+            // restore partially shuffled input array from backup
+            for (i=n-1; i>=0; i--) // O(n) times
+            { 
+                index = backup[ i ];
+                selected = included[ Ni ];
+                included[ Ni ] = included[ index ];
+                included[ index ] = selected;
+                Ni++;
+            }
         }
         return picked;
     }
@@ -429,6 +469,7 @@ var Abacus = {
     ,shuffle: shuffle
     ,xshuffle: xshuffle
     ,pick: random_pick
+    ,pick_include: random_pick_include
     
     ,sum: sum
     ,intersection: intersection
