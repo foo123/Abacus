@@ -26,7 +26,9 @@ else if ( !(name in root) )
     /* module name */           "Abacus",
     /* module factory */        function( exports, undef ) {
 "use strict";
-var PROTO = 'prototype', HAS = 'hasOwnProperty'
+
+var Abacus
+    ,PROTO = 'prototype', HAS = 'hasOwnProperty'
     ,Extend = Object.create
     ,Merge = function(a, b) {
         for (var p in b) 
@@ -54,7 +56,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
     ,abs = Math.abs, min = Math.min, max = Math.max, sqrt = Math.sqrt
     ,EULER = Math.E, PI = Math.PI, PHI = 1.6180339887498948482045868, SQRT5 = sqrt(5.0)
     ,log2 = Math.log2 || function(x) { return Math.log(x) / Math.LN2; }
-    ,rint = function( m, M ) { return round( (M-m)*rnd() + m ); }
+    ,rint = function( m, M ) { return round( (M-m)*rnd( ) + m ); }
     // pre-computed tables for fast lookup
     ,FACT_N_4_20 = [24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,20922789888000,355687428095998,6402373705727994,121645100408832080]
     ,BINOM_N_K_3_23 = [3,6,4,10,10,5,15,20,15,6,21,35,35,21,7,28,56,70,56,28,8,36,84,126,126,84,36,9,45,120,210,252,210,120,45,10,55,165,330,462,462,330,165,55,11,66,220,495,792,924,792,495,220,66,12,78,286,715,1287,1716,1716,1287,715,286,78,13,91,364,1001,2002,3003,3432,3003,2002,1001,364,91,14,105,455,1365,3003,5005,6435,6435,5005,3003,1365,455,105,15,120,560,1820,4368,8008,11440,12870,11440,8008,4368,1820,560,120,16,136,680,2380,6188,12376,19448,24310,24310,19448,12376,6188,2380,680,136,17,153,816,3060,8568,18564,31824,43758,48620,43758,31824,18564,8568,3060,816,153,18,171,969,3876,11628,27132,50388,75582,92378,92378,75582,50388,27132,11628,3876,969,171,19,190,1140,4845,15504,38760,77520,125970,167960,184756,167960,125970,77520,38760,15504,4845,1140,190,20,210,1330,5985,20349,54264,116280,203490,293930,352716,352716,293930,203490,116280,54264,20349,5985,1330,210,21,231,1540,7315,26334,74613,170544,319770,497420,646646,705432,646646,497420,319770,170544,74613,26334,7315,1540,231,22]
@@ -73,6 +75,18 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         }
         return a;
     }
+    ,to_binary_string = function to_binary_string( b ) {
+        return b.toString( 2 );
+    }
+    ,to_fixed_binary_string = function to_fixed_binary_string( l ) {
+        return function( b ) {
+            var n, bs;
+            bs = b.toString( 2 );
+            if ( (n = l-bs.length) > 0 ) bs = new Array(n+1).join('0') + bs;
+            return bs;
+        };
+    }
+    ,to_fixed_binary_string_32 = to_fixed_binary_string( 32 )
     ,numeric_asc = function( a, b ) {
         return a-b;
     }
@@ -97,6 +111,17 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         }
         return a;
     }
+    // http://stackoverflow.com/questions/6443176/how-can-i-generate-a-random-number-within-a-range-but-exclude-some
+    ,rint_exclude = function rint_exclude( m, M, exclude, exclude_count ) {
+        exclude_count = exclude_count || exclude.length;
+        var i, r = m + Abacus.rint( 0, M - m + 1 - exclude_count );
+        for (i=0; i<exclude_count; i++)
+        {
+            if ( r < exclude[i] ) break;
+            r++;
+        }
+        return r;
+    }
     // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
     // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Sattolo.27s_algorithm
     ,shuffle = function shuffle( a, cyclic, copied ) {
@@ -106,7 +131,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         N = ac.length;
         while ( offset < N-- )
         { 
-            perm = rint( 0, N-offset ); 
+            perm = Abacus.rint( 0, N-offset ); 
             if ( N === perm ) continue;
             swap = ac[ N ]; 
             ac[ N ] = ac[ perm ]; 
@@ -119,7 +144,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
     // eXtended shuffle variation to shuffle only parts of array
     // while leaving other parts unaltered
     ,xshuffle = function xshuffle( a, o, copied ) {
-        var i, j, N, perm, swap, inc, ac, offset;
+        var i, j, ii, N, perm, swap, inc, ac, offset;
         ac = true === copied ? a.slice() : a;
         o = o || {};
         offset = true === o.cyclic ? 1 : 0;
@@ -139,10 +164,10 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         }
         else if ( o[HAS]('excluded') && o.excluded.length )
         {
-            inc = []; i=0; j=0;
+            inc = new Array(a.length-o.excluded.length); i=0; j=0; ii=0;
             while (i < a.length)
             {
-                if (j>=o.excluded.length || i<o.excluded[j]) inc.push( i );
+                if (j>=o.excluded.length || i<o.excluded[j]) inc[ii++] = i;
                 else j++;
                 i++;
             }
@@ -164,7 +189,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         N = inc.length;
         while ( offset < N-- )
         { 
-            perm = rint( 0, N-offset ); 
+            perm = Abacus.rint( 0, N-offset ); 
             if ( N === perm ) continue;
             swap = ac[ inc[N] ]; 
             ac[ inc[N] ] = ac[ inc[perm] ]; 
@@ -174,75 +199,88 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
         return ac;
     }
     // http://stackoverflow.com/a/32035986/3591273
-    ,random_pick = function random_pick( a, n, non_destructive ) {
-        // take initial n values from a
-        var picked, backup, i, selected, value, N = a.length;
-            n = Math.min(n, N);
-            picked = new Array( n ); 
-            backup = new Array( n );
+    ,random_pick = function random_pick( a, k, non_destructive ) {
+        var picked, backup, i, selected, value, n = a.length;
+            k = min( k, n );
+            picked = new Array( k ); 
+            backup = new Array( k );
         
         non_destructive = false !== non_destructive;
         // partially shuffle the array, and generate unbiased selection simultaneously
         // this is a variation on fisher-yates-knuth shuffle
-        for (i=0; i<n; i++) // O(n) times
+        for (i=0; i<k; i++) // O(k) times
         { 
-            selected = rint( 0, --N ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
+            selected = Abacus.rint( 0, --n ); // unbiased sampling n * n-1 * n-2 * .. * n-k+1
             value = a[ selected ];
-            a[ selected ] = a[ N ];
-            a[ N ] = value;
+            a[ selected ] = a[ n ];
+            a[ n ] = value;
             backup[ i ] = selected;
             picked[ i ] = value;
         }
         if ( non_destructive )
         {
             // restore partially shuffled input array from backup
-            for (i=n-1; i>=0; i--) // O(n) times
+            for (i=k-1; i>=0; i--) // O(k) times
             { 
                 selected = backup[ i ];
-                value = a[ N ];
-                a[ N ] = a[ selected ];
+                value = a[ n ];
+                a[ n ] = a[ selected ];
                 a[ selected ] = value;
-                N++;
+                n++;
             }
         }
         return picked;
     }
-    ,random_pick_include = function random_pick_include( a, n, included, non_destructive ) {
-        // take initial n values from a
-        var picked, backup, i, selected, value, N = a.length, index, Ni = included.length;
-            n = Math.min(n, N);
-            picked = new Array( n ); backup = new Array( n );
+    ,random_pick_include = function random_pick_include( a, k, included, non_destructive ) {
+        var picked, backup, i, selected, value, n = a.length, index, ni = included.length;
+            k = min( k, n );
+            picked = new Array( k );
+            backup = new Array( k );
         
         non_destructive = false !== non_destructive;
         // partially shuffle the array, and generate unbiased selection simultaneously
         // this is a variation on fisher-yates-knuth shuffle
-        for (i=0; i<n; i++) // O(n) times
+        for (i=0; i<k; i++) // O(k) times
         { 
-            index = rint( 0, --Ni ); // unbiased sampling N * N-1 * N-2 * .. * N-n+1
+            index = Abacus.rint( 0, --ni ); // unbiased sampling n * n-1 * n-2 * .. * n-k+1
             selected = included[ index ];
             value = a[ selected ];
-            included[ index ] = included[ Ni ];
-            included[ Ni ] = selected;
+            included[ index ] = included[ ni ];
+            included[ ni ] = selected;
             backup[ i ] = index;
             picked[ i ] = value;
         }
         if ( non_destructive )
         {
             // restore partially shuffled input array from backup
-            for (i=n-1; i>=0; i--) // O(n) times
+            for (i=k-1; i>=0; i--) // O(k) times
             { 
                 index = backup[ i ];
-                selected = included[ Ni ];
-                included[ Ni ] = included[ index ];
+                selected = included[ ni ];
+                included[ ni ] = included[ index ];
                 included[ index ] = selected;
-                Ni++;
+                ni++;
             }
         }
         return picked;
     }
+    ,radix = function radix( n, b, d ) {
+        d = d || ceil(log(n)/log(b) || 1);
+        var digits = new Array(d), i = d-1, r;
+        digits[ i-- ] = r = n % b;
+        n = ~~((n-r)/b);
+        while ( i >= 0 && n > 0 )
+        {
+            digits[ i-- ] = r = n % b;
+            n = ~~((n-r)/b);
+        }
+        while ( i >= 0 ) digits[ i-- ] = 0;
+        digits.base = b;
+        return digits;
+    }
     ,sum = function sum( arr ) {
-        var s = 0, i, l = arr.length;
-        for (i=0; i<l; i++) s += arr[i];
+        var s = arr[0], i, l;
+        for (i=1,l=arr.length; i<l; i++) s += arr[i];
         return s;
     }
     ,intersection = function intersect_sorted2( a, b ) {
@@ -398,7 +436,7 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
     // http://rosettacode.org/wiki/Convert_decimal_number_to_rational#PHP
     ,ration = function(val, epsilon) {
         if ( undef === epsilon ) epsilon = 1.e-6;
-        if ( val == round(val) ) 
+        if ( val === round(val) ) 
         {
             // integer
             return [round(val), 1];
@@ -455,12 +493,14 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty'
     ,NotImplemented = function( ) { throw new Error("Method not implemented"); }
 ;
 
-var Abacus = {
+Abacus = {
     VERSION: "0.1"
     
     ,rnd: rnd
     ,rint: rint
+    ,rint_exclude: rint_exclude
     ,clamp: clamp
+    ,radix: radix
     
     ,array: array
     ,n_array: n_array
@@ -503,10 +543,30 @@ var BitArray = Abacus.BitArray = Class({
         return self;
     }
     
+    ,clone: function( ) {
+        var self = this, c = new BitArray(self.length);
+        c.bits = new Uint32Array( self.bits );
+        return c;
+    }
+    
+    ,fromArray: function( b ) {
+        var self = this;
+        self.bits = new Uint32Array( b );
+        return self;
+    }
+    
+    ,toArray: function( ) {
+        return Array[PROTO].slice.call( this.bits );
+    }
+    
+    ,toString: function( ) {
+        return this.toArray( ).map( to_fixed_binary_string_32 ).join( '' );
+    }
+    
     ,reset: function( ) {
-        var bits = this.bits, len = bits.length, i;
+        var self = this, bits = self.bits, len = bits.length, i;
         for (i=0; i<len; i++) bits[i] = 0;
-        return this;
+        return self;
     }
     
     ,isset: function( bit ) {
@@ -514,18 +574,21 @@ var BitArray = Abacus.BitArray = Class({
     }
     
     ,set: function( bit ) {
-        this.bits[bit>>>5] |= 1<<(bit&31);
-        return this;
+        var self = this;
+        self.bits[bit>>>5] |= 1<<(bit&31);
+        return self;
     }
     
     ,unset: function( bit ) {
-        this.bits[bit>>>5] &= ~(1<<(bit&31));
-        return this;
+        var self = this;
+        self.bits[bit>>>5] &= ~(1<<(bit&31));
+        return self;
     }
     
     ,toggle: function( bit ) {
-        this.bits[bit>>>5] ^= 1<<(bit&31);
-        return this;
+        var self = this;
+        self.bits[bit>>>5] ^= 1<<(bit&31);
+        return self;
     }
 });
 
@@ -994,7 +1057,7 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,randomIndex: function( ) {
         var self = this;
-        return rint(0, self.$total-1);
+        return Abacus.rint(0, self.$total-1);
     }
     
     ,hasRandomNext: function( ) { return this.$rindex < this.$total; }
@@ -1008,7 +1071,6 @@ r := Z(C(n)) (0<=r<C(n)).
             while ( traversed.isset( r = self.randomIndex( ) ) ) ;
             traversed.set( r );
             self.$rindex++;
-            //console.log(r);
             //console.log(Array.prototype.slice.call(traversed.bits));
             return self.get( r );
         }
@@ -1246,7 +1308,7 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             i = 0;
             while( i < n )
             {
-                dice = rnd( );
+                dice = Abacus.rnd( );
                 cumul = 0;
                 pi = P[i];
                 for (j=0; j<n; j++)
@@ -1449,9 +1511,9 @@ var Derangement = Abacus.Derangement = Class(CombinatorialIterator, {
             {
                 if ( !mark[i] )
                 {
-                    do{ j = rint(0, i-1); }while( mark[j] );
+                    do{ j = Abacus.rint(0, i-1); }while( mark[j] );
                     swap = dern[i]; dern[i] = dern[j]; dern[j] = swap;
-                    if ( rnd() < (u-1)*Du2/Du )
+                    if ( Abacus.rnd() < (u-1)*Du2/Du )
                     {
                         mark[ j ] = true; 
                         u--; m--;
@@ -1531,25 +1593,30 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 i, index, selected, nc, kc;
             if ( n === k ) 
             {
-                // O(k)
+                // O(k), unbiased
                 combination = new Array(k);
-                for (index=0; index<k; index++) combination[ index ] = index;
+                for (index=0; index<k; index++) 
+                    combination[ index ] = index;
             }
             else if ( 1 === k )
             {
-                // O(k)
-                combination = [rint(0, n-1)];
+                // O(k), unbiased
+                combination = [Abacus.rint(0, n-1)];
             }
             else if ( n-1 === k )
             {
-                // O(k)
+                // O(k), unbiased
                 combination = new Array(k);
-                selected = rint(0, n-1);
-                for (i=0,index=0; index<n; index++) if ( selected !== index ) combination[ i++ ] = index;
+                selected = Abacus.rint(0, n-1); i = 0;
+                for (index=0; index<k; index++) 
+                {
+                    if ( selected === index ) i = 1; 
+                    combination[ index ] = i+index;
+                }
             }
             else if ( n-k < k )
             {
-                // O(n)
+                // O(n), unbiased
                 combination = new Array(k);
                 choices = new Array(n);
                 chosen = new Array(n);
@@ -1562,7 +1629,7 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 // partial shuffling O(n-k) times
                 for (i=0; i<kc; i++)
                 { 
-                    selected = rint( 0, --nc );
+                    selected = Abacus.rint( 0, --nc );
                     index = choices[ selected ];
                     choices[ selected ] = choices[ nc ];
                     choices[ nc ] = index;
@@ -1576,7 +1643,15 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             else
             {
-                // O(n)
+                // O(klogk), unbiased
+                /*
+                combination = new Array(k);
+                combination[0] = Abacus.rint(0, --n);
+                for (i=1; i<k; i++) combination[i] = Abacus.rint_exclude(0, --n, combination, i);
+                combination = combination.sort( numeric_asc );
+                */
+                
+                // O(n), unbiased
                 combination = new Array(k);
                 choices = new Array(n);
                 chosen = new Array(n);
@@ -1589,7 +1664,7 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 // partial shuffling O(k) times
                 for (i=0; i<k; i++)
                 { 
-                    selected = rint( 0, --nc );
+                    selected = Abacus.rint( 0, --nc );
                     index = choices[ selected ];
                     choices[ selected ] = choices[ nc ];
                     choices[ nc ] = index;
@@ -1611,7 +1686,7 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             i = 0;
             while ( i < k )
             {
-                dice = rnd( );
+                dice = Abacus.rnd( );
                 cumul = 0;
                 pi = P[i];
                 for (j=0; j<n; j++)
@@ -1822,7 +1897,7 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
                 m = 0, M = n-1, i;
             // O(klogk)
             // make it unbiased
-            for (i=0; i<k; i++) combination[ i ] = rint( m, M );
+            for (i=0; i<k; i++) combination[ i ] = Abacus.rint( m, M );
             return combination.sort( numeric_asc );
         }
         ,fromStochasticMatrix: function( P, n, k ) {
@@ -1833,7 +1908,7 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
             i = 0;
             while ( i < k )
             {
-                dice = rnd( );
+                dice = Abacus.rnd( );
                 cumul = 0;
                 pi = P[i];
                 for (j=0; j<n; j++)
@@ -1950,7 +2025,7 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,item: CombinatorialIterator.item
         ,rand: function( n, k, m, total ) {
             var p, parts, partition, tot = total ? total : this.count(n),
-                dice = rint(1, n), nparts
+                dice = Abacus.rint(1, n), nparts
             ;
             
             // try to generate partitions that sample uniformly the combinatorial object space
@@ -1961,11 +2036,11 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
             }
             else if ( n > dice ) // k parts
             {
-                nparts = dice; //rint(2, n-1);
+                nparts = dice; //Abacus.rint(2, n-1);
                 parts = new Array(n);
                 while ( nparts > 1 )
                 {
-                    p = rint(1, n-nparts+1);
+                    p = Abacus.rint(1, n-nparts+1);
                     if ( !parts[p-1] ) parts[p-1] = [p];
                     else parts[p-1].push(p);
                     n -= p; 
@@ -1991,7 +2066,7 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
             sum = 0;
             while ( sum < n )
             {
-                dice = rnd( );
+                dice = Abacus.rnd( );
                 cumul = 0;
                 notfound = true;
                 for (i=0; i<n; i++)
@@ -2210,7 +2285,7 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
         }
         ,rand: function( n, k, m, total ) {
             var tot = total ? total : (1<<n);
-            return this.item( rint(0, tot-1) );
+            return this.item( Abacus.rint(0, tot-1) );
         }
         ,fromStochasticMatrix: CombinatorialIterator.fromStochasticMatrix
         ,adjacent: CombinatorialIterator.adjacent
