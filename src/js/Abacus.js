@@ -111,14 +111,31 @@ var Abacus
         }
         return a;
     }
+    ,complement = function complement( alpha, N ) {
+        var beta, n, a, b, k = alpha.length;
+        beta = new Array( N-k ); n=0; a=0; b=0;
+        while ( n < N )
+        {
+            if ( a>=k || n<alpha[a] ) beta[b++] = n;
+            else a++;
+            n++;
+        }
+        return beta;
+    }
     // http://stackoverflow.com/questions/6443176/how-can-i-generate-a-random-number-within-a-range-but-exclude-some
     ,rint_exclude = function rint_exclude( m, M, exclude, exclude_count ) {
         exclude_count = exclude_count || exclude.length;
-        var i, r = m + Abacus.rint( 0, M - m + 1 - exclude_count );
-        for (i=0; i<exclude_count; i++)
+        var i, r = Abacus.rint( m, M - exclude_count );
+        // requires excluded items to be sorted ascending
+        if ( exclude_count > 0 && r >= exclude[0] )
         {
-            if ( r < exclude[i] ) break;
             r++;
+            for (i=1; i<exclude_count; i++)
+            {
+                // requires excluded items to be sorted ascending
+                if ( r < exclude[i] ) break;
+                r++;
+            }
         }
         return r;
     }
@@ -144,42 +161,52 @@ var Abacus
     // eXtended shuffle variation to shuffle only parts of array
     // while leaving other parts unaltered
     ,xshuffle = function xshuffle( a, o, copied ) {
-        var i, j, ii, N, perm, swap, inc, ac, offset;
-        ac = true === copied ? a.slice() : a;
+        var n, k, i, j, N, perm, swap, inc, ac, offset;
+        
         o = o || {};
+        if ( arguments.length < 3 ) copied = o.copied;
+        ac = true === copied ? a.slice() : a;
         offset = true === o.cyclic ? 1 : 0;
-        if ( o[HAS]('included') && o.included.length )
+        
+        if ( o[HAS]('included') )
         {
-            inc = o.included;
+            inc = o.included.slice( );
         }
-        else if ( o[HAS]('included_range') && o.included_range.length )
+        else if ( o[HAS]('included_range') )
         {
-            inc = []; i=0; j=0;
-            while (i < a.length)
+            N = a.length; k = o.included_range.length;
+            inc = []; n=0; j=0;
+            while ( n < N )
             {
-                if (j<o.included_range.length && (i>=o.included_range[j] && (j+1 >=o.included_range.length || i<=o.included_range[j+1]))) inc.push( i );
+                if ( j<k && (n>=o.included_range[j] && (j+1>=k || n<=o.included_range[j+1])) ) inc.push( n );
                 else j+=2;
-                i++;
+                n++;
             }
         }
-        else if ( o[HAS]('excluded') && o.excluded.length )
+        else if ( o[HAS]('excluded') )
         {
-            inc = new Array(a.length-o.excluded.length); i=0; j=0; ii=0;
-            while (i < a.length)
+            N = a.length; k = o.excluded.length;
+            inc = new Array(N-k); n=0; i=0; j=0;
+            while ( n < N )
             {
-                if (j>=o.excluded.length || i<o.excluded[j]) inc[ii++] = i;
+                if ( j>=k || n<o.excluded[j] ) inc[i++] = n;
                 else j++;
-                i++;
+                n++;
             }
         }
-        else if ( o[HAS]('excluded_range') && o.excluded_range.length )
+        else if ( o[HAS]('excluded_range') )
         {
-            inc = []; i=0; j=0;
-            while (i < a.length)
+            N = a.length; k = o.excluded_range.length;
+            inc = []; n=0; j=0;
+            while ( n < N )
             {
-                if (j<o.excluded_range.length && i>=o.excluded_range[j]) {i = j+1<o.excluded_range.length ? o.excluded_range[j+1] : i; j+=2;}
-                else inc.push( i );
-                i++;
+                if ( j<k && n>=o.excluded_range[j] )
+                {
+                    n = j+1<k ? o.excluded_range[j+1] : n; 
+                    j+=2;
+                }
+                else inc.push( n );
+                n++;
             }
         }
         else
@@ -304,6 +331,29 @@ var Abacus
             }
         }
         return intersection;
+    }
+    ,difference = function difference_sorted2( a, b ) {
+        var ai = 0, bi = 0, difference = [ ],
+            al = a.length, bl = b.length;
+        // assume a, b lists are sorted ascending
+        while( ai < al && bi < bl )
+        {
+            if      ( a[ai] < b[bi] )
+            { 
+                difference.push( a[ ai ] );
+                ai++; 
+            }
+            else if ( a[ai] > b[bi] )
+            { 
+                difference.push( b[ bi ] );
+                bi++; 
+            }
+            else // they're equal
+            {
+                ai++; bi++;
+            }
+        }
+        return difference;
     }
     ,union = function merge_unique_sorted2( a, b ) {
         var ai = 0, bi = 0, merged = [ ], last,
@@ -505,6 +555,7 @@ Abacus = {
     ,array: array
     ,n_array: n_array
     ,range: range
+    ,complement: complement
 
     ,shuffle: shuffle
     ,xshuffle: xshuffle
@@ -514,6 +565,7 @@ Abacus = {
     ,sum: sum
     ,intersection: intersection
     ,union: union
+    ,difference: difference
     
     ,Factorial: factorial
     ,SubFactorial: subfactorial
@@ -1494,15 +1546,7 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             return null;
         }
-        ,complement: function( comb, n, k ) {
-            var i, i1 = 0, i2 = 0, comp = new Array(n-k);
-            for (i=0; i<n; i++)
-            {
-                if (i1>=k || i<comb[i1]) comp[i2++] = i;
-                else i1++;
-            }
-            return comp;
-        }
+        ,complement: complement
         ,choose: function( arr, comb ) {
             var i, l = comb.length, chosen = new Array(l);
             for (i=0; i<l; i++) chosen[i] = arr[comb[i]];
