@@ -27,7 +27,7 @@ else if ( !(name in root) )
     /* module factory */        function( exports, undef ) {
 "use strict";
 
-var Abacus
+var  Abacus
     ,PROTO = 'prototype', HAS = 'hasOwnProperty'
     ,Extend = Object.create
     ,Merge = function(a, b) {
@@ -50,6 +50,7 @@ var Abacus
         ctor[PROTO] = Merge(Extend(s[PROTO]), c);
         return ctor;
     }
+    
     // utils
     ,rnd = Math.random, round = Math.round, ceil = Math.ceil
     ,floor = Math.floor, exp = Math.exp, log = Math.log, pow = Math.pow
@@ -111,17 +112,6 @@ var Abacus
         }
         return a;
     }
-    ,complement = function complement( alpha, N ) {
-        var beta, n, a, b, k = alpha.length;
-        beta = new Array( N-k ); n=0; a=0; b=0;
-        while ( n < N )
-        {
-            if ( a>=k || n<alpha[a] ) beta[b++] = n;
-            else a++;
-            n++;
-        }
-        return beta;
-    }
     // http://stackoverflow.com/questions/6443176/how-can-i-generate-a-random-number-within-a-range-but-exclude-some
     ,rint_exclude = function rint_exclude( m, M, exclude, exclude_count ) {
         exclude_count = exclude_count || exclude.length;
@@ -161,7 +151,7 @@ var Abacus
     // eXtended shuffle variation to shuffle only parts of array
     // while leaving other parts unaltered
     ,xshuffle = function xshuffle( a, o, copied ) {
-        var n, k, i, j, N, perm, swap, inc, ac, offset;
+        var n, k, i, j, N, perm, swap, inc, b, ac, offset;
         
         o = o || {};
         if ( arguments.length < 3 ) copied = o.copied;
@@ -174,35 +164,35 @@ var Abacus
         }
         else if ( o[HAS]('included_range') )
         {
-            N = a.length; k = o.included_range.length;
+            N = a.length; b = o.included_range; k = b.length;
             inc = []; n=0; j=0;
             while ( n < N )
             {
-                if ( j<k && (n>=o.included_range[j] && (j+1>=k || n<=o.included_range[j+1])) ) inc.push( n );
+                if ( j<k && (n>=b[j] && (j+1>=k || n<=b[j+1])) ) inc.push( n );
                 else j+=2;
                 n++;
             }
         }
         else if ( o[HAS]('excluded') )
         {
-            N = a.length; k = o.excluded.length;
+            N = a.length; b = o.excluded; k = b.length;
             inc = new Array(N-k); n=0; i=0; j=0;
             while ( n < N )
             {
-                if ( j>=k || n<o.excluded[j] ) inc[i++] = n;
+                if ( j>=k || n<b[j] ) inc[i++] = n;
                 else j++;
                 n++;
             }
         }
         else if ( o[HAS]('excluded_range') )
         {
-            N = a.length; k = o.excluded_range.length;
+            N = a.length; b = o.excluded_range; k = b.length;
             inc = []; n=0; j=0;
             while ( n < N )
             {
-                if ( j<k && n>=o.excluded_range[j] )
+                if ( j<k && n>=b[j] )
                 {
-                    n = j+1<k ? o.excluded_range[j+1] : n; 
+                    n = j+1<k ? b[j+1] : n; 
                     j+=2;
                 }
                 else inc.push( n );
@@ -305,9 +295,11 @@ var Abacus
         digits.base = b;
         return digits;
     }
-    ,sum = function sum( arr ) {
-        var s = arr[0], i, l;
-        for (i=1,l=arr.length; i<l; i++) s += arr[i];
+    ,sum = function sum( a ) {
+        var s, i, i0, l = a.length;
+        if ( l&1 ) { s = a[ 0 ]; i0 = 1; } // odd
+        else { s = 0; i0 = 0; } // even
+        for (i=i0; i<l; i+=2) s += a[ i ] + a[ i+1 ];
         return s;
     }
     ,intersection = function intersect_sorted2( a, b ) {
@@ -389,6 +381,67 @@ var Abacus
         while ( ai < al ) if (a[ai++] !== last) merged.push( last=a[ai-1] ); 
         while ( bi < bl ) if (b[bi++] !== last) merged.push( last=b[bi-1] ); 
         return merged;
+    }
+    ,complement = function complement( alpha, N ) {
+        var beta, n, a, b, k = alpha.length;
+        beta = new Array( N-k ); n=0; a=0; b=0;
+        while ( n < N )
+        {
+            if ( a>=k || n<alpha[a] ) beta[b++] = n;
+            else a++;
+            n++;
+        }
+        return beta;
+    }
+    /*,kronecker2 = function kronecker2( alpha, beta ) {
+        var i, j, k, al=alpha.length, bl=beta.length, kl=al*bl, product=new Array(kl);
+        for (k=0,i=0,j=0; k<kl; k++,j++)
+        {
+            if ( j >= bl ) { j=0; i++; }
+            //product[k] = [alpha[i], beta[j]];
+            // use concat so that multiple calls to kronecker can generate
+            // higher-order kronecker products
+            product[k] = [].concat(alpha[i], beta[j]);
+        }
+        return product;
+    }*/
+    ,kronecker = function kronecker( /* var args here */ ) {
+        var k, a, r, l, i, j, vv, tensor,
+            v = arguments, nv = v.length,
+            kl, product;
+        
+        if ( !nv ) return [];
+        kl = v[0].length;
+        for (k=1; k<nv; k++) kl *= v[ k ].length;
+        product = new Array( kl );
+        
+        for (k=0; k<kl; k++)
+        {
+            tensor = [ ];
+            for (r=k,a=nv-1; a>=0; a--)
+            {
+                l = v[ a ].length;
+                i = r % l;
+                r = ~~(r / l);
+                vv = v[ a ][ i ];
+                if ( vv instanceof Array )
+                {
+                    // kronecker can be re-used to create higher-order products
+                    // i.e kronecker(alpha, beta, gamma) and kronecker(kronecker(alpha, beta), gamma)
+                    // should produce exactly same results
+                    for (j=vv.length-1; j>=0; j--)
+                        tensor.unshift( vv[ j ] );
+                }
+                else
+                {
+                    tensor.unshift( vv );
+                }
+            }
+            product[ k ] = tensor;
+        }
+        return product;
+    }
+    ,cartesian = function cartesian( /* var args here */ ) {
     }
     ,cycle2swaps = function( cycle ) {
         var swaps = [], c = cycle.length, j;
@@ -555,7 +608,6 @@ Abacus = {
     ,array: array
     ,n_array: n_array
     ,range: range
-    ,complement: complement
 
     ,shuffle: shuffle
     ,xshuffle: xshuffle
@@ -566,6 +618,9 @@ Abacus = {
     ,intersection: intersection
     ,union: union
     ,difference: difference
+    ,complement: complement
+    ,kronecker: kronecker
+    ,cartesian: cartesian
     
     ,Factorial: factorial
     ,SubFactorial: subfactorial
@@ -734,14 +789,16 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,total: function( ) { return this.$total; }
     
-    ,first: NotImplemented
+    ,first: function( ) {
+        return this.get( 0 );
+    }
     
     ,rewind: function( ) {
         var self = this;
         self.$index = 0;
         self.$current = self.first( );
         self.$prev = false;
-        self.$next = true;
+        self.$next = self.$index < self.$total;
         return self;
     }
     
@@ -763,13 +820,15 @@ r := Z(C(n)) (0<=r<C(n)).
         return current;
     }
     
-    ,last: NotImplemented
+    ,last: function( ) {
+        return this.get( -1 );
+    }
     
     ,forward: function( ) {
         var self = this;
         self.$index = self.$total-1;
         self.$current = self.last( ); 
-        self.$prev = true;
+        self.$prev = self.$index >= 0;
         self.$next = false;
         return self;
     }
@@ -837,18 +896,45 @@ r := Z(C(n)) (0<=r<C(n)).
         return self;
     }
     
-    ,randomIndex: function( ) {
-        var self = this;
-        return Abacus.rint(0, self.$total-1);
+    ,randomIndex: function( m, M ) {
+        var self = this, argslen = arguments.length;
+        if ( 0 === argslen )
+        {
+            m = 0;
+            M = self.$total-1;
+        }
+        else if ( 1 === argslen )
+        {
+            m = m || 0;
+            M = self.$total-1;
+        }
+        return Abacus.rint( m, M );
     }
     
     ,hasRandomNext: function( ) { return this.$rindex < this.$total; }
     
     // http://stackoverflow.com/questions/28990820/iterator-to-produce-unique-random-order
+    // see also: https://en.wikipedia.org/wiki/Reservoir_sampling
     ,randomNext: function( ) {
-        var self = this, r, traversed = self.$traversed;
+        var self = this, r, traversed = self.$traversed, M;
         if ( self.$rindex < self.$total )
         {
+            // http://stackoverflow.com/a/3724708/3591273
+            // http://stackoverflow.com/a/2394292/3591273
+            // variation, based on Floyd's random sample algorithm
+            /*
+            initialize set S to empty, M = N
+            for J := N-M(=0) to N-1 do
+                T := RandInt(0, J)
+                if T is not in S then
+                    insert T in S
+                else
+                    insert J in S            
+            */
+            /*M = self.$total-1-self.$rindex;
+            r = self.randomIndex( 0, M );
+            if ( traversed.isset( r ) ) r = self.$total-1;
+            while ( r>0 && traversed.isset( r ) ) r--;*/
             // get next un-traversed index, reject if needed
             while ( traversed.isset( r = self.randomIndex( ) ) ) ;
             traversed.set( r );
@@ -2073,6 +2159,141 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
         var self = this, i, n = self.$n, item = new Array( n ); 
         for (i=0; i<n; i++) item[ i ] = n-1-i;
         return item;
+    }
+});
+
+// 
+// https://en.wikipedia.org/wiki/Outer_product
+// https://en.wikipedia.org/wiki/Kronecker_product
+// https://en.wikipedia.org/wiki/Tensor_product
+var Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
+    
+    // extends and implements CombinatorialIterator
+    constructor: function Tensor( vectors ) {
+        var self = this;
+        if ( !(self instanceof Tensor) ) return new Tensor( vectors );
+        self.$n = vectors.slice( );
+        self.$total = self.constructor.count( self.$n );
+        self.rewind( );
+    }
+    
+    ,__static__: {
+         fromStochasticMatrix: NotImplemented
+        ,count: function( vectors ) {
+             if ( !vectors.length ) return 0;
+             var i, tot = vectors[0].length;
+             for (i=1; i<vectors.length; i++)
+                 tot *= vectors[i].length;
+             return tot;
+        }
+        ,index: function( tensor, vectors ) { 
+            var index, v = vectors, nv = v.length, va, vv, 
+            l, i, j, k, a, found, is_array, vvl;
+            if ( !nv ) return -1;
+            for (index=0,k=0,a=0; a<nv; a++)
+            {
+                va = v[ a ]; l = va.length;
+                index *= l;
+                found = false;
+                for (i=l-1; i>=0; i--)
+                {
+                    vv = va[ i ]; is_array = false;
+                    if ( vv instanceof Array )
+                    {
+                        is_array = true; found = true;
+                        vvl = vv.length;
+                        for (j=0; j<vvl; j++)
+                        {
+                            if ( tensor[ k+j ] !== vv[ j ] )
+                            {
+                                found = false;
+                                break;
+                            }
+                        }
+                    }
+                    else if ( tensor[ k ] === vv )
+                    {
+                        found = true;
+                    }
+
+                    if ( found )
+                    {
+                        index += i;
+                        k += is_array ? vvl : 1;
+                        break;
+                    }
+                }
+            }
+            return index;
+        }
+        ,item: function( index, vectors ) { 
+            var a, r, l, i, j, vv, tensor,
+                v = vectors, nv = v.length;
+            
+            if ( !nv ) return [ ];
+            
+            tensor = [ ];
+            for (r=index,a=nv-1; a>=0; a--)
+            {
+                l = v[ a ].length;
+                i = r % l;
+                r = ~~(r / l);
+                vv = v[ a ][ i ];
+                if ( vv instanceof Array )
+                {
+                    // kronecker can be re-used to create higher-order products
+                    for (j=vv.length-1; j>=0; j--)
+                        tensor.unshift( vv[ j ] );
+                }
+                else
+                {
+                    tensor.unshift( vv );
+                }
+            }
+            return tensor;
+        }
+        ,rand: function( vectors, a1, a2, total ) {
+            var tot = total ? total : this.count( vectors );
+            return this.item( Abacus.rint(0, tot-1), vectors );
+        }
+        ,adjacent: CombinatorialIterator.adjacent
+        ,product: kronecker
+    }
+    
+    ,stochastic: NotImplemented
+    
+    ,first: function( ) {
+        var self = this, i, j, v = self.$n, nv = v.length, vv, tensor = [];
+        for (i=0; i<nv; i++)
+        {
+            vv = v[ i ][ 0 ];
+            if ( vv instanceof Array )
+            {
+                for (j=0; j<vv.length; j++) tensor.push( vv[ j ] );
+            }
+            else
+            {
+                tensor.push( vv );
+            }
+        }
+        return tensor;
+    }
+    
+    ,last: function( ) {
+        var self = this, i, j, v = self.$n, nv = v.length, vv, tensor = [];
+        for (i=0; i<nv; i++)
+        {
+            vv = v[ i ][ v[ i ].length-1 ];
+            if ( vv instanceof Array )
+            {
+                for (j=0; j<vv.length; j++) tensor.push( vv[ j ] );
+            }
+            else
+            {
+                tensor.push( vv );
+            }
+        }
+        return tensor;
     }
 });
 
