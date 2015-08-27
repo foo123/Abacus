@@ -296,33 +296,28 @@ var  Abacus
         return digits;
     }
     ,sum = function sum( a ) {
-        var fv, f0, i, i0, l = a.length, rem = l&3;
-        f0 = 0;
-        if ( 3 === rem )        { i0 = 3; fv = a[2] + a[1] + a[0]; }
-        else if ( 2 === rem )   { i0 = 2; fv = a[1] + a[0]; }
-        else if ( 1 === rem )   { i0 = 1; fv = a[0]; }
-        else                    { i0 = 0; fv = 0; }
-        for (i=i0; i<l; i+=4) fv += a[i] + a[i+1] + a[i+2] + a[i+3];
+        var fv, f0=0, i, l=a.length, r=l&3, lr=l-r;
+        for (fv=f0,i=0; i<lr; i+=4) fv += a[i] + a[i+1] + a[i+2] + a[i+3];
+        if      ( 3 === r )         fv += a[l-3] + a[l-2] + a[l-1];
+        else if ( 2 === r )         fv += a[l-2] + a[l-1];
+        else if ( 1 === r )         fv += a[l-1];
         return fv;
     }
     ,product = function product( a ) {
-        var fv, f0, i, i0, l = a.length, rem = l&3;
-        f0 = 1;
-        if ( 3 === rem )        { i0 = 3; fv = a[2] * a[1] * a[0]; }
-        else if ( 2 === rem )   { i0 = 2; fv = a[1] * a[0]; }
-        else if ( 1 === rem )   { i0 = 1; fv = a[0]; }
-        else                    { i0 = 0; fv = 1; }
-        for (i=i0; i<l; i+=4) fv *= a[i] * a[i+1] * a[i+2] * a[i+3];
+        var fv, f0=1, i, l=a.length, r=l&3, lr=l-r;
+        for (fv=f0,i=0; i<lr; i+=4) fv *= a[i] * a[i+1] * a[i+2] * a[i+3];
+        if      ( 3 === r )         fv *= a[l-3] * a[l-2] * a[l-1];
+        else if ( 2 === r )         fv *= a[l-2] * a[l-1];
+        else if ( 1 === r )         fv *= a[l-1];
         return fv;
     }
     ,reduce2 = function reduce2( a, f, f0 ) {
-        var fv, i, i0, l = a.length, rem = l&3;
+        var fv, i, l=a.length, r=l&3, lr=l-r;
         f0 = f0 || 0;
-        if ( 3 === rem )        { i0 = 3; fv = f( f( a[1], a[0] ), a[2] ); }
-        else if ( 2 === rem )   { i0 = 2; fv = f( a[1], a[0] ); }
-        else if ( 1 === rem )   { i0 = 1; fv = f( a[0], f0 ); }
-        else                    { i0 = 0; fv = f0; }
-        for (i=i0; i<l; i+=4) fv = f( fv, f( f( a[i], a[i+1] ), f( a[i+2], a[i+3] ) ) );
+        for (fv=f0,i=0; i<lr; i+=4) fv = f( fv, f( f( a[i], a[i+1] ), f( a[i+2], a[i+3] ) ) );
+        if      ( 3 === r )         fv = f( f( fv, a[l-3] ), f( a[l-2], a[l-1] ) );
+        else if ( 2 === r )         fv = f( fv, f( a[l-2], a[l-1] ) );
+        else if ( 1 === r )         fv = f( fv, a[l-1] );
         return fv;
     }
     ,intersection = function intersect_sorted2( a, b ) {
