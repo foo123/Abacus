@@ -43,8 +43,8 @@ t.rewind();
 while (t.hasNext()) 
     echo([
     p=t.next(), 
-    c=Abacus.Tensor.index(p,t.$n),
-    Abacus.Tensor.item(c,t.$n),
+    c=Abacus.Tensor.index(p,[1,2,3]),
+    Abacus.Tensor.item(c,[1,2,3]),
     Abacus.Tensor.component(p, [['a1'],['b1','b2'],['c1','c2','c3']])
     ]);
 //
@@ -56,7 +56,7 @@ t.forward();
 while (t.hasPrev()) 
     echo([
     p=t.prev(), 
-    c=Abacus.Tensor.index(p,t.$n)
+    c=Abacus.Tensor.index(p,[1,2,3])
     ]);
 
 

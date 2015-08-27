@@ -305,20 +305,39 @@ var  Abacus
     }
     ,product = function product( a ) {
         var fv, f0=1, i, l=a.length, r=l&3, lr=l-r;
-        for (fv=f0,i=0; i<lr; i+=4) fv *= a[i] * a[i+1] * a[i+2] * a[i+3];
-        if      ( 3 === r )         fv *= a[l-3] * a[l-2] * a[l-1];
-        else if ( 2 === r )         fv *= a[l-2] * a[l-1];
-        else if ( 1 === r )         fv *= a[l-1];
+        for (fv=f0,i=0; i<lr; i+=4) { fv *= a[i] * a[i+1] * a[i+2] * a[i+3]; if ( 0 === fv ) break; }
+        if ( fv )
+        {
+        if      ( 3 === r )           fv *= a[l-3] * a[l-2] * a[l-1];
+        else if ( 2 === r )           fv *= a[l-2] * a[l-1];
+        else if ( 1 === r )           fv *= a[l-1];
+        }
         return fv;
     }
-    ,reduce2 = function reduce2( a, f, f0 ) {
+    ,operate = function operate( a, f, f0 ) {
         var fv, i, l=a.length, r=l&3, lr=l-r;
         f0 = f0 || 0;
-        for (fv=f0,i=0; i<lr; i+=4) fv = f( fv, f( f( a[i], a[i+1] ), f( a[i+2], a[i+3] ) ) );
-        if      ( 3 === r )         fv = f( f( fv, a[l-3] ), f( a[l-2], a[l-1] ) );
-        else if ( 2 === r )         fv = f( fv, f( a[l-2], a[l-1] ) );
+        for (fv=f0,i=0; i<lr; i+=4) fv = f( f( f( f( fv, a[i] ), a[i+1] ), a[i+2] ), a[i+3] );
+        if      ( 3 === r )         fv = f( f( f( fv, a[l-3] ), a[l-2] ), a[l-1] );
+        else if ( 2 === r )         fv = f( f( fv, a[l-2] ), a[l-1] );
         else if ( 1 === r )         fv = f( fv, a[l-1] );
         return fv;
+    }
+    ,map = function map( a, f ) {
+        var i, l=a.length, r=l&3, lr=l-r, fv = new Array( l );
+        for (i=0; i<lr; i+=4) { fv[i] = f( a[i] ); fv[i+1] = f( a[i+1] ); fv[i+2] = f( a[i+2] ); fv[i+3] = f( a[i+3] ); }
+        if      ( 3 === r )   { fv[l-3] = f( a[l-3] ); fv[l-2] = f( a[l-2] ); fv[l-1] = f( a[l-1] ); }
+        else if ( 2 === r )   { fv[l-2] = f( a[l-2] ); fv[l-1] = f( a[l-1] ); }
+        else if ( 1 === r )   { fv[l-1] = f( a[l-1] ); }
+        return fv;
+    }
+    ,each = function each( a, f ) {
+        var i, l=a.length, r=l&3, lr=l-r;
+        for (i=0; i<lr; i+=4) { f( a[i] ); f( a[i+1] ); f( a[i+2] ); f( a[i+3] ); }
+        if      ( 3 === r )   { f( a[l-3] ); f( a[l-2] ); f( a[l-1] ); }
+        else if ( 2 === r )   { f( a[l-2] ); f( a[l-1] ); }
+        else if ( 1 === r )   { f( a[l-1] ); }
+        return a;
     }
     ,intersection = function intersect_sorted2( a, b ) {
         var ai = 0, bi = 0, intersection = [ ],
@@ -612,6 +631,8 @@ var  Abacus
         return r;
     }
     ,NotImplemented = function( ) { throw new Error("Method not implemented"); }
+    ,List, BitArray, CombinatorialIterator, Permutation, Derangement
+    ,Combination, CombinationRepeat, Partition, RestrictedPartition, PowerSet, Tensor
 ;
 
 Abacus = {
@@ -623,25 +644,6 @@ Abacus = {
     ,clamp: clamp
     ,radix: radix
     
-    ,array: array
-    ,n_array: n_array
-    ,range: range
-
-    ,shuffle: shuffle
-    ,xshuffle: xshuffle
-    ,pick: random_pick
-    ,pick_include: random_pick_include
-    
-    ,sum: sum
-    ,product: product
-    ,reduce: reduce2
-    ,intersection: intersection
-    ,union: union
-    ,difference: difference
-    ,complement: complement
-    ,kronecker: kronecker
-    ,cartesian: cartesian
-    
     ,Factorial: factorial
     ,SubFactorial: subfactorial
     ,Binomial: binomial
@@ -651,7 +653,30 @@ Abacus = {
     ,Catalan: NotImplemented
 };
 
-var BitArray = Abacus.BitArray = Class({
+List = Abacus.List = {
+     array: array
+    ,n_array: n_array
+    ,range: range
+    
+    ,shuffle: shuffle
+    ,xshuffle: xshuffle
+    ,pick: random_pick
+    ,pick_include: random_pick_include
+    
+    ,sum: sum
+    ,product: product
+    ,operate: operate
+    ,map: map
+    ,each: each
+    ,intersection: intersection
+    ,union: union
+    ,difference: difference
+    ,complement: complement
+    ,kronecker: kronecker
+    ,cartesian: cartesian
+};
+
+BitArray = Abacus.BitArray = Class({
     
     constructor: function BitArray(n) {
         var self = this;
@@ -720,7 +745,7 @@ var BitArray = Abacus.BitArray = Class({
 });
 
 // Abacus.CombinatorialIterator, Combinatorial Base Class and Iterator Interface
-var CombinatorialIterator = Abacus.CombinatorialIterator = Class({
+CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
     constructor: function CombinatorialIterator( n, k, m ) {
         var self = this;
@@ -1061,7 +1086,7 @@ r := Z(C(n)) (0<=r<C(n)).
 });
 
 // https://en.wikipedia.org/wiki/Permutations
-var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
+Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function Permutation( n ) {
@@ -1372,7 +1397,7 @@ var Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
 // http://en.wikipedia.org/wiki/Derangement
 // http://arxiv.org/pdf/1009.4214.pdf
 // permutation with no fixed points
-var Derangement = Abacus.Derangement = Class(CombinatorialIterator, {
+Derangement = Abacus.Derangement = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function Derangement( n ) {
@@ -1428,7 +1453,7 @@ var Derangement = Abacus.Derangement = Class(CombinatorialIterator, {
 });
 
 // https://en.wikipedia.org/wiki/Combinations
-var Combination = Abacus.Combination = Class(CombinatorialIterator, {
+Combination = Abacus.Combination = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function Combination( n, k ) {
@@ -1716,7 +1741,7 @@ var Combination = Abacus.Combination = Class(CombinatorialIterator, {
 // aliases
 Combination.conjugate = Combination.complement;
 
-var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
+CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function CombinationRepeat( n, k ) {
@@ -1888,7 +1913,7 @@ var CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, 
 });
 
 // https://en.wikipedia.org/wiki/Partitions
-var Partition = Abacus.Partition = Class(CombinatorialIterator, {
+Partition = Abacus.Partition = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function Partition( n ) {
@@ -2122,7 +2147,7 @@ var Partition = Abacus.Partition = Class(CombinatorialIterator, {
 // aliases
 Partition.transpose = Partition.conjugate;
 
-var RestrictedPartition = Abacus.RestrictedPartition = Class(CombinatorialIterator, {
+RestrictedPartition = Abacus.RestrictedPartition = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function RestrictedPartition( n, k, m ) {
@@ -2142,7 +2167,7 @@ var RestrictedPartition = Abacus.RestrictedPartition = Class(CombinatorialIterat
 });
 
 // http://en.wikipedia.org/wiki/Power_set
-var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
+PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function PowerSet( n ) {
@@ -2190,7 +2215,7 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
 // https://en.wikipedia.org/wiki/Outer_product
 // https://en.wikipedia.org/wiki/Kronecker_product
 // https://en.wikipedia.org/wiki/Tensor_product
-var Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
+Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
     constructor: function Tensor( dims ) {
