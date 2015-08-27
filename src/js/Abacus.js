@@ -296,11 +296,34 @@ var  Abacus
         return digits;
     }
     ,sum = function sum( a ) {
-        var s, i, i0, l = a.length;
-        if ( l&1 ) { s = a[ 0 ]; i0 = 1; } // odd
-        else { s = 0; i0 = 0; } // even
-        for (i=i0; i<l; i+=2) s += a[ i ] + a[ i+1 ];
-        return s;
+        var fv, f0, i, i0, l = a.length, rem = l&3;
+        f0 = 0;
+        if ( 3 === rem )        { i0 = 3; fv = a[2] + a[1] + a[0]; }
+        else if ( 2 === rem )   { i0 = 2; fv = a[1] + a[0]; }
+        else if ( 1 === rem )   { i0 = 1; fv = a[0]; }
+        else                    { i0 = 0; fv = 0; }
+        for (i=i0; i<l; i+=4) fv += a[i] + a[i+1] + a[i+2] + a[i+3];
+        return fv;
+    }
+    ,product = function product( a ) {
+        var fv, f0, i, i0, l = a.length, rem = l&3;
+        f0 = 1;
+        if ( 3 === rem )        { i0 = 3; fv = a[2] * a[1] * a[0]; }
+        else if ( 2 === rem )   { i0 = 2; fv = a[1] * a[0]; }
+        else if ( 1 === rem )   { i0 = 1; fv = a[0]; }
+        else                    { i0 = 0; fv = 1; }
+        for (i=i0; i<l; i+=4) fv *= a[i] * a[i+1] * a[i+2] * a[i+3];
+        return fv;
+    }
+    ,reduce2 = function reduce2( a, f, f0 ) {
+        var fv, i, i0, l = a.length, rem = l&3;
+        f0 = f0 || 0;
+        if ( 3 === rem )        { i0 = 3; fv = f( f( a[1], a[0] ), a[2] ); }
+        else if ( 2 === rem )   { i0 = 2; fv = f( a[1], a[0] ); }
+        else if ( 1 === rem )   { i0 = 1; fv = f( a[0], f0 ); }
+        else                    { i0 = 0; fv = f0; }
+        for (i=i0; i<l; i+=4) fv = f( fv, f( f( a[i], a[i+1] ), f( a[i+2], a[i+3] ) ) );
+        return fv;
     }
     ,intersection = function intersect_sorted2( a, b ) {
         var ai = 0, bi = 0, intersection = [ ],
@@ -615,6 +638,8 @@ Abacus = {
     ,pick_include: random_pick_include
     
     ,sum: sum
+    ,product: product
+    ,reduce: reduce2
     ,intersection: intersection
     ,union: union
     ,difference: difference
@@ -985,8 +1010,7 @@ r := Z(C(n)) (0<=r<C(n)).
     }
     
     ,range: function( start, end ) {
-        var self = this, tot = self.$total, 
-        range = [], dir = 1;
+        var self = this, tot = self.$total, range, count, i, prev, dir = 1;
         if ( arguments.length < 1 )
         {
             start = 0;
@@ -1010,13 +1034,18 @@ r := Z(C(n)) (0<=r<C(n)).
         if ( start<=end )
         {
             // store current iterator state
-            var prev = self.$store( );
+            prev = self.$store( );
             self.$index = start; 
             self.$current = self.get( start );
-            var PUSH = 0 > dir ? "unshift" : "push";
-            while ( start++<=end ) range[PUSH]( self.next( ) );
+            count = end - start; range = new Array( count+1 );
+            if ( 0 > dir ) for (i=count; i>=0; i--) range[ i ] = self.next( );
+            else for (i=0; i<=count; i++) range[ i ] = self.next( );
             // restore previous iterator state
             self.$restore( prev );
+        }
+        else
+        {
+            range = [];
         }
         return range;
     }
@@ -2169,130 +2198,79 @@ var PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
 var Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
-    constructor: function Tensor( vectors ) {
+    constructor: function Tensor( dims ) {
         var self = this;
-        if ( !(self instanceof Tensor) ) return new Tensor( vectors );
-        self.$n = vectors.slice( );
+        if ( !(self instanceof Tensor) ) return new Tensor( dims );
+        self.$n = dims.slice( );
         self.$total = self.constructor.count( self.$n );
         self.rewind( );
     }
     
     ,__static__: {
          fromStochasticMatrix: NotImplemented
-        ,count: function( vectors ) {
-             if ( !vectors.length ) return 0;
-             var i, tot = vectors[0].length;
-             for (i=1; i<vectors.length; i++)
-                 tot *= vectors[i].length;
-             return tot;
+        ,count: function( dims ) {
+             if ( !dims || !dims.length ) return 0;
+             return product( dims );
         }
-        ,index: function( tensor, vectors ) { 
-            var index, v = vectors, nv = v.length, va, vv, 
-            l, i, j, k, a, found, is_array, vvl;
-            if ( !nv ) return -1;
-            for (index=0,k=0,a=0; a<nv; a++)
+        ,index: function( tensor, dims ) { 
+            var index, d = dims, nd = d.length, i;
+            if ( !nd ) return -1;
+            for (index=0,i=0; i<nd; i++)
             {
-                va = v[ a ]; l = va.length;
-                index *= l;
-                found = false;
-                for (i=l-1; i>=0; i--)
-                {
-                    vv = va[ i ]; is_array = false;
-                    if ( vv instanceof Array )
-                    {
-                        is_array = true; found = true;
-                        vvl = vv.length;
-                        for (j=0; j<vvl; j++)
-                        {
-                            if ( tensor[ k+j ] !== vv[ j ] )
-                            {
-                                found = false;
-                                break;
-                            }
-                        }
-                    }
-                    else if ( tensor[ k ] === vv )
-                    {
-                        found = true;
-                    }
-
-                    if ( found )
-                    {
-                        index += i;
-                        k += is_array ? vvl : 1;
-                        break;
-                    }
-                }
+                index = index*d[ i ] + tensor[ i ];
             }
             return index;
         }
-        ,item: function( index, vectors ) { 
-            var a, r, l, i, j, vv, tensor,
-                v = vectors, nv = v.length;
+        ,item: function( index, dims ) { 
+            var r, l, i, t, tensor,
+                d = dims, nd = d.length;
             
-            if ( !nv ) return [ ];
+            if ( !nd ) return [ ];
             
-            tensor = [ ];
-            for (r=index,a=nv-1; a>=0; a--)
+            tensor = new Array( nd );
+            for (r=index,i=nd-1; i>=0; i--)
             {
-                l = v[ a ].length;
-                i = r % l;
-                r = ~~(r / l);
-                vv = v[ a ][ i ];
-                if ( vv instanceof Array )
-                {
-                    // kronecker can be re-used to create higher-order products
-                    for (j=vv.length-1; j>=0; j--)
-                        tensor.unshift( vv[ j ] );
-                }
-                else
-                {
-                    tensor.unshift( vv );
-                }
+                l = d[ i ]; t = r % l;  r = ~~(r / l);
+                tensor[ i ] = t;
             }
             return tensor;
         }
-        ,rand: function( vectors, a1, a2, total ) {
-            var tot = total ? total : this.count( vectors );
-            return this.item( Abacus.rint(0, tot-1), vectors );
+        ,rand: function( dims, a1, a2, total ) {
+            var tot = total ? total : this.count( dims );
+            return this.item( Abacus.rint(0, tot-1), dims );
         }
         ,adjacent: CombinatorialIterator.adjacent
         ,product: kronecker
+        ,component: function( tensor, base_vectors ) {
+            var component = [ ], v = base_vectors, nd = v.length, i, j, vi, vv, iv, vl;
+            for (i=0; i<nd; i++)
+            {
+                vi = v[ i ]; iv = tensor[ i ]; vv = vi[ iv ];
+                if ( vv instanceof Array )
+                {
+                    for (j=0,vl=vv.length; j<vl; j++)
+                        component.push( vv[ j ] );
+                }
+                else
+                {
+                    component.push( vv );
+                }
+            }
+            return component;
+        }
     }
     
     ,stochastic: NotImplemented
     
     ,first: function( ) {
-        var self = this, i, j, v = self.$n, nv = v.length, vv, tensor = [];
-        for (i=0; i<nv; i++)
-        {
-            vv = v[ i ][ 0 ];
-            if ( vv instanceof Array )
-            {
-                for (j=0; j<vv.length; j++) tensor.push( vv[ j ] );
-            }
-            else
-            {
-                tensor.push( vv );
-            }
-        }
+        var self = this, i, nd = self.$n.length, tensor = new Array( nd );
+        for (i=0; i<nd; i++) tensor[ i ] = 0;
         return tensor;
     }
     
     ,last: function( ) {
-        var self = this, i, j, v = self.$n, nv = v.length, vv, tensor = [];
-        for (i=0; i<nv; i++)
-        {
-            vv = v[ i ][ v[ i ].length-1 ];
-            if ( vv instanceof Array )
-            {
-                for (j=0; j<vv.length; j++) tensor.push( vv[ j ] );
-            }
-            else
-            {
-                tensor.push( vv );
-            }
-        }
+        var self = this, i, d = self.$n, nd = d.length, tensor = new Array( nd );
+        for (i=0; i<nd; i++) tensor[ i ] = d[ i ]-1;
         return tensor;
     }
 });

@@ -17,8 +17,8 @@ echo('Abacus.Tensors');
 echo('---');
 
 // Tensors
-echo('t = Abacus.Tensor([["a1"],["b1","b2"],["c1","c2","c3"]])');
-t = Abacus.Tensor([["a1"],["b1","b2"],["c1","c2","c3"]]);
+echo('t = Abacus.Tensor([1,2,3])');
+t = Abacus.Tensor([1,2,3]);
 
 echo('t.total()'); 
 echo(t.total());
@@ -30,7 +30,7 @@ echo('t.next()');
 echo(t.next());
 //
 //output:
-//[a1,b1,c1]
+//[0,0,0]
 
 
 echo('t.hasNext()');
@@ -44,7 +44,8 @@ while (t.hasNext())
     echo([
     p=t.next(), 
     c=Abacus.Tensor.index(p,t.$n),
-    Abacus.Tensor.item(c,t.$n)
+    Abacus.Tensor.item(c,t.$n),
+    Abacus.Tensor.component(p, [['a1'],['b1','b2'],['c1','c2','c3']])
     ]);
 //
 //output (in index-lexicographic order):
@@ -63,7 +64,7 @@ echo('t.random()');
 echo(t.random());
 //
 //sample output:
-//[a1,b2,c3]
+//[0,1,2]
 
 echo('get tensors in unique random order')
 echo('t.randomise()');
@@ -75,8 +76,8 @@ while(t.hasRandomNext()) echo(t.randomNext());
 echo('t.dispose()');
 t.dispose();
 
-echo('t = Abacus.Tensor([["a1"],["b1","b2"],["c1","c2","c3"]])');
-t = Abacus.Tensor([["a1"],["b1","b2"],["c1","c2","c3"]]);
+echo('t = Abacus.Tensor([1,2,3])');
+t = Abacus.Tensor([1,2,3]);
 
 echo('get just last 3 tensors'); 
 echo('t.range(-3,-1)');
@@ -87,3 +88,11 @@ echo('t.range(-1,-3)');
 echo(t.range(-1,-3));
 
 t.dispose();
+
+echo();
+echo("Abacus.Tensor.product(['a1'],['b1','b2'],['c1','c2','c3'])");
+echo(Abacus.Tensor.product(['a1'],['b1','b2'],['c1','c2','c3']));
+echo("Abacus.Tensor.product(Abacus.Tensor.product(['a1'],['b1','b2']),['c1','c2','c3'])");
+echo(Abacus.Tensor.product(Abacus.Tensor.product(['a1'],['b1','b2']),['c1','c2','c3']));
+echo("Abacus.Tensor.product(['a1'],Abacus.Tensor.product(['b1','b2'],['c1','c2','c3']))");
+echo(Abacus.Tensor.product(['a1'],Abacus.Tensor.product(['b1','b2'],['c1','c2','c3'])));
