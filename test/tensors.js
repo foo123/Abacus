@@ -17,8 +17,8 @@ echo('Abacus.Tensors');
 echo('---');
 
 // Tensors
-echo('t = Abacus.Tensor([1,2,3])');
-t = Abacus.Tensor([1,2,3]);
+echo('t = Abacus.Tensor(1,2,3)');
+t = Abacus.Tensor(1,2,3);
 
 echo('t.total()'); 
 echo(t.total());
@@ -76,8 +76,8 @@ while(t.hasRandomNext()) echo(t.randomNext());
 echo('t.dispose()');
 t.dispose();
 
-echo('t = Abacus.Tensor([1,2,3])');
-t = Abacus.Tensor([1,2,3]);
+echo('t = Abacus.Tensor(1,2,3)');
+t = Abacus.Tensor(1,2,3);
 
 echo('get just last 3 tensors'); 
 echo('t.range(-3,-1)');

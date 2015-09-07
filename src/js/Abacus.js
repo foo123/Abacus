@@ -28,8 +28,8 @@ else if ( !(name in root) )
 "use strict";
 
 var  Abacus
-    ,PROTO = 'prototype', HAS = 'hasOwnProperty'
-    ,slice = Array.prototype.slice
+    ,PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
+    ,slice = Array.prototype.slice, bind = Function.prototype.bind
     ,Extend = Object.create
     ,Merge = function(a, b) {
         for (var p in b) 
@@ -42,7 +42,7 @@ var  Abacus
             c = s;
             s = Object;
         }
-        var ctor = c.constructor;
+        var ctor = c[CLASS];
         if ( c[HAS]('__static__') )
         {
             ctor = Merge(ctor, c.__static__);
@@ -827,11 +827,11 @@ BitArray = Abacus.BitArray = Class({
 // Abacus.CombinatorialIterator, Combinatorial Base Class and Iterator Interface
 CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
-    constructor: function CombinatorialIterator( n, k, m ) {
+    constructor: function CombinatorialIterator( n ) {
         var self = this;
-        if ( !(self instanceof CombinatorialIterator) ) return new CombinatorialIterator(n, k, m);
-        self.$n = n||0; self.$k = k||0; self.$m = m||0;
-        self.$total = self.constructor.count( self.$n, self.$k, self.$m );
+        if ( !(self instanceof CombinatorialIterator) ) return new CombinatorialIterator(n);
+        self.n = n||0;
+        self.$total = self[CLASS].count( self.n );
         self.rewind( );
     }
     
@@ -859,14 +859,14 @@ r := Z(C(n)) (0<=r<C(n)).
         ,item: NotImplemented
         ,rand: NotImplemented
         ,fromStochasticMatrix: NotImplemented
-        ,adjacent: function( offset, item, n, k, m ) {
+        ,adjacent: function( offset, item, n ) {
             if ( -1 !== offset && 1 !== offset ) offset = 1;
-            return item ? this.item( this.index(item, n, k, m)+offset, n, k, m ) : null;
+            return item ? this.item( this.index(item, n)+offset, n ) : null;
         }
     }
     
-    ,$n: 0,$k: 0,$m: 0
-    ,$init: null
+    ,n: 0
+    ,$data: null
     ,$total: 0
     ,$index: null
     ,$current: null
@@ -878,10 +878,8 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,dispose: function( ) {
         var self = this;
-        self.$n = null;
-        self.$k = null;
-        self.$m = null;
-        self.$init = null;
+        self.n = null;
+        self.$data = null;
         self.$total = 0;
         self.$index = null;
         self.$current = null;
@@ -932,13 +930,13 @@ r := Z(C(n)) (0<=r<C(n)).
     ,hasNext: function( ) { return this.$next; }
     
     ,next: function( ) {
-        var self = this, item = self.constructor.item,
+        var self = this, item = self[CLASS].item,
             current = self.$current;
         // compute next
         if ( self.$index+1 < self.$total ) 
         {
             self.$next = true;
-            self.$current = item( ++self.$index, self.$n, self.$k, self.$m, self.$total );
+            self.$current = item( ++self.$index, self.n, self.$total );
         }
         else
         {
@@ -963,13 +961,13 @@ r := Z(C(n)) (0<=r<C(n)).
     ,hasPrev: function( ) { return this.$prev; }
     
     ,prev: function( ) {
-        var self = this, item = self.constructor.item,
+        var self = this, item = self[CLASS].item,
             current = self.$current;
         // compute prev
         if ( self.$index-1 >= 0 ) 
         {
             self.$prev = true;
-            self.$current = item( --self.$index, self.$n, self.$k, self.$m, self.$total );
+            self.$current = item( --self.$index, self.n, self.$total );
         }
         else
         {
@@ -980,9 +978,9 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,adjacentNext: function( ) {
         var self = this, 
-            adjacent = self.constructor.adjacent, 
+            adjacent = self[CLASS].adjacent, 
             item = self.$current;
-        var next = adjacent(1, item, self.$n, self.$k, self.$m);
+        var next = adjacent(1, item, self.n);
         if ( !next ) 
         {
             self.$next = false;
@@ -997,9 +995,9 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,adjacentPrev: function( ) {
         var self = this, 
-            adjacent = self.constructor.adjacent, 
+            adjacent = self[CLASS].adjacent, 
             item = self.$current;
-        var next = adjacent(-1, item, self.$n, self.$k, self.$m);
+        var next = adjacent(-1, item, self.n);
         if ( !next ) 
         {
             self.$prev = false;
@@ -1020,6 +1018,12 @@ r := Z(C(n)) (0<=r<C(n)).
         else
             self.$traversed.reset( );
         self.$rindex = 0;
+        return self;
+    }
+    
+    ,stochastise: function( ) {
+        var self = this;
+        self.$counters = [];
         return self;
     }
     
@@ -1079,29 +1083,31 @@ r := Z(C(n)) (0<=r<C(n)).
     
     ,random: function( ) {
         var self = this;
-        return self.constructor.rand( self.$n, self.$k, self.$m, self.$total );
+        return self[CLASS].rand( self.n, self.$total );
     }
     
+    // singly-stochastic
     ,stochastic: function( P ) {
         var self = this;
-        return self.constructor.fromStochasticMatrix( P, self.$n, self.$k, self.$m, self.$total );
+        return self[CLASS].fromStochasticMatrix( P, self.n, null, self.$total );
     }
     
-    ,bistochastic: function( P ) {
+    // doubly-stochastic
+    ,stochastic2: function( P, C ) {
         var self = this;
-        if ( null == self.$counters ) self.$counters = [];
-        return self.constructor.fromStochasticMatrix( P, self.$n, self.$k, self.$m, self.$total, self.$counters );
+        if ( null == self.$counters ) self.$counters = C || [];
+        return self[CLASS].fromStochasticMatrix( P, self.n, self.$counters, self.$total );
     }
     
     ,get: function( index ) {
-        var self = this, tot = self.$total, item = self.constructor.item;
+        var self = this, tot = self.$total, item = self[CLASS].item;
         if ( !arguments.length ) return self.$current;
         if ( 0 > index ) index += tot;
         if ( index >= 0 && index < tot )
         {            
             if ( 0 === index ) return self.first( );
             else if ( tot-1 === index ) return self.last( );
-            return item( index, self.$n, self.$k, self.$m, self.$total );
+            return item( index, self.n, self.$total );
         }
         return null;
     }
@@ -1118,7 +1124,7 @@ r := Z(C(n)) (0<=r<C(n)).
     }
     
     ,range: function( start, end ) {
-        var self = this, tot = self.$total, range, count, i, prev, dir = 1;
+        var self = this, tmp, tot = self.$total, range, count, i, prev, dir = 1;
         if ( arguments.length < 1 )
         {
             start = 0;
@@ -1132,7 +1138,7 @@ r := Z(C(n)) (0<=r<C(n)).
         if ( end < 0 ) end += tot;
         if ( start > end )
         {
-            var tmp = start;
+            tmp = start;
             start = end;
             end = tmp;
             dir = -1;
@@ -1180,8 +1186,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
     constructor: function Permutation( n ) {
         var self = this;
         if ( !(self instanceof Permutation) ) return new Permutation(n);
-        self.$init = new Array(n);
-        for (var i=0; i<n; i++) self.$init[i] = i;
+        self.$data = new Array(n);
+        for (var i=0; i<n; i++) self.$data[i] = i;
         CombinatorialIterator.call(self, n);
     }
     
@@ -1210,7 +1216,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         // http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf
         // O(n log n) uniform lexicographic unranking.
-        ,item: function( index, n, a1, a2, total ) {
+        ,item: function( index, n, total ) {
             var perm = new Array(n), fn = total ? total/n : factorial(n-1),
                 i, j, i2, digit, node, rem,
                 k = ceil(log2(n)), Tl = (1<<(1+k))-1,
@@ -1305,47 +1311,58 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             return shuffle( perm, false, false );
         }
         // http://stackoverflow.com/questions/30694811/permutations-sampling-by-probability-matrix/30695163#30695163
-        ,fromStochasticMatrix: function( P, n, k, m, tot, counters ) {
+        ,fromStochasticMatrix: function( P, n, C ) {
             var permutation = new Array(n), 
-                used = new Array(n), 
-                i, j, dice, pi, cumul, times, singly_stochastic, bi_stochastic = false;
+                used = new Array(n), zeros,
+                i, j, dice, pi, ci, cumul, N = 0, 
+                singly_stochastic, doubly_stochastic = false;
             for (i=0; i<n; i++) used[i] = 0;
-            // bi-stochastic
-            if ( counters )
+            // doubly-stochastic
+            if ( C )
             {
-                bi_stochastic = true;
+                doubly_stochastic = true;
                 // init counters
-                if ( !counters.length )
+                if ( !C.length )
                 {
-                    counters.times = 0;
-                    for (i=0; i<n; i++) 
-                    {
-                        counters.push( new Array(n) );
-                        for (j=0; j<n; j++) counters[i][j] = 0;
-                    }
+                    C.N = 0;
+                    zeros = new Array(n);
+                    for (i=0; i<n; i++) zeros[i] = 0;
+                    for (i=0; i<n; i++) C.push( zeros.slice() );
                 }
-                times = ++counters.times;
+                N = ++C.N;
             }
-            singly_stochastic = !bi_stochastic;
+            singly_stochastic = !doubly_stochastic;
             i = 0;
+            // while permutation places not filled
             while( i < n )
             {
                 dice = Abacus.rnd( );
-                cumul = 0;
-                pi = P[i];
+                cumul = 0; pi = P[i];
+                if ( doubly_stochastic ) ci = C[i];
+                // select an item to fill the i-th place of permutation
+                // according to stochastic matrix P
                 for (j=0; j<n; j++)
                 {
+                    // item j selected
                     if ( cumul < dice && dice <= cumul+pi[j] )
                     {
+                        // if not already used AND
+                        // simulation matrix is singly stochastic OR
+                        // j-item has not been used in i-place enough according to doubly-stochastic matrix
                         if ( 0 === used[j] && 
-                            ( singly_stochastic || counters[i][j] < times*pi[j] )
+                            ( singly_stochastic || ci[j] < N*pi[j] )
                         )
                         {
+                            // then use j-item in i-place of permutation
                             used[j] = 1;
                             permutation[i] = j;
-                            if ( bi_stochastic ) counters[i][j]++;
+                            // increase counter of j-item used in i-place
+                            if ( doubly_stochastic ) ci[j]++;
+                            // next permutation place
                             i++;
                         }
+                        // either item found so break
+                        // or selected item not matches, so break for new dice simulation
                         break;
                     }
                     cumul += pi[j];
@@ -1489,12 +1506,12 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
     
     ,first: function( ) {
         var self = this;
-        return self.$init.slice( );
+        return self.$data.slice( );
     }
     
     ,last: function( ) {
         var self = this;
-        return self.$init.slice( ).reverse( );
+        return self.$data.slice( ).reverse( );
     }
     
     ,next: CombinatorialIterator[PROTO].adjacentNext
@@ -1567,14 +1584,16 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
     constructor: function Combination( n, k ) {
         var self = this;
         if ( !(self instanceof Combination) ) return new Combination(n, k);
-        CombinatorialIterator.call(self, n, k);
+        CombinatorialIterator.call(self, [n, k]);
     }
     
     ,__static__: {
-         count: binomial
-        ,index: function( item, n, k, m, total ) {
-            var index = 0, i, c, j,
-                binom = total ? total : binomial(n, k);
+         count: function( n ) {
+             return binomial(n[0], n[1]);
+         }
+        ,index: function( item, n, total ) {
+            var index = 0, i, c, j, k, binom;
+            k = n[1]; n = n[0]; binom = total ? total : binomial(n, k);
             for (i=1; i<=k; i++)
             {
                 // adjust the order to match MSB to LSB 
@@ -1585,8 +1604,9 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return binom-1-index;
         }
         // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
-        ,item: function( index, n, k, a1, total ) {
-            var item = new Array(k), binom, m, t, p;
+        ,item: function( index, n, total ) {
+            var item, binom, k, m, t, p;
+            k = n[1]; n = n[0]; item = new Array(k);
             binom = total ? total : binomial(n, k);
             // adjust the order to match MSB to LSB 
             index = binom-1-index;
@@ -1613,9 +1633,10 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             while( m > 0 );
             return item;
         }
-        ,rand: function( n, k ) {
+        ,rand: function( n ) {
             var combination, choices, chosen,
-                i, index, selected, nc, kc;
+                k, i, index, selected, nc, kc;
+            k = n[1]; n = n[0];
             if ( n === k ) 
             {
                 // O(k), unbiased
@@ -1703,10 +1724,12 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             return combination;
         }
-        ,fromStochasticMatrix: function( P, n, k ) {
-            var combination = new Array(k), 
-                used = new Array(n), 
-                i, j, dice, pi, cumul;
+        ,fromStochasticMatrix: function( P, n ) {
+            var combination, used, 
+                k, i, j, dice, pi, cumul;
+            k = n[1]; n = n[0];
+            combination = new Array(k);
+            used = new Array(n);
             for (i=0; i<n; i++) used[i] = 0;
             i = 0;
             while ( i < k )
@@ -1736,10 +1759,11 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             return combination;
         }
-        ,adjacent: function( offset, item, n, k ) {
+        ,adjacent: function( offset, item, n ) {
             if ( item )
             {
-                var i, index, limit, curr, next = item.slice();
+                var k, i, index, limit, curr, next = item.slice();
+                k = n[1]; n = n[0];
                 
                 if ( -1 === offset )
                 {
@@ -1796,8 +1820,10 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return chosen;
         }
         ,pick: random_pick
-        ,toMatrix: function( comb, n, k, bycolumns ) {
-            var mat = new Array(n), i, j;
+        ,toMatrix: function( comb, n, bycolumns ) {
+            var mat, k, i, j;
+            k = n[1]; n = n[0];
+            mat = new Array(n);
             bycolumns = true === bycolumns;
             for (i=0; i<n; i++)
             {
@@ -1811,8 +1837,10 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             return mat;
         }
-        ,fromMatrix: function( mat, n, k, bycolumns ) {
-            var comb = new Array(k), i, j;
+        ,fromMatrix: function( mat, n, bycolumns ) {
+            var comb, k, i, j;
+            k = n[1]; n = n[0];
+            comb = new Array(k);
             bycolumns = true === bycolumns;
             for (i=0; i<n; i++)
             {
@@ -1830,14 +1858,13 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
     }
     
     ,first: function( ) {
-        var self = this, i, k = self.$k, n = self.$n, item = new Array(k);
+        var self = this, i, k = self.n[1], n = self.n[0], item = new Array(k);
         for (i=0; i<k; i++) item[i] = i;
         return item;
     }
     
     ,last: function( ) {
-        var self = this, i, k = self.$k, n = self.$n, 
-            item = new Array(k);
+        var self = this, i, k = self.n[1], n = self.n[0], item = new Array(k);
         for (i=0; i<k; i++) item[k-1-i] = n-1-i;
         return item;
     }
@@ -1855,17 +1882,19 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
     constructor: function CombinationRepeat( n, k ) {
         var self = this;
         if ( !(self instanceof CombinationRepeat) ) return new CombinationRepeat(n, k);
-        CombinatorialIterator.call(self, n, k);
+        CombinatorialIterator.call(self, [n, k]);
     }
     
     ,__static__: {
          // http://en.wikipedia.org/wiki/Combination#Number_of_combinations_with_repetition
-         count: function( n, k ) {
-             return binomial(n+k-1,k);
+         count: function( n ) {
+             return binomial(n[0]+n[1]-1,n[1]);
          }
-        ,index: function( item, n, k, m, total ) {
-            var index = 0, i, c, j, N = n+k-1,
-                binom = total ? total : binomial(N, k);
+        ,index: function( item, n, total ) {
+            var index = 0, i, c, j, k, N, binom;
+            k = n[1]; n = n[0];
+            N = n+k-1;
+            binom = total ? total : binomial(N, k);
             for (i=1; i<=k; i++)
             {
                 // adjust the order to match MSB to LSB 
@@ -1882,8 +1911,11 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
             return binom-1-index;
         }
         // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
-        ,item: function( index, n, k, a1, total ) {
-            var item = new Array(k), binom, N = n+k-1, m, t, p;
+        ,item: function( index, n, total ) {
+            var item, binom, k, N, m, t, p;
+            k = n[1]; n = n[0];
+            N = n+k-1;
+            item = new Array(k);
             binom = total ? total : binomial(N, k);
             index = binom-1-index;
             binom = (N-k)*binom/N; 
@@ -1909,18 +1941,21 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
             while( m > 0 );
             return item;
         }
-        ,rand: function( n, k ) {
-            var combination = new Array(k), 
-                m = 0, M = n-1, i;
+        ,rand: function( n ) {
+            var combination, k, m, M, i;
+            k = n[1]; n = n[0];
+            combination = new Array(k);
+            m = 0; M = n-1;
             // O(klogk)
             // make it unbiased
             for (i=0; i<k; i++) combination[ i ] = Abacus.rint( m, M );
             return combination.sort( numeric_asc );
         }
-        ,fromStochasticMatrix: function( P, n, k ) {
-            var combination = new Array(k), 
-                used = new Array(n), 
-                i, j, dice, pi, cumul;
+        ,fromStochasticMatrix: function( P, n ) {
+            var combination, used, k, i, j, dice, pi, cumul;
+            k = n[1]; n = n[0];
+            combination = new Array(k);
+            used = new Array(n);
             for (i=0; i<n; i++) used[i] = 0;
             i = 0;
             while ( i < k )
@@ -1947,10 +1982,11 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
             }
             return combination;
         }
-        ,adjacent: function( offset, item, n, k ) {
+        ,adjacent: function( offset, item, n ) {
             if ( item )
             {
-                var i, index, limit, curr, next = item.slice();
+                var k, i, index, limit, curr, next = item.slice();
+                k = n[1]; n = n[0];
                 
                 if ( -1 === offset )
                 {
@@ -2003,14 +2039,13 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
     }
     
     ,first: function( ) {
-        var self = this, i, k = self.$k, n = self.$n, item = new Array(k);
+        var self = this, i, k = self.n[1], n = self.n[0], item = new Array(k);
         for (i=0; i<k; i++) item[i] = 0;
         return item;
     }
     
     ,last: function( ) {
-        var self = this, i, k = self.$k, n = self.$n, 
-            item = new Array(k);
+        var self = this, i, k = self.n[1], n = self.n[0], item = new Array(k);
         for (i=0; i<k; i++) item[i] = n-1;
         return item;
     }
@@ -2040,7 +2075,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
          }
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
-        ,rand: function( n, k, m, total ) {
+        ,rand: function( n, total ) {
             var p, parts, partition, tot = total ? total : this.count(n),
                 dice = Abacus.rint(1, n), nparts
             ;
@@ -2076,12 +2111,11 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return partition;
         }
         ,fromStochasticMatrix: function( P, n ) {
-            var partition = [], 
-                used = new Array(n), 
-                i, dice, cumul, sum, notfound;
+            var partition = [], used = new Array(n), 
+                i, dice, cumul, summa, notfound;
             for (i=0; i<n; i++) used[i] = 0;
-            sum = 0;
-            while ( sum < n )
+            summa = 0;
+            while ( summa < n )
             {
                 dice = Abacus.rnd( );
                 cumul = 0;
@@ -2090,10 +2124,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 {
                     if ( cumul < dice && dice <= cumul+P[i] )
                     {
-                        if ( sum+i+1 <= n )
+                        if ( summa+i+1 <= n )
                         {
                             used[i]++;
-                            sum += i+1;
+                            summa += i+1;
                         }
                         notfound = false;
                         break;
@@ -2103,10 +2137,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 
                 if ( notfound ) return [n]; // probabilities dont add up, return default partition
                 
-                if ( sum+1 === n ) // just one left
+                if ( summa+1 === n ) // just one left
                 {
                     used[0]++;
-                    sum += 1;
+                    summa += 1;
                 }
             }
             for (i=n-1; i>=0; i--)
@@ -2119,7 +2153,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,adjacent: function( offset, item, n ) {
             if ( item )
             {
-                var i, c, p1, p2, sum, rem, 
+                var i, c, p1, p2, summa, rem, 
                     next = item.slice( );
                 
                 if ( -1 === offset )
@@ -2134,8 +2168,8 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                         p1 = next[i]-1;
                         next = next.slice(0, i+1);
                         next[ i ] = p1;
-                        sum = next.reduce(summation, 0);
-                        rem = n-sum;
+                        summa = sum( next );
+                        rem = n-summa;
                         while ( rem > 0 )
                         {
                             p2 = rem;
@@ -2163,14 +2197,12 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     if ( next[0] < n )
                     {
                         c = next.length;
-                        sum = new Array(c);
-                        for (i=0; i<c; i++) sum[i] = next[i] + (i?sum[i-1]:0);
                         i = c-1; if (i>0) i--;
                         while (i>0 && next[i] === next[i-1]) i--;
                         next[i]++;
-                        next = next.slice(0, i+1);
-                        sum = next.reduce(summation, 0);
-                        rem = n-sum;
+                        next = next.slice( 0, i+1 );
+                        summa = sum( next );
+                        rem = n-summa;
                         while ( rem > 0 )
                         {
                             next.push(1);
@@ -2238,14 +2270,14 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     }
     
     ,first: function( ) {
-        var self = this, i, n = self.$n, item = new Array(n); 
+        var self = this, i, n = self.n, item = new Array(n); 
         for (i=0; i<n; i++) item[i] = 1;
         return item;
     }
     
     ,last: function( ) {
         var self = this;
-        return [ self.$n ]; 
+        return [ self.n ]; 
     }
     
     ,next: CombinatorialIterator[PROTO].adjacentNext
@@ -2261,11 +2293,13 @@ RestrictedPartition = Abacus.RestrictedPartition = Class(CombinatorialIterator, 
     constructor: function RestrictedPartition( n, k, m ) {
         var self = this;
         if ( !(self instanceof RestrictedPartition) ) return new RestrictedPartition(n, k, m);
-        CombinatorialIterator.call(self, n, k, m);
+        CombinatorialIterator.call(self, [n, k, m]);
     }
     
     ,__static__: {
-         count: partitions
+         count: function( n ) {
+             return partitions( n[0], n[1], n[2] );
+         }
         ,index: CombinatorialIterator.index
         ,item: CombinatorialIterator.item
         ,rand: CombinatorialIterator.rand
@@ -2300,7 +2334,7 @@ PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
             }
             return subset;
         }
-        ,rand: function( n, k, m, total ) {
+        ,rand: function( n, total ) {
             var tot = total ? total : (1<<n);
             return this.item( Abacus.rint(0, tot-1) );
         }
@@ -2313,7 +2347,7 @@ PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
     }
     
     ,last: function( ) {
-        var self = this, i, n = self.$n, item = new Array( n ); 
+        var self = this, i, n = self.n, item = new Array( n ); 
         for (i=0; i<n; i++) item[ i ] = n-1-i;
         return item;
     }
@@ -2326,22 +2360,43 @@ PowerSet = Abacus.PowerSet = Class(CombinatorialIterator, {
 Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
-    constructor: function Tensor( dims ) {
+    constructor: function Tensor( /*dims here ..*/ ) {
         var self = this;
-        if ( !(self instanceof Tensor) ) return new Tensor( dims );
-        self.$n = dims.slice( );
-        self.$total = self.constructor.count( self.$n );
-        self.rewind( );
+        if ( !(self instanceof Tensor) ) 
+        {
+            // http://stackoverflow.com/questions/1606797/use-of-apply-with-new-operator-is-this-possible
+            //return new (bind.apply(Tensor, [null].concat(arguments)));
+            self = new Tensor( );
+            if ( arguments.length )
+            {
+                CombinatorialIterator.call(self, slice.call( arguments ));
+            }
+            else
+            {
+                self.n = [];
+                self.$total = 0;
+            }
+            return self;
+        }
+        if ( arguments.length )
+        {
+            CombinatorialIterator.call(self, slice.call( arguments ));
+        }
+        else
+        {
+            self.n = [];
+            self.$total = 0;
+        }
     }
     
     ,__static__: {
          fromStochasticMatrix: NotImplemented
-        ,count: function( dims ) {
-             if ( !dims || !dims.length ) return 0;
-             return product( dims );
+        ,count: function( n ) {
+             if ( !n || !n.length ) return 0;
+             return product( n );
         }
-        ,index: function( tensor, dims ) { 
-            var index, d = dims, nd = d.length, i;
+        ,index: function( tensor, n ) { 
+            var index, d = n, nd = d.length, i;
             if ( !nd ) return -1;
             for (index=0,i=0; i<nd; i++)
             {
@@ -2349,9 +2404,9 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             }
             return index;
         }
-        ,item: function( index, dims ) { 
+        ,item: function( index, n ) { 
             var r, l, i, t, tensor,
-                d = dims, nd = d.length;
+                d = n, nd = d.length;
             
             if ( !nd ) return [ ];
             
@@ -2363,9 +2418,9 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             }
             return tensor;
         }
-        ,rand: function( dims, a1, a2, total ) {
-            var tot = total ? total : this.count( dims );
-            return this.item( Abacus.rint(0, tot-1), dims );
+        ,rand: function( n, total ) {
+            var tot = total ? total : this.count( n );
+            return this.item( Abacus.rint(0, tot-1), n );
         }
         ,adjacent: CombinatorialIterator.adjacent
         ,product: kronecker
@@ -2389,15 +2444,16 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
     }
     
     ,stochastic: NotImplemented
+    ,stochastic2: NotImplemented
     
     ,first: function( ) {
-        var self = this, i, nd = self.$n.length, tensor = new Array( nd );
+        var self = this, i, nd = self.n.length, tensor = new Array( nd );
         for (i=0; i<nd; i++) tensor[ i ] = 0;
         return tensor;
     }
     
     ,last: function( ) {
-        var self = this, i, d = self.$n, nd = d.length, tensor = new Array( nd );
+        var self = this, i, d = self.n, nd = d.length, tensor = new Array( nd );
         for (i=0; i<nd; i++) tensor[ i ] = d[ i ]-1;
         return tensor;
     }

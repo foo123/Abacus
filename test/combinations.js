@@ -29,7 +29,7 @@ echo(comb.total());
 
 echo('comb.rewind()');
 /*comb.rewind();
-while (comb.hasNext())echo([c=comb.next(), p=Abacus.Combination.index(c,6, 3), Abacus.Combination.item(p,6, 3) ]);*/
+while (comb.hasNext())echo([c=comb.next(), p=Abacus.Combination.index(c,[6, 3]), Abacus.Combination.item(p,[6, 3]) ]);*/
 comb.rewind();
 while (comb.hasNext())echo(comb.next());
 
@@ -65,8 +65,8 @@ comb.dispose();
 echo('choose from array, using a combination');
 echo('Abacus.Combination.choose(["a","b","c"], [1,2])');
 echo(Abacus.Combination.choose(["a","b","c"], [1,2]));
-echo('Abacus.Combination.complement([0,1,3], 6, 3)');
-echo(Abacus.Combination.complement([0,1,3], 6, 3));
+echo('Abacus.Combination.complement([0,1,3], 6)');
+echo(Abacus.Combination.complement([0,1,3], 6));
 //
 //sample  output:
 //["b","c"]
@@ -75,17 +75,17 @@ echo(Abacus.Combination.complement([0,1,3], 6, 3));
 
 // combination to matrix
 echo('combination to matrix');
-echo('Abacus.Combination.toMatrix([0,2,5], 6, 3)');
-echo(Abacus.Combination.toMatrix([0,2,5], 6, 3));
+echo('Abacus.Combination.toMatrix([0,2,5], [6, 3])');
+echo(Abacus.Combination.toMatrix([0,2,5], [6, 3]));
 echo('Abacus.Combination.fromMatrix([ [ 1, 0, 0, 0, 0, 0 ],\
   [ 0, 0, 1, 0, 0, 0 ],\
   [ 0, 0, 0, 0, 0, 1 ],\
   [ 0, 0, 0, 0, 0, 0 ],\
   [ 0, 0, 0, 0, 0, 0 ],\
-  [ 0, 0, 0, 0, 0, 0 ] ], 6, 3)');
+  [ 0, 0, 0, 0, 0, 0 ] ], [6, 3])');
 echo(Abacus.Combination.fromMatrix([ [ 1, 0, 0, 0, 0, 0 ],
   [ 0, 0, 1, 0, 0, 0 ],
   [ 0, 0, 0, 0, 0, 1 ],
   [ 0, 0, 0, 0, 0, 0 ],
   [ 0, 0, 0, 0, 0, 0 ],
-  [ 0, 0, 0, 0, 0, 0 ] ], 6, 3));
+  [ 0, 0, 0, 0, 0, 0 ] ], [6, 3]));

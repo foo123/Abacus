@@ -55,29 +55,29 @@ comb.forward()
 [ 0, 1, 3 ]
 [ 0, 1, 2 ]
 comb.random()
-[ 1, 2, 3 ]
+[ 1, 2, 4 ]
 get combinations in unique random order
 comb.randomise()
 while(comb.hasRandomNext()) echo(comb.randomNext())
-[ 1, 2, 5 ]
+[ 2, 4, 5 ]
+[ 2, 3, 4 ]
+[ 0, 4, 5 ]
+[ 0, 3, 4 ]
 [ 0, 3, 5 ]
+[ 1, 3, 5 ]
+[ 1, 2, 5 ]
+[ 0, 1, 3 ]
+[ 0, 1, 5 ]
 [ 0, 2, 3 ]
-[ 0, 2, 4 ]
+[ 1, 3, 4 ]
 [ 0, 1, 4 ]
 [ 3, 4, 5 ]
-[ 0, 1, 3 ]
-[ 1, 2, 3 ]
-[ 2, 3, 4 ]
-[ 1, 2, 4 ]
-[ 0, 3, 4 ]
-[ 2, 3, 5 ]
-[ 2, 4, 5 ]
-[ 0, 1, 5 ]
-[ 0, 4, 5 ]
-[ 1, 3, 4 ]
 [ 1, 4, 5 ]
+[ 2, 3, 5 ]
+[ 1, 2, 4 ]
+[ 0, 2, 4 ]
+[ 1, 2, 3 ]
 [ 0, 2, 5 ]
-[ 1, 3, 5 ]
 [ 0, 1, 2 ]
 get just last 5 combinations
 comb.range(-5,-1)
@@ -89,15 +89,15 @@ comb.dispose()
 choose from array, using a combination
 Abacus.Combination.choose(["a","b","c"], [1,2])
 [ 'b', 'c' ]
-Abacus.Combination.complement([0,1,3], 6, 3)
+Abacus.Combination.complement([0,1,3], 6)
 [ 2, 4, 5 ]
 combination to matrix
-Abacus.Combination.toMatrix([0,2,5], 6, 3)
+Abacus.Combination.toMatrix([0,2,5], [6, 3])
 [ [ 1, 0, 0, 0, 0, 0 ],
   [ 0, 0, 1, 0, 0, 0 ],
   [ 0, 0, 0, 0, 0, 1 ],
   [ 0, 0, 0, 0, 0, 0 ],
   [ 0, 0, 0, 0, 0, 0 ],
   [ 0, 0, 0, 0, 0, 0 ] ]
-Abacus.Combination.fromMatrix([ [ 1, 0, 0, 0, 0, 0 ],  [ 0, 0, 1, 0, 0, 0 ],  [ 0, 0, 0, 0, 0, 1 ],  [ 0, 0, 0, 0, 0, 0 ],  [ 0, 0, 0, 0, 0, 0 ],  [ 0, 0, 0, 0, 0, 0 ] ], 6, 3)
+Abacus.Combination.fromMatrix([ [ 1, 0, 0, 0, 0, 0 ],  [ 0, 0, 1, 0, 0, 0 ],  [ 0, 0, 0, 0, 0, 1 ],  [ 0, 0, 0, 0, 0, 0 ],  [ 0, 0, 0, 0, 0, 0 ],  [ 0, 0, 0, 0, 0, 0 ] ], [6, 3])
 [ 0, 2, 5 ]

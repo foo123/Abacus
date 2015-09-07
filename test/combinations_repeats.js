@@ -25,7 +25,7 @@ echo(comb.total());
 
 echo('comb.rewind()');
 /*comb.rewind();
-while (comb.hasNext()) echo([c=comb.next(),p=Abacus.CombinationRepeat.index(c,6,3),Abacus.CombinationRepeat.item(p,6,3)]);*/
+while (comb.hasNext()) echo([c=comb.next(),p=Abacus.CombinationRepeat.index(c,[6,3]),Abacus.CombinationRepeat.item(p,[6,3])]);*/
 comb.rewind();
 while (comb.hasNext()) echo(comb.next());
 

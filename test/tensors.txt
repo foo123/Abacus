@@ -9,7 +9,7 @@ generate all combinatorial objects without storing all of them in memory at once
 
 Abacus.Tensors
 ---
-t = Abacus.Tensor([1,2,3])
+t = Abacus.Tensor(1,2,3)
 t.total()
 6
 t.next()
@@ -37,14 +37,14 @@ t.random()
 get tensors in unique random order
 t.randomise()
 while(t.hasRandomNext()) echo(t.randomNext())
-[ 0, 0, 2 ]
-[ 0, 0, 1 ]
-[ 0, 0, 0 ]
-[ 0, 1, 1 ]
-[ 0, 1, 2 ]
 [ 0, 1, 0 ]
+[ 0, 1, 1 ]
+[ 0, 0, 1 ]
+[ 0, 0, 2 ]
+[ 0, 0, 0 ]
+[ 0, 1, 2 ]
 t.dispose()
-t = Abacus.Tensor([1,2,3])
+t = Abacus.Tensor(1,2,3)
 get just last 3 tensors
 t.range(-3,-1)
 [ [ 0, 1, 0 ], [ 0, 1, 1 ], [ 0, 1, 2 ] ]

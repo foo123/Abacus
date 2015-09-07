@@ -113,34 +113,34 @@ while (perm.hasPrev()) echo(perm.prev())
 [ [ 0, 1, 3, 2 ], 1 ]
 [ [ 0, 1, 2, 3 ], 0 ]
 perm.random()
-[ 1, 0, 3, 2 ]
+[ 3, 0, 1, 2 ]
 get permutations in unique random order
 perm.randomise()
 while(perm.hasRandomNext()) echo(perm.randomNext())
-[ 2, 0, 3, 1 ]
-[ 1, 3, 2, 0 ]
 [ 0, 3, 1, 2 ]
-[ 0, 2, 1, 3 ]
-[ 0, 2, 3, 1 ]
-[ 1, 2, 3, 0 ]
-[ 2, 0, 1, 3 ]
-[ 1, 2, 0, 3 ]
-[ 2, 1, 0, 3 ]
-[ 0, 3, 2, 1 ]
 [ 0, 1, 3, 2 ]
-[ 3, 0, 1, 2 ]
-[ 3, 0, 2, 1 ]
-[ 1, 3, 0, 2 ]
-[ 3, 1, 2, 0 ]
-[ 2, 1, 3, 0 ]
-[ 2, 3, 1, 0 ]
 [ 1, 0, 3, 2 ]
-[ 1, 0, 2, 3 ]
+[ 2, 0, 3, 1 ]
+[ 2, 1, 0, 3 ]
 [ 3, 2, 0, 1 ]
-[ 2, 3, 0, 1 ]
+[ 3, 0, 1, 2 ]
+[ 2, 1, 3, 0 ]
 [ 3, 1, 0, 2 ]
-[ 0, 1, 2, 3 ]
+[ 1, 0, 2, 3 ]
+[ 1, 2, 3, 0 ]
+[ 0, 2, 3, 1 ]
+[ 2, 3, 1, 0 ]
+[ 3, 1, 2, 0 ]
+[ 3, 0, 2, 1 ]
 [ 3, 2, 1, 0 ]
+[ 2, 0, 1, 3 ]
+[ 0, 3, 2, 1 ]
+[ 1, 2, 0, 3 ]
+[ 0, 2, 1, 3 ]
+[ 1, 3, 0, 2 ]
+[ 1, 3, 2, 0 ]
+[ 0, 1, 2, 3 ]
+[ 2, 3, 0, 1 ]
 perm.dispose()
 perm = Abacus.Permutation(15)
 perm.total()
@@ -163,7 +163,7 @@ permute an array, using a permutation
 Abacus.Permutation.permute(["a","b","c"], [2,0,1])
 [ 'c', 'a', 'b' ]
 Abacus.Permutation.shuffle(["a","b","c"])
-[ 'b', 'c', 'a' ]
+[ 'a', 'b', 'c' ]
 compute inverse permutation
 Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)
 [ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
@@ -186,26 +186,26 @@ Abacus.Permutation.toMatrix([2,0,1], 3)
 permutation matrix to permutation
 Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ], 3)
 [ 2, 0, 1 ]
-permutation from stochastic matrix
+permutation from singly-stochastic matrix
 P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]
 p=Abacus.Permutation(3)
 p.stochastic(P)
-[ 1, 0, 2 ]
-[ 1, 0, 2 ]
+[ 1, 2, 0 ]
 [ 1, 0, 2 ]
 [ 1, 2, 0 ]
 [ 1, 0, 2 ]
+[ 1, 2, 0 ]
 [ 1, 0, 2 ]
-permutation from bi-stochastic matrix
+permutation from doubly-stochastic matrix
 P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]
 p=Abacus.Permutation(3)
-p.bistochastic(P)
+p.stochastic2(P)
+[ 1, 0, 2 ]
+[ 1, 2, 0 ]
 [ 1, 2, 0 ]
 [ 1, 0, 2 ]
 [ 1, 2, 0 ]
 [ 1, 0, 2 ]
-[ 1, 0, 2 ]
-[ 1, 2, 0 ]
 ```
 
 ###Tests

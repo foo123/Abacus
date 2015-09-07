@@ -190,8 +190,8 @@ echo(Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]/*[ 
 //output:
 //[2,0,1]
 
-// permutation from stochastic matrix
-echo('permutation from stochastic matrix');
+// permutation from singly-stochastic matrix
+echo('permutation from singly-stochastic matrix');
 echo('P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]');
 echo('p=Abacus.Permutation(3)');
 echo('p.stochastic(P)');
@@ -210,15 +210,15 @@ for(var i=1; i<=6; i++)
 //[1,2,0]
 // ..
 
-// permutation from bi-stochastic matrix
-echo('permutation from bi-stochastic matrix');
+// permutation from doubly-stochastic matrix
+echo('permutation from doubly-stochastic matrix');
 echo('P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]');
 echo('p=Abacus.Permutation(3)');
-echo('p.bistochastic(P)');
+echo('p.stochastic2(P)');
 var P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ],p=Abacus.Permutation(3);
 for(var i=1; i<=6; i++)
 {
-    echo(p.bistochastic(P));
+    echo(p.stochastic2(P));
 }
 //
 //sample output:
