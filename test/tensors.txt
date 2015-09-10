@@ -33,15 +33,15 @@ while (t.hasPrev()) echo(t.prev())
 [ [ 0, 0, 1 ], 1 ]
 [ [ 0, 0, 0 ], 0 ]
 t.random()
-[ 0, 1, 1 ]
+[ 0, 0, 1 ]
 get tensors in unique random order
 t.randomise()
 while(t.hasRandomNext()) echo(t.randomNext())
 [ 0, 1, 0 ]
-[ 0, 1, 1 ]
 [ 0, 0, 1 ]
 [ 0, 0, 2 ]
 [ 0, 0, 0 ]
+[ 0, 1, 1 ]
 [ 0, 1, 2 ]
 t.dispose()
 t = Abacus.Tensor(1,2,3)

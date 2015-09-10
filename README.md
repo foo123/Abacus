@@ -231,7 +231,7 @@ most algorithms are linear (or log-linear) time algorithms and the author hopes 
 * add `Derangement`, `RestrictedPartition` [IN PROGRESS]
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) [DONE, see reference]
-* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (`Partition.random` is **not unbiased** right now, in progress)
+* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (methods use unbiased sampling algorithms, however results in certain cases might depend on quality of RPNGs)
 * add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, and so on (TODO)
 * add `Fibonacci`, `Catalan`, `Bell` number computations (TODO)
 * add generic number field computations e.g `Integer`, `Rational`, `Real`, `Polynomial` etc.. [IN PROGRESS]
