@@ -1,6 +1,9 @@
 # Abacus
 A combinatorics library for Node/JS, PHP, Python, ActionScript
 
+**update in progress do not use**
+
+
 (php/python implementations in progress)
 
 **version 0.1**
@@ -218,21 +221,22 @@ see: `test/test.bat`
 * `test/powersets.js`
 * `test/partitions.js`
 * `test/tensors.js`
+* `test/tuples.js`
 
 
 ###Performance
 
-most algorithms are linear (or log-linear) time algorithms and the author hopes to remain so
+most algorithms are linear `O(n)` (or log-linear `O(nlgn)`) time algorithms and the author hopes to remain so
 
 
 ###Todo
 
-* add ranking/unranking algorithms and associated methods (preferably of O(n) or O(nlgn) complexity) both for lexicographic order, random order and reverse-lexicographic order [ALMOST DONE]
-* add `Derangement`, `RestrictedPartition` [IN PROGRESS]
+* support efficient ranking/unranking algorithms and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for  `LEX`, `COLEX`, `REVLEX`, `REVCOLEX`, `RANDOM` orderings seamlessly and uniformly [ALMOST DONE, NEW FEATURE]
+* allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference]
+* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * add `Combinadic`, `Factoradic` transformations [DONE]
-* allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backracking) [DONE, see reference]
-* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (methods use unbiased sampling algorithms, however results in certain cases might depend on quality of RPNGs)
-* add support for general *rule-based* and/or *structure-based* Combinatorial objects like `Grammar`, and so on (TODO)
+* add `Derangement`, `RestrictedPartition` [IN PROGRESS]
 * add `Fibonacci`, `Catalan`, `Bell` number computations (TODO)
-* add generic number field computations e.g `Integer`, `Rational`, `Real`, `Polynomial` etc.. [IN PROGRESS]
-* add support for `biginteger` computations like factorials etc??
+* add support for general *rule-based* `Combinatorial` objects like `Grammar`, and so on (TODO)
+* add magic squares algorithms [IN PROGRESS]
+* support `biginteger` computations e.g factorials??

@@ -42,9 +42,11 @@ echo(pset.next());
 //true
 //[0]
 
+echo('pset.rewind()');
+echo('while(pset.hasNext()) echo(pset.next())');
+pset.rewind();
+while(pset.hasNext()) echo(pset.next());
 
-echo('pset.all()');
-echo(pset.all());
 //
 //output (in index-lexicographic order):
 //[
@@ -74,10 +76,10 @@ echo(pset.random());
 //[0,2]
 
 echo('get subsets in unique random order')
-echo('pset.randomise()');
-echo('while(pset.hasRandomNext()) echo(pset.randomNext())');
-pset.randomise();
-while(pset.hasRandomNext()) echo(pset.randomNext());
+echo('pset.order("random")');
+echo('while(pset.hasNext()) echo(pset.next())');
+pset.order("random");
+while(pset.hasNext()) echo(pset.next());
 
 
 

@@ -23,28 +23,22 @@ perm = Abacus.Permutation(4);
 echo('perm.total()'); 
 echo(perm.total());
 //
-//output 6 = 3!:
-//6
+//output 24 = 4!:
+//24
 
 echo('perm.next()'); 
 echo(perm.next());
 //
 //output:
-//[0,1,2]
+//[0,1,2,3]
 
 
 echo('perm.hasNext()');
 echo(perm.hasNext());
 echo('perm.next()');
 echo(perm.next());
-//
-//output:
-//true
-//[0,2,1]
 
 
-/*echo('perm.all()');
-echo(perm.all());*/
 perm.rewind();
 while (perm.hasNext()) 
     echo([
@@ -54,22 +48,15 @@ while (perm.hasNext())
     ]);
 //
 //output (in index-lexicographic order):
-//[
-//[0,1,2]
-//[0,2,1]
-//[1,0,2]
-//[1,2,0]
-//[2,0,1]
-//[2,1,0]
-//]
 
-echo('perm.forward()');
-echo('while (perm.hasPrev()) echo(perm.prev())');
-perm.forward();
-while (perm.hasPrev()) 
+echo('perm.order("revlex")');
+echo('while (perm.hasNext()) echo(perm.next())');
+perm.order("revlex");
+while (perm.hasNext()) 
     echo([
-    p=perm.prev(), 
-    c=Abacus.Permutation.index(p,4)
+    p=perm.next(), 
+    c=Abacus.Permutation.index(p,4,"revlex"),
+    Abacus.Permutation.item(c,4,"revlex")
     ]);
 //
 // output
