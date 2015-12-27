@@ -6,7 +6,7 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Combinations');
+echo('Abacus.Combinations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Combinations
@@ -15,6 +15,8 @@ o = Abacus.Combination(6,3);
 
 echo('o.total()'); 
 echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
 
 echo('o.next()'); 
 echo(o.next());
@@ -28,6 +30,10 @@ echo(o.next());
 echo('o.rewind()');
 o.rewind();
 while (o.hasNext()) echo (o.next());
+
+echo('o.forward()');
+o.forward();
+while (o.hasPrev()) echo (o.prev());
 
 echo('o.order("revlex")');
 o.order("revlex");

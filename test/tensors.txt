@@ -1,8 +1,9 @@
-Abacus.Tensors
+Abacus.Tensors (VERSION = 0.1.0)
 ---
 o = Abacus.Tensor(1,2,3)
 o.total()
 6
+default order is "lex", lexicographic-order
 o.next()
 [ 0, 0, 0 ]
 o.hasNext()
@@ -16,6 +17,13 @@ o.rewind()
 [ 0, 1, 0 ]
 [ 0, 1, 1 ]
 [ 0, 1, 2 ]
+o.forward()
+[ 0, 1, 2 ]
+[ 0, 1, 1 ]
+[ 0, 1, 0 ]
+[ 0, 0, 2 ]
+[ 0, 0, 1 ]
+[ 0, 0, 0 ]
 o.order("revlex")
 [ 0, 1, 2 ]
 [ 0, 1, 1 ]
@@ -40,12 +48,12 @@ o.order("revcolex")
 o.random()
 [ 0, 0, 1 ]
 o.order("random")
+[ 0, 1, 1 ]
 [ 0, 0, 1 ]
 [ 0, 0, 2 ]
-[ 0, 1, 2 ]
 [ 0, 1, 0 ]
-[ 0, 1, 1 ]
 [ 0, 0, 0 ]
+[ 0, 1, 2 ]
 o.order("colex").range(-5, -1)
 [ [ 1, 0, 0 ], [ 2, 0, 0 ], [ 0, 1, 0 ], [ 1, 1, 0 ], [ 2, 1, 0 ] ]
 o.dispose()

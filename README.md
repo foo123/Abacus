@@ -50,11 +50,12 @@ Abacus combinatorics use an Iterator pattern to succesively and consistently
 generate all combinatorial objects without storing all of them in memory at once
 
 
-Abacus.Combinations
+Abacus.Combinations (VERSION = 0.1.0)
 ---
 o = Abacus.Combination(6,3)
 o.total()
 20
+default order is "lex", lexicographic-order
 o.next()
 [ 0, 1, 2 ]
 o.hasNext()
@@ -82,6 +83,27 @@ o.rewind()
 [ 2, 3, 5 ]
 [ 2, 4, 5 ]
 [ 3, 4, 5 ]
+o.forward()
+[ 3, 4, 5 ]
+[ 2, 4, 5 ]
+[ 2, 3, 5 ]
+[ 2, 3, 4 ]
+[ 1, 4, 5 ]
+[ 1, 3, 5 ]
+[ 1, 3, 4 ]
+[ 1, 2, 5 ]
+[ 1, 2, 4 ]
+[ 1, 2, 3 ]
+[ 0, 4, 5 ]
+[ 0, 3, 5 ]
+[ 0, 3, 4 ]
+[ 0, 2, 5 ]
+[ 0, 2, 4 ]
+[ 0, 2, 3 ]
+[ 0, 1, 5 ]
+[ 0, 1, 4 ]
+[ 0, 1, 3 ]
+[ 0, 1, 2 ]
 o.order("revlex")
 [ 3, 4, 5 ]
 [ 2, 4, 5 ]
@@ -146,28 +168,28 @@ o.order("revcolex")
 [ 0, 1, 3 ]
 [ 0, 1, 2 ]
 o.random()
-[ 3, 4, 5 ]
+[ 1, 3, 5 ]
 o.order("random")
-[ 1, 2, 5 ]
-[ 1, 3, 4 ]
-[ 0, 3, 5 ]
+[ 0, 1, 3 ]
 [ 1, 4, 5 ]
 [ 1, 3, 5 ]
-[ 0, 3, 4 ]
-[ 0, 1, 5 ]
-[ 2, 4, 5 ]
-[ 2, 3, 4 ]
+[ 0, 3, 5 ]
+[ 1, 2, 5 ]
 [ 0, 4, 5 ]
+[ 0, 2, 3 ]
+[ 1, 2, 3 ]
+[ 0, 2, 4 ]
 [ 1, 2, 4 ]
 [ 3, 4, 5 ]
-[ 0, 1, 3 ]
-[ 0, 2, 4 ]
+[ 2, 3, 4 ]
+[ 0, 2, 5 ]
+[ 0, 1, 5 ]
+[ 2, 4, 5 ]
+[ 2, 3, 5 ]
 [ 0, 1, 2 ]
 [ 0, 1, 4 ]
-[ 0, 2, 5 ]
-[ 1, 2, 3 ]
-[ 2, 3, 5 ]
-[ 0, 2, 3 ]
+[ 0, 3, 4 ]
+[ 1, 3, 4 ]
 o.order("colex").range(-5, -1)
 [ [ 2, 3, 5 ], [ 0, 4, 5 ], [ 1, 4, 5 ], [ 2, 4, 5 ], [ 3, 4, 5 ] ]
 o.dispose()
@@ -181,9 +203,10 @@ see: `test/test.bat`
 * `test/combinations.js`
 * `test/combinations_repeats.js`
 * `test/powersets.js`
-* `test/partitions.js`
+* `test/partitions.js` **changes, in progress**
 * `test/tensors.js`
 * `test/tuples.js`
+* `test/magic_squares.js` **in progress**
 
 
 ###Performance
@@ -198,8 +221,8 @@ most algorithms are linear `O(n)` (or log-linear `O(nlgn)`) time algorithms, plu
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * add `Combinadic`, `Factoradic` transformations [DONE]
-* add `Derangement`, `RestrictedPartition` [IN PROGRESS]
 * add magic squares algorithms [IN PROGRESS, NEW FEATURE]
-* support generic *rule-based* `Combinatorial` objects like `Grammar`, and so on (TODO)
+* add `Derangement`, `RestrictedPartition` [IN PROGRESS]
+* add generic *rule-based* `Combinatorial` objects like `Grammar` (TODO)
 * add `Fibonacci`, `Catalan`, `Bell` number computations (TODO?)
 * support `biginteger` computations e.g factorials??

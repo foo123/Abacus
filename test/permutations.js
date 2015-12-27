@@ -6,7 +6,7 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Permutations');
+echo('Abacus.Permutations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Permutations
@@ -15,6 +15,8 @@ o = Abacus.Permutation(4);
 
 echo('o.total()'); 
 echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
 
 echo('o.next()'); 
 echo(o.next());
@@ -28,6 +30,10 @@ echo(o.next());
 echo('o.rewind()');
 o.rewind();
 while (o.hasNext()) echo (o.next());
+
+echo('o.forward()');
+o.forward();
+while (o.hasPrev()) echo (o.prev());
 
 echo('o.order("revlex")');
 o.order("revlex");
@@ -52,11 +58,10 @@ while (o.hasNext()) echo (o.next());
 echo('o.order("colex").range(-5, -1)');
 echo (o.order("colex").range(-5, -1));
 
-/*
-echo('o.order("stochastic",[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ])');
-o.order("stochastic", [ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], true);
-while (o.hasNext()) echo (o.next());
-*/
+
+echo('o.order("stochastic",[ [ 0, 1, 0, 0 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ] ]).range(0, 9)');
+echo(o.order("stochastic", [ [ 0, 1, 0, 0 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ] ]).range(0, 9));
+
 
 // dispose
 echo('o.dispose()');
