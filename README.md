@@ -42,7 +42,7 @@ Abacus uses (for the most part) self-contained and standalone methods, so they c
 
 ###Example API
 
-**output** (see `test/permutations.js`)
+**output** (see `test/combinations.js`)
 
 ```text
 Note: Due to the large number of combinatorial samples,
@@ -50,165 +50,127 @@ Abacus combinatorics use an Iterator pattern to succesively and consistently
 generate all combinatorial objects without storing all of them in memory at once
 
 
-
-
-
-
-Abacus.Permutations
+Abacus.Combinations
 ---
-perm = Abacus.Permutation(4)
-perm.total()
-24
-perm.next()
-[ 0, 1, 2, 3 ]
-perm.hasNext()
+o = Abacus.Combination(6,3)
+o.total()
+20
+o.next()
+[ 0, 1, 2 ]
+o.hasNext()
 true
-perm.next()
-[ 0, 1, 3, 2 ]
-[ [ 0, 1, 2, 3 ], 0, [ 0, 1, 2, 3 ] ]
-[ [ 0, 1, 3, 2 ], 1, [ 0, 1, 3, 2 ] ]
-[ [ 0, 2, 1, 3 ], 2, [ 0, 2, 1, 3 ] ]
-[ [ 0, 2, 3, 1 ], 3, [ 0, 2, 3, 1 ] ]
-[ [ 0, 3, 1, 2 ], 4, [ 0, 3, 1, 2 ] ]
-[ [ 0, 3, 2, 1 ], 5, [ 0, 3, 2, 1 ] ]
-[ [ 1, 0, 2, 3 ], 6, [ 1, 0, 2, 3 ] ]
-[ [ 1, 0, 3, 2 ], 7, [ 1, 0, 3, 2 ] ]
-[ [ 1, 2, 0, 3 ], 8, [ 1, 2, 0, 3 ] ]
-[ [ 1, 2, 3, 0 ], 9, [ 1, 2, 3, 0 ] ]
-[ [ 1, 3, 0, 2 ], 10, [ 1, 3, 0, 2 ] ]
-[ [ 1, 3, 2, 0 ], 11, [ 1, 3, 2, 0 ] ]
-[ [ 2, 0, 1, 3 ], 12, [ 2, 0, 1, 3 ] ]
-[ [ 2, 0, 3, 1 ], 13, [ 2, 0, 3, 1 ] ]
-[ [ 2, 1, 0, 3 ], 14, [ 2, 1, 0, 3 ] ]
-[ [ 2, 1, 3, 0 ], 15, [ 2, 1, 3, 0 ] ]
-[ [ 2, 3, 0, 1 ], 16, [ 2, 3, 0, 1 ] ]
-[ [ 2, 3, 1, 0 ], 17, [ 2, 3, 1, 0 ] ]
-[ [ 3, 0, 1, 2 ], 18, [ 3, 0, 1, 2 ] ]
-[ [ 3, 0, 2, 1 ], 19, [ 3, 0, 2, 1 ] ]
-[ [ 3, 1, 0, 2 ], 20, [ 3, 1, 0, 2 ] ]
-[ [ 3, 1, 2, 0 ], 21, [ 3, 1, 2, 0 ] ]
-[ [ 3, 2, 0, 1 ], 22, [ 3, 2, 0, 1 ] ]
-[ [ 3, 2, 1, 0 ], 23, [ 3, 2, 1, 0 ] ]
-perm.forward()
-while (perm.hasPrev()) echo(perm.prev())
-[ [ 3, 2, 1, 0 ], 23 ]
-[ [ 3, 2, 0, 1 ], 22 ]
-[ [ 3, 1, 2, 0 ], 21 ]
-[ [ 3, 1, 0, 2 ], 20 ]
-[ [ 3, 0, 2, 1 ], 19 ]
-[ [ 3, 0, 1, 2 ], 18 ]
-[ [ 2, 3, 1, 0 ], 17 ]
-[ [ 2, 3, 0, 1 ], 16 ]
-[ [ 2, 1, 3, 0 ], 15 ]
-[ [ 2, 1, 0, 3 ], 14 ]
-[ [ 2, 0, 3, 1 ], 13 ]
-[ [ 2, 0, 1, 3 ], 12 ]
-[ [ 1, 3, 2, 0 ], 11 ]
-[ [ 1, 3, 0, 2 ], 10 ]
-[ [ 1, 2, 3, 0 ], 9 ]
-[ [ 1, 2, 0, 3 ], 8 ]
-[ [ 1, 0, 3, 2 ], 7 ]
-[ [ 1, 0, 2, 3 ], 6 ]
-[ [ 0, 3, 2, 1 ], 5 ]
-[ [ 0, 3, 1, 2 ], 4 ]
-[ [ 0, 2, 3, 1 ], 3 ]
-[ [ 0, 2, 1, 3 ], 2 ]
-[ [ 0, 1, 3, 2 ], 1 ]
-[ [ 0, 1, 2, 3 ], 0 ]
-perm.random()
-[ 3, 0, 1, 2 ]
-get permutations in unique random order
-perm.randomise()
-while(perm.hasRandomNext()) echo(perm.randomNext())
-[ 0, 3, 1, 2 ]
-[ 0, 1, 3, 2 ]
-[ 1, 0, 3, 2 ]
-[ 2, 0, 3, 1 ]
-[ 2, 1, 0, 3 ]
-[ 3, 2, 0, 1 ]
-[ 3, 0, 1, 2 ]
-[ 2, 1, 3, 0 ]
-[ 3, 1, 0, 2 ]
-[ 1, 0, 2, 3 ]
-[ 1, 2, 3, 0 ]
-[ 0, 2, 3, 1 ]
-[ 2, 3, 1, 0 ]
-[ 3, 1, 2, 0 ]
-[ 3, 0, 2, 1 ]
-[ 3, 2, 1, 0 ]
-[ 2, 0, 1, 3 ]
-[ 0, 3, 2, 1 ]
-[ 1, 2, 0, 3 ]
-[ 0, 2, 1, 3 ]
-[ 1, 3, 0, 2 ]
-[ 1, 3, 2, 0 ]
-[ 0, 1, 2, 3 ]
-[ 2, 3, 0, 1 ]
-perm.dispose()
-perm = Abacus.Permutation(15)
-perm.total()
-1307674368000
-get just last 5 permutations
-perm.range(-5,-1)
-[ [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 2, 1 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 0, 2 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ] ]
-get just last 5 permutations in reverse order
-perm.range(-1,-5)
-[ [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 1 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 2, 0 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 0, 2 ],
-  [ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 2, 1 ] ]
-permute an array, using a permutation
-Abacus.Permutation.permute(["a","b","c"], [2,0,1])
-[ 'c', 'a', 'b' ]
-Abacus.Permutation.shuffle(["a","b","c"])
-[ 'a', 'b', 'c' ]
-compute inverse permutation
-Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)
-[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
-factor permutation into cycles
-Abacus.Permutation.toCycles([2,7,5,6,3,0,4,1], 8)
-[ [ 0, 2, 5 ], [ 1, 7 ], [ 3, 6, 4 ] ]
-Abacus.Permutation.toCycles([5,4,1,3,2,0], 6)
-[ [ 0, 5 ], [ 1, 4, 2 ], [ 3 ] ]
-Abacus.Permutation.fromCycles([ [0,5], [1,4,2], [3] ], 6)
-[ 5, 4, 1, 3, 2, 0 ]
-factor permutation into swaps
-Abacus.Permutation.toSwaps([2,7,5,6,3,0,4,1], 8)
-[ [ 0, 5 ], [ 0, 2 ], [ 1, 7 ], [ 3, 4 ], [ 3, 6 ] ]
-permutation from swaps
-Abacus.Permutation.fromSwaps([ [0,5], [0,2], [1,7], [3,4], [3,6] ], 8)
-[ 2, 7, 5, 6, 3, 0, 4, 1 ]
-permutation to permutation matrix
-Abacus.Permutation.toMatrix([2,0,1], 3)
-[ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]
-permutation matrix to permutation
-Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ], 3)
-[ 2, 0, 1 ]
-permutation from singly-stochastic matrix
-P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]
-p=Abacus.Permutation(3)
-p.stochastic(P)
-[ 1, 2, 0 ]
-[ 1, 0, 2 ]
-[ 1, 2, 0 ]
-[ 1, 0, 2 ]
-[ 1, 2, 0 ]
-[ 1, 0, 2 ]
-permutation from doubly-stochastic matrix
-P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]
-p=Abacus.Permutation(3)
-p.stochastic2(P)
-[ 1, 0, 2 ]
-[ 1, 2, 0 ]
-[ 1, 2, 0 ]
-[ 1, 0, 2 ]
-[ 1, 2, 0 ]
-[ 1, 0, 2 ]
+o.next()
+[ 0, 1, 3 ]
+o.rewind()
+[ 0, 1, 2 ]
+[ 0, 1, 3 ]
+[ 0, 1, 4 ]
+[ 0, 1, 5 ]
+[ 0, 2, 3 ]
+[ 0, 2, 4 ]
+[ 0, 2, 5 ]
+[ 0, 3, 4 ]
+[ 0, 3, 5 ]
+[ 0, 4, 5 ]
+[ 1, 2, 3 ]
+[ 1, 2, 4 ]
+[ 1, 2, 5 ]
+[ 1, 3, 4 ]
+[ 1, 3, 5 ]
+[ 1, 4, 5 ]
+[ 2, 3, 4 ]
+[ 2, 3, 5 ]
+[ 2, 4, 5 ]
+[ 3, 4, 5 ]
+o.order("revlex")
+[ 3, 4, 5 ]
+[ 2, 4, 5 ]
+[ 2, 3, 5 ]
+[ 2, 3, 4 ]
+[ 1, 4, 5 ]
+[ 1, 3, 5 ]
+[ 1, 3, 4 ]
+[ 1, 2, 5 ]
+[ 1, 2, 4 ]
+[ 1, 2, 3 ]
+[ 0, 4, 5 ]
+[ 0, 3, 5 ]
+[ 0, 3, 4 ]
+[ 0, 2, 5 ]
+[ 0, 2, 4 ]
+[ 0, 2, 3 ]
+[ 0, 1, 5 ]
+[ 0, 1, 4 ]
+[ 0, 1, 3 ]
+[ 0, 1, 2 ]
+o.order("colex")
+[ 0, 1, 2 ]
+[ 0, 1, 3 ]
+[ 0, 2, 3 ]
+[ 1, 2, 3 ]
+[ 0, 1, 4 ]
+[ 0, 2, 4 ]
+[ 1, 2, 4 ]
+[ 0, 3, 4 ]
+[ 1, 3, 4 ]
+[ 2, 3, 4 ]
+[ 0, 1, 5 ]
+[ 0, 2, 5 ]
+[ 1, 2, 5 ]
+[ 0, 3, 5 ]
+[ 1, 3, 5 ]
+[ 2, 3, 5 ]
+[ 0, 4, 5 ]
+[ 1, 4, 5 ]
+[ 2, 4, 5 ]
+[ 3, 4, 5 ]
+o.order("revcolex")
+[ 3, 4, 5 ]
+[ 2, 4, 5 ]
+[ 1, 4, 5 ]
+[ 0, 4, 5 ]
+[ 2, 3, 5 ]
+[ 1, 3, 5 ]
+[ 0, 3, 5 ]
+[ 1, 2, 5 ]
+[ 0, 2, 5 ]
+[ 0, 1, 5 ]
+[ 2, 3, 4 ]
+[ 1, 3, 4 ]
+[ 0, 3, 4 ]
+[ 1, 2, 4 ]
+[ 0, 2, 4 ]
+[ 0, 1, 4 ]
+[ 1, 2, 3 ]
+[ 0, 2, 3 ]
+[ 0, 1, 3 ]
+[ 0, 1, 2 ]
+o.random()
+[ 3, 4, 5 ]
+o.order("random")
+[ 1, 2, 5 ]
+[ 1, 3, 4 ]
+[ 0, 3, 5 ]
+[ 1, 4, 5 ]
+[ 1, 3, 5 ]
+[ 0, 3, 4 ]
+[ 0, 1, 5 ]
+[ 2, 4, 5 ]
+[ 2, 3, 4 ]
+[ 0, 4, 5 ]
+[ 1, 2, 4 ]
+[ 3, 4, 5 ]
+[ 0, 1, 3 ]
+[ 0, 2, 4 ]
+[ 0, 1, 2 ]
+[ 0, 1, 4 ]
+[ 0, 2, 5 ]
+[ 1, 2, 3 ]
+[ 2, 3, 5 ]
+[ 0, 2, 3 ]
+o.order("colex").range(-5, -1)
+[ [ 2, 3, 5 ], [ 0, 4, 5 ], [ 1, 4, 5 ], [ 2, 4, 5 ], [ 3, 4, 5 ] ]
+o.dispose()
 ```
 
 ###Tests
@@ -226,17 +188,18 @@ see: `test/test.bat`
 
 ###Performance
 
-most algorithms are linear `O(n)` (or log-linear `O(nlgn)`) time algorithms and the author hopes to remain so
+most algorithms are linear `O(n)` (or log-linear `O(nlgn)`) time algorithms, plus statisticaly unbiased, and the author hopes to remain so
 
 
 ###Todo
 
-* support efficient ranking/unranking algorithms and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for  `LEX`, `COLEX`, `REVLEX`, `REVCOLEX`, `RANDOM` orderings seamlessly and uniformly [ALMOST DONE, NEW FEATURE]
-* allow iterator pattern to produce unique and uniform random ordering traversals for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference]
-* make sure the `.random` methods uniformly and unbiasedly sample the combinatorial object space (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
+* support **multiple custom iterator orderings**, i.e  `LEX`, `COLEX`, `REVLEX`, `REVCOLEX`, `RANDOM`, `STOCHASTIC` (where applicable) seamlessly and uniformly [ALMOST DONE, NEW FEATURE]
+* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for  supported orderings [DONE]
+* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above]
+* make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * add `Derangement`, `RestrictedPartition` [IN PROGRESS]
-* add `Fibonacci`, `Catalan`, `Bell` number computations (TODO)
-* add support for general *rule-based* `Combinatorial` objects like `Grammar`, and so on (TODO)
-* add magic squares algorithms [IN PROGRESS]
+* add magic squares algorithms [IN PROGRESS, NEW FEATURE]
+* support generic *rule-based* `Combinatorial` objects like `Grammar`, and so on (TODO)
+* add `Fibonacci`, `Catalan`, `Bell` number computations (TODO?)
 * support `biginteger` computations e.g factorials??

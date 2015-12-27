@@ -4,55 +4,57 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // Note: Due to the large number of combinatorial samples,
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
-var p, c, comb;
+var o;
 
-echo('Note: Due to the large number of combinatorial samples,');
-echo('Abacus combinatorics use an Iterator pattern to succesively and consistently');
-echo('generate all combinatorial objects without storing all of them in memory at once');
-echo("\n\n");
-
-echo("\n\n");
-echo('Abacus.Combinations with Repeats');
+echo('Abacus.CombinationRepeats');
 echo('---');
 
-// Combinations
-echo('comb = Abacus.CombinationRepeat(6, 3)');
-comb = Abacus.CombinationRepeat(6, 3);
+// CombinationRepeats
+echo('o = Abacus.CombinationRepeat(6,3)');
+o = Abacus.CombinationRepeat(6,3);
 
-echo('comb.total()');
-echo(comb.total());
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
 
 
-echo('comb.rewind()');
-/*comb.rewind();
-while (comb.hasNext()) echo([c=comb.next(),p=Abacus.CombinationRepeat.index(c,[6,3]),Abacus.CombinationRepeat.item(p,[6,3])]);*/
-comb.rewind();
-while (comb.hasNext()) echo(comb.next());
+echo('o.rewind()');
+o.rewind();
+while (o.hasNext()) echo (o.next());
 
-echo('comb.forward()');
-comb.forward();
-while (comb.hasPrev()) echo(comb.prev());
+echo('o.order("revlex")');
+o.order("revlex");
+while (o.hasNext()) echo (o.next());
 
-echo('comb.random()');
-echo(comb.random());
-//
-//sample output:
-//[0,2]
+echo('o.order("colex")');
+o.order("colex");
+while (o.hasNext()) echo (o.next());
 
-echo('get combinations in unique random order')
-echo('comb.randomise()');
-echo('while(comb.hasRandomNext()) echo(comb.randomNext())');
-comb.randomise();
-while(comb.hasRandomNext()) echo(comb.randomNext());
+echo('o.order("revcolex")');
+o.order("revcolex");
+while (o.hasNext()) echo (o.next());
 
-echo('get just last 5 combinations'); 
-echo('comb.range(-5,-1)');
-echo(comb.range(-5,-1));
 
-echo('get just last 5 combinations in reverse order'); 
-echo('comb.range(-1,-5)');
-echo(comb.range(-1,-5));
+echo('o.random()');
+echo(o.random());
+
+echo('o.order("random")');
+o.order("random");
+while (o.hasNext()) echo (o.next());
+
+echo('o.order("colex").range(-5, -1)');
+echo (o.order("colex").range(-5, -1));
+
 
 // dispose
-echo('comb.dispose()');
-comb.dispose();
+echo('o.dispose()');
+o.dispose();
+
+

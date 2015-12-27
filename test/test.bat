@@ -8,3 +8,4 @@ call node powersets.js > powersets.txt
 call node partitions.js > partitions.txt
 call node tensors.js > tensors.txt
 call node tuples.js > tuples.txt
+call node magic_squares.js > magic_squares.txt

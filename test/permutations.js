@@ -4,215 +4,62 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // Note: Due to the large number of combinatorial samples,
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
-var p, c, perm;
+var o;
 
-echo('Note: Due to the large number of combinatorial samples,');
-echo('Abacus combinatorics use an Iterator pattern to succesively and consistently');
-echo('generate all combinatorial objects without storing all of them in memory at once');
-echo("\n\n");
-
-
-echo("\n\n");
 echo('Abacus.Permutations');
 echo('---');
 
 // Permutations
-echo('perm = Abacus.Permutation(4)');
-perm = Abacus.Permutation(4);
+echo('o = Abacus.Permutation(4)');
+o = Abacus.Permutation(4);
 
-echo('perm.total()'); 
-echo(perm.total());
-//
-//output 24 = 4!:
-//24
+echo('o.total()'); 
+echo(o.total());
 
-echo('perm.next()'); 
-echo(perm.next());
-//
-//output:
-//[0,1,2,3]
+echo('o.next()'); 
+echo(o.next());
 
-
-echo('perm.hasNext()');
-echo(perm.hasNext());
-echo('perm.next()');
-echo(perm.next());
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
 
 
-perm.rewind();
-while (perm.hasNext()) 
-    echo([
-    p=perm.next(), 
-    c=Abacus.Permutation.index(p,4),
-    Abacus.Permutation.item(c,4)
-    ]);
-//
-//output (in index-lexicographic order):
+echo('o.rewind()');
+o.rewind();
+while (o.hasNext()) echo (o.next());
 
-echo('perm.order("revlex")');
-echo('while (perm.hasNext()) echo(perm.next())');
-perm.order("revlex");
-while (perm.hasNext()) 
-    echo([
-    p=perm.next(), 
-    c=Abacus.Permutation.index(p,4,"revlex"),
-    Abacus.Permutation.item(c,4,"revlex")
-    ]);
-//
-// output
+echo('o.order("revlex")');
+o.order("revlex");
+while (o.hasNext()) echo (o.next());
+
+echo('o.order("colex")');
+o.order("colex");
+while (o.hasNext()) echo (o.next());
+
+echo('o.order("revcolex")');
+o.order("revcolex");
+while (o.hasNext()) echo (o.next());
+
+
+echo('o.random()');
+echo(o.random());
+
+echo('o.order("random")');
+o.order("random");
+while (o.hasNext()) echo (o.next());
+
+echo('o.order("colex").range(-5, -1)');
+echo (o.order("colex").range(-5, -1));
+
 /*
-[ 2, 1, 0 ]
-[ 2, 0, 1 ]
-[ 1, 2, 0 ]
-[ 1, 0, 2 ]
-[ 0, 2, 1 ]
-[ 0, 1, 2 ]
+echo('o.order("stochastic",[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ])');
+o.order("stochastic", [ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ], true);
+while (o.hasNext()) echo (o.next());
 */
 
-
-echo('perm.random()');
-echo(perm.random());
-//
-//sample output:
-//[2,0,1]
-
-echo('get permutations in unique random order')
-echo('perm.randomise()');
-echo('while(perm.hasRandomNext()) echo(perm.randomNext())');
-perm.randomise();
-while(perm.hasRandomNext()) echo(perm.randomNext());
-
 // dispose
-echo('perm.dispose()');
-perm.dispose();
+echo('o.dispose()');
+o.dispose();
 
-echo('perm = Abacus.Permutation(15)');
-perm = Abacus.Permutation(15);
 
-echo('perm.total()'); 
-echo(perm.total());
-
-echo('get just last 5 permutations'); 
-echo('perm.range(-5,-1)');
-echo(perm.range(-5,-1));
-
-echo('get just last 5 permutations in reverse order'); 
-echo('perm.range(-1,-5)');
-echo(perm.range(-1,-5));
-
-perm.dispose();
-
-// permute an array, using a permutation
-echo('permute an array, using a permutation');
-echo('Abacus.Permutation.permute(["a","b","c"], [2,0,1])');
-echo(Abacus.Permutation.permute(["a","b","c"], [2,0,1]));
-//
-//sample  output:
-//["c","a","b"]
-
-echo('Abacus.Permutation.shuffle(["a","b","c"])');
-echo(Abacus.Permutation.shuffle(["a","b","c"]));
-//
-//sample  output:
-//["b","c","a"]
-
-// compute inverse permutation (http://mathworld.wolfram.com/InversePermutation.html)
-echo('compute inverse permutation');
-echo('Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10)');
-echo(Abacus.Permutation.inverse([2,7,4,9,8,3,5,0,6,1], 10));
-//
-//output:
-//[ 2, 7, 4, 9, 8, 3, 5, 0, 6, 1 ]
-//[ 7, 9, 0, 5, 2, 6, 8, 1, 4, 3 ]
-
-// factor permutation into cycles
-echo('factor permutation into cycles');
-echo('Abacus.Permutation.toCycles([2,7,5,6,3,0,4,1], 8)');
-echo(Abacus.Permutation.toCycles([2,7,5,6,3,0,4,1], 8));
-//
-//output:
-//[ [0,2,5], [1,7], [3,6,4] ]
-
-echo('Abacus.Permutation.toCycles([5,4,1,3,2,0], 6)');
-echo(Abacus.Permutation.toCycles([5,4,1,3,2,0], 6));
-//
-//output:
-//[ [0,5], [1,4,2], [3] ]
-
-echo('Abacus.Permutation.fromCycles([ [0,5], [1,4,2], [3] ], 6)');
-echo(Abacus.Permutation.fromCycles([ [0,5], [1,4,2], [3] ], 6));
-//
-//output:
-//[5,4,1,3,2,0]
-
-// factor permutation into swaps
-echo('factor permutation into swaps');
-echo('Abacus.Permutation.toSwaps([2,7,5,6,3,0,4,1], 8)');
-echo(Abacus.Permutation.toSwaps([2,7,5,6,3,0,4,1], 8));
-//
-//output:
-//[ [0,5], [0,2], [1,7], [3,4], [3,6] ]
-
-// permutation from swaps
-echo('permutation from swaps');
-echo('Abacus.Permutation.fromSwaps([ [0,5], [0,2], [1,7], [3,4], [3,6] ], 8)');
-echo(Abacus.Permutation.fromSwaps([ [0,5], [0,2], [1,7], [3,4], [3,6] ], 8));
-//
-//output:
-//[2,7,5,6,3,0,4,1]
-
-// permutation to permutation matrix
-echo('permutation to permutation matrix');
-echo('Abacus.Permutation.toMatrix([2,0,1], 3)');
-echo(Abacus.Permutation.toMatrix([2,0,1], 3));
-//
-//output:
-//[ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]
-
-// permutation matrix to permutation
-echo('permutation matrix to permutation');
-echo('Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ], 3)');
-echo(Abacus.Permutation.fromMatrix([ [ 0, 0, 1 ], [ 1, 0, 0 ], [ 0, 1, 0 ] ]/*[ [ 0, 1, 0 ], [ 0, 0, 1 ], [ 1, 0, 0 ] ]*/, 3));
-//
-//output:
-//[2,0,1]
-
-// permutation from singly-stochastic matrix
-echo('permutation from singly-stochastic matrix');
-echo('P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]');
-echo('p=Abacus.Permutation(3)');
-echo('p.stochastic(P)');
-var P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ],p=Abacus.Permutation(3);
-for(var i=1; i<=6; i++)
-{
-    echo(p.stochastic(P));
-}
-//
-//sample output:
-//[1,0,2]
-//[1,2,0]
-//[1,0,2]
-//[1,2,0]
-//[1,0,2]
-//[1,2,0]
-// ..
-
-// permutation from doubly-stochastic matrix
-echo('permutation from doubly-stochastic matrix');
-echo('P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ]');
-echo('p=Abacus.Permutation(3)');
-echo('p.stochastic2(P)');
-var P=[ [ 0, 1, 0 ], [ 1/2, 0, 1/2 ], [ 1/2, 0, 1/2 ] ],p=Abacus.Permutation(3);
-for(var i=1; i<=6; i++)
-{
-    echo(p.stochastic2(P));
-}
-//
-//sample output:
-//[1,0,2]
-//[1,2,0]
-//[1,0,2]
-//[1,2,0]
-//[1,0,2]
-//[1,2,0]
-// ..

@@ -6,12 +6,12 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Tensors');
+echo('Abacus.Tuples');
 echo('---');
 
-// Tensors
-echo('o = Abacus.Tensor(1,2,3)');
-o = Abacus.Tensor(1,2,3);
+// Tuples
+echo('o = Abacus.Tuple(3,3)');
+o = Abacus.Tuple(3,3);
 
 echo('o.total()'); 
 echo(o.total());
