@@ -6,7 +6,7 @@ A combinatorics library for Node/JS, PHP, Python, ActionScript
 
 (php/python implementations in progress)
 
-**version 0.1**
+**version 0.1.0**
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -211,7 +211,13 @@ see: `test/test.bat`
 
 ###Performance
 
-most algorithms are linear `O(n)` (or log-linear `O(nlgn)`) time algorithms, plus statisticaly unbiased, and the author hopes to remain so
+most algorithms:
+
+* are **linear** `O(n)` (or log-linear `O(nlgn)`) time algorithms
+* are **statisticaly unbiased** (e.g uniform sampling methods)
+* use **efficient sucessor methods** (e.g loopless methods / constant delay methods) to generate objects
+* **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
+
 
 
 ###Todo

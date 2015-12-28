@@ -22,24 +22,16 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 "use strict";
 
 var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
-    ,slice = Array.prototype.slice, bind = Function.prototype.bind
+    ,slice = Array.prototype.slice
     ,Extend = Object.create
     ,Merge = function(a, b) {
         for (var p in b) if (b[HAS](p)) a[p] = b[p];
         return a;
     }
     ,Class = function(s, c) {
-        if ( 1 === arguments.length )
-        {
-            c = s;
-            s = Object;
-        }
+        if ( 1 === arguments.length ) { c = s; s = Object; }
         var ctor = c[CLASS];
-        if ( c[HAS]('__static__') )
-        {
-            ctor = Merge(ctor, c.__static__);
-            delete c.__static__;
-        }
+        if ( c[HAS]('__static__') ) { ctor = Merge(ctor, c.__static__); delete c.__static__; }
         ctor[PROTO] = Merge(Extend(s[PROTO]), c);
         return ctor;
     }
@@ -58,16 +50,6 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
     ,log2 = Math.log2 || function(x) { return Math.log(x) / Math.LN2; }
     ,int = function int( x ) { return parseInt(x||0,10)||0; }
     ,rint = function rint( m, M ) { return round( (M-m)*rnd( ) + m ); }
-    ,clamp = function clamp( v, m, M ) { return ( v < m ) ? m : ((v > M) ? M : v); }
-    ,numeric_asc = function numeric_asc( a, b ) { return a-b; }
-    ,numeric_desc = function numeric_desc( a, b ) { return b-a; }
-    ,array = function( n ) { return new Array(n); }
-    ,n_array = function n_array( dims ) {
-        var len = dims.shift( ),
-            a = len ? new Array( len ) : [ ], i;
-        if ( dims.length ) for (i=0; i<len; i++) a[ i ] = n_array( dims.slice(0) );
-        return a;
-    }
     ,to_binary_string = function to_binary_string( b ) { return b.toString( 2 );  }
     ,to_fixed_binary_string = function to_fixed_binary_string( l ) {
         return function( b ) {
@@ -78,45 +60,8 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
         };
     }
     ,to_fixed_binary_string_32 = to_fixed_binary_string( 32 )
-    ,range = function range( n, options )  {
-        var a, i;
-        options = options || {};
-        a = new Array( n );
-        if ( options[HAS]('value') )
-        {
-            var v = options.value, is_arr_str = !!v.slice;
-            for (i=0; i<n; i++) {a[ i ] = is_arr_str ? v.slice() : v;}
-        }
-        else
-        {
-            var start = options[HAS]('start') ? parseInt(options.start, 10) : 0,
-                step = options[HAS]('step') ? parseInt(options.step, 10) : 1,
-                istep = 0;
-            for (i=0; i<n; i++) {a[ i ] = istep+start; istep += step;}
-        }
-        return a;
-    }
-    // http://stackoverflow.com/questions/6443176/how-can-i-generate-a-random-number-within-a-range-but-exclude-some
-    ,rint_exclude = function rint_exclude( m, M, exclude, exclude_count ) {
-        exclude_count = exclude_count || exclude.length;
-        var i, r = Abacus.rint( m, M - exclude_count );
-        // requires excluded items to be sorted ascending
-        if ( exclude_count > 0 && r >= exclude[0] )
-        {
-            r++;
-            for (i=1; i<exclude_count; i++)
-            {
-                // requires excluded items to be sorted ascending
-                if ( r < exclude[i] ) break;
-                r++;
-            }
-        }
-        return r;
-    }
     ,add = function add( x, y ) { return x+y; }
     ,mul = function mul( x, y ) { return x*y; }
-    // http://jsperf.com/functional-loop-unrolling/2
-    // http://jsperf.com/functional-loop-unrolling/3
     ,sum = function sum( a ) {
         var i, l=a.length, r=l&15, q=r&1, fv=q?a[0]:0;
         for (i=q; i<r; i+=2)  fv += a[i]+a[i+1];
@@ -129,6 +74,8 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
         for (i=r; i<l; i+=16) fv *= a[i]*a[i+1]*a[i+2]*a[i+3]*a[i+4]*a[i+5]*a[i+6]*a[i+7]*a[i+8]*a[i+9]*a[i+10]*a[i+11]*a[i+12]*a[i+13]*a[i+14]*a[i+15];
         return fv;
     }
+    // http://jsperf.com/functional-loop-unrolling/2
+    // http://jsperf.com/functional-loop-unrolling/3
     ,operate = function operate( x, F, F0, i0, i1, reverse ) {
         var len = x.length;
         if ( arguments.length < 5 ) i1 = len-1;
@@ -459,9 +406,9 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
         return product;
     }
     ,cartesian = function cartesian( /* var args here */ ) { }
-    // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
-    // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Sattolo.27s_algorithm
     ,shuffle = function shuffle( a, cyclic, copied ) {
+        // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+        // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Sattolo.27s_algorithm
         var N, perm, swap, ac, offset;
         ac = true === copied ? a.slice() : a;
         offset = true === cyclic ? 1 : 0;
@@ -477,8 +424,8 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
         // in-place or copy
         return ac;
     }
-    // http://stackoverflow.com/a/32035986/3591273
     ,pick = function pick( a, k, non_destructive ) {
+        // http://stackoverflow.com/a/32035986/3591273
         var picked, backup, i, selected, value, n = a.length;
         k = min( k, n );
         picked = new Array( k ); 
@@ -521,9 +468,11 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
         }
         return beta;
     }
-    // useful for transformations to/from lex / co-lex (actually rev-co-lex) orders
-    // e.g http://www.tcs.hut.fi/Studies/T-79.5202/2008SPR/kalvotwww.pdf
     ,reverse_complement = function reverse_complement( alpha, N ) {
+        // useful for transformations to/from lex / co-lex (actually rev-co-lex) orders
+        // e.g http://www.tcs.hut.fi/Studies/T-79.5202/2008SPR/kalvotwww.pdf
+        if ( null == alpha ) return null;
+        else if ( !alpha.length ) return [];
         var i, k = alpha.length, beta = new Array(k);
         if ( N.length && N.push ) for (i=0; i<k; i++) beta[k-1-i] = N[i]-1-alpha[i];
         else for (i=0; i<k; i++) beta[k-1-i] = N-1-alpha[i];
@@ -727,12 +676,12 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
             return floor(0.5+exp(logFn));
         }
     }
-    // http://en.wikipedia.org/wiki/Derangement
     ,subfactorial = function subfactorial( n ) {
+        // http://en.wikipedia.org/wiki/Derangement
         return floor(0.5 + factorial( n )/EULER);
     }
-    // http://en.wikipedia.org/wiki/Binomial_coefficient
     ,binomial = function binomial( n, k ) {
+        // http://en.wikipedia.org/wiki/Binomial_coefficient
         if ( k > n-k ) k = n - k; // take advantage of symmetry
         if ( 0 > k || 1 > n ) return 0;
         else if ( 0 === k || 1 === n ) return 1;
@@ -747,10 +696,10 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
             return floor(0.5+Cnk);
         }
     }
-    // recursively compute the partition count using the recursive relation:
-    // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
-    // http://www.programminglogic.com/integer-partition-algorithm/
     ,partitions = function partitions( n, k, m, tbl ) {
+        // recursively compute the partition count using the recursive relation:
+        // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
+        // http://www.programminglogic.com/integer-partition-algorithm/
         // compute number of integer partitions of n
         // into exactly k parts having m as max value
         // m + k-1 <= n <= k*m
@@ -776,25 +725,10 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
     ,powNK = function( n, k ) {
         return pow(n, k);
     }
-    // http://en.wikipedia.org/wiki/Fibonacci_number
-    ,fibonacci = function( n ) {
-        if ( 0 > n ) return 0;
-        // use lookup table
-        if ( 32 > n ) return FIB_32[ n ];
-        // compute it directly
-        if ( 64 > n )
-        {
-            var f0 = FIB_32[30], f1 = FIB_32[31], f2;
-            while ( n-- > 31 ) { f2 = f0+f1; f0 = f1; f1 = f2; }
-            return f2;
-        }
-        // compute it approximately
-        return floor(0.5+(pow(PHI, n)-pow(1-PHI, n))/SQRT5);
-    }
-    // https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
-    // https://en.wikipedia.org/wiki/Integer_relation_algorithm
-    // http://userpages.umbc.edu/~rcampbel/NumbThy/Class/Programming/JavaScript/
     ,xgcd = function( a, b ) {
+        // https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
+        // https://en.wikipedia.org/wiki/Integer_relation_algorithm
+        // http://userpages.umbc.edu/~rcampbel/NumbThy/Class/Programming/JavaScript/
         var a1=1, b1=0, a2=0, b2=1, aneg=1, bneg=1, tmp, q;
         if (a < 0) { a = -a; aneg = -1; };
         if (b < 0) { b = -b; bneg = -1; };
@@ -810,17 +744,13 @@ var  Abacus, PROTO = 'prototype', CLASS = 'constructor', HAS = 'hasOwnProperty'
     }
     ,LEX = 8, REVLEX = 16, COLEX = 32, REVCOLEX = 64, GRAY = 128, RANDOM = 256, STOCHASTIC = 512
     ,ORDERINGS = LEX | REVLEX | COLEX | REVCOLEX | GRAY | RANDOM | STOCHASTIC
-    ,ORDER = function ORDER( ordering ) {
-        if ( !arguments.length || null == ordering ) return LEX; // default
-        if ( ordering.substr )
-        {
-            ordering = ordering.toUpperCase( );
-            return Abacus.ORDER[HAS](ordering) ? Abacus.ORDER[ordering] : LEX;
-        }
-        if ( !(ORDERINGS & ordering) ) ordering = LEX;
-        return ordering;
+    ,ORDER = function ORDER( o ) {
+        if ( !arguments.length || null == o ) return LEX; // default
+        if ( o.substr ) { o = o.toUpperCase( ); return Abacus.ORDER[HAS](o) ? Abacus.ORDER[o] : LEX; }
+        if ( !(ORDERINGS & o) ) o = LEX;
+        return o;
     }
-    ,List, BitArray, CombinatorialIterator, Permutation, Derangement
+    ,BitArray, CombinatorialIterator, Permutation, Derangement
     ,Combination, CombinationRepeat, Partition, RestrictedPartition
     ,Powerset, Tensor, Tuple
     ,NotImplemented = function( method ) { 
@@ -840,16 +770,23 @@ Abacus = {
 
 ,rnd: rnd
 ,rint: rint
-,rint_exclude: rint_exclude
-,clamp: clamp
 
 ,Factorial: factorial
 ,SubFactorial: subfactorial
 ,Binomial: binomial
 ,Partitions: partitions
-,Fibonacci: fibonacci
-,Bell: NotImplemented( )
-,Catalan: NotImplemented( )
+
+,shuffle: shuffle
+,pick: pick
+
+,operate: operate
+,map: map
+,filter: filter
+,each: each
+,intersection: intersection
+,union: union
+,kronecker: kronecker
+,cartesian: cartesian
 
 };
 
@@ -860,40 +797,21 @@ Abacus.ORDER = {
  LEX: LEX
 ,LEXICOGRAPHIC: LEX
 ,REVLEX: REVLEX
+,ANTILEX: REVLEX
 ,REVERSELEXICOGRAPHIC: REVLEX
+,ANTILEXICOGRAPHIC: REVLEX
 ,COLEX: COLEX
 ,COLEXICOGRAPHIC: COLEX
 ,REVCOLEX: REVCOLEX
+,ANTICOLEX: REVCOLEX
 ,REVERSECOLEXICOGRAPHIC: REVCOLEX
+,ANTICOLEXICOGRAPHIC: REVCOLEX
 //,GRAY: GRAY
 ,RANDOM: RANDOM
 ,RANDOMISED: RANDOM
 ,STOCHASTIC: STOCHASTIC
 
 };
-
-List = Abacus.List = {
-    
- array: array
-,n_array: n_array
-,range: range
-
-,shuffle: shuffle
-,pick: pick
-
-,sum: sum
-,operate: operate
-,map: map
-,filter: filter
-,each: each
-,intersection: intersection
-,union: union
-,complement: complement
-,kronecker: kronecker
-,cartesian: cartesian
-
-};
-
 
 BitArray = Abacus.BitArray = Class({
     
@@ -1070,8 +988,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             order = ORDER( order );
             self._order = order; self._index = 0;
             self._item = self.__item = null;
-            self._prev = self._index > 0;
-            self._next = self._index < self._count;
+            self._prev = false; self._next = false;
             tot = self._count; n = self.n;
             
             if ( STOCHASTIC & order )
@@ -1092,7 +1009,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                     throw new Error('No Stochastic Transition Matrix given!');
                 }
             }
-            else if ( RANDOM === order )
+            else if ( RANDOM & order )
             {
                 // lazy init
                 if ( !self._traversed ) self._traversed = new BitArray( tot );
@@ -1100,24 +1017,25 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 self._traversed.set( r=self.randomIndex( ) );
                 self._item = self.__item = self.item( r, LEX );
             }
-            else if ( REVCOLEX === order )
+            else if ( REVCOLEX & order )
             {
                 self.__item = klass.first( n );
                 self._item = klass.dual( self.__item, n, REVCOLEX );
             }
-            else if ( COLEX === order )
+            else if ( COLEX & order )
             {
                 self.__item = klass.last( n );
                 self._item = klass.dual( self.__item, n, COLEX );
             }
-            else if ( REVLEX === order )
+            else if ( REVLEX & order )
             {
                 self._item = self.__item = klass.last( n );
             }
-            else /*if ( LEX === order )*/
+            else /*if ( LEX & order )*/
             {
                 self._item = self.__item = klass.first( n );
             }
+            self._next = null != self._item;
             return self;
         }
         return self._order;
@@ -1131,7 +1049,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             if ( 0 > index ) index += tot;
             if ( index >=0 && index < tot )
             {
-                if ( REVCOLEX === order )
+                if ( REVCOLEX & order )
                 {
                     self._index = index;
                     self.__item = 0 === index
@@ -1141,7 +1059,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                     : klass.unrank( index, n, tot ));
                     self._item = klass.dual( self.__item, n, REVCOLEX );
                 }
-                else if ( COLEX === order )
+                else if ( COLEX & order )
                 {
                     self._index = index;
                     self.__item = 0 === index
@@ -1151,7 +1069,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                     : klass.unrank( tot-1-index, n, tot ));
                     self._item = klass.dual( self.__item, n, COLEX );
                 }
-                else if ( REVLEX === order )
+                else if ( REVLEX & order )
                 {
                     self._index = index;
                     self._item = self.__item = 0 === index
@@ -1160,7 +1078,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                     ? klass.first( n )
                     : klass.unrank( tot-1-index, n, tot ));
                 }
-                else if ( LEX === order )
+                else if ( LEX & order )
                 {
                     self._index = index;
                     self._item = self.__item = 0 === index
@@ -1184,7 +1102,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( 0 > index ) index += tot;
         if ( index >= 0 && index < tot )
         {            
-            if ( RANDOM === order )
+            if ( RANDOM & order )
             {
                 traversed = self._traversed;
                 // get next un-traversed index, reject if needed
@@ -1192,7 +1110,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 traversed.set( r );
                 return klass.unrank( r, n, tot );
             }
-            else if ( REVCOLEX === order )
+            else if ( REVCOLEX & order )
             {
                 return klass.dual( 0 === index
                 ? klass.first( n )
@@ -1200,7 +1118,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 ? klass.last( n )
                 : klass.unrank( index, n, tot )), n, REVCOLEX );
             }
-            else if ( COLEX === order )
+            else if ( COLEX & order )
             {
                 return klass.dual( 0 === index
                 ? klass.last( n )
@@ -1208,7 +1126,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 ? klass.first( n )
                 : klass.unrank( tot-1-index, n, tot )), n, COLEX );
             }
-            else if ( REVLEX === order )
+            else if ( REVLEX & order )
             {
                 return 0 === index
                 ? klass.last( n )
@@ -1216,7 +1134,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 ? klass.first( n )
                 : klass.unrank( tot-1-index, n, tot ));
             }
-            else //if ( LEX === order )
+            else //if ( LEX & order )
             {
                 return 0 === index
                 ? klass.first( n )
@@ -1262,49 +1180,56 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,next: function( ) {
         var self = this, order = self._order, traversed, r,
             klass = self[CLASS], current = self._item, n = self.n, tot = self._count;
-        // compute next
+        
         if ( STOCHASTIC & order )
         {
             self._item = self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
         }
-        else if ( self._index+1 < tot ) 
+        else if ( RANDOM & order )
         {
-            self._next = true; ++self._index;
-            if ( RANDOM === order )
+            if ( self._index+1 < tot )
             {
+                ++self._index;
                 traversed = self._traversed;
                 // get next un-traversed index, reject if needed
                 while ( traversed.isset( r = self.randomIndex( ) ) ) ;
                 traversed.set( r );
                 self._item = self.__item = self.item( r, LEX );
+                self._next = null != self._item;
             }
-            else if ( REVCOLEX === order )
+            else
             {
-                self.__item = klass.succ( 1, self.__item, n, tot );
-                self._item = klass.dual( self.__item, n, REVCOLEX );
-            }
-            else if ( COLEX === order )
-            {
-                self.__item = klass.succ( -1, self.__item, n, tot );
-                self._item = klass.dual( self.__item, n, COLEX );
-            }
-            else if ( REVLEX === order )
-            {
-                self._item = self.__item = klass.succ( -1, self.__item, n, tot );
-            }
-            else /*if ( LEX === order )*/
-            {
-                self._item = self.__item = klass.succ( 1, self.__item, n, tot );
+                self._next = false;
+                if ( self._traversed )
+                {
+                    self._traversed.dispose( );
+                    self._traversed = null;
+                }
             }
         }
         else
         {
-            self._next = false;
-            if ( (RANDOM === order) && self._traversed )
+            // compute next, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
+            if ( REVCOLEX & order )
             {
-                self._traversed.dispose( );
-                self._traversed = null;
+                self.__item = klass.succ( 1, self.__item, n, tot );
+                self._item = klass.dual( self.__item, n, REVCOLEX );
             }
+            else if ( COLEX & order )
+            {
+                self.__item = klass.succ( -1, self.__item, n, tot );
+                self._item = klass.dual( self.__item, n, COLEX );
+            }
+            else if ( REVLEX & order )
+            {
+                self._item = self.__item = klass.succ( -1, self.__item, n, tot );
+            }
+            else /*if ( LEX & order )*/
+            {
+                self._item = self.__item = klass.succ( 1, self.__item, n, tot );
+            }
+            self._next = null != self._item;
+            if ( self._next ) ++self._index;
         }
         return current;
     }
@@ -1312,8 +1237,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,forward: function( ) {
         var self = this;
         self.order( self._order ).index( self._count-1 );
-        self._prev = self._index >= 0;
-        self._next = false;
+        self._prev = self._index >= 0; self._next = false;
         return self;
     }
     
@@ -1328,33 +1252,28 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         // random and stochastic order has no prev
         if ( (RANDOM | STOCHASTIC) & order ) return null;
         
-        // compute prev
-        if ( self._index-1 >= 0 ) 
+        // compute prev, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
+        if ( REVCOLEX & order )
         {
-            self._prev = true; --self._index;
-            if ( REVCOLEX === order )
-            {
-                self.__item = klass.succ( -1, self.__item, n, tot );
-                self._item = klass.dual( self.__item, n, REVCOLEX );
-            }
-            else if ( COLEX === order )
-            {
-                self.__item = klass.succ( 1, self.__item, n, tot );
-                self._item = klass.dual( self.__item, n, COLEX );
-            }
-            else if ( REVLEX === order )
-            {
-                self._item = self.__item = klass.succ( 1, self.__item, n, tot );
-            }
-            else /*if ( LEX === order )*/
-            {
-                self._item = self.__item = klass.succ( -1, self.__item, n, tot );
-            }
+            self.__item = klass.succ( -1, self.__item, n, tot );
+            self._item = klass.dual( self.__item, n, REVCOLEX );
         }
-        else
+        else if ( COLEX & order )
         {
-            self._prev = false;
+            self.__item = klass.succ( 1, self.__item, n, tot );
+            self._item = klass.dual( self.__item, n, COLEX );
         }
+        else if ( REVLEX & order )
+        {
+            self._item = self.__item = klass.succ( 1, self.__item, n, tot );
+        }
+        else /*if ( LEX & order )*/
+        {
+            self._item = self.__item = klass.succ( -1, self.__item, n, tot );
+        }
+        self._prev = null != self._item;
+        if ( self._prev ) --self._index;
+        
         return current;
     }
     
@@ -1948,14 +1867,14 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return null;
         }
         ,rand: function( n ) {
-            var comb, k, g, i, j, p, q;
+            var comb, k, g, i, j, p, q, n_k;
             // O(n), unbiased, only one call to RPNG, NO big integers
             k = n[1]; n = n[0]; comb = new Array(k);
-            g = Abacus.rnd( ); j = 0; q = 0;
+            g = Abacus.rnd( ); j = 0; q = 0; n_k = n-k;
             for (i=1; i<=k; i++)
             {
                 j++; p = (k-i+1) / (n-j+1);
-                while ((p <= g) && (j < n-k+i))
+                while ((p <= g) && (j < n_k+i))
                 {
                     q = p;
                     j++;
@@ -2026,7 +1945,7 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
     ,__static__: {
          // http://en.wikipedia.org/wiki/Combination#Number_of_combinations_with_repetition
          count: function( n ) {
-             return binomial(n[0]+n[1]-1,n[1]);
+             return binomial( n[0]+n[1]-1, n[1] );
          }
         ,dual: Combination.dual
         ,rank: function( item, n, total ) {
@@ -2141,14 +2060,14 @@ CombinationRepeat = Abacus.CombinationRepeat = Class(CombinatorialIterator, {
             return null;
         }
         ,rand: function( n ) {
-            var comb, k, g, i, j, p, q, N;
+            var comb, k, g, i, j, p, q, N, N_k;
             // O(n+k), unbiased, only one call to RPNG, NO big integers
             k = n[1]; n = n[0]; comb = new Array(k);
-            g = Abacus.rnd( ); j = 0; q = 0; N = n+k-1;
+            g = Abacus.rnd( ); j = 0; q = 0; N = n+k-1; N_k = N-k;
             for(i=1; i<=k; i++)
             {
                 j++; p = (k-i+1) / (N-j+1);
-                while ((p <= g) && (j < N-k+i))
+                while ((p <= g) && (j < N_k+i))
                 {
                     q = p;
                     j++;
@@ -2413,7 +2332,16 @@ Powerset = Abacus.Powerset = Class(CombinatorialIterator, {
             for (i=0; i<n; i++) item[ i ] = n-1-i;
             return item;
         }
-        ,succ: CombinatorialIterator.succ
+        ,succ: function( offset, item, n ) {
+            var klass = this;
+            if ( 1 !== offset && -1 !== offset ) offset = 1;
+            return -1 === offset
+            ? (0===item.length
+            ? null : klass.unrank( klass.rank( item )+offset ))
+            : (n===item.length
+            ? null : klass.unrank( klass.rank( item )+offset ))
+            ;
+        }
         ,rand: CombinatorialIterator.rand
         ,stochastic: CombinatorialIterator.stochastic
     }
@@ -2431,8 +2359,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         var self = this;
         if ( !(self instanceof Tensor) ) 
         {
-            // http://stackoverflow.com/questions/1606797/use-of-apply-with-new-operator-is-this-possible
-            //return new (bind.apply(Tensor, [null].concat(arguments)));
             self = new Tensor( );
             if ( arguments.length )
             {
