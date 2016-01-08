@@ -229,6 +229,7 @@ most algorithms:
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * add magic squares algorithms [IN PROGRESS, NEW FEATURE]
 * add `Derangement`, `RestrictedPartition` [IN PROGRESS]
+* support generation of combinatorial objects based on *templates of constraints* to satisfy e.g "only combinations with `ab{i}{i+1}`" strtucture and so on.. (TODO)
 * add generic *rule-based* `Combinatorial` objects like `Grammar` (TODO)
 * add `Fibonacci`, `Catalan`, `Bell` number computations (TODO?)
 * support `biginteger` computations e.g factorials??
