@@ -224,6 +224,7 @@ most algorithms:
 * are **statisticaly unbiased** (e.g uniform sampling methods)
 * use **efficient sucessor methods** (e.g loopless methods / constant delay methods) to generate objects
 * **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
+* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. **Note** that the lib can generate very large (and in most cases also randomised) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
 
 
 
@@ -233,10 +234,10 @@ most algorithms:
 * support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for  supported orderings [DONE]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
+* support `biginteger` computations e.g factorials?? [DONE, the lib does not support biginteger arithmetic, but arithmetic routines have been made dynamicaly pluggable and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
 * add `Combinadic`, `Factoradic` transformations [DONE]
 * add magic squares algorithms [IN PROGRESS, NEW FEATURE]
 * add `Derangement`, `RestrictedPartition` [IN PROGRESS]
-* support generation of combinatorial objects based on *templates of constraints* to satisfy e.g "only combinations with `ab{i}{i+1}`" strtucture and so on.. (TODO)
+* support generation of combinatorial objects based on *patterns/templates of constraints* to satisfy e.g "only combinations with `xx(n)(n+1)x`" pattern and so on.. (TODO)
 * add generic *rule-based* `Combinatorial` objects like `Grammar` (TODO)
 * add `Fibonacci`, `Catalan`, `Bell` number computations (TODO?)
-* support `biginteger` computations e.g factorials??
