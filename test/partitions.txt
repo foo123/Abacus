@@ -2,7 +2,7 @@ Abacus.Partitions (VERSION = 0.1.0)
 ---
 o = Abacus.Partition(5)
 o.total()
-10
+7
 default order is "lex", lexicographic-order
 o.next()
 [ 1, 1, 1, 1, 1 ]
@@ -18,9 +18,6 @@ o.rewind()
 [ 3, 2 ]
 [ 4, 1 ]
 [ 5 ]
-null
-null
-null
 o.forward()
 [ 5 ]
 [ 4, 1 ]
@@ -29,7 +26,4 @@ o.forward()
 [ 2, 2, 1 ]
 [ 2, 1, 1, 1 ]
 [ 1, 1, 1, 1, 1 ]
-null
-null
-null
 o.dispose()
