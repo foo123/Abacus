@@ -26,7 +26,7 @@ function use_biginteger_arithmetic( Abacus )
     Abacus.Arithmetic.min = bigInt.min;
     Abacus.Arithmetic.max = bigInt.max;
     
-    Abacus.Arithmetic.BigInt = bigInt
+    Abacus.Arithmetic.num = function(a){ return bigInt(a); };
 }
 //use_biginteger_arithmetic( './BigInteger.js' );
 

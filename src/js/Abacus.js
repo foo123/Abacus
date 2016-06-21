@@ -577,6 +577,7 @@ Abacus.Util = {
 ,kronecker: kronecker
 ,cartesian: cartesian
 
+,num: function( a ) { return parseInt(a,10); }
 ,val: function( a ) { return Abacus.Arithmetic.floor(a.valueOf()); }
 
 ,equ: function( a, b ) { return a===b; }
@@ -636,7 +637,8 @@ Abacus.Util = {
 // support pluggable arithmetics, eg biginteger Arithmetic
 Abacus.Arithmetic = {
     
- val: Abacus.Util.val
+ num: Abacus.Util.num
+,val: Abacus.Util.val
 
 ,equ: Abacus.Util.equ
 ,gte: Abacus.Util.gte
@@ -863,7 +865,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return this._count;
     }
     
-    ,order: function( order, T, doubly_stochastic ) {
+    ,order: function( order, T, doubly_stochastic, __reverse__ ) {
         var self = this, klass = self[CLASS], r, tot, n;
         if ( !arguments.length ) return self._order;
         
@@ -872,6 +874,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self._item = self.__item = null;
         self._prev = false; self._next = false;
         tot = self._count; n = self.n;
+        __reverse__ = true === __reverse__;
         
         if ( STOCHASTIC & order )
         {
@@ -879,12 +882,14 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             if ( (null != self._stochastic) && !T )
             {
                 if ( null != self._stochastic[2] ) self._stochastic[2] = []; // reset
-                self._item = self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
+                self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
+                self._item = self.__item.slice( );
             }
             else if ( T )
             {
                 self._stochastic = [T, doubly_stochastic ? 1 : 0, doubly_stochastic ? [] : null];
-                self._item = self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
+                self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
+                self._item = self.__item.slice( );
             }
             else
             {
@@ -897,25 +902,28 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             if ( !self._traversed ) self._traversed = new BitArray( tot );
             else self._traversed.reset( );
             self._traversed.set( r=self.randomIndex( ) );
-            self._item = self.__item = self.item( r, LEX );
+            self.__item = self.item( r, LEX );
+            self._item = null != self.__item ? self.__item.slice( ) : null;
         }
         else if ( REVCOLEX & order )
         {
-            self.__item = klass.first( n );
+            self.__item = __reverse__ ? klass.last( n ) : klass.first( n );
             self._item = klass.dual( self.__item, n, REVCOLEX );
         }
         else if ( COLEX & order )
         {
-            self.__item = klass.last( n );
+            self.__item = __reverse__ ? klass.first( n ) : klass.last( n );
             self._item = klass.dual( self.__item, n, COLEX );
         }
         else if ( REVLEX & order )
         {
-            self._item = self.__item = klass.last( n );
+            self.__item = __reverse__ ? klass.first( n ) : klass.last( n );
+            self._item = null != self.__item ? self.__item.slice( ) : null;
         }
         else /*if ( LEX & order )*/
         {
-            self._item = self.__item = klass.first( n );
+            self.__item = __reverse__ ? klass.last( n ) : klass.first( n );
+            self._item = null != self.__item ? self.__item.slice( ) : null;
         }
         self._next = null != self._item;
         return self;
@@ -927,6 +935,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, klass = self[CLASS],
             n = self.n, tot = self._count, order = self._order, tot_1;
         
+        index = Arithmetic.num( index );
         if ( Arithmetic.gt(0, index) ) index = Arithmetic.add(index, tot);
         if ( Arithmetic.gte(index, 0) && Arithmetic.lt(index, tot) )
         {
@@ -954,20 +963,22 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             else if ( REVLEX & order )
             {
                 self._index = index;
-                self._item = self.__item = Arithmetic.equ(0, index)
+                self.__item = Arithmetic.equ(0, index)
                 ? klass.last( n )
                 : (Arithmetic.equ(tot_1, index)
                 ? klass.first( n )
                 : klass.unrank( Arithmetic.sub(tot_1,index), n, tot ));
+                self._item = self.__item.slice( );
             }
             else if ( LEX & order )
             {
                 self._index = index;
-                self._item = self.__item = Arithmetic.equ(0, index)
+                self.__item = Arithmetic.equ(0, index)
                 ? klass.first( n )
                 : (Arithmetic.equ(tot_1, index)
                 ? klass.last( n )
                 : klass.unrank( index, n, tot ));
+                self._item = self.__item.slice( );
             }
         }
         return self;
@@ -980,6 +991,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             klass = self[CLASS], Arithmetic = Abacus.Arithmetic, traversed, r;
         order = null != order ? ORDER( order ) : self._order;
         
+        index = Arithmetic.num( index );
         if ( Arithmetic.gt(0, index) ) index = Arithmetic.add(index, tot);
         if ( Arithmetic.gte(index, 0) && Arithmetic.lt(index, tot) )
         {            
@@ -1037,8 +1049,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         }
         else if ( 1 === argslen )
         {
-            m = m || 0;
+            m = Arithmetic.num( m || 0 );
             M = Arithmetic.sub(tot,1);
+        }
+        else
+        {
+            m = Arithmetic.num( m );
+            M = Arithmetic.num( M );
         }
         return Arithmetic.rnd( m, M );
     }
@@ -1065,7 +1082,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         
         if ( STOCHASTIC & order )
         {
-            self._item = self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
+            self.__item = klass.stochastic( self._stochastic[0], n, self._stochastic[2] );
+            self._item = self.__item.slice( );
         }
         else if ( RANDOM & order )
         {
@@ -1076,8 +1094,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 // get next un-traversed index, reject if needed
                 while ( traversed.isset( r = self.randomIndex( ) ) ) ;
                 traversed.set( r );
-                self._item = self.__item = self.item( r, LEX );
-                self._next = null != self._item;
+                self.__item = self.item( r, LEX );
+                self._item = null != self.__item ? self.__item.slice( ) : null;
+                self._next = null != self.__item;
             }
             else
             {
@@ -1104,13 +1123,15 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             }
             else if ( REVLEX & order )
             {
-                self._item = self.__item = klass.succ( -1, self.__item, n, tot );
+                self.__item = klass.succ( -1, self.__item, n, tot );
+                self._item = null != self.__item ? self.__item.slice( ) : null;
             }
             else /*if ( LEX & order )*/
             {
-                self._item = self.__item = klass.succ( 1, self.__item, n, tot );
+                self.__item = klass.succ( 1, self.__item, n, tot );
+                self._item = null != self.__item ? self.__item.slice( ) : null;
             }
-            self._next = null != self._item;
+            self._next = null != self.__item;
             if ( self._next ) self._index = Arithmetic.add(self._index, 1);
         }
         return current;
@@ -1118,7 +1139,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
     ,forward: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        self.order( self._order ).index( Arithmetic.sub(self._count,1) );
+        self.order( self._order, null, null, true );
         self._prev = Arithmetic.gte(self._index, 0); self._next = false;
         return self;
     }
@@ -1128,7 +1149,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     }
     
     ,prev: function( ) {
-        var self = this, order = self._order,
+        var self = this, Arithmetic = Abacus.Arithmetic, order = self._order,
             klass = self[CLASS], current = self._item, n = self.n, tot = self._count;
         
         // random and stochastic order has no prev
@@ -1147,14 +1168,16 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         }
         else if ( REVLEX & order )
         {
-            self._item = self.__item = klass.succ( 1, self.__item, n, tot );
+            self.__item = klass.succ( 1, self.__item, n, tot );
+            self._item = null != self.__item ? self.__item.slice( ) : null;
         }
         else /*if ( LEX & order )*/
         {
-            self._item = self.__item = klass.succ( -1, self.__item, n, tot );
+            self.__item = klass.succ( -1, self.__item, n, tot );
+            self._item = null != self.__item ? self.__item.slice( ) : null;
         }
-        self._prev = null != self._item;
-        if ( self._prev ) --self._index;
+        self._prev = null != self.__item;
+        if ( self._prev ) self._index = Arithmetic.sub(self._index, 1);
         
         return current;
     }
@@ -1170,7 +1193,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         }
         else if ( argslen < 2 )
         {
+            start = Arithmetic.num( start );
             end = tot_1;
+        }
+        else
+        {
+            start = Arithmetic.num( start );
+            end = Arithmetic.num( end );
         }
         if ( Arithmetic.lt(start, 0) ) start = Arithmetic.add(start,tot);
         if ( Arithmetic.lt(end, 0) ) end = Arithmetic.add(end,tot);
