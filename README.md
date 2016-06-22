@@ -20,7 +20,7 @@ Abacus uses (for the most part) self-contained and standalone methods, so they c
 
 **see also:**  
 
-* [Contemplate](https://github.com/foo123/Contemplate) a fast and light-weight Template Engine for Node/JS, PHP, Python
+* [Contemplate](https://github.com/foo123/Contemplate) a fast and light-weight Template Engine for Node/XPCOM/JS, PHP, Python
 * [HtmlWidget](https://github.com/foo123/HtmlWidget) html widgets used as (template) plugins and/or standalone for PHP, Node/XPCOM/JS, Python both client and server-side
 * [Tao](https://github.com/foo123/Tao.js) A simple, tiny, isomorphic, precise and fast template engine for handling both string and live dom based templates
 * [ModelView](https://github.com/foo123/modelview.js) a light-weight and flexible MVVM framework for JavaScript/HTML5
@@ -271,11 +271,11 @@ see: `test/test.bat`
 
 most algorithms:
 
-* are **linear** `O(n)` (or log-linear `O(nlgn)`) time algorithms
+* are **linear** `O(n)` (or log-linear `O(nlgn)`) time and space algorithms
 * are **statisticaly unbiased** (e.g uniform sampling methods)
-* use **efficient sucessor methods** (e.g loopless methods / constant delay methods) to generate objects
+* use **efficient successor methods** (e.g loopless methods / constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see below)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
-* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. **Note** that the lib can generate very large (and in most cases also randomised) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
+* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. **Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
 
 
 
