@@ -1,6 +1,6 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('./abacus-bigint');
+var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
@@ -33,6 +33,9 @@ echo(o.item("78043612608166064768844377641568960512000000000000","revlex"));
 
 echo('o.item(78043612608166064768844377641568960512000000000000,"revcolex")');
 echo(o.item("78043612608166064768844377641568960512000000000000","revcolex"));
+
+echo('o.order("lex").range(30414093201713378043612608166064768844377641568960511999999999998)');
+echo (o.order("lex").range("30414093201713378043612608166064768844377641568960511999999999998"));
 
 // dispose
 echo('o.dispose()');
