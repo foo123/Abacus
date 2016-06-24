@@ -6,12 +6,12 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Powersets (VERSION = '+Abacus.VERSION+')');
+echo('Abacus.Subsets (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Powersets
-echo('o = Abacus.Powerset(4)');
-o = Abacus.Powerset(4);
+echo('o = Abacus.Subset(4)');
+o = Abacus.Subset(4);
 
 echo('o.total()'); 
 echo(o.total());
@@ -62,5 +62,3 @@ echo (o.order("colex").range(-5, -1));
 // dispose
 echo('o.dispose()');
 o.dispose();
-
-

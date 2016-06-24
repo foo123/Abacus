@@ -261,7 +261,7 @@ see: `test/test.bat`
 * `test/permutations-bigint.js`
 * `test/combinations.js`
 * `test/combinations_repeats.js`
-* `test/powersets.js`
+* `test/subsets.js`
 * `test/tensors.js`
 * `test/tuples.js`
 * `test/partitions.js` **in-complete, in progress**
@@ -271,7 +271,7 @@ see: `test/test.bat`
 
 most algorithms:
 
-* are **linear** `O(n)` (or log-linear `O(nlgn)`) time and space algorithms
+* are **linear** `O(n)` (or log-linear `O(nlgn)`) **time and space** algorithms
 * are **statisticaly unbiased** (e.g uniform sampling methods)
 * use **efficient successor methods** (e.g loopless methods / constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see below)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
@@ -281,7 +281,7 @@ most algorithms:
 
 ###Todo
 
-* support **multiple custom iterator orderings**, i.e  `LEX`, `COLEX`, `REVLEX`, `REVCOLEX`, `RANDOM`, `STOCHASTIC` (where applicable) seamlessly and uniformly [ALMOST DONE, NEW FEATURE]
+* support **multiple custom iterator orderings**, i.e  `LEX`, `COLEX`, `REVLEX`, `REVCOLEX`, `MINIMAL`, `RANDOM`, `STOCHASTIC` (where applicable) seamlessly and uniformly, both forward and backward [ALMOST DONE, NEW FEATURE]
 * support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for  supported orderings [DONE]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
