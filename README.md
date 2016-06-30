@@ -1,5 +1,5 @@
 # Abacus
-A combinatorics library for Node/JS, PHP, Python, ActionScript
+A combinatorics library for Node/XPCOM/JS, PHP, Python, ActionScript
 
 **update in progress do not use**
 
@@ -111,7 +111,7 @@ o.forward()
 [ 0, 1, 4 ]
 [ 0, 1, 3 ]
 [ 0, 1, 2 ]
-o.order("revlex")
+o.order("lex,reversed")
 [ 3, 4, 5 ]
 [ 2, 4, 5 ]
 [ 2, 3, 5 ]
@@ -153,7 +153,7 @@ o.order("colex")
 [ 1, 4, 5 ]
 [ 2, 4, 5 ]
 [ 3, 4, 5 ]
-o.order("revcolex")
+o.order("colex,reversed")
 [ 3, 4, 5 ]
 [ 2, 4, 5 ]
 [ 1, 4, 5 ]
@@ -174,8 +174,6 @@ o.order("revcolex")
 [ 0, 2, 3 ]
 [ 0, 1, 3 ]
 [ 0, 1, 2 ]
-o.random()
-[ 1, 3, 5 ]
 o.order("random")
 [ 0, 1, 3 ]
 [ 1, 4, 5 ]
@@ -197,6 +195,8 @@ o.order("random")
 [ 0, 1, 4 ]
 [ 0, 3, 4 ]
 [ 1, 3, 4 ]
+o.random()
+[ 1, 3, 5 ]
 o.order("colex").range(-5, -1)
 [ [ 2, 3, 5 ], [ 0, 4, 5 ], [ 1, 4, 5 ], [ 2, 4, 5 ], [ 3, 4, 5 ] ]
 o.dispose()
@@ -273,7 +273,7 @@ most algorithms:
 
 * are **linear** `O(n)` (or log-linear `O(nlgn)`) **time and space** algorithms
 * are **statisticaly unbiased** (e.g uniform sampling methods)
-* use **efficient successor methods** (e.g loopless methods / constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see below)
+* use **efficient successor methods** (e.g loopless, constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see below)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
 * arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. **Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
 
@@ -281,13 +281,13 @@ most algorithms:
 
 ###Todo
 
-* support **multiple custom iterator orderings**, i.e  `LEX`, `COLEX`, `REVLEX`, `REVCOLEX`, `MINIMAL`, `RANDOM`, `STOCHASTIC` (where applicable) seamlessly and uniformly, both forward and backward [ALMOST DONE, NEW FEATURE]
-* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for  supported orderings [DONE]
-* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in any random ordering uniquely and unbiasedly (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above]
-* make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
+* apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
 * support `biginteger` computations e.g factorials?? [DONE, the lib does not support biginteger arithmetic, but arithmetic routines have been made dynamicaly pluggable and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
-* add `Combinadic`, `Factoradic` transformations [DONE]
-* add magic squares algorithms [IN PROGRESS, NEW FEATURE]
-* add `Derangement`, `RestrictedPartition` [IN PROGRESS]
+* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `minimal/gray`, `random`, `stochastic` (where applicable) seamlessly and uniformly, both forward and backward [ALMOST DONE, NEW FEATURE]
+* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [ALMOST DONE]
+* make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
+* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [ALMOST DONE, see reference, used as custom iterator ordering, see above]
+* add `MultisetPermutation`, `Derangement`, `SetPartition`, `RestrictedPartition` [IN PROGRESS]
+* add latin squares, magic squares algorithms [IN PROGRESS]
 * support generation of combinatorial objects based on *patterns/templates of constraints* to satisfy e.g "only combinations with `xx(n)(n+1)x`" pattern and so on.. (TODO)
 * add generic *rule-based* `Combinatorial` objects like `Grammar` (TODO)
