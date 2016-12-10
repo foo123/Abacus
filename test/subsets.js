@@ -55,7 +55,7 @@ echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
 
 echo('o.order("gray")');
-print_all( o.order("gray") );
+//print_all( o.order("gray") );
 
 echo('o.order("random")');
 print_all( o.order("random") );

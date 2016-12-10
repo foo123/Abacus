@@ -7,6 +7,7 @@ function use_biginteger_arithmetic( Abacus )
     
     Arithmetic.O = bigInt.zero;
     Arithmetic.I = bigInt.one;
+    Arithmetic.J = bigInt.minusOne;
     
     Arithmetic.equ = function( a, b ){ return a.eq( b ); };
     Arithmetic.gte = function( a, b ){ return a.geq( b ); };
@@ -18,7 +19,7 @@ function use_biginteger_arithmetic( Abacus )
     };
     Arithmetic.clamp = function( a, m, M ){ return a.lt( m ) ? m : (a.gt( M ) ? M : a); };
     Arithmetic.wrap = function( a, m, M ){ return a.lt( m ) ? M : (a.gt( M ) ? m : a); };
-    Arithmetic.wrapR = function( a, M ){ return a.lt( 0 ) ? a.plus( M ) : a; };
+    Arithmetic.wrapR = function( a, M ){ return a.lt( bigInt.zero ) ? a.plus( M ) : a; };
     
     Arithmetic.add = function( a, b ){ return a.plus( b ); };
     Arithmetic.sub = function( a, b ){ return a.minus( b ); };

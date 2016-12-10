@@ -1,0 +1,33 @@
+Abacus.CombinatorialIterator.Template (VERSION = 0.1.0)
+---
+o = Abacus.CombinatorialIterator.Template("(n)(m)(1){2}x{3}(0)(n+1)(m+1){4}")
+o.data
+{ variables: 
+   { '0': 
+      { pos: 0,
+        value: 'n',
+        reference: true,
+        expression: false,
+        count: 1 },
+     '1': 
+      { pos: 1,
+        value: 'm',
+        reference: true,
+        expression: false,
+        count: 1 },
+     '8': 
+      { pos: 8,
+        value: 'n+1',
+        reference: false,
+        expression: true,
+        count: 1 },
+     '9': 
+      { pos: 9,
+        value: 'm+1',
+        reference: false,
+        expression: true,
+        count: 4 } },
+  constants: 
+   { '2': { pos: 2, value: '1', count: 2 },
+     '7': { pos: 7, value: '0', count: 1 } },
+  any: { '4': { pos: 4, count: 3 } } }
