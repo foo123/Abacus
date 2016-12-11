@@ -40,6 +40,12 @@ var  Abacus = {VERSION: "0.1.0"}
     }
     
     // utils
+    ,trim_re = /^\s+|\s+$/g
+    ,trim = String.prototype.trim
+        ? function( s ){ return s.trim(); }
+        : function( s ){ return s.replace(trim_re, ''); }
+    ,is_array = function( x ) { return (x instanceof Array) || ('[object Array]' === toString.call(x)); }
+    ,is_string = function( x ) { return (x instanceof String) || ('[object String]' === toString.call(x)); }
     ,log2 = Math.log2 || function(x) { return Math.log(x) / Math.LN2; }
     ,to_base_string = function to_base_string( b, base ) { return b.toString( base||2 );  }
     ,to_fixed_base_string = function to_fixed_base_string( l, base, z ) {
@@ -172,7 +178,7 @@ var  Abacus = {VERSION: "0.1.0"}
                 i = r % l;
                 r = ~~(r / l);
                 vv = v[ a ][ i ];
-                if ( vv instanceof Array )
+                if ( is_array(vv) )
                 {
                     // kronecker can be re-used to create higher-order products
                     // i.e kronecker(alpha, beta, gamma) and kronecker(kronecker(alpha, beta), gamma)
@@ -205,7 +211,7 @@ var  Abacus = {VERSION: "0.1.0"}
             for (a=nv-1; a>=0; a--)
             {
                 vv = v[ a ].length < k ? null : v[ a ][ k ];
-                if ( vv instanceof Array )
+                if ( is_array(vv) )
                 {
                     // cartesian can be re-used to create higher-order products
                     // i.e cartesian(alpha, beta, gamma) and cartesian(cartesian(alpha, beta), gamma)
@@ -486,7 +492,7 @@ var  Abacus = {VERSION: "0.1.0"}
         if ( null == a ) return null;
         if ( !a.length ) return [];
         var i, k = a.length, g = new Array(k);
-        if ( n instanceof Array )
+        if ( is_array(n) )
         {
             // non-cyclic multi-radix n-ray code
             // [TODO] need to make cyclic for all n and radix used!!!
@@ -523,7 +529,7 @@ var  Abacus = {VERSION: "0.1.0"}
         if ( null == a ) return null;
         if ( !a.length ) return [];
         var i, k = a.length, b = new Array(k);
-        if ( n instanceof Array ) for (i=0; i<k; i++) b[i] = n[i]-1-a[i];
+        if ( is_array(n) ) for (i=0; i<k; i++) b[i] = n[i]-1-a[i];
         else if ( 0 > n ) for (i=0; i<k; i++) b[i] = k-1-i-a[i];
         else for (n=n-1,i=0; i<k; i++) b[i] = n-a[i];
         return b;
@@ -538,7 +544,7 @@ var  Abacus = {VERSION: "0.1.0"}
     // T process / symmetry
     ,inversion = function inversion( n, n0 ) {
         if ( null == n0 ) n0 = 0;
-        if ( n instanceof Array )
+        if ( is_array(n) )
         {
             var i, l = n.length, invn = new Array(l);
             for(i=0; i<l; i++) invn[i] = n0 - n[i];
@@ -804,37 +810,168 @@ var  Abacus = {VERSION: "0.1.0"}
         }
         return p;
     }
-    ,combinatorial_template_parse = function combinatorial_template_parse( tpl ) {
-        var l = tpl.length, i, pos, c, num, entry,
-            variables = {}, constants = {}, any = {}
+    ,apply_template_values = function apply_template_values( references, values ) {
+        var c, i = 0;
+        for(c in references)
+        {
+            if ( HAS.call(references, c) && !references[c].expr )
+                references[c].val = values[i++];
+        }
+        for(c in references)
+        {
+            if ( HAS.call(references, c) && references[c].expr )
+            {
+                references[c].expr();
+            }
+        }
+    }
+    ,check_unique = function check_unique( satisfied, constants, references, deep ) {
+        var unique = true, c, applied = {};
+        for(c in constants)
+        {
+            if ( !HAS.call(constants, c) ) continue;
+            if ( 1 < constants[c].pos.length )
+            {
+                unique = false;
+                break;
+            }
+            if ( deep ) applied[constants[c].val] = 1;
+        }
+        if ( unique )
+        {
+            for(c in references)
+            {
+                if ( !HAS.call(references, c) ) continue;
+                if ( references[c].expr && (1 < references[c].pos.length) )
+                {
+                    unique = false;
+                    break;
+                }
+                if ( deep )
+                {
+                    if ( 1 === applied[references[c].val] )
+                    {
+                        unique = false;
+                        break;
+                    }
+                    else
+                    {
+                        applied[references[c].val] = 1;
+                    }
+                }
+            }
+        }
+        satisfied.unique = unique;
+        return satisfied;
+    }
+    ,check_ordered = function check_ordered( satisfied, constants, references, desc, deep ) {
+        var ordered = true, strongly_ordered = true, c, k, i, j;
+        for(c in constants)
+        {
+            if ( !HAS.call(constants, c) ) continue;
+            if ( strongly_ordered )
+            {
+                for(i=0; i<constants[c].pos.length; i++)
+                {
+                    if ( (desc && constants[c].val > constants[c].pos[i]) || (!desc && constants[c].val < constants[c].pos[i]) )
+                    {
+                        strongly_ordered = false;
+                        break;
+                    }
+                }
+            }
+            if ( ordered )
+            {
+                for(k in constants)
+                {
+                    if ( !HAS.call(constants, k) ) continue;
+                    for(i=0; i<constants[c].pos.length; i++)
+                    {
+                        for(j=0; j<constants[k].pos.length; j++)
+                        {
+                            if ( (constants[c].val < constants[k].val) && (
+                                (desc && constants[c].pos[i] < constants[k].pos[j]) ||
+                                (!desc && constants[c].pos[i] > constants[k].pos[j])
+                            ) )
+                            {
+                                ordered = false;
+                                break;
+                            }
+                        }
+                        if ( !ordered ) break;
+                    }
+                    if ( !ordered ) break;
+                }
+            }
+            if ( !ordered && !strongly_ordered ) break;
+        }
+        if ( deep && (ordered || strongly_ordered) )
+        {
+        for(c in references)
+        {
+            if ( !HAS.call(references, c) ) continue;
+            if ( strongly_ordered )
+            {
+                for(i=0; i<references[c].pos.length; i++)
+                {
+                    if ( (desc && references[c].val > references[c].pos[i]) || (!desc && references[c].val < references[c].pos[i]) )
+                    {
+                        strongly_ordered = false;
+                        break;
+                    }
+                }
+            }
+            if ( ordered )
+            {
+                for(k in references)
+                {
+                    if ( !HAS.call(references, k) ) continue;
+                    for(i=0; i<references[c].pos.length; i++)
+                    {
+                        for(j=0; j<references[k].pos.length; j++)
+                        {
+                            if ( (references[c].val < references[k].val) && (
+                                (desc && references[c].pos[i] < references[k].pos[j]) ||
+                                (!desc && references[c].pos[i] > references[k].pos[j])
+                            ) )
+                            {
+                                ordered = false;
+                                break;
+                            }
+                        }
+                        if ( !ordered ) break;
+                    }
+                    if ( !ordered ) break;
+                }
+            }
+            if ( !ordered && !strongly_ordered ) break;
+        }
+        }
+        satisfied.ordered = ordered;
+        satisfied.strongly_ordered = strongly_ordered;
+        return satisfied;
+    }
+    ,check_outliers = function check_outliers( satisfied, constants, references, min, max ) {
+        var outliers = [];
+        satisfied.outliers = outliers;
+        return satisfied;
+    }
+    ,combinatorial_template_parse = function combinatorial_template_parse( tpl, constraints ) {
+        var l = tpl.length, i, j, k, p, c, s, n, entry,
+            paren, is_constant, is_reference,
+            fixed, min = null, max = null, variables = [], references = {}, constants = {},
+            positions = {}, satisfied = {unique:true,ordered:true,strongly_ordered:true,outliers:[]}
         ;
-        i = 0; pos = 0;
+        i = 0; p = 0;
         while ( i < l )
         {
             c = tpl.charAt(i++);
-            if ( 'x' === c )
+            if ( '(' === c )
             {
-                // any term
-                any[pos] = entry = {pos:pos, count:1};
-                if ( '{' === tpl.charAt(i) )
-                {
-                    // repeat
-                    i += 1; num = '';
-                    while ( i < l )
-                    {
-                        c = tpl.charAt(i++);
-                        if ( '}' === c ) break;
-                        num += c;
-                    }
-                    entry.count = num.length ? parseInt(num,10) : 1;
-                }
-                pos += entry.count;
-            }
-            else if ( '(' === c )
-            {
-                // constant or variable expression
-                var paren = 0, is_constant = true, is_variable = true;
-                num = '';
+                paren = 0;
+                is_constant = true;
+                is_reference = true;
+                s = '';
                 while ( i < l )
                 {
                     c = tpl.charAt(i++);
@@ -844,47 +981,157 @@ var  Abacus = {VERSION: "0.1.0"}
                         if ( 0 === paren ) break;
                         else paren--;
                     }
-                    num += c;
+                    s += c;
                     if ( ('0' > c) || ('9' < c) ) is_constant = false;
-                    if ( ('0' <= c) && ('9' >= c) ) is_variable = false;
+                    if ( ('(' === c) || (')' === c) ) is_reference = false;
                 }
+                s = trim(s);
+                
+                if ( !s.length )
+                {
+                    // any term
+                    n = 1;
+                    if ( '{' === tpl.charAt(i) )
+                    {
+                        // repeat
+                        i += 1; s = '';
+                        while ( i < l )
+                        {
+                            c = tpl.charAt(i++);
+                            if ( '}' === c ) break;
+                            s += c;
+                        }
+                        n = s.length ? (parseInt(s,10)||1) : 1;
+                    }
+                    p += n;
+                    continue;
+                }
+                
                 if ( is_constant )
                 {
-                    // constant, fixed
-                    constants[pos] = entry = {pos:pos, value:num, count:1};
+                    // constant
+                    if ( HAS.call(constants, s) )
+                    {
+                        entry = constants[s];
+                        entry.pos.push(p);
+                    }
+                    else
+                    {
+                        constants[s] = entry = {type:"const", pos:[p], key:s, val:parseInt(s,10)};
+                        if ( (null === min) || (entry.val < min) ) min = entry.val;
+                        if ( (null === max) || (entry.val > max) ) max = entry.val;
+                    }
+                    positions[p] = entry;
                 }
                 else
                 {
-                    // variable
-                    variables[pos] = entry = {pos:pos, value:num, reference:is_variable, expression:!is_variable, count:1};
+                    // reference or expression
+                    if ( HAS.call(references, s) )
+                    {
+                        entry = references[s];
+                        entry.pos.push(p);
+                    }
+                    else
+                    {
+                        references[s] = entry = {type:is_reference?"ref":"expr", pos:[p], key:s, val:null, expr:!is_reference};
+                        if ( is_reference )
+                        {
+                            variables.push(s);
+                        }
+                        else
+                        {
+                            var expr = entry.key, el = expr.length, ei=0, refs = {}, se;
+                            while(ei<el)
+                            {
+                                c = expr.charAt(ei++);
+                                if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) )
+                                {
+                                    se = c;
+                                    while(ei<el)
+                                    {
+                                        c = expr.charAt(ei++);
+                                        if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || ('0' <= c && '9' >= c) )
+                                            se += c;
+                                        else break;
+                                    }
+                                    if ( !HAS.call(refs, se) ) refs[se] = 1;
+                                }
+                            }
+                            entry.refs = Object.keys(refs);
+                        }
+                    }
+                    positions[p] = entry;
                 }
+                n = 1;
                 if ( '{' === tpl.charAt(i) )
                 {
                     // repeat
-                    i += 1; num = '';
+                    i += 1; s = '';
                     while ( i < l )
                     {
                         c = tpl.charAt(i++);
                         if ( '}' === c ) break;
-                        num += c;
+                        s += c;
                     }
-                    entry.count = num.length ? parseInt(num,10) : 1;
+                    n = s.length ? parseInt(s,10)||1 : 1;
                 }
-                pos += entry.count;
+                p += n;
+                while(--n)
+                {
+                    positions[entry.pos[entry.pos.length-1]+1] = entry;
+                    entry.pos.push(entry.pos[entry.pos.length-1]+1);
+                }
             }
         }
-        return {variables: variables, constants: constants, any: any};
+        fixed = 0;
+        for(c in constants)
+        {
+            if ( !HAS.call(constants, c) ) continue;
+            fixed += constants[c].pos.length;
+        }
+        for(c in references)
+        {
+            if ( !HAS.call(references, c) || (true !== references[c].expr) ) continue;
+            var decl = "";
+            if ( references[c].refs.length )
+            {
+                decl += "var ";
+                for(i=0; i<references[c].refs.length; i++)
+                    decl += (i ? "," : "")+references[c].refs[i]+"=ref[\""+references[c].refs[i]+"\"].val";
+                decl += ";\n";
+            }
+            references[c].expr = new Function("ref", "\"use strict\";\nreturn function(){\n\"use strict\";\n"+decl+"ref[\""+references[c].key+"\"].val="+references[c].key+";\n};")(references);
+            fixed += references[c].pos.length;
+        }
+        var l = variables.length,
+            even_values = new Array(l),
+            odd_values = new Array(l),
+            unique_values = new Array(l),
+            desc = constraints&&constraints.desc;
+        for(j=0,i=0; i<l; i++)
+        {
+            even_values[i] = 0; odd_values[i] = 1;
+            while( HAS.call(constants,j) ) j++;
+            unique_values[desc ? l-1-i : i] = j++;
+        }
+        console.log(unique_values);
+        apply_template_values(references, unique_values);
+        check_unique(satisfied, constants, references, true);
+        check_ordered(satisfied, constants, references, desc, true);
+        check_outliers(satisfied, constants, references);
+        return {fixed:fixed, variables:variables, constants:constants, references:references/*, positions:positions*/, constraints:satisfied};
     }
     ,REVERSED = 1, REFLECTED = 2
     ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32, STOCHASTIC = 64
     ,LEXICAL = LEX | COLEX | MINIMAL, RANDOMISED = RANDOM | STOCHASTIC
     ,ORDERINGS = LEXICAL | RANDOMISED | REVERSED | REFLECTED
+    ,UNIQUE = 1, ORDERED = 2, INDEPENDENT = 4
     ,ORDER = function ORDER( o ) {
         if ( !arguments.length || null == o )
         {
             return LEX; // default
         }
-        if ( 'string' === typeof o )
+        if ( is_string(o) )
         {
             var order = 0, ord = o.toUpperCase( ).split(',');
             for(var i=0,l=ord.length; i<l; i++)
@@ -1136,20 +1383,90 @@ Abacus.BitArray = Class({
 CombinatorialTemplate = Class({
     
     constructor: function CombinatorialTemplate(tpl) {
-        var self = this;
+        var self = this, klass = self[CLASS];
         if ( !(self instanceof CombinatorialTemplate) ) return new CombinatorialTemplate(tpl);
-        self.template = tpl||'';
-        self.data = CombinatorialTemplate.parse( self.template );
+        self.tpl = tpl||'';
+        self.tre = klass.parse( self.tpl );
     }
     
-    ,template: null
+    ,tpl: null
+    ,tre: null
     ,data: null
     
     ,dispose: function( ) {
         var self = this;
-        self.template = null;
+        self.tpl = null;
+        self.tre = null;
         self.data = null;
         return self;
+    }
+    
+    ,tree: function( ) {
+        return this.tre;
+    }
+    
+    ,render: function( input, output ) {
+        var tpl = this.tre, i, o, li, lo, n, p, pl;
+        li = input.length; lo = output.length;
+        rendered = new Array(lo);
+        inputs = new Array(lo);
+        map = new Array(lo);
+        for(o=0; o<lo; o++)
+        {
+            if ( inputs[o] ) continue;
+            if ( HAS.call(tpl.constants,o) )
+            {
+                n = tpl.constants[o];
+                for(p=0,pl=n.pos.length; p<pl; p++)
+                {
+                    inputs[n.pos[p]] = {"const":n,index:o};
+                    map[n.pos[p]] = 0;
+                }
+            }
+            else if ( HAS.call(tpl.references,o) )
+            {
+                n = tpl.references[o];
+                if ( !n.expr )
+                {
+                    for(p=0,pl=n.pos.length; p<pl; p++)
+                    {
+                        inputs[n.pos[p]] = {"input":n,index:o};
+                        map[n.pos[p]] = 0;
+                    }
+                }
+                else
+                {
+                    for(p=0,pl=n.pos.length; p<pl; p++)
+                    {
+                        inputs[n.pos[p]] = {"expr":n,index:o};
+                        map[n.pos[p]] = 0;
+                    }
+                }
+            }
+            else
+            {
+                inputs[o] = true;
+            }
+        }
+        for(i=0,o=0; o<lo; o++)
+        {
+            if ( rendered[o] ) continue;
+            if ( HAS.call(tpl.constants,o) )
+            {
+                n = tpl.constants[o];
+                for(p=0,pl=n.pos.length; p<pl; p++)
+                {
+                    output[n.pos[p]] = n.val;
+                    rendered[n.pos[p]] = 1;
+                }
+            }
+            else if ( i < li )
+            {
+                output[o] = input[i++];
+                rendered[o] = 1;
+            }
+        }
+        return output;
     }
 });
 CombinatorialTemplate.parse = combinatorial_template_parse;
@@ -1174,6 +1491,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             };
         }
         ,Template: CombinatorialTemplate
+        
+        //,TYPE: 0
         
         // some C-P-T processes at play here :))
         ,C: function( item, n ) {
@@ -1214,6 +1533,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,_next: null
     ,_traversed: null
     ,_stochastic: null
+    ,_template: null
     
     ,dispose: function( ) {
         var self = this;
@@ -1231,6 +1551,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         {
             self._traversed.dispose( );
             self._traversed = null;
+        }
+        if ( self._template )
+        {
+            self._template.dispose( );
+            self._template = null;
         }
         return self;
     }
@@ -1263,6 +1588,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self.n = state[7];
         }
         return self;
+    }
+    
+    ,template: function( ) {
+        return this._template ? this._template.tpl||null : null;
     }
     
     ,total: function( ) {
@@ -1695,7 +2024,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
     constructor: function Permutation( n, multiset ) {
         var self = this;
         if ( !(self instanceof Permutation) ) return new Permutation(n, multiset);
-        CombinatorialIterator.call(self, [n, '[object Array]' === toString.call(multiset) ? multiset : false]);
+        CombinatorialIterator.call(self, [n, is_array(multiset)&&multiset.length ? multiset : false]);
     }
     
     ,__static__: {
@@ -1725,7 +2054,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         ,rand: function( n ) {
             var klass = this;
-            return n instanceof Array ? klass.randInv( n[0] ) : klass.randPerm( n );
+            return is_array(n) ? klass.randInv( n[0] ) : klass.randPerm( n );
         }
         ,randPerm: function( n ) {
             // return a random permutation
@@ -1806,11 +2135,11 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         ,rank: function( item, n ) { 
             var klass = this;
-            return n instanceof Array ? klass.rankInv( item, n[0] ) : klass.rankPerm( item, n || item.length );
+            return is_array(n) ? klass.rankInv( item, n[0] ) : klass.rankPerm( item, n || item.length );
         }
         ,unrank: function( index, n, total ) { 
             var klass = this;
-            return n instanceof Array ? klass.unrankInv( index, n[0], total ) : klass.unrankPerm( index, [n || item.length], total );
+            return is_array(n) ? klass.unrankInv( index, n[0], total ) : klass.unrankPerm( index, [n || item.length], total );
         }
         ,rankInv: function( item, n ) { 
             var Arithmetic = Abacus.Arithmetic, index, i, m;
@@ -2069,9 +2398,24 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
 Combination = Abacus.Combination = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
-    constructor: function Combination( n, k, type ) {
+    constructor: function Combination( n, k, type/*, template*/ ) {
         var self = this;
-        if ( !(self instanceof Combination) ) return new Combination(n, k, type);
+        if ( !(self instanceof Combination) ) return new Combination(n, k, type/*, template*/);
+        /*if ( is_string(template)&&template.length )
+        {
+            var tpl = CombinatorialTemplate(template), orig_n = [n, k];
+            if ( !tpl.tre.unique || !tpl.tre.ordered )
+            {
+            }
+            else
+            {
+            }
+            self._template = tpl;
+        }
+        else
+        {
+            self._template = null;
+        }*/
         CombinatorialIterator.call(self, [n, k, "repeated"===String(type).toLowerCase()]);
     }
     

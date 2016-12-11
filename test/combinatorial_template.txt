@@ -1,33 +1,172 @@
 Abacus.CombinatorialIterator.Template (VERSION = 0.1.0)
 ---
-o = Abacus.CombinatorialIterator.Template("(n)(m)(1){2}x{3}(0)(n+1)(m+1){4}")
-o.data
-{ variables: 
-   { '0': 
-      { pos: 0,
-        value: 'n',
-        reference: true,
-        expression: false,
-        count: 1 },
-     '1': 
-      { pos: 1,
-        value: 'm',
-        reference: true,
-        expression: false,
-        count: 1 },
-     '8': 
-      { pos: 8,
-        value: 'n+1',
-        reference: false,
-        expression: true,
-        count: 1 },
-     '9': 
-      { pos: 9,
-        value: 'm+1',
-        reference: false,
-        expression: true,
-        count: 4 } },
-  constants: 
-   { '2': { pos: 2, value: '1', count: 2 },
-     '7': { pos: 7, value: '0', count: 1 } },
-  any: { '4': { pos: 4, count: 3 } } }
+o = Abacus.CombinatorialIterator.Template("((n+1))(n)(m)(1){2}(){3}(0)((n+1))((m+1)){4}((n+m))")
+[ 2, 3 ]
+o.tree()
+{
+  "fixed": 10,
+  "variables": [
+    "n",
+    "m"
+  ],
+  "constants": {
+    "0": {
+      "type": "const",
+      "pos": [
+        8
+      ],
+      "key": "0",
+      "val": 0
+    },
+    "1": {
+      "type": "const",
+      "pos": [
+        3,
+        4
+      ],
+      "key": "1",
+      "val": 1
+    }
+  },
+  "references": {
+    "(n+1)": {
+      "type": "expr",
+      "pos": [
+        0,
+        9
+      ],
+      "key": "(n+1)",
+      "val": 3,
+      "refs": [
+        "n"
+      ]
+    },
+    "n": {
+      "type": "ref",
+      "pos": [
+        1
+      ],
+      "key": "n",
+      "val": 2,
+      "expr": false
+    },
+    "m": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "m",
+      "val": 3,
+      "expr": false
+    },
+    "(m+1)": {
+      "type": "expr",
+      "pos": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "key": "(m+1)",
+      "val": 4,
+      "refs": [
+        "m"
+      ]
+    },
+    "(n+m)": {
+      "type": "expr",
+      "pos": [
+        14
+      ],
+      "key": "(n+m)",
+      "val": 5,
+      "refs": [
+        "n",
+        "m"
+      ]
+    }
+  },
+  "constraints": {
+    "unique": false,
+    "ordered": false,
+    "strongly_ordered": false,
+    "outliers": []
+  }
+}
+o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(1)(0)((n+1))((n+m))")
+[ 2, 3 ]
+o.tree()
+{
+  "fixed": 4,
+  "variables": [
+    "n",
+    "m"
+  ],
+  "constants": {
+    "0": {
+      "type": "const",
+      "pos": [
+        5
+      ],
+      "key": "0",
+      "val": 0
+    },
+    "1": {
+      "type": "const",
+      "pos": [
+        4
+      ],
+      "key": "1",
+      "val": 1
+    }
+  },
+  "references": {
+    "n": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "n",
+      "val": 2,
+      "expr": false
+    },
+    "m": {
+      "type": "ref",
+      "pos": [
+        3
+      ],
+      "key": "m",
+      "val": 3,
+      "expr": false
+    },
+    "(n+1)": {
+      "type": "expr",
+      "pos": [
+        6
+      ],
+      "key": "(n+1)",
+      "val": 3,
+      "refs": [
+        "n"
+      ]
+    },
+    "(n+m)": {
+      "type": "expr",
+      "pos": [
+        7
+      ],
+      "key": "(n+m)",
+      "val": 5,
+      "refs": [
+        "n",
+        "m"
+      ]
+    }
+  },
+  "constraints": {
+    "unique": false,
+    "ordered": false,
+    "strongly_ordered": false,
+    "outliers": []
+  }
+}

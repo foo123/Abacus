@@ -289,5 +289,5 @@ most algorithms:
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [ALMOST DONE, see reference, used as custom iterator ordering, see above]
 * add `MultisetPermutation`, `Derangement`, `SetPartition`, `RestrictedPartition` [IN PROGRESS]
 * add latin squares, magic squares algorithms [IN PROGRESS]
-* support generation of combinatorial objects based on *patterns/templates of constraints* to satisfy e.g "only combinatorial objects matching `'(n)(m)(1){2}x{3}(0)(n+1)(m+1){4}'`" pattern and so on.. [IN PROGRESS]
-* add generic *rule-based* `Combinatorial` objects like `Grammar` [TODO?]
+* support generation of combinatorial objects based on *patterns/templates of constraints* to satisfy e.g "only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)(n+1)(n+m){4}'`" pattern and so on.. [IN PROGRESS]
+* add generic *rule-based* `Combinatorial` objects like `Grammar` [TODO?] (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
