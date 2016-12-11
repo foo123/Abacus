@@ -1,7 +1,22 @@
 Abacus.CombinatorialIterator.Template (VERSION = 0.1.0)
 ---
+Abacus.CombinatorialTest(4, 0, 5, "inc")
+[ 0, 1, 2, 3 ]
+[ 0, 1, 2, 4 ]
+[ 0, 1, 2, 5 ]
+[ 0, 1, 3, 4 ]
+[ 0, 1, 3, 5 ]
+[ 0, 1, 4, 5 ]
+[ 0, 2, 3, 4 ]
+[ 0, 2, 3, 5 ]
+[ 0, 2, 4, 5 ]
+[ 0, 3, 4, 5 ]
+[ 1, 2, 3, 4 ]
+[ 1, 2, 3, 5 ]
+[ 1, 2, 4, 5 ]
+[ 1, 3, 4, 5 ]
+[ 2, 3, 4, 5 ]
 o = Abacus.CombinatorialIterator.Template("((n+1))(n)(m)(1){2}(){3}(0)((n+1))((m+1)){4}((n+m))")
-[ 2, 3 ]
 o.tree()
 {
   "fixed": 10,
@@ -9,7 +24,7 @@ o.tree()
     "n",
     "m"
   ],
-  "constants": {
+  "references": {
     "0": {
       "type": "const",
       "pos": [
@@ -26,9 +41,7 @@ o.tree()
       ],
       "key": "1",
       "val": 1
-    }
-  },
-  "references": {
+    },
     "(n+1)": {
       "type": "expr",
       "pos": [
@@ -48,7 +61,7 @@ o.tree()
       ],
       "key": "n",
       "val": 2,
-      "expr": false
+      "compute": false
     },
     "m": {
       "type": "ref",
@@ -57,7 +70,7 @@ o.tree()
       ],
       "key": "m",
       "val": 3,
-      "expr": false
+      "compute": false
     },
     "(m+1)": {
       "type": "expr",
@@ -86,15 +99,151 @@ o.tree()
       ]
     }
   },
+  "positions": {
+    "0": {
+      "type": "expr",
+      "pos": [
+        0,
+        9
+      ],
+      "key": "(n+1)",
+      "val": 3,
+      "refs": [
+        "n"
+      ]
+    },
+    "1": {
+      "type": "ref",
+      "pos": [
+        1
+      ],
+      "key": "n",
+      "val": 2,
+      "compute": false
+    },
+    "2": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "m",
+      "val": 3,
+      "compute": false
+    },
+    "3": {
+      "type": "const",
+      "pos": [
+        3,
+        4
+      ],
+      "key": "1",
+      "val": 1
+    },
+    "4": {
+      "type": "const",
+      "pos": [
+        3,
+        4
+      ],
+      "key": "1",
+      "val": 1
+    },
+    "8": {
+      "type": "const",
+      "pos": [
+        8
+      ],
+      "key": "0",
+      "val": 0
+    },
+    "9": {
+      "type": "expr",
+      "pos": [
+        0,
+        9
+      ],
+      "key": "(n+1)",
+      "val": 3,
+      "refs": [
+        "n"
+      ]
+    },
+    "10": {
+      "type": "expr",
+      "pos": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "key": "(m+1)",
+      "val": 4,
+      "refs": [
+        "m"
+      ]
+    },
+    "11": {
+      "type": "expr",
+      "pos": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "key": "(m+1)",
+      "val": 4,
+      "refs": [
+        "m"
+      ]
+    },
+    "12": {
+      "type": "expr",
+      "pos": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "key": "(m+1)",
+      "val": 4,
+      "refs": [
+        "m"
+      ]
+    },
+    "13": {
+      "type": "expr",
+      "pos": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "key": "(m+1)",
+      "val": 4,
+      "refs": [
+        "m"
+      ]
+    },
+    "14": {
+      "type": "expr",
+      "pos": [
+        14
+      ],
+      "key": "(n+m)",
+      "val": 5,
+      "refs": [
+        "n",
+        "m"
+      ]
+    }
+  },
   "constraints": {
     "unique": false,
     "ordered": false,
-    "strongly_ordered": false,
-    "outliers": []
+    "strongly_ordered": false
   }
 }
 o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(1)(0)((n+1))((n+m))")
-[ 2, 3 ]
 o.tree()
 {
   "fixed": 4,
@@ -102,7 +251,7 @@ o.tree()
     "n",
     "m"
   ],
-  "constants": {
+  "references": {
     "0": {
       "type": "const",
       "pos": [
@@ -118,9 +267,7 @@ o.tree()
       ],
       "key": "1",
       "val": 1
-    }
-  },
-  "references": {
+    },
     "n": {
       "type": "ref",
       "pos": [
@@ -128,7 +275,7 @@ o.tree()
       ],
       "key": "n",
       "val": 2,
-      "expr": false
+      "compute": false
     },
     "m": {
       "type": "ref",
@@ -137,7 +284,7 @@ o.tree()
       ],
       "key": "m",
       "val": 3,
-      "expr": false
+      "compute": false
     },
     "(n+1)": {
       "type": "expr",
@@ -163,10 +310,378 @@ o.tree()
       ]
     }
   },
+  "positions": {
+    "2": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "n",
+      "val": 2,
+      "compute": false
+    },
+    "3": {
+      "type": "ref",
+      "pos": [
+        3
+      ],
+      "key": "m",
+      "val": 3,
+      "compute": false
+    },
+    "4": {
+      "type": "const",
+      "pos": [
+        4
+      ],
+      "key": "1",
+      "val": 1
+    },
+    "5": {
+      "type": "const",
+      "pos": [
+        5
+      ],
+      "key": "0",
+      "val": 0
+    },
+    "6": {
+      "type": "expr",
+      "pos": [
+        6
+      ],
+      "key": "(n+1)",
+      "val": 3,
+      "refs": [
+        "n"
+      ]
+    },
+    "7": {
+      "type": "expr",
+      "pos": [
+        7
+      ],
+      "key": "(n+m)",
+      "val": 5,
+      "refs": [
+        "n",
+        "m"
+      ]
+    }
+  },
   "constraints": {
     "unique": false,
     "ordered": false,
-    "strongly_ordered": false,
-    "outliers": []
+    "strongly_ordered": false
+  }
+}
+o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(4)(5)((n+4))((m+4))")
+o.tree()
+{
+  "fixed": 4,
+  "variables": [
+    "n",
+    "m"
+  ],
+  "references": {
+    "4": {
+      "type": "const",
+      "pos": [
+        4
+      ],
+      "key": "4",
+      "val": 4
+    },
+    "5": {
+      "type": "const",
+      "pos": [
+        5
+      ],
+      "key": "5",
+      "val": 5
+    },
+    "n": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "n",
+      "val": 2,
+      "compute": false
+    },
+    "m": {
+      "type": "ref",
+      "pos": [
+        3
+      ],
+      "key": "m",
+      "val": 3,
+      "compute": false
+    },
+    "(n+4)": {
+      "type": "expr",
+      "pos": [
+        6
+      ],
+      "key": "(n+4)",
+      "val": 6,
+      "refs": [
+        "n"
+      ]
+    },
+    "(m+4)": {
+      "type": "expr",
+      "pos": [
+        7
+      ],
+      "key": "(m+4)",
+      "val": 7,
+      "refs": [
+        "m"
+      ]
+    }
+  },
+  "positions": {
+    "2": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "n",
+      "val": 2,
+      "compute": false
+    },
+    "3": {
+      "type": "ref",
+      "pos": [
+        3
+      ],
+      "key": "m",
+      "val": 3,
+      "compute": false
+    },
+    "4": {
+      "type": "const",
+      "pos": [
+        4
+      ],
+      "key": "4",
+      "val": 4
+    },
+    "5": {
+      "type": "const",
+      "pos": [
+        5
+      ],
+      "key": "5",
+      "val": 5
+    },
+    "6": {
+      "type": "expr",
+      "pos": [
+        6
+      ],
+      "key": "(n+4)",
+      "val": 6,
+      "refs": [
+        "n"
+      ]
+    },
+    "7": {
+      "type": "expr",
+      "pos": [
+        7
+      ],
+      "key": "(m+4)",
+      "val": 7,
+      "refs": [
+        "m"
+      ]
+    }
+  },
+  "constraints": {
+    "unique": true,
+    "ordered": true,
+    "strongly_ordered": true
+  }
+}
+o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m))((n))")
+o.tree()
+{
+  "fixed": 4,
+  "variables": [
+    "n",
+    "m",
+    "k",
+    "l"
+  ],
+  "references": {
+    "n": {
+      "type": "ref",
+      "pos": [
+        0
+      ],
+      "key": "n",
+      "val": 0,
+      "compute": false
+    },
+    "m": {
+      "type": "ref",
+      "pos": [
+        1
+      ],
+      "key": "m",
+      "val": 1,
+      "compute": false
+    },
+    "k": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "k",
+      "val": 2,
+      "compute": false
+    },
+    "l": {
+      "type": "ref",
+      "pos": [
+        3
+      ],
+      "key": "l",
+      "val": 3,
+      "compute": false
+    },
+    "(l)": {
+      "type": "expr",
+      "pos": [
+        4
+      ],
+      "key": "(l)",
+      "val": 3,
+      "refs": [
+        "l"
+      ]
+    },
+    "(k)": {
+      "type": "expr",
+      "pos": [
+        5
+      ],
+      "key": "(k)",
+      "val": 2,
+      "refs": [
+        "k"
+      ]
+    },
+    "(m)": {
+      "type": "expr",
+      "pos": [
+        6
+      ],
+      "key": "(m)",
+      "val": 1,
+      "refs": [
+        "m"
+      ]
+    },
+    "(n)": {
+      "type": "expr",
+      "pos": [
+        7
+      ],
+      "key": "(n)",
+      "val": 0,
+      "refs": [
+        "n"
+      ]
+    }
+  },
+  "positions": {
+    "0": {
+      "type": "ref",
+      "pos": [
+        0
+      ],
+      "key": "n",
+      "val": 0,
+      "compute": false
+    },
+    "1": {
+      "type": "ref",
+      "pos": [
+        1
+      ],
+      "key": "m",
+      "val": 1,
+      "compute": false
+    },
+    "2": {
+      "type": "ref",
+      "pos": [
+        2
+      ],
+      "key": "k",
+      "val": 2,
+      "compute": false
+    },
+    "3": {
+      "type": "ref",
+      "pos": [
+        3
+      ],
+      "key": "l",
+      "val": 3,
+      "compute": false
+    },
+    "4": {
+      "type": "expr",
+      "pos": [
+        4
+      ],
+      "key": "(l)",
+      "val": 3,
+      "refs": [
+        "l"
+      ]
+    },
+    "5": {
+      "type": "expr",
+      "pos": [
+        5
+      ],
+      "key": "(k)",
+      "val": 2,
+      "refs": [
+        "k"
+      ]
+    },
+    "6": {
+      "type": "expr",
+      "pos": [
+        6
+      ],
+      "key": "(m)",
+      "val": 1,
+      "refs": [
+        "m"
+      ]
+    },
+    "7": {
+      "type": "expr",
+      "pos": [
+        7
+      ],
+      "key": "(n)",
+      "val": 0,
+      "refs": [
+        "n"
+      ]
+    }
+  },
+  "constraints": {
+    "unique": false,
+    "ordered": false,
+    "strongly_ordered": false
   }
 }

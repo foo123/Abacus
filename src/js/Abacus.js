@@ -810,103 +810,35 @@ var  Abacus = {VERSION: "0.1.0"}
         }
         return p;
     }
-    ,apply_template_values = function apply_template_values( references, values ) {
-        var c, i = 0;
-        for(c in references)
+    ,apply_template_values = function apply_template_values( references, variables, values ) {
+        var k, i, l = variables.length;
+        if ( l )
         {
-            if ( HAS.call(references, c) && !references[c].expr )
-                references[c].val = values[i++];
-        }
-        for(c in references)
-        {
-            if ( HAS.call(references, c) && references[c].expr )
-            {
-                references[c].expr();
-            }
+            for(i=0; i<l; i++)
+                references[variables[i]].val = values[i];
+            for(k in references)
+                if ( HAS.call(references, k) && ("expr" === references[k].type) )
+                    references[k].compute();
         }
     }
-    ,check_unique = function check_unique( satisfied, constants, references, deep ) {
+    ,check_unique = function check_unique( satisfied, references ) {
         var unique = true, c, applied = {};
-        for(c in constants)
+        for(c in references)
         {
-            if ( !HAS.call(constants, c) ) continue;
-            if ( 1 < constants[c].pos.length )
-            {
+            if ( !HAS.call(references, c) ) continue;
+            if ( /*("const" === references[c].type || "expr" === references[c].type) &&*/ (1 < references[c].pos.length) )
                 unique = false;
-                break;
-            }
-            if ( deep ) applied[constants[c].val] = 1;
-        }
-        if ( unique )
-        {
-            for(c in references)
-            {
-                if ( !HAS.call(references, c) ) continue;
-                if ( references[c].expr && (1 < references[c].pos.length) )
-                {
-                    unique = false;
-                    break;
-                }
-                if ( deep )
-                {
-                    if ( 1 === applied[references[c].val] )
-                    {
-                        unique = false;
-                        break;
-                    }
-                    else
-                    {
-                        applied[references[c].val] = 1;
-                    }
-                }
-            }
+            if ( 1 === applied[references[c].val] )
+                unique = false;
+            else
+                applied[references[c].val] = 1;
+            if ( !unique ) break;
         }
         satisfied.unique = unique;
         return satisfied;
     }
-    ,check_ordered = function check_ordered( satisfied, constants, references, desc, deep ) {
+    ,check_ordered = function check_ordered( satisfied, references, desc ) {
         var ordered = true, strongly_ordered = true, c, k, i, j;
-        for(c in constants)
-        {
-            if ( !HAS.call(constants, c) ) continue;
-            if ( strongly_ordered )
-            {
-                for(i=0; i<constants[c].pos.length; i++)
-                {
-                    if ( (desc && constants[c].val > constants[c].pos[i]) || (!desc && constants[c].val < constants[c].pos[i]) )
-                    {
-                        strongly_ordered = false;
-                        break;
-                    }
-                }
-            }
-            if ( ordered )
-            {
-                for(k in constants)
-                {
-                    if ( !HAS.call(constants, k) ) continue;
-                    for(i=0; i<constants[c].pos.length; i++)
-                    {
-                        for(j=0; j<constants[k].pos.length; j++)
-                        {
-                            if ( (constants[c].val < constants[k].val) && (
-                                (desc && constants[c].pos[i] < constants[k].pos[j]) ||
-                                (!desc && constants[c].pos[i] > constants[k].pos[j])
-                            ) )
-                            {
-                                ordered = false;
-                                break;
-                            }
-                        }
-                        if ( !ordered ) break;
-                    }
-                    if ( !ordered ) break;
-                }
-            }
-            if ( !ordered && !strongly_ordered ) break;
-        }
-        if ( deep && (ordered || strongly_ordered) )
-        {
         for(c in references)
         {
             if ( !HAS.call(references, c) ) continue;
@@ -925,7 +857,7 @@ var  Abacus = {VERSION: "0.1.0"}
             {
                 for(k in references)
                 {
-                    if ( !HAS.call(references, k) ) continue;
+                    if ( !HAS.call(references, k) || (c === k) ) continue;
                     for(i=0; i<references[c].pos.length; i++)
                     {
                         for(j=0; j<references[k].pos.length; j++)
@@ -946,22 +878,65 @@ var  Abacus = {VERSION: "0.1.0"}
             }
             if ( !ordered && !strongly_ordered ) break;
         }
-        }
         satisfied.ordered = ordered;
         satisfied.strongly_ordered = strongly_ordered;
         return satisfied;
     }
-    ,check_outliers = function check_outliers( satisfied, constants, references, min, max ) {
-        var outliers = [];
-        satisfied.outliers = outliers;
-        return satisfied;
+    ,generate_combinatorial_test = function generate_combinatorial_test( testval, min, max, type ) {
+        if ( !testval || !testval.length ) return;
+        var i, n = testval.length;
+        //if ( max-min+1 < n ) return false;
+        if ( null == testval[0] )
+        {
+            if ( "inc" === type ) for(i=0; i<n; i++) testval[i] = min+i;
+            else for(i=0; i<n; i++) testval[i] = min;
+            return testval;
+        }
+        else
+        {
+            if ( "inc" === type )
+            {
+                i = n-1;
+                while( (i >= 0) && (testval[i] === max+i-n+1) ) i--;
+                if ( (i >= 0) && (testval[i] < max+i-n+1) )
+                {
+                    testval[i]++;
+                    while ( (++i < n) ) testval[i] = testval[i-1]+1;
+                    return testval;
+                }
+            }
+            else if ( "nondec" === type )
+            {
+                i = n-1;
+                while( (i >= 0) && (testval[i] === max) ) i--;
+                if ( (i >= 0) && (testval[i] < max) )
+                {
+                    testval[i]++;
+                    while ( ++i < n ) testval[i] = testval[i-1];
+                    return testval;
+                }
+            }
+            else //if ( "indie" === type )
+            {
+                i = n-1;
+                while( (i >= 0) && (testval[i] === max) ) i--;
+                if ( (i >= 0) && (testval[i] < max) )
+                {
+                    testval[i]++;
+                    while ( ++i < n ) testval[i] = 0;
+                    return testval;
+                }
+            }
+        }
     }
-    ,combinatorial_template_parse = function combinatorial_template_parse( tpl, constraints ) {
+    ,parse_combinatorial_template = function parse_combinatorial_template( tpl, constraints ) {
         var l = tpl.length, i, j, k, p, c, s, n, entry,
             paren, is_constant, is_reference,
-            fixed, min = null, max = null, variables = [], references = {}, constants = {},
-            positions = {}, satisfied = {unique:true,ordered:true,strongly_ordered:true,outliers:[]}
+            fixed = 0, min = null, max = null,
+            variables = [], references = {}, positions = {},
+            satisfied = {unique:true,ordered:true,strongly_ordered:true}
         ;
+        constraints = constraints||{};
         i = 0; p = 0;
         while ( i < l )
         {
@@ -1010,14 +985,14 @@ var  Abacus = {VERSION: "0.1.0"}
                 if ( is_constant )
                 {
                     // constant
-                    if ( HAS.call(constants, s) )
+                    if ( HAS.call(references, s) )
                     {
-                        entry = constants[s];
+                        entry = references[s];
                         entry.pos.push(p);
                     }
                     else
                     {
-                        constants[s] = entry = {type:"const", pos:[p], key:s, val:parseInt(s,10)};
+                        references[s] = entry = {type:"const", pos:[p], key:s, val:parseInt(s,10)};
                         if ( (null === min) || (entry.val < min) ) min = entry.val;
                         if ( (null === max) || (entry.val > max) ) max = entry.val;
                     }
@@ -1033,14 +1008,16 @@ var  Abacus = {VERSION: "0.1.0"}
                     }
                     else
                     {
-                        references[s] = entry = {type:is_reference?"ref":"expr", pos:[p], key:s, val:null, expr:!is_reference};
+                        references[s] = entry = {type:is_reference?"ref":"expr", pos:[p], key:s, val:null, compute:!is_reference};
                         if ( is_reference )
                         {
+                            // reference
                             variables.push(s);
                         }
                         else
                         {
-                            var expr = entry.key, el = expr.length, ei=0, refs = {}, se;
+                            // expression
+                            var expr = entry.key, el = expr.length, ei=0, refs = {}, se, decl = "";
                             while(ei<el)
                             {
                                 c = expr.charAt(ei++);
@@ -1058,6 +1035,14 @@ var  Abacus = {VERSION: "0.1.0"}
                                 }
                             }
                             entry.refs = Object.keys(refs);
+                            if ( entry.refs.length )
+                            {
+                                decl += "var ";
+                                for(j=0; j<entry.refs.length; j++)
+                                    decl += (j ? "," : "")+entry.refs[j]+"=ref[\""+entry.refs[j]+"\"].val";
+                                decl += ";\n";
+                            }
+                            entry.compute = new Function("ref", "\"use strict\";\nreturn function(){\n\"use strict\";\n"+decl+"ref[\""+entry.key+"\"].val="+entry.key+";\n};")(references);
                         }
                     }
                     positions[p] = entry;
@@ -1076,6 +1061,7 @@ var  Abacus = {VERSION: "0.1.0"}
                     n = s.length ? parseInt(s,10)||1 : 1;
                 }
                 p += n;
+                if ( ("const" === entry.type) || ("expr" === entry.type) ) fixed += n;
                 while(--n)
                 {
                     positions[entry.pos[entry.pos.length-1]+1] = entry;
@@ -1083,43 +1069,29 @@ var  Abacus = {VERSION: "0.1.0"}
                 }
             }
         }
-        fixed = 0;
-        for(c in constants)
-        {
-            if ( !HAS.call(constants, c) ) continue;
-            fixed += constants[c].pos.length;
-        }
-        for(c in references)
-        {
-            if ( !HAS.call(references, c) || (true !== references[c].expr) ) continue;
-            var decl = "";
-            if ( references[c].refs.length )
-            {
-                decl += "var ";
-                for(i=0; i<references[c].refs.length; i++)
-                    decl += (i ? "," : "")+references[c].refs[i]+"=ref[\""+references[c].refs[i]+"\"].val";
-                decl += ";\n";
-            }
-            references[c].expr = new Function("ref", "\"use strict\";\nreturn function(){\n\"use strict\";\n"+decl+"ref[\""+references[c].key+"\"].val="+references[c].key+";\n};")(references);
-            fixed += references[c].pos.length;
-        }
         var l = variables.length,
-            even_values = new Array(l),
-            odd_values = new Array(l),
+            //even_values = new Array(l),
+            //odd_values = new Array(l),
             unique_values = new Array(l),
-            desc = constraints&&constraints.desc;
+            desc = !!constraints.desc, applied = {};
         for(j=0,i=0; i<l; i++)
         {
-            even_values[i] = 0; odd_values[i] = 1;
-            while( HAS.call(constants,j) ) j++;
-            unique_values[desc ? l-1-i : i] = j++;
+            //even_values[i] = 0; odd_values[i] = 1;
+            j = references[variables[i]].pos[0];
+            while( (1 === applied[j]) || (HAS.call(references,j) && ("const" === references[j].type)) ) j++;
+            unique_values[i] = j;
+            applied[j] = 1;
         }
-        console.log(unique_values);
-        apply_template_values(references, unique_values);
-        check_unique(satisfied, constants, references, true);
-        check_ordered(satisfied, constants, references, desc, true);
-        check_outliers(satisfied, constants, references);
-        return {fixed:fixed, variables:variables, constants:constants, references:references/*, positions:positions*/, constraints:satisfied};
+        apply_template_values( references, variables, unique_values );
+        check_unique( satisfied, references );
+        check_ordered( satisfied, references, desc );
+        return {
+            fixed       : fixed,
+            variables   : variables,
+            references  : references,
+            positions   : positions,
+            constraints : satisfied
+        };
     }
     ,REVERSED = 1, REFLECTED = 2
     ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32, STOCHASTIC = 64
@@ -1380,6 +1352,8 @@ Abacus.BitArray = Class({
     }
 });
 
+Abacus.CombinatorialTest = generate_combinatorial_test;
+
 CombinatorialTemplate = Class({
     
     constructor: function CombinatorialTemplate(tpl) {
@@ -1406,70 +1380,24 @@ CombinatorialTemplate = Class({
     }
     
     ,render: function( input, output ) {
-        var tpl = this.tre, i, o, li, lo, n, p, pl;
+        var tpl = this.tre, i, o, li, lo;
         li = input.length; lo = output.length;
-        rendered = new Array(lo);
-        inputs = new Array(lo);
-        map = new Array(lo);
+        values = new Array(tpl.variables.length);
+        for(i=0; i<values.length; i++)
+        {
+        }
+        apply_template_values( tpl.references, tpl.variables, values );
         for(o=0; o<lo; o++)
         {
-            if ( inputs[o] ) continue;
-            if ( HAS.call(tpl.constants,o) )
-            {
-                n = tpl.constants[o];
-                for(p=0,pl=n.pos.length; p<pl; p++)
-                {
-                    inputs[n.pos[p]] = {"const":n,index:o};
-                    map[n.pos[p]] = 0;
-                }
-            }
-            else if ( HAS.call(tpl.references,o) )
-            {
-                n = tpl.references[o];
-                if ( !n.expr )
-                {
-                    for(p=0,pl=n.pos.length; p<pl; p++)
-                    {
-                        inputs[n.pos[p]] = {"input":n,index:o};
-                        map[n.pos[p]] = 0;
-                    }
-                }
-                else
-                {
-                    for(p=0,pl=n.pos.length; p<pl; p++)
-                    {
-                        inputs[n.pos[p]] = {"expr":n,index:o};
-                        map[n.pos[p]] = 0;
-                    }
-                }
-            }
+            if ( HAS.call(tpl.positions,o) )
+                output[o] = positions[o].val;
             else
-            {
-                inputs[o] = true;
-            }
-        }
-        for(i=0,o=0; o<lo; o++)
-        {
-            if ( rendered[o] ) continue;
-            if ( HAS.call(tpl.constants,o) )
-            {
-                n = tpl.constants[o];
-                for(p=0,pl=n.pos.length; p<pl; p++)
-                {
-                    output[n.pos[p]] = n.val;
-                    rendered[n.pos[p]] = 1;
-                }
-            }
-            else if ( i < li )
-            {
-                output[o] = input[i++];
-                rendered[o] = 1;
-            }
+                output[o] = i < li ? input[i++] : o;
         }
         return output;
     }
 });
-CombinatorialTemplate.parse = combinatorial_template_parse;
+CombinatorialTemplate.parse = parse_combinatorial_template;
 
 // Abacus.CombinatorialIterator, Combinatorial Base Class and Iterator Interface
 // NOTE: by substituting usual Arithmetic ops with big-integer ops,
