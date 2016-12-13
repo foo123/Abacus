@@ -25,7 +25,9 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 var  Abacus = {VERSION: "0.1.0"}
     ,PROTO = 'prototype', CLASS = 'constructor'
     ,NotImplemented = function( ) { throw new Error("Method not implemented!"); }
-    ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
+    ,slice = Array.prototype.slice
+    ,HAS = Object[PROTO].hasOwnProperty
+    ,toString = Object[PROTO].toString
     ,Extend = Object.create
     ,Merge = function(a, b) {
         for (var p in b) if (HAS.call(b,p)) a[p] = b[p];
@@ -58,6 +60,34 @@ var  Abacus = {VERSION: "0.1.0"}
         };
     }
     ,to_fixed_binary_string_32 = to_fixed_base_string( 32, 2, '0' )
+    ,Node = function Node( k, v, p, n, l, r, d ) {
+        // a unified graph as well as (binary) tree, as well as quadraply-, doubly- and singly- linked list
+        var self = this;
+        self.key = k; self.val = v;
+        self.prev = p || null; self.next = n || null;
+        self.left = l || null; self.right = r || null;
+        self.data = d || null;
+    }
+    ,walk = function walk( scheme, node, go ) {
+        if ( null == node ) return;
+        var step, i, l, n, s = 0, sl = scheme.length;
+        while ( s < sl )
+        {
+            step = scheme[s]; s += 1; n = null;
+            if ( (Node.NODE === step) )                                n = node;
+            else if ( (Node.PREV === step) && (null != node.prev) )    n = node.prev;
+            else if ( (Node.LEFT === step) && (null != node.left) )    n = node.left;
+            else if ( (Node.RIGHT === step) && (null != node.right) )  n = node.right;
+            else if ( (Node.NEXT === step) && (null != node.next) )    n = node.next;
+            else /*if ( null == n )*/ continue;
+            if ( node === n )
+                go( n );
+            else if ( is_array(n) )
+                for(i=0,l=n.length; i<l; i++) walk( scheme, n[i], go );
+            else
+                walk( scheme, n, go );
+        }
+    }
     // http://jsperf.com/functional-loop-unrolling/2
     // http://jsperf.com/functional-loop-unrolling/3
     ,operation = function operation( F, F0, i0, i1 ) {
@@ -68,10 +98,10 @@ var  Abacus = {VERSION: "0.1.0"}
         return Fv;
     }
     ,operate = function operate( x, F, F0, i0, i1, reverse ) {
-        var len = x.length;
-        if ( arguments.length < 5 ) i1 = len-1;
+        var len = x.length, argslen = arguments.length;
+        if ( argslen < 5 ) i1 = len-1;
         if ( 0 > i1 ) i1 += len;
-        if ( arguments.length < 4 ) i0 = 0;
+        if ( argslen < 4 ) i0 = 0;
         if ( i0 > i1 ) return F0;
         if ( true === reverse )
         {
@@ -88,11 +118,11 @@ var  Abacus = {VERSION: "0.1.0"}
         return Fv;
     }
     ,map = function map( x, F, i0, i1, in_place, reverse ) {
-        var len = x.length;
+        var len = x.length, argslen = arguments.length;
         in_place = true === in_place;
-        if ( arguments.length < 4 ) i1 = len-1;
+        if ( argslen < 4 ) i1 = len-1;
         if ( 0 > i1 ) i1 += len;
-        if ( arguments.length < 3 ) i0 = 0;
+        if ( argslen < 3 ) i0 = 0;
         if ( i0 > i1 ) return in_place ? x : [];
         var i, j, k, l=i1-i0+1, l1, lr, r, q, Fx = in_place ? x : new Array(l);
         if ( true === reverse )
@@ -253,14 +283,15 @@ var  Abacus = {VERSION: "0.1.0"}
         if ( il < intersection.length ) intersection.length = il;
         return intersection;
     }
-    ,merge = function merge_sorted2( a, b, reverse, unique ) {
+    ,merge = function merge_sorted2( a, b, a0, a1, b0, b1, union, reverse, unique, in_place ) {
         reverse = -1 === reverse ? 1 : 0; unique = false !== unique;
-        var ai = 0, bi = 0, al = a.length, bl = b.length,
-        union = new Array(al+bl), ul = 0, last, with_duplicates = !unique;
+        var ai = a0, bi = b0, al = a1-a0+1, bl = b1-b0+1,
+            ui = 0, ul = al+bl, last, with_duplicates = !unique;
+        union = union || new Array(ul);
         // assume a, b lists are sorted ascending, even with duplicate values
-        while( ai < al && bi < bl )
+        while( ai <= a1 && bi <= b1 )
         {
-            if      (unique && ul) // handle any possible duplicates inside SAME list
+            if      (unique && ui) // handle any possible duplicates inside SAME list
             {
                 if ( a[ai] === last )
                 {
@@ -275,69 +306,106 @@ var  Abacus = {VERSION: "0.1.0"}
             }
             if      ( a[ai] < b[bi] )
             { 
-                union[ul++] = last = reverse?b[bi++]:a[ai++]; 
+                union[ui++] = last = reverse?b[bi++]:a[ai++]; 
             }
             else if ( a[ai] > b[bi] )
             { 
-                union[ul++] = last = reverse?a[ai++]:b[bi++]; 
+                union[ui++] = last = reverse?a[ai++]:b[bi++]; 
             }
             else // they're equal, push one unique
             {
-                union[ul++] = last = a[ ai ];
-                if ( with_duplicates ) union[ul++] = b[ bi ];
+                union[ui++] = last = a[ ai ];
+                if ( with_duplicates ) union[ui++] = b[ bi ];
                 ai++; bi++;
             }
         }
-        while ( ai < al ) if ( with_duplicates || (a[ai] !== last) ) union[ul++] = last = a[ai++]; 
-        while ( bi < bl ) if ( with_duplicates || (b[bi] !== last) ) union[ul++] = last = b[bi++]; 
-        // truncate if needed
-        if ( ul < union.length ) union.length = ul;
-        return union;
-    }
-    ,insert_sort = function insert_sorted2( a, v, k, reverse ) {
-        reverse = -1 === reverse ? 1 : 0;
-        // assume list a is ALREADY SORTED ASC/DESC, depending on reverse flag
-        if ( null == k ) k = v;
-        var l = a.length, s, m, e;
-        if ( 0 === l )
+        while ( ai <= a1 ) { if ( with_duplicates || (a[ai] !== last) ) union[ui++] = last = a[ai]; ai++; }
+        while ( bi <= b1 ) { if ( with_duplicates || (b[bi] !== last) ) union[ui++] = last = b[bi]; bi++; }
+        if ( true === in_place )
         {
-            a.push( v );
-        }
-        else if ( k < a[reverse ? l-1 : 0] )
-        {
-            if ( reverse ) a.push( v ); else a.unshift( v );
-        }
-        else if ( k >= a[reverse ? 0 : l-1] )
-        {
-            if ( reverse ) a.unshift( v ); else a.push( v );
+            // move the merged back to the a array
+            for(ui=0; ui<ul; ui++) a[a0+ui] = union[ui];
+            return a;
         }
         else
         {
-            // insert sorted using binary search
-            // O(logN) worst-case time
-            s = 0; e = l-1;
-            if ( reverse )
-            {
-                while ( e > s )
-                {
-                    m = s + ((e-s+1)>>>1);
-                    if ( k < a[ m ] ) s = m;
-                    else e = m-1;
-                }
-            }
-            else
-            {
-                while ( e > s )
-                {
-                    m = s + ((e-s+1)>>>1);
-                    if ( k < a[ m ] ) e = m-1;
-                    else s = m;
-                }
-            }
-            if ( k < a[ s ] ) a.splice(reverse ? s+1 : s, 0, v);
-            else  a.splice(reverse ? s : s+1, 0, v);
+            // truncate if needed
+            if ( ui < union.length ) union.length = ui;
+            return union;
+        }
+    }
+    ,mergesort = function mergesort( a/*, reverse*/ ) {
+        var N = a.length;
+        // in-place
+        if ( 1 >= N ) return a;
+        var logN = N, j, n, size = 1, size2 = 2, min = Math.min, aux = new Array(N);
+        while ( logN )
+        {
+            n = N-size;
+            for (j=0; j<n; j+=size2)
+                merge(a, a, j, j+size-1, j+size, min(j+size2-1, N-1), aux, false/*reverse*/, false, true);
+            size <<= 1; size2 <<= 1; logN >>= 1;
         }
         return a;
+    }
+    ,insert_sort = function insert_sort( list, v, k/*, reverse*/ ) {
+        //reverse = -1 === reverse ? 1 : 0;
+        if ( null == k ) k = v;
+        var s, e;
+        if ( !list.tree || (0 === list.tree.data) )
+        {
+            // insert first item in btree: O(1)
+            list.tree = new Node(k,v);
+            list.tree.data = 1;
+        }
+        else if ( 1 === list.tree.data )
+        {
+            // insert second item in btree: O(1)
+            /*if ( reverse )
+                s = k >= list.tree.key
+                    ? new Node(k,v,null,list.tree)
+                    : new Node(k,v,list.tree);
+            else*/
+                s = k < list.tree.key
+                    ? new Node(k,v,null,list.tree)
+                    : new Node(k,v,list.tree);
+            s.data = list.tree.data+1;
+            list.tree.data = null;
+            list.tree = s;
+        }
+        else
+        {
+            // insert item in btree: O(logN) average-case, O(N) worst-case
+            e = list.tree; e.data++;
+            /*if ( reverse )
+            {
+                while ( e )
+                {
+                    s = e;
+                    e = k >= e.key ? e.prev : e.next;
+                }
+                if ( k >= s.key ) s.prev = new Node(k,v,s);
+                else              s.next = new Node(k,v,s);
+            }
+            else
+            {*/
+                while ( e )
+                {
+                    s = e;
+                    e = k < e.key ? e.prev : e.next;
+                }
+                if ( k < s.key ) s.prev = new Node(k,v,s);
+                else             s.next = new Node(k,v,s);
+            /*}*/
+        }
+        if ( list.tree.data === list.length )
+        {
+            // depth-first, in-order traversal and position sorted in final array: O(N)
+            var index = 0;
+            walk([Node.PREV, Node.NODE, Node.NEXT], list.tree, function( node ){ list[index++] = node.val; });
+            list.tree = null;
+        }
+        return list;
     }
     ,shuffle = function shuffle( a, cyclic, copied ) {
         // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
@@ -425,21 +493,13 @@ var  Abacus = {VERSION: "0.1.0"}
         k = Abacus.Math.min( k, n );
         sorted = true === sorted;
         
+        picked = new Array(k);
         if ( true === repeated )
         {
             n = n-1;
-            if ( sorted )
-            {
-                picked = [];
-                for (i=0; i<k; i++) // O(klogk) times, worst-case
-                    insert_sort( picked, a[ rndInt( 0, n ) ] );
-            }
-            else
-            {
-                picked = new Array( k );
-                for (i=0; i<k; i++) // O(k) times
-                    picked[ i ] = a[ rndInt( 0, n ) ];
-            }
+            for (i=0; i<k; i++) // O(k) times
+                picked[ i ] = a[ rndInt( 0, n ) ];
+            if ( sorted ) mergesort( picked );// O(klogk) times, average/worst-case
             return picked;
         }
         
@@ -448,31 +508,14 @@ var  Abacus = {VERSION: "0.1.0"}
         
         // partially shuffle the array, and generate unbiased selection simultaneously
         // this is a variation on fisher-yates-knuth shuffle
-        if ( sorted )
-        {
-            picked = [];
-            for (i=0; i<k; i++) // O(klogk) times, worst-case
-            { 
-                selected = rndInt( 0, --n ); // unbiased sampling n * n-1 * n-2 * .. * n-k+1
-                value = a[ selected ];
-                a[ selected ] = a[ n ];
-                a[ n ] = value;
-                insert_sort( picked, value );
-                non_destructive && (backup[ i ] = selected);
-            }
-        }
-        else
-        {
-            picked = new Array( k );
-            for (i=0; i<k; i++) // O(k) times
-            { 
-                selected = rndInt( 0, --n ); // unbiased sampling n * n-1 * n-2 * .. * n-k+1
-                value = a[ selected ];
-                a[ selected ] = a[ n ];
-                a[ n ] = value;
-                picked[ i ] = value;
-                non_destructive && (backup[ i ] = selected);
-            }
+        for (i=0; i<k; i++) // O(k) times
+        { 
+            selected = rndInt( 0, --n ); // unbiased sampling n * n-1 * n-2 * .. * n-k+1
+            value = a[ selected ];
+            a[ selected ] = a[ n ];
+            a[ n ] = value;
+            picked[ i ] = value;
+            non_destructive && (backup[ i ] = selected);
         }
         if ( non_destructive )
         {
@@ -486,6 +529,7 @@ var  Abacus = {VERSION: "0.1.0"}
                 n++;
             }
         }
+        if ( sorted ) mergesort( picked );// O(klogk) times, average/worst-case
         return picked;
     }
     ,gray_encode = function gray_encode( a, n ) {
@@ -929,6 +973,52 @@ var  Abacus = {VERSION: "0.1.0"}
             }
         }
     }
+    ,build_expression = function build_expression( expr, entry, references ) {
+        var el = expr.length, i, j, l, ei=0, refs = {}, se, decl = "", c;
+        while(ei<el)
+        {
+            c = expr.charAt(ei++);
+            if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) )
+            {
+                se = c;
+                while(ei<el)
+                {
+                    c = expr.charAt(ei++);
+                    if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || ('0' <= c && '9' >= c) )
+                        se += c;
+                    else break;
+                }
+                if ( !HAS.call(refs, se) ) refs[se] = 1;
+            }
+        }
+        entry.refs = Object.keys(refs);
+        if ( entry.refs.length )
+        {
+            decl += "var ";
+            for(j=0,l=entry.refs.length; j<l; j++)
+                decl += (j ? "," : "")+entry.refs[j]+"=ref[\""+entry.refs[j]+"\"].val";
+            decl += ";\n";
+        }
+        entry.compute = new Function("ref", "\"use strict\";\nreturn function(){\n\"use strict\";\n"+decl+"return ref[\""+entry.key+"\"].val="+entry.key+";\n};")(references);
+        entry.coef = {}; entry.zero = 0;
+        if ( entry.refs.length )
+        {
+            // compute (effective) linear coefficients of expression
+            for(j=0,l=entry.refs.length; j<l; j++)
+            {
+                entry.coef[entry.refs[j]] = 1;
+                references[entry.refs[j]].val = 0;
+            }
+            entry.zero = entry.compute();
+            for(j=0; j<l; j++)
+            {
+                references[entry.refs[j]].val = 1;
+                entry.coef[entry.refs[j]] = entry.compute()-entry.zero;
+                references[entry.refs[j]].val = 0;
+            }
+        }
+        return entry;
+    }
     ,parse_combinatorial_template = function parse_combinatorial_template( tpl, constraints ) {
         var l = tpl.length, i, j, k, p, c, s, n, entry,
             paren, is_constant, is_reference,
@@ -1017,32 +1107,7 @@ var  Abacus = {VERSION: "0.1.0"}
                         else
                         {
                             // expression
-                            var expr = entry.key, el = expr.length, ei=0, refs = {}, se, decl = "";
-                            while(ei<el)
-                            {
-                                c = expr.charAt(ei++);
-                                if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) )
-                                {
-                                    se = c;
-                                    while(ei<el)
-                                    {
-                                        c = expr.charAt(ei++);
-                                        if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || ('0' <= c && '9' >= c) )
-                                            se += c;
-                                        else break;
-                                    }
-                                    if ( !HAS.call(refs, se) ) refs[se] = 1;
-                                }
-                            }
-                            entry.refs = Object.keys(refs);
-                            if ( entry.refs.length )
-                            {
-                                decl += "var ";
-                                for(j=0; j<entry.refs.length; j++)
-                                    decl += (j ? "," : "")+entry.refs[j]+"=ref[\""+entry.refs[j]+"\"].val";
-                                decl += ";\n";
-                            }
-                            entry.compute = new Function("ref", "\"use strict\";\nreturn function(){\n\"use strict\";\n"+decl+"ref[\""+entry.key+"\"].val="+entry.key+";\n};")(references);
+                            //entry = build_expression( entry.key, entry, references );
                         }
                     }
                     positions[p] = entry;
@@ -1068,6 +1133,11 @@ var  Abacus = {VERSION: "0.1.0"}
                     entry.pos.push(entry.pos[entry.pos.length-1]+1);
                 }
             }
+        }
+        for(c in references)
+        {
+            if ( !HAS.call(references,c) || ("expr" !== references[c].type) ) continue;
+            build_expression( references[c].key, references[c], references );
         }
         var l = variables.length,
             //even_values = new Array(l),
@@ -1157,10 +1227,15 @@ Abacus.ORDER = {
 
 };
 
-// list/array utiltities
+// list/array/tree/graph utiltities
+Node.NODE = 1; Node.PREV = 2; Node.NEXT = 3; Node.LEFT = 4; Node.RIGHT = 5;
+//Node.walk = walk;
 Abacus.List = {
 
- operate: operate
+ Node: Node
+,walk: walk
+
+,operate: operate
 ,map: map
 ,operation: operation
 
@@ -1173,6 +1248,7 @@ Abacus.List = {
 ,intersection: intersect
 ,union: merge
 ,insertion: insert_sort
+,sort: mergesort
 
 ,shuffle: shuffle
 ,xshuffle: xshuffle
@@ -2372,12 +2448,14 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 }
                 else
                 {
-                    // O(klogk) worst-case, unbiased
-                    item = [];
+                    // O(klogk) average-case, unbiased
+                    item = new Array(k);
                     for(i=0; i<k; i++)
                         // select uniformly with repetition
                         // insert the selected in sorted place
-                        insert_sort( item, rndInt(0, c) );
+                        //item = insert_sort( item, rndInt(0, c) );
+                        item[i] = rndInt(0, c);
+                    mergesort(item);
                 }
             }
             else
@@ -2394,7 +2472,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 }
                 else if ( n_k < k )
                 {
-                    selected = {}; excluded = [];
+                    selected = {}; excluded = new Array(n_k);
                     for(i=0; i<n_k; i++)
                     {
                         // select uniformly without repetition
@@ -2403,15 +2481,16 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                         while ( 1 === selected[selection] ) selection = rndInt(0, c);
                         selected[selection] = 1;
                         // insert the selected in sorted place
-                        insert_sort( excluded, selection );
+                        //excluded = insert_sort( excluded, selection );
+                        excluded[i] = selection;
                     }
                     // get the complement
-                    item = complement( excluded, n );
+                    item = complement( mergesort(excluded), n );
                 }
                 else
                 {
-                    // O(klogk) worst-case, unbiased
-                    selected = {}; item = [];
+                    // O(klogk) average-case, unbiased
+                    selected = {}; item = new Array(k);
                     for(i=0; i<k; i++)
                     {
                         // select uniformly without repetition
@@ -2420,8 +2499,10 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                         while ( 1 === selected[selection] ) selection = rndInt(0, c);
                         selected[selection] = 1;
                         // insert the selected in sorted place
-                        insert_sort( item, selection );
+                        //item = insert_sort( item, selection );
+                        item[i] = selection;
                     }
+                    mergesort(item);
                 }
             }
             return item;
