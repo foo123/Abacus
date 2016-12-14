@@ -60,34 +60,6 @@ var  Abacus = {VERSION: "0.1.0"}
         };
     }
     ,to_fixed_binary_string_32 = to_fixed_base_string( 32, 2, '0' )
-    ,Node = function Node( k, v, p, n, l, r, d ) {
-        // a unified graph as well as (binary) tree, as well as quadraply-, doubly- and singly- linked list
-        var self = this;
-        self.key = k; self.val = v;
-        self.prev = p || null; self.next = n || null;
-        self.left = l || null; self.right = r || null;
-        self.data = d || null;
-    }
-    ,walk = function walk( scheme, node, go ) {
-        if ( null == node ) return;
-        var step, i, l, n, s = 0, sl = scheme.length;
-        while ( s < sl )
-        {
-            step = scheme[s]; s += 1; n = null;
-            if ( (Node.NODE === step) )                                n = node;
-            else if ( (Node.PREV === step) && (null != node.prev) )    n = node.prev;
-            else if ( (Node.LEFT === step) && (null != node.left) )    n = node.left;
-            else if ( (Node.RIGHT === step) && (null != node.right) )  n = node.right;
-            else if ( (Node.NEXT === step) && (null != node.next) )    n = node.next;
-            else /*if ( null == n )*/ continue;
-            if ( node === n )
-                go( n );
-            else if ( is_array(n) )
-                for(i=0,l=n.length; i<l; i++) walk( scheme, n[i], go );
-            else
-                walk( scheme, n, go );
-        }
-    }
     // http://jsperf.com/functional-loop-unrolling/2
     // http://jsperf.com/functional-loop-unrolling/3
     ,operation = function operation( F, F0, i0, i1 ) {
@@ -97,97 +69,16 @@ var  Abacus = {VERSION: "0.1.0"}
         for (i=r; i<l; i+=16) { k = i0+i; Fv = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(Fv,k),k+1),k+2),k+3),k+4),k+5),k+6),k+7),k+8),k+9),k+10),k+11),k+12),k+13),k+14),k+15); }
         return Fv;
     }
-    ,operate = function operate( x, F, F0, i0, i1, reverse ) {
+    ,operate = function operate( x, F, F0, i0, i1 ) {
         var len = x.length, argslen = arguments.length;
         if ( argslen < 5 ) i1 = len-1;
         if ( 0 > i1 ) i1 += len;
         if ( argslen < 4 ) i0 = 0;
         if ( i0 > i1 ) return F0;
-        if ( true === reverse )
-        {
-        var i, k, l=i1-i0+1, l1=l-1, r=l&15, q=r&1, lr=l1-r, Fv=q?F(F0,x[i1],i1):F0;
-        for (i=l1-q; i>lr; i-=2) { k = i0+i; Fv = F(F(Fv,x[k],k),x[k-1],k-1); }
-        for (i=lr; i>=0; i-=16)  { k = i0+i; Fv = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(Fv,x[k],k),x[k-1],k-1),x[k-2],k-2),x[k-3],k-3),x[k-4],k-4),x[k-5],k-5),x[k-6],k-6),x[k-7],k-7),x[k-8],k-8),x[k-9],k-9),x[k-10],k-10),x[k-11],k-11),x[k-12],k-12),x[k-13],k-13),x[k-14],k-14),x[k-15],k-15); }
-        }
-        else
-        {
         var i, k, l=i1-i0+1, r=l&15, q=r&1, Fv=q?F(F0,x[i0],i0):F0;
         for (i=q; i<r; i+=2)  { k = i0+i; Fv = F(F(Fv,x[k],k),x[k+1],k+1); }
         for (i=r; i<l; i+=16) { k = i0+i; Fv = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(Fv,x[k],k),x[k+1],k+1),x[k+2],k+2),x[k+3],k+3),x[k+4],k+4),x[k+5],k+5),x[k+6],k+6),x[k+7],k+7),x[k+8],k+8),x[k+9],k+9),x[k+10],k+10),x[k+11],k+11),x[k+12],k+12),x[k+13],k+13),x[k+14],k+14),x[k+15],k+15); }
-        }
         return Fv;
-    }
-    ,map = function map( x, F, i0, i1, in_place, reverse ) {
-        var len = x.length, argslen = arguments.length;
-        in_place = true === in_place;
-        if ( argslen < 4 ) i1 = len-1;
-        if ( 0 > i1 ) i1 += len;
-        if ( argslen < 3 ) i0 = 0;
-        if ( i0 > i1 ) return in_place ? x : [];
-        var i, j, k, l=i1-i0+1, l1, lr, r, q, Fx = in_place ? x : new Array(l);
-        if ( true === reverse )
-        {
-            l1=l-1; r=l&15; q=r&1; lr=l1-r;
-            if ( q ) Fx[in_place ? i0 : 0] = F(x[i1], i1, i0, i1);
-            for (i=l1-q; i>lr; i-=2)
-            { 
-                k = i0+i; j = in_place ? k : i;
-                Fx[j  ] = F(x[k  ], k  , i0, i1);
-                Fx[j+1] = F(x[k-1], k-1, i0, i1);
-            }
-            for (i=lr; i>=0; i-=16)
-            {
-                k = i0+i; j = in_place ? k : i;
-                Fx[j  ] = F(x[k  ], k  , i0, i1);
-                Fx[j+1] = F(x[k-1], k-1, i0, i1);
-                Fx[j+2] = F(x[k-2], k-2, i0, i1);
-                Fx[j+3] = F(x[k-3], k-3, i0, i1);
-                Fx[j+4] = F(x[k-4], k-4, i0, i1);
-                Fx[j+5] = F(x[k-5], k-5, i0, i1);
-                Fx[j+6] = F(x[k-6], k-6, i0, i1);
-                Fx[j+7] = F(x[k-7], k-7, i0, i1);
-                Fx[j+8] = F(x[k-8], k-8, i0, i1);
-                Fx[j+9] = F(x[k-9], k-9, i0, i1);
-                Fx[j+10] = F(x[k-10], k-10, i0, i1);
-                Fx[j+11] = F(x[k-11], k-11, i0, i1);
-                Fx[j+12] = F(x[k-12], k-12, i0, i1);
-                Fx[j+13] = F(x[k-13], k-13, i0, i1);
-                Fx[j+14] = F(x[k-14], k-14, i0, i1);
-                Fx[j+15] = F(x[k-15], k-15, i0, i1);
-            }
-        }
-        else
-        {
-            r=l&15; q=r&1;
-            if ( q ) Fx[in_place ? i0 : 0] = F(x[i0], i0, i0, i1);
-            for (i=q; i<r; i+=2)
-            { 
-                k = i0+i; j = in_place ? k : i;
-                Fx[j  ] = F(x[k  ], k  , i0, i1);
-                Fx[j+1] = F(x[k+1], k+1, i0, i1);
-            }
-            for (i=r; i<l; i+=16)
-            {
-                k = i0+i; j = in_place ? k : i;
-                Fx[j  ] = F(x[k  ], k  , i0, i1);
-                Fx[j+1] = F(x[k+1], k+1, i0, i1);
-                Fx[j+2] = F(x[k+2], k+2, i0, i1);
-                Fx[j+3] = F(x[k+3], k+3, i0, i1);
-                Fx[j+4] = F(x[k+4], k+4, i0, i1);
-                Fx[j+5] = F(x[k+5], k+5, i0, i1);
-                Fx[j+6] = F(x[k+6], k+6, i0, i1);
-                Fx[j+7] = F(x[k+7], k+7, i0, i1);
-                Fx[j+8] = F(x[k+8], k+8, i0, i1);
-                Fx[j+9] = F(x[k+9], k+9, i0, i1);
-                Fx[j+10] = F(x[k+10], k+10, i0, i1);
-                Fx[j+11] = F(x[k+11], k+11, i0, i1);
-                Fx[j+12] = F(x[k+12], k+12, i0, i1);
-                Fx[j+13] = F(x[k+13], k+13, i0, i1);
-                Fx[j+14] = F(x[k+14], k+14, i0, i1);
-                Fx[j+15] = F(x[k+15], k+15, i0, i1);
-            }
-        }
-        return Fx;
     }
     ,kronecker = function kronecker( /* var args here */ ) {
         var k, a, r, l, i, j, vv, tensor,
@@ -348,64 +239,15 @@ var  Abacus = {VERSION: "0.1.0"}
         }
         return a;
     }
-    ,insert_sort = function insert_sort( list, v, k/*, reverse*/ ) {
-        //reverse = -1 === reverse ? 1 : 0;
-        if ( null == k ) k = v;
-        var s, e;
-        if ( !list.tree || (0 === list.tree.data) )
+    ,compl = function compl( exc, N ) {
+        var inc = [], i=0, j=0, n = excl.length;
+        while (i < N)
         {
-            // insert first item in btree: O(1)
-            list.tree = new Node(k,v);
-            list.tree.data = 1;
+            if (j>=n || i<excl[j]) inc.push( i );
+            else j++;
+            i++;
         }
-        else if ( 1 === list.tree.data )
-        {
-            // insert second item in btree: O(1)
-            /*if ( reverse )
-                s = k >= list.tree.key
-                    ? new Node(k,v,null,list.tree)
-                    : new Node(k,v,list.tree);
-            else*/
-                s = k < list.tree.key
-                    ? new Node(k,v,null,list.tree)
-                    : new Node(k,v,list.tree);
-            s.data = list.tree.data+1;
-            list.tree.data = null;
-            list.tree = s;
-        }
-        else
-        {
-            // insert item in btree: O(logN) average-case, O(N) worst-case
-            e = list.tree; e.data++;
-            /*if ( reverse )
-            {
-                while ( e )
-                {
-                    s = e;
-                    e = k >= e.key ? e.prev : e.next;
-                }
-                if ( k >= s.key ) s.prev = new Node(k,v,s);
-                else              s.next = new Node(k,v,s);
-            }
-            else
-            {*/
-                while ( e )
-                {
-                    s = e;
-                    e = k < e.key ? e.prev : e.next;
-                }
-                if ( k < s.key ) s.prev = new Node(k,v,s);
-                else             s.next = new Node(k,v,s);
-            /*}*/
-        }
-        if ( list.tree.data === list.length )
-        {
-            // depth-first, in-order traversal and position sorted in final array: O(N)
-            var index = 0;
-            walk([Node.PREV, Node.NODE, Node.NEXT], list.tree, function( node ){ list[index++] = node.val; });
-            list.tree = null;
-        }
-        return list;
+        return inc;
     }
     ,shuffle = function shuffle( a, cyclic, copied ) {
         // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
@@ -424,16 +266,6 @@ var  Abacus = {VERSION: "0.1.0"}
         }
         // in-place or copy
         return ac;
-    }
-    ,compl = function compl( exc, N ) {
-        var inc = [], i=0, j=0, n = excl.length;
-        while (i < N)
-        {
-            if (j>=n || i<excl[j]) inc.push( i );
-            else j++;
-            i++;
-        }
-        return inc;
     }
     ,xshuffle = function xshuffle( a, o, copied ) {
         var i, j, N, perm, swap, inc, ac, offset, rndInt = Abacus.Math.rndInt;
@@ -973,9 +805,32 @@ var  Abacus = {VERSION: "0.1.0"}
             }
         }
     }
-    ,build_expression = function build_expression( expr, entry, references ) {
-        var el = expr.length, i, j, l, ei=0, refs = {}, se, decl = "", c;
-        while(ei<el)
+    ,effective_coefficients = function effective_coefficients( entry, references/*, correlations, higher_order_terms*/ ) {
+        var j, ref = entry.reference, l = ref.length;
+        entry.coefficient = [0, {}];
+        if ( l )
+        {
+            // compute (effective) linear coefficients of expression
+            for(j=0; j<l; j++)
+            {
+                entry.coefficient[1][ref[j]] = 1;
+                references[ref[j]].val = 0;
+            }
+            entry.coefficient[0] = entry.compute();
+            for(j=0; j<l; j++)
+            {
+                references[ref[j]].val = 1;
+                entry.coefficient[1][ref[j]] = entry.compute()-entry.coefficient[0];
+                references[ref[j]].val = 0;
+            }
+            // compute (effective) correlation coefficients and higher order terms of expression
+            // .. maybe ?
+        }
+        return entry;
+    }
+    ,build_expression = function build_expression( entry, references ) {
+        var expr = entry.key, el = expr.length, i, j, l, ei = 0, ref = {}, se, decl = "", c;
+        while(ei < el)
         {
             c = expr.charAt(ei++);
             if ( ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) )
@@ -988,41 +843,24 @@ var  Abacus = {VERSION: "0.1.0"}
                         se += c;
                     else break;
                 }
-                if ( !HAS.call(refs, se) ) refs[se] = 1;
+                if ( !HAS.call(ref, se) ) ref[se] = 1;
             }
         }
-        entry.refs = Object.keys(refs);
-        if ( entry.refs.length )
+        entry.reference = ref = Object.keys(ref);
+        if ( l=ref.length )
         {
             decl += "var ";
-            for(j=0,l=entry.refs.length; j<l; j++)
-                decl += (j ? "," : "")+entry.refs[j]+"=ref[\""+entry.refs[j]+"\"].val";
+            for(j=0; j<l; j++) decl += (j ? "," : "")+ref[j]+"=ref[\""+ref[j]+"\"].val";
             decl += ";\n";
         }
         entry.compute = new Function("ref", "\"use strict\";\nreturn function(){\n\"use strict\";\n"+decl+"return ref[\""+entry.key+"\"].val="+entry.key+";\n};")(references);
-        entry.coef = {}; entry.zero = 0;
-        if ( entry.refs.length )
-        {
-            // compute (effective) linear coefficients of expression
-            for(j=0,l=entry.refs.length; j<l; j++)
-            {
-                entry.coef[entry.refs[j]] = 1;
-                references[entry.refs[j]].val = 0;
-            }
-            entry.zero = entry.compute();
-            for(j=0; j<l; j++)
-            {
-                references[entry.refs[j]].val = 1;
-                entry.coef[entry.refs[j]] = entry.compute()-entry.zero;
-                references[entry.refs[j]].val = 0;
-            }
-        }
+        effective_coefficients( entry, references );
         return entry;
     }
     ,parse_combinatorial_template = function parse_combinatorial_template( tpl, constraints ) {
         var l = tpl.length, i, j, k, p, c, s, n, entry,
             paren, is_constant, is_reference,
-            fixed = 0, min = null, max = null,
+            fixed = 0, constants = 0, min = null, max = null,
             variables = [], references = {}, positions = {},
             satisfied = {unique:true,ordered:true,strongly_ordered:true}
         ;
@@ -1086,7 +924,6 @@ var  Abacus = {VERSION: "0.1.0"}
                         if ( (null === min) || (entry.val < min) ) min = entry.val;
                         if ( (null === max) || (entry.val > max) ) max = entry.val;
                     }
-                    positions[p] = entry;
                 }
                 else
                 {
@@ -1098,20 +935,21 @@ var  Abacus = {VERSION: "0.1.0"}
                     }
                     else
                     {
-                        references[s] = entry = {type:is_reference?"ref":"expr", pos:[p], key:s, val:null, compute:!is_reference};
                         if ( is_reference )
                         {
                             // reference
+                            references[s] = entry = {type:"ref", pos:[p], key:s, val:null};
                             variables.push(s);
                         }
                         else
                         {
                             // expression
-                            //entry = build_expression( entry.key, entry, references );
+                            references[s] = entry = {type:"expr", pos:[p], key:s, val:null, reference:null, coefficient:null, compute:null};
+                            //build_expression( entry, references );
                         }
                     }
-                    positions[p] = entry;
                 }
+                positions[p] = entry.key;
                 n = 1;
                 if ( '{' === tpl.charAt(i) )
                 {
@@ -1126,10 +964,11 @@ var  Abacus = {VERSION: "0.1.0"}
                     n = s.length ? parseInt(s,10)||1 : 1;
                 }
                 p += n;
-                if ( ("const" === entry.type) || ("expr" === entry.type) ) fixed += n;
+                if ( "const" === entry.type ) { constants += n; fixed += n; }
+                if ( "expr" === entry.type ) { fixed += n; }
                 while(--n)
                 {
-                    positions[entry.pos[entry.pos.length-1]+1] = entry;
+                    positions[entry.pos[entry.pos.length-1]+1] = entry.key;
                     entry.pos.push(entry.pos[entry.pos.length-1]+1);
                 }
             }
@@ -1137,9 +976,9 @@ var  Abacus = {VERSION: "0.1.0"}
         for(c in references)
         {
             if ( !HAS.call(references,c) || ("expr" !== references[c].type) ) continue;
-            build_expression( references[c].key, references[c], references );
+            build_expression( references[c], references );
         }
-        var l = variables.length,
+        /*var l = variables.length,
             //even_values = new Array(l),
             //odd_values = new Array(l),
             unique_values = new Array(l),
@@ -1154,8 +993,10 @@ var  Abacus = {VERSION: "0.1.0"}
         }
         apply_template_values( references, variables, unique_values );
         check_unique( satisfied, references );
-        check_ordered( satisfied, references, desc );
+        check_ordered( satisfied, references, desc );*/
         return {
+            source      : tpl,
+            constants   : constants,
             fixed       : fixed,
             variables   : variables,
             references  : references,
@@ -1224,36 +1065,6 @@ Abacus.ORDER = {
 ,RANDOM: RANDOM
 ,RANDOMISED: RANDOM
 ,STOCHASTIC: STOCHASTIC
-
-};
-
-// list/array/tree/graph utiltities
-Node.NODE = 1; Node.PREV = 2; Node.NEXT = 3; Node.LEFT = 4; Node.RIGHT = 5;
-//Node.walk = walk;
-Abacus.List = {
-
- Node: Node
-,walk: walk
-
-,operate: operate
-,map: map
-,operation: operation
-
-,sum: sum
-,product: product
-
-,kronecker: kronecker
-,cartesian: cartesian
-
-,intersection: intersect
-,union: merge
-,insertion: insert_sort
-,sort: mergesort
-
-,shuffle: shuffle
-,xshuffle: xshuffle
-,multiset_shuffle: multiset_shuffle
-,pick: pick
 
 };
 
@@ -1395,8 +1206,9 @@ Abacus.BitArray = Class({
     }
     
     ,toString: function( ) {
-        var arr = this.toArray( );
-        return map( a, to_fixed_binary_string_32, 0, arr.length-1, true ).join( '' );
+        var a = this.toArray( ), i, l;
+        for(i=0,l=a.length; i<l; i++) a[i] = to_fixed_binary_string_32(a[i]);
+        return a.join('');
     }
     
     ,reset: function( ) {
@@ -1429,47 +1241,29 @@ Abacus.BitArray = Class({
 });
 
 Abacus.CombinatorialTest = generate_combinatorial_test;
-
 CombinatorialTemplate = Class({
     
     constructor: function CombinatorialTemplate(tpl) {
         var self = this, klass = self[CLASS];
         if ( !(self instanceof CombinatorialTemplate) ) return new CombinatorialTemplate(tpl);
-        self.tpl = tpl||'';
-        self.tre = klass.parse( self.tpl );
+        self.ast = klass.parse( String(tpl||'') );
     }
     
-    ,tpl: null
-    ,tre: null
-    ,data: null
+    ,ast: null
     
     ,dispose: function( ) {
         var self = this;
-        self.tpl = null;
-        self.tre = null;
-        self.data = null;
+        self.ast = null;
         return self;
     }
     
-    ,tree: function( ) {
-        return this.tre;
-    }
-    
-    ,render: function( input, output ) {
-        var tpl = this.tre, i, o, li, lo;
-        li = input.length; lo = output.length;
-        values = new Array(tpl.variables.length);
-        for(i=0; i<values.length; i++)
-        {
-        }
+    ,render: function( input, output, in2out ) {
+        var tpl = this.ast, i, j, l, values;
+        // create template in2out map and values from input values here
         apply_template_values( tpl.references, tpl.variables, values );
-        for(o=0; o<lo; o++)
-        {
-            if ( HAS.call(tpl.positions,o) )
-                output[o] = positions[o].val;
-            else
-                output[o] = i < li ? input[i++] : o;
-        }
+        // render final output from template values and rest input values
+        for(j=0,i=0,l=output.length; i<l; i++)
+            output[i] = HAS.call(tpl.positions,i) ? tpl.references[tpl.positions[i]].val : in2out[input[j++]];
         return output;
     }
 });
@@ -1537,7 +1331,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,_next: null
     ,_traversed: null
     ,_stochastic: null
-    ,_template: null
+    ,_tpl: null
     
     ,dispose: function( ) {
         var self = this;
@@ -1556,10 +1350,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             self._traversed.dispose( );
             self._traversed = null;
         }
-        if ( self._template )
+        if ( self._tpl )
         {
-            self._template.dispose( );
-            self._template = null;
+            self._tpl.dispose( );
+            self._tpl = null;
         }
         return self;
     }
@@ -1595,7 +1389,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     }
     
     ,template: function( ) {
-        return this._template ? this._template.tpl||null : null;
+        return this._tpl ? this._tpl.ast||null : null;
     }
     
     ,total: function( ) {
@@ -2407,18 +2201,17 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         if ( !(self instanceof Combination) ) return new Combination(n, k, type/*, template*/);
         /*if ( is_string(template)&&template.length )
         {
-            var tpl = CombinatorialTemplate(template), orig_n = [n, k];
-            if ( !tpl.tre.unique || !tpl.tre.ordered )
+            self._tpl = tpl = CombinatorialTemplate(tpl), orig_n = [n, k];
+            if ( !tpl.ast.unique || !tpl.ast.ordered )
             {
             }
             else
             {
             }
-            self._template = tpl;
         }
         else
         {
-            self._template = null;
+            self._tpl = null;
         }*/
         CombinatorialIterator.call(self, [n, k, "repeated"===String(type).toLowerCase()]);
     }

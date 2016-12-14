@@ -1,8 +1,10 @@
 Abacus.CombinatorialIterator.Template (VERSION = 0.1.0)
 ---
 o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(4)(5)((3*n+4))((m+4))")
-o.tree()
+o.ast
 {
+  "source": "(){2}(n)(m)(4)(5)((3*n+4))((m+4))",
+  "constants": 2,
   "fixed": 4,
   "variables": [
     "n",
@@ -31,8 +33,7 @@ o.tree()
         2
       ],
       "key": "n",
-      "val": 2,
-      "compute": false
+      "val": 0
     },
     "m": {
       "type": "ref",
@@ -40,8 +41,7 @@ o.tree()
         3
       ],
       "key": "m",
-      "val": 3,
-      "compute": false
+      "val": 0
     },
     "(3*n+4)": {
       "type": "expr",
@@ -49,14 +49,16 @@ o.tree()
         6
       ],
       "key": "(3*n+4)",
-      "val": 10,
-      "refs": [
+      "val": 7,
+      "reference": [
         "n"
       ],
-      "coef": {
-        "n": 3
-      },
-      "zero": 4
+      "coefficient": [
+        4,
+        {
+          "n": 3
+        }
+      ]
     },
     "(m+4)": {
       "type": "expr",
@@ -64,91 +66,37 @@ o.tree()
         7
       ],
       "key": "(m+4)",
-      "val": 7,
-      "refs": [
+      "val": 5,
+      "reference": [
         "m"
       ],
-      "coef": {
-        "m": 1
-      },
-      "zero": 4
+      "coefficient": [
+        4,
+        {
+          "m": 1
+        }
+      ]
     }
   },
   "positions": {
-    "2": {
-      "type": "ref",
-      "pos": [
-        2
-      ],
-      "key": "n",
-      "val": 2,
-      "compute": false
-    },
-    "3": {
-      "type": "ref",
-      "pos": [
-        3
-      ],
-      "key": "m",
-      "val": 3,
-      "compute": false
-    },
-    "4": {
-      "type": "const",
-      "pos": [
-        4
-      ],
-      "key": "4",
-      "val": 4
-    },
-    "5": {
-      "type": "const",
-      "pos": [
-        5
-      ],
-      "key": "5",
-      "val": 5
-    },
-    "6": {
-      "type": "expr",
-      "pos": [
-        6
-      ],
-      "key": "(3*n+4)",
-      "val": 10,
-      "refs": [
-        "n"
-      ],
-      "coef": {
-        "n": 3
-      },
-      "zero": 4
-    },
-    "7": {
-      "type": "expr",
-      "pos": [
-        7
-      ],
-      "key": "(m+4)",
-      "val": 7,
-      "refs": [
-        "m"
-      ],
-      "coef": {
-        "m": 1
-      },
-      "zero": 4
-    }
+    "2": "n",
+    "3": "m",
+    "4": "4",
+    "5": "5",
+    "6": "(3*n+4)",
+    "7": "(m+4)"
   },
   "constraints": {
     "unique": true,
-    "ordered": false,
+    "ordered": true,
     "strongly_ordered": true
   }
 }
-o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m))((n))")
-o.tree()
+o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m+2*n+1))((n))")
+o.ast
 {
+  "source": "(n)(m)(k)(l)((l))((k))((m+2*n+1))((n))",
+  "constants": 0,
   "fixed": 4,
   "variables": [
     "n",
@@ -163,8 +111,7 @@ o.tree()
         0
       ],
       "key": "n",
-      "val": 0,
-      "compute": false
+      "val": 0
     },
     "m": {
       "type": "ref",
@@ -172,8 +119,7 @@ o.tree()
         1
       ],
       "key": "m",
-      "val": 1,
-      "compute": false
+      "val": 0
     },
     "k": {
       "type": "ref",
@@ -181,8 +127,7 @@ o.tree()
         2
       ],
       "key": "k",
-      "val": 2,
-      "compute": false
+      "val": 0
     },
     "l": {
       "type": "ref",
@@ -190,8 +135,7 @@ o.tree()
         3
       ],
       "key": "l",
-      "val": 3,
-      "compute": false
+      "val": 0
     },
     "(l)": {
       "type": "expr",
@@ -199,14 +143,16 @@ o.tree()
         4
       ],
       "key": "(l)",
-      "val": 3,
-      "refs": [
+      "val": 1,
+      "reference": [
         "l"
       ],
-      "coef": {
-        "l": 1
-      },
-      "zero": 0
+      "coefficient": [
+        0,
+        {
+          "l": 1
+        }
+      ]
     },
     "(k)": {
       "type": "expr",
@@ -214,29 +160,35 @@ o.tree()
         5
       ],
       "key": "(k)",
-      "val": 2,
-      "refs": [
+      "val": 1,
+      "reference": [
         "k"
       ],
-      "coef": {
-        "k": 1
-      },
-      "zero": 0
+      "coefficient": [
+        0,
+        {
+          "k": 1
+        }
+      ]
     },
-    "(m)": {
+    "(m+2*n+1)": {
       "type": "expr",
       "pos": [
         6
       ],
-      "key": "(m)",
-      "val": 1,
-      "refs": [
-        "m"
+      "key": "(m+2*n+1)",
+      "val": 3,
+      "reference": [
+        "m",
+        "n"
       ],
-      "coef": {
-        "m": 1
-      },
-      "zero": 0
+      "coefficient": [
+        1,
+        {
+          "m": 1,
+          "n": 2
+        }
+      ]
     },
     "(n)": {
       "type": "expr",
@@ -244,117 +196,31 @@ o.tree()
         7
       ],
       "key": "(n)",
-      "val": 0,
-      "refs": [
+      "val": 1,
+      "reference": [
         "n"
       ],
-      "coef": {
-        "n": 1
-      },
-      "zero": 0
+      "coefficient": [
+        0,
+        {
+          "n": 1
+        }
+      ]
     }
   },
   "positions": {
-    "0": {
-      "type": "ref",
-      "pos": [
-        0
-      ],
-      "key": "n",
-      "val": 0,
-      "compute": false
-    },
-    "1": {
-      "type": "ref",
-      "pos": [
-        1
-      ],
-      "key": "m",
-      "val": 1,
-      "compute": false
-    },
-    "2": {
-      "type": "ref",
-      "pos": [
-        2
-      ],
-      "key": "k",
-      "val": 2,
-      "compute": false
-    },
-    "3": {
-      "type": "ref",
-      "pos": [
-        3
-      ],
-      "key": "l",
-      "val": 3,
-      "compute": false
-    },
-    "4": {
-      "type": "expr",
-      "pos": [
-        4
-      ],
-      "key": "(l)",
-      "val": 3,
-      "refs": [
-        "l"
-      ],
-      "coef": {
-        "l": 1
-      },
-      "zero": 0
-    },
-    "5": {
-      "type": "expr",
-      "pos": [
-        5
-      ],
-      "key": "(k)",
-      "val": 2,
-      "refs": [
-        "k"
-      ],
-      "coef": {
-        "k": 1
-      },
-      "zero": 0
-    },
-    "6": {
-      "type": "expr",
-      "pos": [
-        6
-      ],
-      "key": "(m)",
-      "val": 1,
-      "refs": [
-        "m"
-      ],
-      "coef": {
-        "m": 1
-      },
-      "zero": 0
-    },
-    "7": {
-      "type": "expr",
-      "pos": [
-        7
-      ],
-      "key": "(n)",
-      "val": 0,
-      "refs": [
-        "n"
-      ],
-      "coef": {
-        "n": 1
-      },
-      "zero": 0
-    }
+    "0": "n",
+    "1": "m",
+    "2": "k",
+    "3": "l",
+    "4": "(l)",
+    "5": "(k)",
+    "6": "(m+2*n+1)",
+    "7": "(n)"
   },
   "constraints": {
-    "unique": false,
-    "ordered": false,
-    "strongly_ordered": false
+    "unique": true,
+    "ordered": true,
+    "strongly_ordered": true
   }
 }

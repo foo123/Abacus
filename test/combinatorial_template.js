@@ -19,23 +19,23 @@ while( combtest )
 /*echo('o = Abacus.CombinatorialIterator.Template("((n+1))(n)(m)(1){2}(){3}(0)((n+1))((m+1)){4}((n+m))")');
 o = Abacus.CombinatorialIterator.Template("((n+1))(n)(m)(1){2}(){3}(0)((n+1))((m+1)){4}((n+m))");
 
-echo('o.tree()'); 
-echo(o.tree());
+echo('o.ast'); 
+echo(o.ast);
 
 echo('o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(1)(0)((n+1))((n+m))")');
 o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(1)(0)((n+1))((n+m))");
 
-echo('o.tree()'); 
-echo(o.tree());
+echo('o.ast'); 
+echo(o.ast);
 */
 echo('o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(4)(5)((3*n+4))((m+4))")');
 o = Abacus.CombinatorialIterator.Template("(){2}(n)(m)(4)(5)((3*n+4))((m+4))");
 
-echo('o.tree()'); 
-echo(o.tree());
+echo('o.ast'); 
+echo(o.ast);
 
-echo('o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m))((n))")');
-o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m))((n))");
+echo('o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m+2*n+1))((n))")');
+o = Abacus.CombinatorialIterator.Template("(n)(m)(k)(l)((l))((k))((m+2*n+1))((n))");
 
-echo('o.tree()'); 
-echo(o.tree());
+echo('o.ast'); 
+echo(o.ast);
