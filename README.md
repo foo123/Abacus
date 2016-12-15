@@ -264,7 +264,10 @@ see: `test/test.bat`
 * `test/subsets.js`
 * `test/tensors.js`
 * `test/tuples.js`
-* `test/partitions.js` **in-complete, in progress**
+* `test/partitions.js` **in progress**
+* `test/restricted_partitions.js` **todo**
+* `test/derangements.js` **todo**
+* `test/multiset_permutations.js` **todo**
 
 
 ###Performance
