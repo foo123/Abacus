@@ -267,6 +267,7 @@ see: `test/test.bat`
 * `test/partitions.js` **in progress**
 * `test/restricted_partitions.js` **todo**
 * `test/derangements.js` **todo**
+* `test/involutions.js` **todo**
 * `test/multiset_permutations.js` **todo**
 
 
