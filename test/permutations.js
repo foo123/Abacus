@@ -2,14 +2,14 @@ var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
 
-function print_all( o, prev )
+function print_all( o, prev, f )
 {
     if ( -1 === prev )
-        while ( o.hasPrev() ) echo( o.prev() );
+        while ( o.hasPrev() ) echo( f ? f(o.prev()) : o.prev() );
     else
         //while ( o.hasNext() ) echo( o.next() );
         // iterator/iterable are supported
-        for(let item of o) echo( item );
+        for(let item of o) echo( f ? f(item) : item );
 }
 
 // Note: Due to the large number of combinatorial samples,
@@ -37,7 +37,17 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind(), 1, function( item ){
+    return [
+    item.slice(),
+    "index          : " + (o.index()-(o.hasNext()?1:0)), // object index points at next item when this is printed
+    "rank           : " + Abacus.Permutation.rank(item),
+    "is_permutation : " + (Abacus.Permutation.is_permutation(item)?"yes":"no"),
+    "is_identity    : " + (Abacus.Permutation.is_identity(item)?"yes":"no"),
+    "is_derangement : " + (Abacus.Permutation.is_derangement(item)?"yes":"no"),
+    "is_involution  : " + (Abacus.Permutation.is_involution(item)?"yes":"no")
+    ];
+});
 
 echo('backwards');
 echo('o.forward()');
@@ -58,9 +68,6 @@ print_all( o.order("colex,reflected") );
 echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
 
-echo('o.order("minimal")');
-print_all( o.order("minimal") );
-
 echo('o.order("random")');
 print_all( o.order("random") );
 
@@ -69,10 +76,6 @@ echo(o.random());
 
 echo('o.order("colex").range(-5, -1)');
 print_all(o.order("colex").range(-5, -1));
-
-
-echo('o.order("stochastic", [ [ 0, 1, 0, 0 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ] ]).range(0, 9)');
-print_all(o.order("stochastic", [ [ 0, 1, 0, 0 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ], [ 1/3, 0, 1/3, 1/3 ] ]).range(0, 9));
 
 
 // dispose

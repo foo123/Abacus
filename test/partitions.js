@@ -1,14 +1,14 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
-function print_all( o, prev )
+function print_all( o, prev, f )
 {
     if ( -1 === prev )
-        while ( o.hasPrev() ) echo( o.prev() );
+        while ( o.hasPrev() ) echo( f ? f(o.prev()) : o.prev() );
     else
         //while ( o.hasNext() ) echo( o.next() );
         // iterator/iterable are supported
-        for(let item of o) echo( item );
+        for(let item of o) echo( f ? f(item) : item );
 }
 
 // Note: Due to the large number of combinatorial samples,
@@ -20,8 +20,8 @@ echo('Abacus.Partitions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Partitions
-echo('o = Abacus.Partition(5)');
-o = Abacus.Partition(5);
+echo('o = Abacus.Partition(8)');
+o = Abacus.Partition(8);
 
 echo('o.total()'); 
 echo(o.total());

@@ -1,21 +1,20 @@
 # Abacus
-A combinatorics library for Node/XPCOM/JS, PHP, Python, ActionScript
-
-**update in progress do not use**
+A combinatorics library for Node/XPCOM/JS, PHP, Python
 
 
 (php/python implementations in progress)
 
-**version 0.1.0**
+
+**version 0.5.0**
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
 [Abacus.js](https://raw.githubusercontent.com/foo123/Abacus/master/src/js/Abacus.js),  [Abacus.min.js](https://raw.githubusercontent.com/foo123/Abacus/master/src/js/Abacus.min.js)
 
 
-Abacus is a small library containing methods and associated math utilities for (fast) combinatorial scientific computation. It builds on (and extends) a [previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
+`Abacus` is a small generic library containing methods and associated math utilities for (fast) combinatorial object computation. It builds on (and extends) a [deprecated previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
 
-Abacus uses (for the most part) self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
+`Abacus` uses (for the most part) self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
 
 **see also:**  
@@ -49,163 +48,381 @@ Abacus uses (for the most part) self-contained and standalone methods, so they c
 
 ###Example API
 
-**combinations** (see `test/combinations.js`)
+**permutations** (see `test/permutations.js`)
 
 ```text
-Note: Due to the large number of combinatorial samples,
-Abacus combinatorics use an Iterator pattern to succesively and consistently
-generate all combinatorial objects without storing all of them in memory at once
-
-
-Abacus.Combinations (VERSION = 0.1.0)
+Abacus.Permutations (VERSION = 0.5.0)
 ---
-o = Abacus.Combination(6,3)
+o = Abacus.Permutation(4)
 o.total()
-20
-default order is "lex", lexicographic-order
+24
 o.next()
-[ 0, 1, 2 ]
+[ 0, 1, 2, 3 ]
 o.hasNext()
 true
 o.next()
-[ 0, 1, 3 ]
+[ 0, 1, 3, 2 ]
+default order is "lex", lexicographic-order
 o.rewind()
-[ 0, 1, 2 ]
-[ 0, 1, 3 ]
-[ 0, 1, 4 ]
-[ 0, 1, 5 ]
-[ 0, 2, 3 ]
-[ 0, 2, 4 ]
-[ 0, 2, 5 ]
-[ 0, 3, 4 ]
-[ 0, 3, 5 ]
-[ 0, 4, 5 ]
-[ 1, 2, 3 ]
-[ 1, 2, 4 ]
-[ 1, 2, 5 ]
-[ 1, 3, 4 ]
-[ 1, 3, 5 ]
-[ 1, 4, 5 ]
-[ 2, 3, 4 ]
-[ 2, 3, 5 ]
-[ 2, 4, 5 ]
-[ 3, 4, 5 ]
+[ [ 0, 1, 2, 3 ],
+  'index          : 0',
+  'rank           : 0',
+  'is_permutation : yes',
+  'is_identity    : yes',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 0, 1, 3, 2 ],
+  'index          : 1',
+  'rank           : 1',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 0, 2, 1, 3 ],
+  'index          : 2',
+  'rank           : 2',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 0, 2, 3, 1 ],
+  'index          : 3',
+  'rank           : 3',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 0, 3, 1, 2 ],
+  'index          : 4',
+  'rank           : 4',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 0, 3, 2, 1 ],
+  'index          : 5',
+  'rank           : 5',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 1, 0, 2, 3 ],
+  'index          : 6',
+  'rank           : 6',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 1, 0, 3, 2 ],
+  'index          : 7',
+  'rank           : 7',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : yes' ]
+[ [ 1, 2, 0, 3 ],
+  'index          : 8',
+  'rank           : 8',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 1, 2, 3, 0 ],
+  'index          : 9',
+  'rank           : 9',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : no' ]
+[ [ 1, 3, 0, 2 ],
+  'index          : 10',
+  'rank           : 10',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : no' ]
+[ [ 1, 3, 2, 0 ],
+  'index          : 11',
+  'rank           : 11',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 2, 0, 1, 3 ],
+  'index          : 12',
+  'rank           : 12',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 2, 0, 3, 1 ],
+  'index          : 13',
+  'rank           : 13',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : no' ]
+[ [ 2, 1, 0, 3 ],
+  'index          : 14',
+  'rank           : 14',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 2, 1, 3, 0 ],
+  'index          : 15',
+  'rank           : 15',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 2, 3, 0, 1 ],
+  'index          : 16',
+  'rank           : 16',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : yes' ]
+[ [ 2, 3, 1, 0 ],
+  'index          : 17',
+  'rank           : 17',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : no' ]
+[ [ 3, 0, 1, 2 ],
+  'index          : 18',
+  'rank           : 18',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : no' ]
+[ [ 3, 0, 2, 1 ],
+  'index          : 19',
+  'rank           : 19',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 3, 1, 0, 2 ],
+  'index          : 20',
+  'rank           : 20',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : no' ]
+[ [ 3, 1, 2, 0 ],
+  'index          : 21',
+  'rank           : 21',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : no',
+  'is_involution  : yes' ]
+[ [ 3, 2, 0, 1 ],
+  'index          : 22',
+  'rank           : 22',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : no' ]
+[ [ 3, 2, 1, 0 ],
+  'index          : 23',
+  'rank           : 23',
+  'is_permutation : yes',
+  'is_identity    : no',
+  'is_derangement : yes',
+  'is_involution  : yes' ]
+backwards
 o.forward()
-[ 3, 4, 5 ]
-[ 2, 4, 5 ]
-[ 2, 3, 5 ]
-[ 2, 3, 4 ]
-[ 1, 4, 5 ]
-[ 1, 3, 5 ]
-[ 1, 3, 4 ]
-[ 1, 2, 5 ]
-[ 1, 2, 4 ]
-[ 1, 2, 3 ]
-[ 0, 4, 5 ]
-[ 0, 3, 5 ]
-[ 0, 3, 4 ]
-[ 0, 2, 5 ]
-[ 0, 2, 4 ]
-[ 0, 2, 3 ]
-[ 0, 1, 5 ]
-[ 0, 1, 4 ]
-[ 0, 1, 3 ]
-[ 0, 1, 2 ]
+[ 3, 2, 1, 0 ]
+[ 3, 2, 0, 1 ]
+[ 3, 1, 2, 0 ]
+[ 3, 1, 0, 2 ]
+[ 3, 0, 2, 1 ]
+[ 3, 0, 1, 2 ]
+[ 2, 3, 1, 0 ]
+[ 2, 3, 0, 1 ]
+[ 2, 1, 3, 0 ]
+[ 2, 1, 0, 3 ]
+[ 2, 0, 3, 1 ]
+[ 2, 0, 1, 3 ]
+[ 1, 3, 2, 0 ]
+[ 1, 3, 0, 2 ]
+[ 1, 2, 3, 0 ]
+[ 1, 2, 0, 3 ]
+[ 1, 0, 3, 2 ]
+[ 1, 0, 2, 3 ]
+[ 0, 3, 2, 1 ]
+[ 0, 3, 1, 2 ]
+[ 0, 2, 3, 1 ]
+[ 0, 2, 1, 3 ]
+[ 0, 1, 3, 2 ]
+[ 0, 1, 2, 3 ]
+o.order("lex,reflected")
+[ 3, 2, 1, 0 ]
+[ 2, 3, 1, 0 ]
+[ 3, 1, 2, 0 ]
+[ 1, 3, 2, 0 ]
+[ 2, 1, 3, 0 ]
+[ 1, 2, 3, 0 ]
+[ 3, 2, 0, 1 ]
+[ 2, 3, 0, 1 ]
+[ 3, 0, 2, 1 ]
+[ 0, 3, 2, 1 ]
+[ 2, 0, 3, 1 ]
+[ 0, 2, 3, 1 ]
+[ 3, 1, 0, 2 ]
+[ 1, 3, 0, 2 ]
+[ 3, 0, 1, 2 ]
+[ 0, 3, 1, 2 ]
+[ 1, 0, 3, 2 ]
+[ 0, 1, 3, 2 ]
+[ 2, 1, 0, 3 ]
+[ 1, 2, 0, 3 ]
+[ 2, 0, 1, 3 ]
+[ 0, 2, 1, 3 ]
+[ 1, 0, 2, 3 ]
+[ 0, 1, 2, 3 ]
 o.order("lex,reversed")
-[ 3, 4, 5 ]
-[ 2, 4, 5 ]
-[ 2, 3, 5 ]
-[ 2, 3, 4 ]
-[ 1, 4, 5 ]
-[ 1, 3, 5 ]
-[ 1, 3, 4 ]
-[ 1, 2, 5 ]
-[ 1, 2, 4 ]
-[ 1, 2, 3 ]
-[ 0, 4, 5 ]
-[ 0, 3, 5 ]
-[ 0, 3, 4 ]
-[ 0, 2, 5 ]
-[ 0, 2, 4 ]
-[ 0, 2, 3 ]
-[ 0, 1, 5 ]
-[ 0, 1, 4 ]
-[ 0, 1, 3 ]
-[ 0, 1, 2 ]
+[ 3, 2, 1, 0 ]
+[ 3, 2, 0, 1 ]
+[ 3, 1, 2, 0 ]
+[ 3, 1, 0, 2 ]
+[ 3, 0, 2, 1 ]
+[ 3, 0, 1, 2 ]
+[ 2, 3, 1, 0 ]
+[ 2, 3, 0, 1 ]
+[ 2, 1, 3, 0 ]
+[ 2, 1, 0, 3 ]
+[ 2, 0, 3, 1 ]
+[ 2, 0, 1, 3 ]
+[ 1, 3, 2, 0 ]
+[ 1, 3, 0, 2 ]
+[ 1, 2, 3, 0 ]
+[ 1, 2, 0, 3 ]
+[ 1, 0, 3, 2 ]
+[ 1, 0, 2, 3 ]
+[ 0, 3, 2, 1 ]
+[ 0, 3, 1, 2 ]
+[ 0, 2, 3, 1 ]
+[ 0, 2, 1, 3 ]
+[ 0, 1, 3, 2 ]
+[ 0, 1, 2, 3 ]
 o.order("colex")
-[ 0, 1, 2 ]
-[ 0, 1, 3 ]
-[ 0, 2, 3 ]
-[ 1, 2, 3 ]
-[ 0, 1, 4 ]
-[ 0, 2, 4 ]
-[ 1, 2, 4 ]
-[ 0, 3, 4 ]
-[ 1, 3, 4 ]
-[ 2, 3, 4 ]
-[ 0, 1, 5 ]
-[ 0, 2, 5 ]
-[ 1, 2, 5 ]
-[ 0, 3, 5 ]
-[ 1, 3, 5 ]
-[ 2, 3, 5 ]
-[ 0, 4, 5 ]
-[ 1, 4, 5 ]
-[ 2, 4, 5 ]
-[ 3, 4, 5 ]
+[ 3, 2, 1, 0 ]
+[ 2, 3, 1, 0 ]
+[ 3, 1, 2, 0 ]
+[ 1, 3, 2, 0 ]
+[ 2, 1, 3, 0 ]
+[ 1, 2, 3, 0 ]
+[ 3, 2, 0, 1 ]
+[ 2, 3, 0, 1 ]
+[ 3, 0, 2, 1 ]
+[ 0, 3, 2, 1 ]
+[ 2, 0, 3, 1 ]
+[ 0, 2, 3, 1 ]
+[ 3, 1, 0, 2 ]
+[ 1, 3, 0, 2 ]
+[ 3, 0, 1, 2 ]
+[ 0, 3, 1, 2 ]
+[ 1, 0, 3, 2 ]
+[ 0, 1, 3, 2 ]
+[ 2, 1, 0, 3 ]
+[ 1, 2, 0, 3 ]
+[ 2, 0, 1, 3 ]
+[ 0, 2, 1, 3 ]
+[ 1, 0, 2, 3 ]
+[ 0, 1, 2, 3 ]
+o.order("colex,reflected")
+[ 0, 1, 2, 3 ]
+[ 0, 1, 3, 2 ]
+[ 0, 2, 1, 3 ]
+[ 0, 2, 3, 1 ]
+[ 0, 3, 1, 2 ]
+[ 0, 3, 2, 1 ]
+[ 1, 0, 2, 3 ]
+[ 1, 0, 3, 2 ]
+[ 1, 2, 0, 3 ]
+[ 1, 2, 3, 0 ]
+[ 1, 3, 0, 2 ]
+[ 1, 3, 2, 0 ]
+[ 2, 0, 1, 3 ]
+[ 2, 0, 3, 1 ]
+[ 2, 1, 0, 3 ]
+[ 2, 1, 3, 0 ]
+[ 2, 3, 0, 1 ]
+[ 2, 3, 1, 0 ]
+[ 3, 0, 1, 2 ]
+[ 3, 0, 2, 1 ]
+[ 3, 1, 0, 2 ]
+[ 3, 1, 2, 0 ]
+[ 3, 2, 0, 1 ]
+[ 3, 2, 1, 0 ]
 o.order("colex,reversed")
-[ 3, 4, 5 ]
-[ 2, 4, 5 ]
-[ 1, 4, 5 ]
-[ 0, 4, 5 ]
-[ 2, 3, 5 ]
-[ 1, 3, 5 ]
-[ 0, 3, 5 ]
-[ 1, 2, 5 ]
-[ 0, 2, 5 ]
-[ 0, 1, 5 ]
-[ 2, 3, 4 ]
-[ 1, 3, 4 ]
-[ 0, 3, 4 ]
-[ 1, 2, 4 ]
-[ 0, 2, 4 ]
-[ 0, 1, 4 ]
-[ 1, 2, 3 ]
-[ 0, 2, 3 ]
-[ 0, 1, 3 ]
-[ 0, 1, 2 ]
+[ 0, 1, 2, 3 ]
+[ 1, 0, 2, 3 ]
+[ 0, 2, 1, 3 ]
+[ 2, 0, 1, 3 ]
+[ 1, 2, 0, 3 ]
+[ 2, 1, 0, 3 ]
+[ 0, 1, 3, 2 ]
+[ 1, 0, 3, 2 ]
+[ 0, 3, 1, 2 ]
+[ 3, 0, 1, 2 ]
+[ 1, 3, 0, 2 ]
+[ 3, 1, 0, 2 ]
+[ 0, 2, 3, 1 ]
+[ 2, 0, 3, 1 ]
+[ 0, 3, 2, 1 ]
+[ 3, 0, 2, 1 ]
+[ 2, 3, 0, 1 ]
+[ 3, 2, 0, 1 ]
+[ 1, 2, 3, 0 ]
+[ 2, 1, 3, 0 ]
+[ 1, 3, 2, 0 ]
+[ 3, 1, 2, 0 ]
+[ 2, 3, 1, 0 ]
+[ 3, 2, 1, 0 ]
 o.order("random")
-[ 0, 1, 3 ]
-[ 1, 4, 5 ]
-[ 1, 3, 5 ]
-[ 0, 3, 5 ]
-[ 1, 2, 5 ]
-[ 0, 4, 5 ]
-[ 0, 2, 3 ]
-[ 1, 2, 3 ]
-[ 0, 2, 4 ]
-[ 1, 2, 4 ]
-[ 3, 4, 5 ]
-[ 2, 3, 4 ]
-[ 0, 2, 5 ]
-[ 0, 1, 5 ]
-[ 2, 4, 5 ]
-[ 2, 3, 5 ]
-[ 0, 1, 2 ]
-[ 0, 1, 4 ]
-[ 0, 3, 4 ]
-[ 1, 3, 4 ]
+[ 1, 2, 0, 3 ]
+[ 3, 1, 2, 0 ]
+[ 0, 3, 2, 1 ]
+[ 1, 3, 0, 2 ]
+[ 1, 3, 2, 0 ]
+[ 2, 1, 3, 0 ]
+[ 1, 0, 3, 2 ]
+[ 2, 3, 1, 0 ]
+[ 3, 0, 2, 1 ]
+[ 2, 1, 0, 3 ]
+[ 3, 2, 0, 1 ]
+[ 3, 0, 1, 2 ]
+[ 0, 3, 1, 2 ]
+[ 0, 2, 3, 1 ]
+[ 1, 0, 2, 3 ]
+[ 1, 2, 3, 0 ]
+[ 2, 3, 0, 1 ]
+[ 0, 2, 1, 3 ]
+[ 0, 1, 3, 2 ]
+[ 0, 1, 2, 3 ]
+[ 2, 0, 1, 3 ]
+[ 2, 0, 3, 1 ]
+[ 3, 1, 0, 2 ]
+[ 3, 2, 1, 0 ]
 o.random()
-[ 1, 3, 5 ]
+[ 0, 3, 1, 2 ]
 o.order("colex").range(-5, -1)
-[ [ 2, 3, 5 ], [ 0, 4, 5 ], [ 1, 4, 5 ], [ 2, 4, 5 ], [ 3, 4, 5 ] ]
+[ 1, 2, 0, 3 ]
+[ 2, 0, 1, 3 ]
+[ 0, 2, 1, 3 ]
+[ 1, 0, 2, 3 ]
+[ 0, 1, 2, 3 ]
 o.dispose()
 ```
 
 **big-integer arithmetic permutations** (see `test/permutations-bigint.js`)
 
 ```text
-Abacus.Permutations (VERSION = 0.1.0)
+Abacus.Permutations (VERSION = 0.5.0)
 ---
 o = Abacus.Permutation(50)
 o.total()
@@ -264,11 +481,11 @@ see: `test/test.bat`
 * `test/subsets.js`
 * `test/tensors.js`
 * `test/tuples.js`
-* `test/partitions.js` **in progress**
+* `test/partitions.js`
 * `test/restricted_partitions.js` **todo**
+* `test/multiset_permutations.js` **todo**
 * `test/derangements.js` **todo**
 * `test/involutions.js` **todo**
-* `test/multiset_permutations.js` **todo**
 
 
 ###Performance
@@ -279,19 +496,22 @@ most algorithms:
 * are **statisticaly unbiased** (e.g uniform sampling methods)
 * use **efficient successor methods** (e.g loopless, constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see below)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
-* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. **Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
+* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. 
+
+**Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
 
 
 
 ###Todo
 
 * apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
-* support `biginteger` computations e.g factorials?? [DONE, the lib does not support biginteger arithmetic, but arithmetic routines have been made dynamicaly pluggable and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
-* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `minimal/gray`, `random`, `stochastic` (where applicable) seamlessly and uniformly, both forward and backward [ALMOST DONE, NEW FEATURE]
-* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [ALMOST DONE]
+* support `biginteger` combinatorial computations e.g large factorials [DONE, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
+* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE, `partition` rank/unrank not implemented yet, may be optimised]
+* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `minimal/gray` ordering is not implemented yet, `random` ordering may be optimised]
+* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
-* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [ALMOST DONE, see reference, used as custom iterator ordering, see above]
-* add `MultisetPermutation`, `Derangement`, `SetPartition`, `RestrictedPartition` [IN PROGRESS]
-* add latin squares, magic squares algorithms [IN PROGRESS]
-* support generation of combinatorial objects based on *patterns/templates of constraints* to satisfy e.g "only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`" pattern and so on.. [IN PROGRESS]
-* add generic *rule-based* `Combinatorial` objects like `Grammar` (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
+* add `MultisetPermutation`, `Derangement`, `Involution`, `SetPartition`, `RestrictedPartition` (TODO)
+* support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
+* support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
+* support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
+* add `LatinSquare`, `MagicSquare` algorithms (TODO)
