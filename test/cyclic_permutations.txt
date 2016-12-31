@@ -1,0 +1,60 @@
+Abacus.Permutations (VERSION = 0.6.0)
+---
+o = Abacus.Permutation(4,{type:"cyclic"})
+o.total()
+4
+o.next()
+[ 0, 1, 2, 3 ]
+o.hasNext()
+true
+o.next()
+[ 1, 2, 3, 0 ]
+default order is "lex", lexicographic-order
+o.rewind()
+[ 0, 1, 2, 3 ]
+[ 1, 2, 3, 0 ]
+[ 2, 3, 0, 1 ]
+[ 3, 0, 1, 2 ]
+backwards
+o.rewind(-1)
+[ 3, 0, 1, 2 ]
+[ 2, 3, 0, 1 ]
+[ 1, 2, 3, 0 ]
+[ 0, 1, 2, 3 ]
+o.order("lex,reflected")
+[ 3, 2, 1, 0 ]
+[ 0, 3, 2, 1 ]
+[ 1, 0, 3, 2 ]
+[ 2, 1, 0, 3 ]
+o.order("lex,reversed")
+[ 3, 0, 1, 2 ]
+[ 2, 3, 0, 1 ]
+[ 1, 2, 3, 0 ]
+[ 0, 1, 2, 3 ]
+o.order("colex")
+[ 1, 2, 3, 0 ]
+[ 2, 3, 0, 1 ]
+[ 3, 0, 1, 2 ]
+[ 0, 1, 2, 3 ]
+o.order("colex,reflected")
+[ 0, 3, 2, 1 ]
+[ 1, 0, 3, 2 ]
+[ 2, 1, 0, 3 ]
+[ 3, 2, 1, 0 ]
+o.order("colex,reversed")
+[ 0, 1, 2, 3 ]
+[ 3, 0, 1, 2 ]
+[ 2, 3, 0, 1 ]
+[ 1, 2, 3, 0 ]
+o.order("random")
+[ 1, 2, 3, 0 ]
+[ 2, 3, 0, 1 ]
+[ 0, 1, 2, 3 ]
+[ 3, 0, 1, 2 ]
+o.random()
+[ 0, 1, 2, 3 ]
+o.order("colex").range(-3, -1)
+[ 2, 3, 0, 1 ]
+[ 3, 0, 1, 2 ]
+[ 0, 1, 2, 3 ]
+o.dispose()

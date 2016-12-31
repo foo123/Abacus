@@ -19,21 +19,31 @@ var o;
 echo('Abacus.Partitions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Partitions
+// Set (Restricted) Partitions
 
-echo('o = Abacus.Partition(7)');
-o = Abacus.Partition(7);
+echo('o = Abacus.Partition(7,{type:"set"})');
+o = Abacus.Partition(7,{type:"set"});
 
 echo('o.total()'); 
 echo(o.total());
 
-echo('o.next()'); 
-echo(o.next());
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
 
-echo('o.hasNext()');
-echo(o.hasNext());
-echo('o.next()');
-echo(o.next());
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(8,{type:"set","max=":4})');
+o = Abacus.Partition(8,{type:"set","max=":4});
+
+echo('o.total()'); 
+echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
@@ -48,19 +58,11 @@ echo('o.dispose()');
 o.dispose();
 
 
-echo('o = Abacus.Partition(8)');
-o = Abacus.Partition(8);
+echo('o = Abacus.Partition(8,{type:"set","parts=":4})');
+o = Abacus.Partition(8,{type:"set","parts=":4});
 
 echo('o.total()'); 
 echo(o.total());
-
-echo('o.next()'); 
-echo(o.next());
-
-echo('o.hasNext()');
-echo(o.hasNext());
-echo('o.next()');
-echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
@@ -73,56 +75,3 @@ print_all( o.rewind(-1), -1 );
 // dispose
 echo('o.dispose()');
 o.dispose();
-
-echo('o = Abacus.Partition(12)');
-o = Abacus.Partition(12);
-
-echo('o.total()'); 
-echo(o.total());
-
-echo('o.next()'); 
-echo(o.next());
-
-echo('o.hasNext()');
-echo(o.hasNext());
-echo('o.next()');
-echo(o.next());
-
-echo('default order is "lex", lexicographic-order');
-echo('o.rewind()');
-print_all( o.rewind() );
-
-echo('backwards');
-echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
-
-// dispose
-echo('o.dispose()');
-o.dispose();
-
-echo('o = Abacus.Partition(20)');
-o = Abacus.Partition(20);
-
-echo('o.total()'); 
-echo(o.total());
-
-echo('o.next()'); 
-echo(o.next());
-
-echo('o.hasNext()');
-echo(o.hasNext());
-echo('o.next()');
-echo(o.next());
-
-echo('default order is "lex", lexicographic-order');
-echo('o.rewind()');
-print_all( o.rewind() );
-
-echo('backwards');
-echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
-
-// dispose
-echo('o.dispose()');
-o.dispose();
-

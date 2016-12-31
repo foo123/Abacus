@@ -16,12 +16,12 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Tuples (VERSION = '+Abacus.VERSION+')');
+echo('Abacus.Permutations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Tuples
-echo('o = Abacus.Tensor(3,3,{type:"tuple"})');
-o = Abacus.Tensor(3,3,{type:"tuple"});
+// Permutations
+echo('o = Abacus.Permutation(4,{type:"cyclic"})');
+o = Abacus.Permutation(4,{type:"cyclic"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -36,7 +36,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -63,8 +63,8 @@ print_all( o.order("random") );
 echo('o.random()');
 echo(o.random());
 
-echo('o.order("colex").range(-5, -1)');
-print_all(o.order("colex").range(-5, -1));
+echo('o.order("colex").range(-3, -1)');
+print_all(o.order("colex").range(-3, -1));
 
 
 // dispose

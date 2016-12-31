@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python
 (php/python implementations in progress)
 
 
-**version 0.5.1** (~ 28kB minified, ~ 9kB zipped)
+**version 0.6.0** (~ 29kB minified, ~ 9kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -523,6 +523,7 @@ o.dispose()
 see: `test/test.bat`
 
 * `test/permutations.js`
+* `test/cyclic_permutations.js`
 * `test/permutations-bigint.js`
 * `test/combinations.js`
 * `test/combinations_repeats.js`
@@ -530,9 +531,10 @@ see: `test/test.bat`
 * `test/tensors.js`
 * `test/tuples.js`
 * `test/partitions.js`
-* `test/restricted_partitions.js` **todo**
-* `test/multiset_permutations.js` **todo**
+* `test/set_partitions.js`
+* `test/restricted_partitions.js`
 * `test/derangements.js` **todo**
+* `test/multiset_permutations.js` **todo**
 * `test/involutions.js` **todo**
 
 
@@ -558,7 +560,7 @@ most algorithms:
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `minimal/gray` ordering is not implemented yet, `random` ordering may be optimised]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
-* add `MultisetPermutation`, `Derangement`, `Involution`, `SetPartition`, `RestrictedPartition` (TODO)
+* add `MultisetPermutation`, `Derangement`, `Involution`, `RestrictedPartition` (full support + rank/unrank methods) (TODO)
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
