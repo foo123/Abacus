@@ -23,6 +23,9 @@ echo('---');
 echo('o = Abacus.Permutation(4,{type:"cyclic"})');
 o = Abacus.Permutation(4,{type:"cyclic"});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 

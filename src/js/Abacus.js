@@ -1529,8 +1529,17 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self.$ = $ = $ || {};
         $.type = String($.type || "default").toLowerCase();
         $.order = $.order || LEX; // default order is lexicographic ("lex")
+        if ( n instanceof CombinatorialIterator )
+        {
+            var co = $.subiterator = n, d = self.n = co.dimension();
+            $.count = klass.count( self.n, self.$ );
+            $.subcount = Abacus.Arithmetic.mul($.count, co.total());
+        }
+        else
+        {
+            $.count = klass.count( self.n, self.$ );
+        }
         $.dimension = $.dimension || self.n[0] || self.n || 0;
-        $.count = klass.count( self.n, self.$ );
         self.order( $.order ); 
     }
     
@@ -1557,8 +1566,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         
         ,count: NotImplemented
         ,initial: NotImplemented
-        ,rank: NotImplemented
-        ,unrank: NotImplemented
+        ,cascade: function( item, subitem ) {
+            if ( null == item || null == subitem ) return null;
+            return array(item.length, function(i){return item[i]<subitem.length ? subitem[item[i]] : null;});
+        }
         ,dual: function( item, index, n, $ ) {
             if ( null == item ) return null;
             // some C-P-T processes at play here
@@ -1582,6 +1593,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 O = Arithmetic.O, index = Arithmetic.rnd(O, N);
             return Arithmetic.eq(O, index) ? klass.initial(1, n, $) : (Arithmetic.eq(N, index) ? klass.initial(-1, n, $) : klass.unrank(index, n, $));
         }
+        ,rank: NotImplemented
+        ,unrank: NotImplemented
     }
     
     ,name: "CombinatorialIterator"
@@ -1593,12 +1606,21 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,_index: null
     ,__item: null
     ,_item: null
+    ,__subindex: null
+    ,_subindex: null
+    ,__subitem: null
+    ,_subitem: null
     ,_prev: null
     ,_next: null
     ,_traversed: null
     
-    ,dispose: function( ) {
+    ,dispose: function( recursive ) {
         var self = this;
+        if ( (true === recursive) && self.$.subiterator )
+        {
+            self.$.subiterator.dispose();
+            self.$.subiterator = null;
+        }
         self.name = null;
         self.n = null;
         self.m = null;
@@ -1608,6 +1630,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self._index = null;
         self.__item = null;
         self._item = null;
+        self.__subindex = null;
+        self._subindex = null;
+        self.__subitem = null;
+        self._subitem = null;
         self._prev = null;
         self._next = null;
         if ( self._traversed )
@@ -1622,8 +1648,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return this.$.dimension || 0;
     }
     
-    ,total: function( ) {
-        return this.$.count || 0;
+    ,total: function( non_recursive ) {
+        var $ = this.$;
+        return true===non_recursive ? ($.count || 0) : ($.subcount || $.count || 0);
     }
     
     ,order: function( order, reverse ) {
@@ -1641,6 +1668,21 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         dir = REVERSED & order ? -1 : 1; // T
         dir = reverse ? -dir : dir; // T
         $.order = order;
+        if ( $.subiterator )
+        {
+            $.subiterator.rewind(reverse ? -1 : 1);
+            self.__subindex = $.subiterator.index();
+            self.__subitem = $.subiterator.next(reverse ? -1 : 1);
+            self._subindex = null;
+            self._subitem = null;
+        }
+        else
+        {
+            self.__subindex = null;
+            self.__subitem = null;
+            self._subindex = null;
+            self._subitem = null;
+        }
         self.__index = self._index = O;
         self._item = self.__item = null;
         self._prev = false; self._next = false;
@@ -1681,21 +1723,39 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self._index = reverse && !(RANDOM & order) ? tot_1 : O;
         self._prev = (RANDOM & order) || !reverse ? false : null != self.__item;
         self._next = reverse && !(RANDOM & order) ? false : null != self.__item;
+        if ( $.subiterator )
+        {
+            self._prev = self._prev && (null != self.__subitem);
+            self._next = self._next && (null != self.__subitem);
+            self._subindex = Arithmetic.add(Arithmetic.mul(self._index,$.subiterator.total()), self.__subindex);
+            self._subitem = self._item && self.__subitem ? klass.cascade(self._item, self.__subitem) : null;
+        }
         return self;
     }
     
-    ,index: function( index ) {
-        if ( !arguments.length ) return this._index;
+    ,index: function( index, non_recursive ) {
+        non_recursive = true === non_recursive;
+        if ( !arguments.length ) return this.$.subiterator /*&& !non_recursive*/ ? this._subindex : this._index;
         
         var self = this, Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            klass = self[CLASS], T = klass.T, n = self.n, $ = self.$, tot = $.count,
+            klass = self[CLASS], T = klass.T, n = self.n, $ = self.$,
+            tot = $.subiterator && !non_recursive ? $.subcount : $.count,
+            curindex = $.subiterator && !non_recursive ? self._subindex : self._index,
             order = $.order, tot_1, dir = REVERSED & order ? -1 : 1; // T
         
         index = Arithmetic.wrapR(Arithmetic.N( index ), tot);
         
-        if ( !Arithmetic.equ(index, self._index) && Arithmetic.inside(index, J, tot) )
+        if ( !Arithmetic.equ(index, curindex) && Arithmetic.inside(index, J, tot) )
         {
+            if ( $.subiterator && !non_recursive )
+            {
+                $.subiterator.index( Arithmetic.mod(index, $.subiterator.total()) );
+                self.__subindex = $.subiterator.index();
+                self.__subitem = $.subiterator.item();
+                index = Arithmetic.div(index, $.subiterator.total());
+                tot = $.count;
+            }
             tot_1 = Arithmetic.sub(tot, I);
             if ( COLEX & order )
             {
@@ -1723,16 +1783,24 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 self._prev = null != self.__item;
                 self._next = null != self.__item;
             }
+            if ( $.subiterator )
+            {
+                self._prev = self._prev && (null != self.__subitem);
+                self._next = self._next && (null != self.__subitem);
+                self._subindex = Arithmetic.add(Arithmetic.mul(self._index,$.subiterator.total()), self.__subindex);
+                self._subitem = self._item && self.__subitem ? klass.cascade(self._item, self.__subitem) : null;
+            }
         }
         return self;
     }
     
     ,item: function( index, order ) {
-        if ( !arguments.length ) return this._item;
+        if ( !arguments.length ) return this.$.subiterator ? this._subitem : this._item;
         
-        var self = this, n = self.n, $ = self.$, tot = $.count, tot_1, dir, indx,
+        var self = this, n = self.n, $ = self.$, tot = $.subiterator ? $.subcount : $.count,
+            curindex = $.subiterator ? self._subindex : self._index, tot_1, dir, indx,
             klass = self[CLASS], T = klass.T, Arithmetic = Abacus.Arithmetic,
-            O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, o, ret;
+            O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, o, item, subitem;
         order = null != order ? ORDER( order ) : $.order;
         
         if ( is_array(index) )
@@ -1769,59 +1837,72 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         
         index = Arithmetic.wrapR(Arithmetic.N( index ), tot);
         
-        if ( (order === $.order) && Arithmetic.equ(index, self._index) ) return self._item;
+        if ( (order === $.order) && Arithmetic.equ(index, curindex) ) return $.subiterator ? self._subitem : self._item;
         
         if ( Arithmetic.inside(index, J, tot) )
         {            
+            subitem = null;
+            if ( $.subiterator )
+            {
+                subitem = $.subiterator.item( Arithmetic.mod(index, $.subiterator.total()) );
+                index = Arithmetic.div(index, $.subiterator.total());
+                tot = $.count;
+            }
             dir = REVERSED & order ? -1 : 1;
             tot_1 = Arithmetic.sub(tot, I);
             if ( RANDOM & order )
             {
                 indx = self.random("index");
                 o = $.order; $.order = order;
-                ret =  klass.dual(
+                item =  klass.dual(
                     klass.unrank( indx, n, $ )
                     /*klass.rand( n, tot )*/
                     , indx, n, $
                 );
                 $.order = o;
-                return ret;
+                if ( $.subiterator )
+                    item = item && subitem ? klass.cascade(item, subitem) : null;
+                return item;
             }
             else if ( COLEX & order )
             {
                 indx = -1 === dir ? index : Arithmetic.sub(tot_1, index);
                 o = $.order; $.order = order;
-                ret = klass.dual( Arithmetic.equ(O, index)
+                item = klass.dual( Arithmetic.equ(O, index)
                 ? klass.initial( -dir, n, $ )
                 : (Arithmetic.equ(tot_1, index)
                 ? klass.initial( dir, n, $ )
                 : klass.unrank( indx, n, $ )), indx, n, $ );
                 $.order = o;
-                return ret;
+                if ( $.subiterator )
+                    item = item && subitem ? klass.cascade(item, subitem) : null;
+                return item;
             }
             else /*if ( LEX & order )*/
             {
                 indx = -1 === dir ? Arithmetic.sub(tot_1, index) : index;
                 o = $.order; $.order = order;
-                ret = klass.dual( Arithmetic.equ(O, index)
+                item = klass.dual( Arithmetic.equ(O, index)
                 ? klass.initial( dir, n, $ )
                 : (Arithmetic.equ(tot_1, index)
                 ? klass.initial( -dir, n, $ )
                 : klass.unrank( indx, n, $ )), indx, n, $ );
                 $.order = o;
-                return ret;
+                if ( $.subiterator )
+                    item = item && subitem ? klass.cascade(item, subitem) : null;
+                return item;
             }
         }
         return null;
     }
     
     ,random: function( type, m, M ) {
-        var self = this, klass = self[CLASS], ret, o = self.$.order;
+        var self = this, klass = self[CLASS], $ = self.$, item, o = $.order;
         if ( "index" === type )
         {
             var Arithmetic = Abacus.Arithmetic,
                 N = Arithmetic.N, O = Arithmetic.O, I = Arithmetic.I,
-                tot = self.$.count, argslen = arguments.length-1;
+                tot = $.count, argslen = arguments.length-1;
             if ( 0 === argslen )
             {
                 m = O;
@@ -1839,10 +1920,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             }
             return Arithmetic.rnd( m, M );
         }
-        self.$.order |= RANDOM;
-        ret = klass.rand( self.n, self.$ );
-        self.$.order = o;
-        return klass.dual( ret, null, self.n, self.$ );
+        $.order |= RANDOM;
+        item = klass.rand( self.n, $ );
+        $.order = o;
+        item = klass.dual( item, null, self.n, $ );
+        return $.subiterator ? klass.cascade( item, $.subiterator.random() ) : item;
     }
     
     ,rewind: function( dir ) {
@@ -1860,90 +1942,131 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this, Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             traversed, r, dir, klass = self[CLASS], T = klass.T,
-            current = self._item, n = self.n, $ = self.$,
-            order = $.order, tot = $.count, tot_1, rs;
+            n = self.n, $ = self.$,
+            order = $.order, tot = $.count, tot_1, rs, advance = 1,
+            current = $.subiterator ? self._subitem : self._item;
         
         if ( -1 === dir )
         {
-            // random and stochastic order has no prev
+            // random order has no prev
             if ( RANDOM & order ) return null;
             
-            dir = REVERSED & order ? -1 : 1; // T
-            // compute prev, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
-            if ( COLEX & order )
+            if ( $.subiterator )
             {
-                self.__item = klass.succ( dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 > dir ? J : I);
+                advance = 0;
+                if ( !$.subiterator.hasNext(-1) )
+                {
+                    $.subiterator.rewind(-1);
+                    advance = 1;
+                }
+                self.__subindex = $.subiterator.index();
+                self.__subitem = $.subiterator.next(-1);
             }
-            else /*if ( LEX & order )*/
+            if ( advance )
             {
-                self.__item = klass.succ( -dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 < dir ? J : I);
+                dir = REVERSED & order ? -1 : 1; // T
+                // compute prev, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
+                if ( COLEX & order )
+                {
+                    self.__item = klass.succ( dir, self.__item, self.__index, n, $ );
+                    if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 > dir ? J : I);
+                }
+                else /*if ( LEX & order )*/
+                {
+                    self.__item = klass.succ( -dir, self.__item, self.__index, n, $ );
+                    if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 < dir ? J : I);
+                }
             }
             self._item = null == self.__item ? null : klass.dual( self.__item, self.__index, n, $ );
             self._prev = null != self.__item;
             if ( self._prev ) self._index = Arithmetic.sub(self._index, I);
+            if ( $.subiterator )
+            {
+                self._prev = self._prev && (null != self.__subitem);
+                self._subindex = Arithmetic.add(Arithmetic.mul(self._index,$.subiterator.total()), self.__subindex);
+                self._subitem = self._item && self.__subitem ? klass.cascade(self._item, self.__subitem) : null;
+            }
             return current;
         }
         
-        if ( RANDOM & order )
+        if ( $.subiterator )
         {
-            tot_1 = Arithmetic.sub(tot, I);
-            if ( Arithmetic.lt(self._index, tot_1) )
+            advance = 0;
+            if ( !$.subiterator.hasNext() )
             {
-                traversed = self._traversed;
-                if ( !traversed )
+                $.subiterator.rewind();
+                advance = 1;
+            }
+            self.__subindex = $.subiterator.index();
+            self.__subitem = $.subiterator.next();
+        }
+        if ( advance )
+        {
+            if ( RANDOM & order )
+            {
+                tot_1 = Arithmetic.sub(tot, I);
+                if ( Arithmetic.lt(self._index, tot_1) )
                 {
-                    r = self.random("index");
-                    self.__item = klass.unrank( r, n, $ );
-                    if ( null != self.__item ) self.__index = r;
+                    traversed = self._traversed;
+                    if ( !traversed )
+                    {
+                        r = self.random("index");
+                        self.__item = klass.unrank( r, n, $ );
+                        if ( null != self.__item ) self.__index = r;
+                    }
+                    else
+                    {
+                        // get next un-traversed index, reject if needed
+                        r = self.random("index");
+                        rs = Abacus.Math.rnd( ) > 0.5 ? J : I;
+                        while ( traversed.isset( r ) ) r = Arithmetic.wrap( Arithmetic.add(r, rs), O, tot_1 );
+                        traversed.set( r );
+                        self.__item = klass.unrank( r, n, $ );
+                        if ( null != self.__item ) self.__index = r;
+                    }
                 }
                 else
                 {
-                    // get next un-traversed index, reject if needed
-                    r = self.random("index");
-                    rs = Abacus.Math.rnd( ) > 0.5 ? J : I;
-                    while ( traversed.isset( r ) ) r = Arithmetic.wrap( Arithmetic.add(r, rs), O, tot_1 );
-                    traversed.set( r );
-                    self.__item = klass.unrank( r, n, $ );
-                    if ( null != self.__item ) self.__index = r;
+                    self._item = self.__item = null;
+                    if ( self._traversed )
+                    {
+                        self._traversed.dispose( );
+                        self._traversed = null;
+                    }
                 }
             }
             else
             {
-                self._item = self.__item = null;
-                if ( self._traversed )
+                dir = REVERSED & order ? -1 : 1; // T
+                // compute next, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
+                if ( COLEX & order )
                 {
-                    self._traversed.dispose( );
-                    self._traversed = null;
+                    self.__item = klass.succ( -dir, self.__item, self.__index, n, $ );
+                    if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 < dir ? J : I);
                 }
-            }
-        }
-        else
-        {
-            dir = REVERSED & order ? -1 : 1; // T
-            // compute next, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
-            if ( COLEX & order )
-            {
-                self.__item = klass.succ( -dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 < dir ? J : I);
-            }
-            else /*if ( LEX & order )*/
-            {
-                self.__item = klass.succ( dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 > dir ? J : I);
+                else /*if ( LEX & order )*/
+                {
+                    self.__item = klass.succ( dir, self.__item, self.__index, n, $ );
+                    if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 > dir ? J : I);
+                }
             }
         }
         self._item = null == self.__item ? null : klass.dual( self.__item, self.__index, n, $ );
         self._next = null != self.__item;
         if ( self._next ) self._index = Arithmetic.add(self._index, I);
+        if ( $.subiterator )
+        {
+            self._next = self._next && (null != self.__subitem);
+            self._subindex = Arithmetic.add(Arithmetic.mul(self._index,$.subiterator.total()), self.__subindex);
+            self._subitem = self._item && self.__subitem ? klass.cascade(self._item, self.__subitem) : null;
+        }
         return current;
     }
     
     ,range: function( start, end ) {
         var self = this, Arithmetic = Abacus.Arithmetic,
             N = Arithmetic.N, O = Arithmetic.O, I = Arithmetic.I,
-            tmp, $ = self.$, tot = $.count, range, count, i, iter_state, dir = 1,
+            tmp, $ = self.$, tot = $.subiterator ? $.subcount : $.count, range, count, i, iter_state, dir = 1,
             argslen = arguments.length, tot_1 = Arithmetic.sub(tot, I),
             not_randomised = !(RANDOM & $.order);
         if ( argslen < 1 )
@@ -1981,6 +2104,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 ,self._index
                 ,self.__item
                 ,self._item
+                ,self.__subindex
+                ,self._subindex
+                ,self.__subitem
+                ,self._subitem
                 ,self._prev
                 ,self._next
             ];
@@ -1995,8 +2122,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             self._index = iter_state[2];
             self.__item = iter_state[3];
             self._item = iter_state[4];
-            self._prev = iter_state[5];
-            self._next = iter_state[6];
+            self.__subindex = iter_state[5];
+            self._subindex = iter_state[6];
+            self.__subitem = iter_state[7];
+            self._subitem = iter_state[8];
+            self._prev = iter_state[9];
+            self._next = iter_state[10];
         }
         else
         {
@@ -2026,7 +2157,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
     // extends and implements CombinatorialIterator
     constructor: function Tensor( /*dims here ..*/ ) {
         var self = this, n = slice.call(arguments), $;
-        $ = n.length && !is_array(n[n.length-1]) && (n[n.length-1] !== +n[n.length-1]) ? n.pop( ) || {} : {};
+        $ = n.length && !(n[n.length-1] instanceof CombinatorialIterator) && !is_array(n[n.length-1]) && (n[n.length-1] !== +n[n.length-1]) ? n.pop( ) || {} : {};
         $.type = $.type || "tensor";
         $.order = $.order || LEX;
         if ( n.length && is_array(n[0]) ) n = n[0];
@@ -2055,6 +2186,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             );
             return item;
         }
+        ,cascade: CombinatorialIterator.cascade
         ,dual: function( item, index, n, $ ) {
             if ( null == item ) return null;
             // some C-P-T processes at play here
@@ -2175,6 +2307,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             );
             return item;
         }
+        ,cascade: CombinatorialIterator.cascade
         ,dual: CombinatorialIterator.dual
         ,succ: function( dir, item, index, n, $ ) {
             return next_permutation( item, n, dir, $ && "cyclic"===$.type );
@@ -2308,6 +2441,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             );
             return item;
         }
+        ,cascade: CombinatorialIterator.cascade
         ,dual: CombinatorialIterator.dual
         ,succ: function( dir, item, index, n, $ ) {
             return next_combination( item, n, dir, $ && "repeated" === $.type );
@@ -2452,6 +2586,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             var item = 0 > dir ? array(n, 0, 1) : [];
             return item;
         }
+        ,cascade: CombinatorialIterator.cascade
         ,dual: function( item, index, n, $ ) {
             if ( null == item ) return null;
             // some C-P-T processes at play here
@@ -2585,6 +2720,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             }
             return item;
         }
+        ,cascade: CombinatorialIterator.cascade
         ,dual: function( item, index, n, $ ) {
             if ( null == item ) return null;
             var klass = this, order = $ && $.order ? $.order : 0,

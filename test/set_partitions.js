@@ -24,6 +24,9 @@ echo('---');
 echo('o = Abacus.Partition(7,{type:"set"})');
 o = Abacus.Partition(7,{type:"set"});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -41,6 +44,9 @@ o.dispose();
 
 echo('o = Abacus.Partition(8,{type:"set","max=":4})');
 o = Abacus.Partition(8,{type:"set","max=":4});
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());
@@ -60,6 +66,9 @@ o.dispose();
 
 echo('o = Abacus.Partition(8,{type:"set","parts=":4})');
 o = Abacus.Partition(8,{type:"set","parts=":4});
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());

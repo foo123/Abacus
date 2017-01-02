@@ -16,12 +16,12 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Combinations (VERSION = '+Abacus.VERSION+')');
+echo('Abacus Algebraic Composition: Permutations OF Combinations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Combinations
-echo('o = Abacus.Combination(6,3)');
-o = Abacus.Combination(6,3);
+// All Combinations = All Permutations of All Unique Combinations
+echo('o = Abacus.Permutation(Abacus.Combination(6,3))');
+o = Abacus.Permutation(Abacus.Combination(6,3));
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -39,41 +39,16 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind()/*, 1, function(item){
-    var index = Abacus.Combination.rank( item, o.n, o.type );
-    return [
-    item.slice(),
-    index,
-    Abacus.Combination.unrank( index, o.n, o.type, o.total() )
-    ];
-}*/ );
+print_all( o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
-echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
-
-echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
-
-echo('o.order("colex")');
-print_all( o.order("colex") );
-
-echo('o.order("colex,reflected")');
-print_all( o.order("colex,reflected") );
-
-echo('o.order("colex,reversed")');
-print_all( o.order("colex,reversed") );
-
-echo('o.order("random")');
-print_all( o.order("random") );
-
 echo('o.random()');
 echo(o.random());
 
-echo('o.order("colex").range(-5, -1)');
+echo('o.order("lex").range(-5, -1)');
 print_all(o.order("colex").range(-5, -1));
 
 

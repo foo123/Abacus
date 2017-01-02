@@ -24,6 +24,9 @@ echo('---');
 echo('o = Abacus.Partition(7,{"max=":4})');
 o = Abacus.Partition(7,{"max=":4});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -42,6 +45,9 @@ o.dispose();
 echo('o = Abacus.Partition(8,{"max=":4})');
 o = Abacus.Partition(8,{"max=":4});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -59,6 +65,9 @@ o.dispose();
 
 echo('o = Abacus.Partition(12,{"max=":4})');
 o = Abacus.Partition(12,{"max=":4});
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());
@@ -79,6 +88,9 @@ o.dispose();
 echo('o = Abacus.Partition(20,{"max=":4})');
 o = Abacus.Partition(20,{"max=":4});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -98,6 +110,9 @@ o.dispose();
 echo('o = Abacus.Partition(7,{"parts=":4})');
 o = Abacus.Partition(7,{"parts=":4});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -115,6 +130,9 @@ o.dispose();
 
 echo('o = Abacus.Partition(8,{"parts=":4})');
 o = Abacus.Partition(8,{"parts=":4});
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());
@@ -134,6 +152,9 @@ o.dispose();
 echo('o = Abacus.Partition(12,{"parts=":4})');
 o = Abacus.Partition(12,{"parts=":4});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -152,6 +173,9 @@ o.dispose();
 echo('o = Abacus.Partition(20,{"parts=":4})');
 o = Abacus.Partition(20,{"parts=":4});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -169,6 +193,9 @@ o.dispose();
 
 echo('o = Abacus.Partition(20,{"parts=":4,"max=":7})');
 o = Abacus.Partition(20,{"parts=":4,"max=":7});
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());

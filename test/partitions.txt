@@ -1,6 +1,8 @@
-Abacus.Partitions (VERSION = 0.6.0)
+Abacus.Partitions (VERSION = 0.7.0)
 ---
 o = Abacus.Partition(7)
+o.dimension()
+{ from: 1, to: 7 }
 o.total()
 15
 o.next()
@@ -45,6 +47,8 @@ o.rewind(-1)
 [ 1, 1, 1, 1, 1, 1, 1 ]
 o.dispose()
 o = Abacus.Partition(8)
+o.dimension()
+{ from: 1, to: 8 }
 o.total()
 22
 o.next()
@@ -103,6 +107,8 @@ o.rewind(-1)
 [ 1, 1, 1, 1, 1, 1, 1, 1 ]
 o.dispose()
 o = Abacus.Partition(12)
+o.dimension()
+{ from: 1, to: 12 }
 o.total()
 77
 o.next()
@@ -271,6 +277,8 @@ o.rewind(-1)
 [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 o.dispose()
 o = Abacus.Partition(20)
+o.dimension()
+{ from: 1, to: 20 }
 o.total()
 627
 o.next()

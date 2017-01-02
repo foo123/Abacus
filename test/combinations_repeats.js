@@ -23,6 +23,9 @@ echo('---');
 echo('o = Abacus.Combination(6,3,{type:"repeated"})');
 o = Abacus.Combination(6,3,{type:"repeated"});
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 

@@ -23,6 +23,9 @@ echo('---');
 echo('o = Abacus.Tensor(1,2,3)');
 o = Abacus.Tensor(1,2,3);
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 

@@ -1,11 +1,11 @@
 # Abacus
-A combinatorics library for Node/XPCOM/JS, PHP, Python
+A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 
 
-(php/python implementations in progress)
+(php/python/java/c implementations in progress)
 
 
-**version 0.6.0** (~ 29kB minified, ~ 9kB zipped)
+**version 0.6.0** (~ 29kB minified, ~ 9kB zipped) (**version 0.7.0, in progress**)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -40,11 +40,30 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python
 
 ###Contents
 
+* [Features](#features)
 * [Example API](#example-api)
-* [Tests](#tests)
 * [Performance](#performance)
 * [Todo](#todo)
 
+
+###Features
+
+**Supports:** (see: `test/test.bat`)
+
+* `Tensor` (`test/tensors.js`)
+* `Tuple` (`test/tuples.js`)
+* `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
+* `CyclicPermutation` (`test/cyclic_permutations.js`)
+* `MultisetPermutation` (`test/multiset_permutations.js`) **todo**
+* `DerangementPermutation` (`test/derangements.js`) **todo**
+* `InvolutionPermutation` (`test/involutions.js`) **todo**
+* `Combination` (`test/combinations.js`)
+* `RepeatedCombination` (`test/combinations_repeats.js`)
+* `Subset` (`test/subsets.js`)
+* `Partition` (`test/partitions.js`)
+* `RestrictedPartition` (`test/restricted_partitions.js`)
+* `SetPartition` (`test/set_partitions.js`)
+* algebraic composition of combinatorial objects (of fixed dimensions for now) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/all_combinations.js`)
 
 ###Example API
 
@@ -518,26 +537,6 @@ o.order("lex").range(30414093201713378043612608166064768844377641568960511999999
 o.dispose()
 ```
 
-###Tests
-
-see: `test/test.bat`
-
-* `test/permutations.js`
-* `test/cyclic_permutations.js`
-* `test/permutations-bigint.js`
-* `test/combinations.js`
-* `test/combinations_repeats.js`
-* `test/subsets.js`
-* `test/tensors.js`
-* `test/tuples.js`
-* `test/partitions.js`
-* `test/set_partitions.js`
-* `test/restricted_partitions.js`
-* `test/derangements.js` **todo**
-* `test/multiset_permutations.js` **todo**
-* `test/involutions.js` **todo**
-
-
 ###Performance
 
 most algorithms:
@@ -556,11 +555,12 @@ most algorithms:
 
 * apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
 * support `biginteger` combinatorial computations e.g large factorials [DONE, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
-* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE, `partition` rank/unrank not implemented yet, may be optimised]
+* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE, `Partition.rank`/`Partition.unrank` methods not implemented yet, may be optimised]
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `minimal/gray` ordering is not implemented yet, `random` ordering may be optimised]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
-* add `MultisetPermutation`, `Derangement`, `Involution`, `RestrictedPartition` (full support + rank/unrank methods) (TODO)
+* support algebraic composition/cascading of combinatorial objects (of fixed dimensions for now) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
+* add `MultisetPermutation`, `DerangementPermutation`, `InvolutionPermutation` (TODO)
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)

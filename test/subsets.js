@@ -23,6 +23,9 @@ echo('---');
 echo('o = Abacus.Subset(5)');
 o = Abacus.Subset(5);
 
+echo('o.dimension()'); 
+echo(o.dimension());
+
 echo('o.total()'); 
 echo(o.total());
 
@@ -36,7 +39,9 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind()/*, 1, function(item){
+    return [item.slice(), Abacus.Util.difference(o.n, item, -1)];
+}*/ );
 
 echo('backwards');
 echo('o.rewind(-1)');
