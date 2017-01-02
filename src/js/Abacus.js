@@ -2434,7 +2434,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         if ( !(self instanceof Subset) ) return new Subset(n, $);
         $ = $ || {}; $.type = $.type || "subset";
         CombinatorialIterator.call(self, "Subset", n||1, $);
-        self.$.dimension = {from:0, to:self.n};
+        self.$.dimension = 0===self.n ? 0 : {from:0, to:self.n};
     }
     
     ,__static__: {
@@ -2511,7 +2511,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         if ( !(self instanceof Partition) ) return new Partition(n, $);
         $ = $ || {}; $.type = $.type || "partition";
         CombinatorialIterator.call(self, "Partition", n||1, $);
-        self.$.dimension = {from:1, to:self.n};
+        var M = $ && $["max="] ? $["max="]|0 : null, K = $ && $["parts="] ? $["parts="]|0 : null,
+            N = self.n, k1 = K ? K : (M ? N-M+1 : N), k0 = K ? K : (M ? stdMath.ceil(N/M) : 1);
+        self.$.dimension = k1===k0 ? k0 : {from:stdMath.min(k0,k1), to:stdMath.max(k0,k1)};
     }
     
     ,__static__: {
