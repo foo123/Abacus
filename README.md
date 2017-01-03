@@ -57,13 +57,15 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `MultisetPermutation` (`test/multiset_permutations.js`) **todo**
 * `DerangementPermutation` (`test/derangements.js`) **todo**
 * `InvolutionPermutation` (`test/involutions.js`) **todo**
-* `Combination` (`test/combinations.js`)
-* `RepeatedCombination` (`test/combinations_repeats.js`)
+* `UnorderedCombination` (`test/combinations.js`)
+* `OrderedCombination` (`test/ordered_combinations.js`) **partialy complete**
+* `UnorderedRepeatedCombination` (`test/combinations_repeats.js`)
+* `OrderedRepeatedCombination` (`test/ordered_combinations_repeats.js`)
 * `Subset` (`test/subsets.js`)
 * `Partition` (`test/partitions.js`)
-* `RestrictedPartition` (`test/restricted_partitions.js`)
-* `SetPartition` (`test/set_partitions.js`)
-* algebraic composition of combinatorial objects (of fixed dimensions for now) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/all_combinations.js`)
+* `RestrictedPartition` (`test/restricted_partitions.js`) **partialy complete**
+* `SetPartition` (`test/set_partitions.js`) **partialy complete**
+* algebraic composition of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js`)
 
 ###Example API
 
@@ -555,11 +557,11 @@ most algorithms:
 
 * apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
 * support `biginteger` combinatorial computations e.g large factorials [DONE, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
-* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE, `Partition.rank`/`Partition.unrank` methods not implemented yet, may be optimised]
+* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE, `OrderedCombination.rank`/`OrderedCombination.unrank`/`Partition.rank`/`Partition.unrank` methods not implemented yet, may be optimised]
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `minimal/gray` ordering is not implemented yet, `random` ordering may be optimised]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
-* support algebraic composition/cascading of combinatorial objects (of fixed dimensions for now) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
+* support algebraic composition/cascading of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
 * add `MultisetPermutation`, `DerangementPermutation`, `InvolutionPermutation` (TODO)
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)

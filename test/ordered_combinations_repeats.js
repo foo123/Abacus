@@ -16,12 +16,12 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Subsets (VERSION = '+Abacus.VERSION+')');
+echo('Abacus.CombinationRepeats (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Powersets
-echo('o = Abacus.Subset(5)');
-o = Abacus.Subset(5);
+// CombinationRepeats
+echo('o = Abacus.Combination(5,3,{type:"ordered_repeated"})');
+o = Abacus.Combination(5,3,{type:"ordered_repeated"});
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -39,7 +39,14 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind()/*, 1, function(item){
+    var index = Abacus.Combination.rank( item, o.n, o.type );
+    return [
+    item.slice(),
+    index,
+    Abacus.Combination.unrank( index, o.n, o.type, o.total() )
+    ];
+}*/ );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -66,6 +73,7 @@ print_all( o.order("random") );
 echo('o.random()');
 echo(o.random());
 
+
 echo('o.order("colex").range(-5, -1)');
 print_all(o.order("colex").range(-5, -1));
 
@@ -73,3 +81,5 @@ print_all(o.order("colex").range(-5, -1));
 // dispose
 echo('o.dispose()');
 o.dispose();
+
+

@@ -21,8 +21,8 @@ echo('---');
 
 // Partitions
 
-echo('o = Abacus.Partition(7)');
-o = Abacus.Partition(7);
+echo('o = Abacus.Partition(7,{length:"constant"})');
+o = Abacus.Partition(7,{length:"constant"});
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -80,8 +80,8 @@ print_all( o.rewind(-1), -1 );
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(12)');
-o = Abacus.Partition(12);
+echo('o = Abacus.Partition(12,{type:"packed"})');
+o = Abacus.Partition(12,{type:"packed"});
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -109,8 +109,8 @@ print_all( o.rewind(-1), -1 );
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(20)');
-o = Abacus.Partition(20);
+echo('o = Abacus.Partition(20,{type:"packed",length:"constant"})');
+o = Abacus.Partition(20,{type:"packed",length:"constant"});
 
 echo('o.dimension()'); 
 echo(o.dimension());
