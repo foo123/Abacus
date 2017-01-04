@@ -20,8 +20,8 @@ echo('Abacus.CombinationRepeats (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // CombinationRepeats
-echo('o = Abacus.Combination(5,3,{type:"ordered_repeated"})');
-o = Abacus.Combination(5,3,{type:"ordered_repeated"});
+echo('o = Abacus.Combination(5,3,{type:"ordered+repeated"})');
+o = Abacus.Combination(5,3,{type:"ordered+repeated"});
 
 echo('o.dimension()'); 
 echo(o.dimension());

@@ -39,18 +39,49 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind()/*, 1, function(item){
+    var rank = Abacus.Combination.rank(item, o.n, o.$),
+        unranked = Abacus.Combination.unrank(rank, o.n, o.$);
+    return [
+    item.slice(),
+    rank,
+    unranked
+    ];
+}*/ );
 
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
+echo('o.order("colex")');
+print_all( o.order("colex") );
+
+echo('o.order("colex,reflected")');
+print_all( o.order("colex,reflected") );
+
+echo('o.order("colex,reversed")');
+print_all( o.order("colex,reversed") );
+
+echo('o.order("random")');
+print_all( o.order("random") );
+
 echo('o.random()');
 echo(o.random());
+
+
+echo('o.order("colex").range(-5, -1)');
+print_all(o.order("colex").range(-5, -1));
 
 
 // dispose
 echo('o.dispose()');
 o.dispose();
+
 
 
