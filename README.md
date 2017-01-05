@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.6.0** (~ 29kB minified, ~ 9kB zipped) (**version 0.7.0, in progress**)
+**version 0.7.0** (~ 38kB minified, ~ 12kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -41,8 +41,8 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 ###Contents
 
 * [Features](#features)
-* [Example API](#example-api)
 * [Performance](#performance)
+* [Example API](#example-api)
 * [Todo](#todo)
 
 
@@ -55,7 +55,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
 * `CyclicPermutation` (`test/cyclic_permutations.js`)
 * `MultisetPermutation` (`test/multiset_permutations.js`) **todo**
-* `DerangementPermutation` (`test/derangements.js`) **todo**
+* `DerangementPermutation` (`test/derangements.js`) **almost complete**
 * `InvolutionPermutation` (`test/involutions.js`) **todo**
 * `UnorderedCombination` (`test/combinations.js`)
 * `OrderedCombination` (`test/ordered_combinations.js`)
@@ -63,10 +63,24 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `OrderedRepeatedCombination` (`test/ordered_combinations_repeats.js`)
 * `Subset` (`test/subsets.js`)
 * `Partition` (`test/partitions.js`)
-* `RestrictedPartition` (`test/restricted_partitions.js`) **partialy complete**
+* `RestrictedPartition` (`test/restricted_partitions.js`) **almost complete**
 * `SetPartition` (`test/set_partitions.js`) **partialy complete**
 * algebraic composition of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js`)
-* multiple (combined) iterator orderings &amp; traversals: **lex**, **colex**, **random**, **reversed**, **reflected**, **minimal** (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), ..
+* multiple (combined) iterator orderings &amp; traversals: **lex**, **colex**, **random**, **reversed**, **reflected**, **minimal** (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
+
+
+###Performance
+
+all algorithms:
+
+* are **linear** `O(n)` (or log-linear `O(nlgn)`) **time and space** algorithms
+* are **statisticaly unbiased** (i.e uniform sampling methods)
+* use **efficient successor methods** (e.g loopless, CAT/constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above)
+* **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
+* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. 
+
+**Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
+
 
 ###Example API
 
@@ -540,19 +554,6 @@ o.order("lex").range(30414093201713378043612608166064768844377641568960511999999
 o.dispose()
 ```
 
-###Performance
-
-most algorithms:
-
-* are **linear** `O(n)` (or log-linear `O(nlgn)`) **time and space** algorithms
-* are **statisticaly unbiased** (e.g uniform sampling methods)
-* use **efficient successor methods** (e.g loopless, constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see below)
-* **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
-* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. 
-
-**Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
-
-
 
 ###Todo
 
@@ -563,7 +564,7 @@ most algorithms:
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
-* add `MultisetPermutation`, `DerangementPermutation`, `InvolutionPermutation` (TODO)
+* add `MultisetPermutation`, `InvolutionPermutation`, full support for `DerangementPermutation` &amp; `RestrictedPartition` (TODO)
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
