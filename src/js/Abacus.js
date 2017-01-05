@@ -1088,8 +1088,7 @@ function next_permutation( item, N, dir, type )
         {
             if ( "cyclic" === type )
             {
-                if ( item[0] > 0 )
-                    item = [item[n-1]].concat(item.slice(0,-1));
+                if ( item[0] > 0 ) item = [item[n-1]].concat(item.slice(0,-1));
                 //else last item
                 else item = null;
             }
@@ -1108,19 +1107,19 @@ function next_permutation( item, N, dir, type )
                     while (kl>k && item[k]<item[kl]) kl--;
                     //Swap the value of a[k] with that of a[l].
                     s = item[k]; item[k] = item[kl]; item[kl] = s;
-                    fixed = (k === item[k]);
                     //Reverse the sequence from a[k + 1] up to and including the final element a[n].
                     l = k+1; r = n-1;
-                    while (l <= r)
+                    while (l < r)
                     {
-                        s = item[l];
-                        item[l++] = item[r];
-                        item[r--] = s;
-                        fixed = fixed || (l-1 === item[l-1]) || (r+1 === item[r+1]);
+                        s = item[l]; item[l] = item[r]; item[r] = s;
+                        fixed = fixed || (l === item[l]) || (r === item[r]);
+                        l++; r--;
                     }
+                    fixed = fixed || (k === item[k]) || (r === item[r]);
                     if ( "derangement" === type )
                     {
-                        if ( !fixed ) for(l=0; l<=k; l++) if( l === item[l] ) { fixed = true; break; }
+                        if ( !fixed )
+                            for(l=k-1; l>=0; l--) if( l === item[l] ) { fixed = true; break; }
                     }
                     else
                     {
@@ -1137,8 +1136,7 @@ function next_permutation( item, N, dir, type )
         {
             if ( "cyclic" === type )
             {
-                if ( item[0]+1 < n )
-                    item = item.slice(1).concat([item[0]]);
+                if ( item[0]+1 < n ) item = item.slice(1).concat([item[0]]);
                 //else last item
                 else item = null;
             }
@@ -1157,19 +1155,19 @@ function next_permutation( item, N, dir, type )
                     while (kl>k && item[k]>item[kl]) kl--;
                     //Swap the value of a[k] with that of a[l].
                     s = item[k]; item[k] = item[kl]; item[kl] = s;
-                    fixed = (k === item[k]);
                     //Reverse the sequence from a[k + 1] up to and including the final element a[n].
                     l = k+1; r = n-1;
-                    while (l <= r)
+                    while (l < r)
                     {
-                        s = item[l];
-                        item[l++] = item[r];
-                        item[r--] = s;
-                        fixed = fixed || (l-1 === item[l-1]) || (r+1 === item[r+1]);
+                        s = item[l]; item[l] = item[r]; item[r] = s;
+                        fixed = fixed || (l === item[l]) || (r === item[r]);
+                        l++; r--;
                     }
+                    fixed = fixed || (k === item[k]) || (r === item[r]);
                     if ( "derangement" === type )
                     {
-                        if ( !fixed ) for(l=0; l<=k; l++) if( l === item[l] ) { fixed = true; break; }
+                        if ( !fixed )
+                            for(l=k-1; l>=0; l--) if( l === item[l] ) { fixed = true; break; }
                     }
                     else
                     {
@@ -1211,7 +1209,7 @@ function next_combination( item, N, dir, type )
             }
             else if ( "ordered" === type )
             {
-                for(selected = {},i=0; i<k; i++) selected[item[i]] = i;
+                for(selected={},i=0; i<k; i++) selected[item[i]] = i;
                 i = k-1; index = -1;
                 while( (-1 === index) && (0 <= i) )
                 {
@@ -1233,7 +1231,7 @@ function next_combination( item, N, dir, type )
                 if ( -1 < index )
                 {
                     item[index] = j;
-                    for (j=n-1,i=index+1; i<k; i++)
+                    for(j=n-1,i=index+1; i<k; i++)
                     {
                         while( (j>=0) && (null != selected[j]) ) j--;
                         item[i] = j; selected[j] = i;
@@ -1255,7 +1253,7 @@ function next_combination( item, N, dir, type )
                 if ( -1 < index )
                 {
                     curr = n-1+ofs;
-                    for (i=k-1; i>index; i--)
+                    for(i=k-1; i>index; i--)
                     {
                         curr -= ofs;
                         item[i] = curr;
@@ -1284,7 +1282,7 @@ function next_combination( item, N, dir, type )
             }
             else if ( "ordered" === type )
             {
-                for(selected = {},i=0; i<k; i++) selected[item[i]] = i;
+                for(selected={},i=0; i<k; i++) selected[item[i]] = i;
                 i = k-1; index = -1;
                 while( (-1 === index) && (0 <= i) )
                 {
@@ -1306,7 +1304,7 @@ function next_combination( item, N, dir, type )
                 if ( -1 < index )
                 {
                     item[index] = j;
-                    for (j=0,i=index+1; i<k; i++)
+                    for(j=0,i=index+1; i<k; i++)
                     {
                         while( (j<n) && (null != selected[j]) ) j++;
                         item[i] = j; selected[j] = i;
@@ -1341,7 +1339,7 @@ function next_combination( item, N, dir, type )
                 if ( -1 < index )
                 {
                     curr = item[index]+1-ofs;
-                    for (i=index; i<k; i++)
+                    for(i=index; i<k; i++)
                     {
                         curr += ofs;
                         item[i] = curr;
@@ -2636,9 +2634,14 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 if ( 2 > n ) return null;
                 if ( n&1 ) // odd
-                    item = 0 > dir ? next_permutation(array(n, n-1, -1), n, -1, type) : array(n-3, function(i){return i&1?i-1:i+1;}).concat([n-2,n-1,n-3]);
+                {
+                    var n_2 = stdMath.floor(n/2);
+                    item = 0 > dir ? array(n-n_2-1, n-1, -1).concat([n_2-1,n_2]).concat(array(n_2-1, n_2-2, -1)) : array(n-3, function(i){return i&1?i-1:i+1;}).concat([n-2,n-1,n-3]);
+                }
                 else // even
+                {
                     item = 0 > dir ? array(n, n-1, -1) : array(n, function(i){return i&1?i-1:i+1;});
+                }
             }
             else//if ( "permutation" === type )
             {
@@ -2694,7 +2697,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "permutation",
                 add = Arithmetic.add, mul = Arithmetic.mul,
-                index = Arithmetic.O, i, m;
+                index = Arithmetic.O, i, m, I;
             n = n || item.length;
             if ( !n ) return Arithmetic.J;
             if ( "cyclic"=== type )
@@ -2703,12 +2706,18 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ( "derangement" === type )
             {
+                /*item = permutation2inversion( item );
+                for(I=n&1?-1:1,i=0; i<n-1; i++,I=-I)
+                {
+                    index = add(mul(index,n-i), I*(n-i)+item[ i ]);
+                }
+                return index;*/
                 return NotImplemented();
             }
             else//if ( "permutation" === type )
             {
                 item = permutation2inversion( item );
-                for (m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[ i ]);
+                for(m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[ i ]);
                 return index;
             }
         }

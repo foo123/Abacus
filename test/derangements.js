@@ -28,7 +28,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -64,7 +64,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -100,7 +100,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -128,6 +128,7 @@ echo('o.random()');
 echo(o.random());
 o.dispose();
 
+
 echo('o = Abacus.Permutation(5,{type:"derangement"})');
 o = Abacus.Permutation(5,{type:"derangement"});
 
@@ -136,7 +137,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -173,7 +174,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
