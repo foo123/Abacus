@@ -673,13 +673,14 @@ function binary2subset( item, n )
     for(n=n-1,i=0; i<=n; i++) if ( 0 < item[i] ) subset.push(n-i);
     return subset;
 }
-function conjugatepartition( partition, packed )
+function conjugatepartition( partition )
 {
     if ( null == partition ) return null;
     // http://mathworld.wolfram.com/ConjugatePartition.html
     var l = partition.length, n, i, j, p, conjpartition;
-    if ( true === packed )
+    if ( is_array(partition[0]) )
     {
+        // packed representation
         p = partition[j]; conjpartition = [[p[1], p[0]]];
         for(j=1; j<l; j++)
         {
@@ -691,6 +692,7 @@ function conjugatepartition( partition, packed )
     }
     else
     {
+        // unpacked representation
         n = partition[0]; conjpartition = array(n, 1, 0);
         for(j=1; j<l; j++)
         {
@@ -1736,7 +1738,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         $.type = String($.type || "default").toLowerCase();
         $.order = $.order || LEX; // default order is lexicographic ("lex")
         $.base = $.base || 0;
+        $.minbase = null != $.minbase ? $.minbase : $.base;
+        $.maxbase = null != $.maxbase ? $.maxbase : $.base;
         $.dimension = $.dimension || 0;
+        $.mindimension = null != $.mindimension ? $.mindimension : $.dimension;
+        $.maxdimension = null != $.maxdimension ? $.maxdimension : $.dimension;
         $.rand = $.rand || {};
         $.count = klass.count( self.n, self.$ );
         if ( $.sub instanceof CombinatorialIterator )
@@ -1745,9 +1751,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             $.submethod = String($.submethod || "project").toLowerCase();
             $.subcascade = -1 === $.subcascade ? -1 : 1;
             if ( "concatenate" === $.submethod )
-                $.dimension = $.dimension+$.sub.dimension();
+                $.subdimension = $.dimension+$.sub.dimension();
             else if ( "compose" === $.submethod )
-                $.dimension = $.dimension*$.sub.dimension();
+                $.subdimension = $.dimension*$.sub.dimension();
+            else
+                $.subdimension = $.dimension;
         }
         self.order( $.order ); 
     }
@@ -1763,15 +1771,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         }
         
         // some C-P-T processes at play here :))
-        ,C: function( item, n ) {
-            return conjugation( item, n );
-        }
-        ,P: function( item, n ) {
-            return parity( item );
-        }
-        ,T: function( item, n ) {
-            return inversion( item, n );
-        }
+        ,C: function( item, C0 ) { return conjugation( item, C0 ); }
+        ,P: function( item/*, P0*/ ) { return parity( item ); }
+        ,T: function( item, T0 ) { return inversion( item, T0 ); }
         
         ,count: NotImplemented
         ,initial: NotImplemented
@@ -1785,25 +1787,31 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             if ( null == item ) return null;
             // some C-P-T processes at play here
             var klass = this, order = $ && $.order ? $.order : 0,
-                C = klass.C, P = klass.P, T = klass.T;
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
-            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
-            else if ( COLEX & order ) item = REFLECTED & order ? C( item, n ) : P( C( item, n ), n );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, n ) : item.slice( );
+                C = klass.C, P = klass.P, //T = klass.T,
+                C0 = $ && (null!=$.base) ? $.base : n,
+                P0 = $ && (null!=$.dimension) ? $.dimension : n;
+            if ( RANDOM & order ) item = REFLECTED & order ? P( item, P0 ) : item.slice( );
+            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, P0 ) : item.slice( );
+            else if ( COLEX & order ) item = REFLECTED & order ? C( item, C0 ) : P( C( item, C0 ), P0 );
+            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, P0 ) : item.slice( );
             return item;
         }
         ,succ: function( dir, item, index, n, $ ) {
+            if ( null == item || null == index ) return null;
             var klass = this, Arithmetic = Abacus.Arithmetic;
-            return null == item
-                ? null
-                : klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $)
-            ;
+            return klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $);
         }
         ,rand: function( n, $ ) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 N = Arithmetic.sub($ && $.count ? $.count : klass.count(n, $), Arithmetic.I),
                 O = Arithmetic.O, index = Arithmetic.rnd(O, N);
-            return Arithmetic.equ(O, index) ? klass.initial(1, n, $) : (Arithmetic.equ(N, index) ? klass.initial(-1, n, $) : klass.unrank(index, n, $));
+            return Arithmetic.equ(O, index) ? (
+                klass.initial(1, n, $)
+            ) : (Arithmetic.equ(N, index) ? (
+                klass.initial(-1, n, $)
+            ) : (
+                klass.unrank(index, n, $)
+            ));
         }
         ,rank: NotImplemented
         ,unrank: NotImplemented
@@ -1856,12 +1864,14 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return self;
     }
     
-    ,base: function( ) {
-        return this.$.base || 0;
+    ,base: function( non_recursive ) {
+        var $ = this.$;
+        return $.sub && true!==non_recursive ? ($.subbase || $.base || 0) : ($.base || 0);
     }
     
-    ,dimension: function( ) {
-        return this.$.dimension || 0;
+    ,dimension: function( non_recursive ) {
+        var $ = this.$;
+        return $.sub && true!==non_recursive ? ($.subdimension || $.dimension || 0) : ($.dimension || 0);
     }
     
     ,total: function( non_recursive ) {
@@ -2481,16 +2491,20 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         }
         else
         {
-            $.base = operate(function(m, k){return k > m ? k : m;}, 0, n);
+            var m_M = operate(function(m_M, k){
+                if ( k < m_M[0] ) m_M[0] = k;
+                if ( k > m_M[1] ) m_M[1] = k;
+                return m_M;
+            }, [Infinity,0], n);
+            $.base = n;
+            $.minbase = m_M[0]; $.maxbase = m_M[1];
             $.dimension = n.length;
         }
         CombinatorialIterator.call(self, "Tensor", n, $);
     }
     
     ,__static__: {
-         C: function( item, n ) {
-            return conjugation( item, n[1] );
-        }
+         C: CombinatorialIterator.C
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
         
@@ -2508,16 +2522,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             return item;
         }
         ,cascade: CombinatorialIterator.cascade
-        ,dual: function( item, index, n, $ ) {
-            if ( null == item ) return null;
-            // some C-P-T processes at play here
-            var klass = this, order = $ && $.order ? $.order : 0,
-                C = $ && "tuple"===$.type ? klass.C : CombinatorialIterator.C, P = klass.P, T = klass.T;
-            if ( RANDOM & order ) return REFLECTED & order ? P( item, n ) : item.slice( );
-            else if ( MINIMAL & order ) return REFLECTED & order ? P( item, n ) : item.slice( );
-            else if ( COLEX & order ) return REFLECTED & order ? C( item, n ) : P( C( item, n ), n );
-            else/*if ( LEX & order )*/return REFLECTED & order ? P( item, n ) : item.slice( );
-        }
+        ,dual: CombinatorialIterator.dual
         ,succ: function( dir, item, index, n, $ ) {
             return next_tensor( item, n, dir, $ && $.type ? $.type : "tensor" );
         }
@@ -2620,7 +2625,10 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         // is based on random generation, instead of random unranking
         $.rand = {"multiset":1,"derangement":1,"involution":1};
         if ( "multiset" === $.type )
+        {
             $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array(n, 1, 0);
+            $.base = $.multiplicity.length;
+        }
         CombinatorialIterator.call(self, "Permutation", n, $);
     }
     
@@ -2686,19 +2694,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             return item;
         }
         ,cascade: CombinatorialIterator.cascade
-        ,dual: function( item, index, n, $ ) {
-            if ( null == item ) return null;
-            // some C-P-T processes at play here
-            var klass = this, type = $ && $.type ? $.type : "permutation",
-                order = $ && $.order ? $.order : 0,
-                nm = "multiset" === type ? $.multiplicity.length : n,
-                C = klass.C, P = klass.P, T = klass.T;
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
-            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
-            else if ( COLEX & order ) item = REFLECTED & order ? C( item, nm ) : P( C( item, nm ), n );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, n ) : item.slice( );
-            return item;
-        }
+        ,dual: CombinatorialIterator.dual
         ,succ: function( dir, item, index, n, $ ) {
             var type = $ && $.type ? $.type : "permutation";
             if ( "involution" === type ) return null;
@@ -2926,9 +2922,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
     }
     
     ,__static__: {
-         C: function( item, n ) {
-            return conjugation( item, n[0] );
-        }
+         C: CombinatorialIterator.C
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
         
@@ -3163,14 +3157,14 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             n = $.sub.base();
         }
         $.base = n;
-        $.dimension = {from:0, to:n};
+        $.dimension = n;
+        $.mindimension = 0;
+        $.maxdimension = n;
         CombinatorialIterator.call(self, "Subset", n, $);
     }
     
     ,__static__: {
-         C: function( item, n ) {
-            return difference( n, item );
-        }
+         C: function( item, n ) { return difference( n, item ); }
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
         
@@ -3187,7 +3181,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             if ( null == item ) return null;
             // some C-P-T processes at play here
             var klass = this, order = $ && $.order ? $.order : 0,
-                C = klass.C, P = klass.P, T = klass.T;
+                C = klass.C, P = klass.P/*, T = klass.T*/;
             if ( RANDOM & order ) item = REFLECTED & order ? item.slice( ) : P( item, n );
             else if ( MINIMAL & order ) item = REFLECTED & order ? item.slice( ) : P( item, n );
             else if ( COLEX & order ) item = REFLECTED & order ? P( C( item, n ), n ) : C( item, n );
@@ -3258,14 +3252,14 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         var M = $["max="] ? $["max="]|0 : null, K = $["parts="] ? $["parts="]|0 : null,
             k1 = K ? K : (M ? n-M+1 : n), k0 = K ? K : (M ? stdMath.ceil(n/M) : 1);
         $.base = n;
-        $.dimension = "constant"===$["length"] ? (K||n) : (k1===k0 ? k0 : {from:stdMath.min(k0,k1), to:stdMath.max(k0,k1)});
+        $.dimension = K || n;
+        $.mindimension = stdMath.min(k0,k1);
+        $.maxdimension = stdMath.max(k0,k1);
         CombinatorialIterator.call(self, "Partition", n, $);
     }
     
     ,__static__: {
-         C: function( item, n, packed ) {
-            return conjugatepartition( item, true===packed );
-        }
+         C: function( item/*, n*/ ) { return conjugatepartition( item ); }
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
         
@@ -3347,14 +3341,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             if ( null == item ) return null;
             var klass = this, order = $ && $.order ? $.order : 0,
                 M = $ && $["max="] ? $["max="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
-                C = klass.C, P = klass.P, T = klass.T;
+                K = $ && $["parts="] ? $["parts="]|0 : null;
             if ( K && !M ) item = conjugatepartition(item);
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
-            else if ( MINIMAL & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
-            else if ( COLEX & order ) item = REFLECTED & order ? P( C( item, n ), n ) : C( item, n );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, n ) : item.slice( );
             if ( $ && "unpacked"===$.type ) item = unpackpartition(item);
+            item = CombinatorialIterator.dual.call(klass, item, index, n, $);
             if ( $ && "set"===$.type ) return partition2sets(item);
             if ( ($ && "constant"===$['length']) && (item.length < n) ) item = item.concat(array(n-item.length, 0, 0));
             if ( $ && "packed"===$.type ) item = packpartition(item);

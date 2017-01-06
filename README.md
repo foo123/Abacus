@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.7.5** (~ 40kB minified, ~ 12kB zipped)
+**version 0.7.5** (~ 39kB minified, ~ 12kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
