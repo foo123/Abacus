@@ -17,6 +17,9 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 `Abacus` uses (for the most part) self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
 
+[![Abacus Live](/abacus-live.png)](https://foo123.github.io/examples/abacus)
+
+
 **see also:**  
 
 * [Contemplate](https://github.com/foo123/Contemplate) a fast and light-weight Template Engine for Node/XPCOM/JS, PHP, Python
@@ -40,6 +43,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 
 ###Contents
 
+* [Live Playground Example](https://foo123.github.io/examples/abacus)
 * [Features](#features)
 * [Performance](#performance)
 * [Example API](#example-api)
