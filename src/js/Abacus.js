@@ -1784,7 +1784,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             // some C-P-T processes at play here
             var klass = this, order = $ && $.order ? $.order : 0,
                 C = klass.C, P = klass.P, T = klass.T;
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item;
+            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
             else if (MINIMAL & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
             else if ( COLEX & order ) item = REFLECTED & order ? C( item, n ) : P( C( item, n ), n );
             else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, n ) : item.slice( );
@@ -2510,7 +2510,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             // some C-P-T processes at play here
             var klass = this, order = $ && $.order ? $.order : 0,
                 C = $ && "tuple"===$.type ? klass.C : CombinatorialIterator.C, P = klass.P, T = klass.T;
-            if ( RANDOM & order ) return REFLECTED & order ? P( item, n ) : item;
+            if ( RANDOM & order ) return REFLECTED & order ? P( item, n ) : item.slice( );
             else if ( MINIMAL & order ) return REFLECTED & order ? P( item, n ) : item.slice( );
             else if ( COLEX & order ) return REFLECTED & order ? C( item, n ) : P( C( item, n ), n );
             else/*if ( LEX & order )*/return REFLECTED & order ? P( item, n ) : item.slice( );
@@ -2902,11 +2902,14 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             ) : (
                 0 > dir ? array(n[1], n[0]-n[1], 1) : array(n[1], 0, 1)
             ));
-            if ( "binary" === type ) item = subset2binary(item, n[0]);
             return item;
         }
         ,cascade: CombinatorialIterator.cascade
-        ,dual: CombinatorialIterator.dual
+        ,dual: function( item, index, n, $ ) {
+            item = CombinatorialIterator.dual.call(this, item, index, n, $);
+            if ( $ && "binary" === $.type ) item = subset2binary(item, n[0]);
+            return item;
+        }
         ,succ: function( dir, item, index, n, $ ) {
             return next_combination( item, n, dir, $ && $.type ? $.type : "unordered" );
         }
@@ -3132,7 +3135,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             // some C-P-T processes at play here
             var klass = this, order = $ && $.order ? $.order : 0,
                 C = klass.C, P = klass.P, T = klass.T;
-            if ( RANDOM & order ) item = REFLECTED & order ? item : P( item, n );
+            if ( RANDOM & order ) item = REFLECTED & order ? item.slice( ) : P( item, n );
             else if ( MINIMAL & order ) item = REFLECTED & order ? item.slice( ) : P( item, n );
             else if ( COLEX & order ) item = REFLECTED & order ? P( C( item, n ), n ) : C( item, n );
             else/*if ( LEX & order )*/item = REFLECTED & order ? item.slice( ) : P( item, n );
@@ -3294,7 +3297,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 C = klass.C, P = klass.P, T = klass.T;
             if ( K && !M ) item = conjugatepartition(item);
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item;
+            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
             else if ( MINIMAL & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
             else if ( COLEX & order ) item = REFLECTED & order ? P( C( item, n ), n ) : C( item, n );
             else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, n ) : item.slice( );
