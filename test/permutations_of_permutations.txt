@@ -1,4 +1,4 @@
-Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 0.7.0)
+Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 0.7.5)
 ---
 o = Abacus.Permutation(2, {sub:Abacus.Permutation(2),submethod:"compose"})
 o.dimension()

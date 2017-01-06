@@ -1,4 +1,4 @@
-Abacus.Partitions (VERSION = 0.7.0)
+Abacus.Partitions (VERSION = 0.7.5)
 ---
 o = Abacus.Partition(7,{"max=":4})
 o.dimension()

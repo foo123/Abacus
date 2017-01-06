@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.7.0** (~ 38kB minified, ~ 12kB zipped)
+**version 0.7.5** (~ 40kB minified, ~ 12kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -58,7 +58,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Tuple` (`test/tuples.js`)
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
 * `CyclicPermutation` (`test/cyclic_permutations.js`)
-* `MultisetPermutation` (`test/multiset_permutations.js`) **todo**
+* `MultisetPermutation` (`test/multiset_permutations.js`) **almost complete**
 * `DerangementPermutation` (`test/derangements.js`) **almost complete**
 * `InvolutionPermutation` (`test/involutions.js`) **todo**
 * `UnorderedCombination` (`test/combinations.js`)

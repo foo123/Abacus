@@ -3,6 +3,7 @@ rem @echo off
 call node tensors.js > tensors.txt
 call node tuples.js > tuples.txt
 call node permutations.js > permutations.txt
+call node multiset_permutations.js > multiset_permutations.txt
 call node derangements.js > derangements.txt
 call node permutations-bigint.js > permutations-bigint.txt
 call node cyclic_permutations.js > cyclic_permutations.txt

@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics library for Node/XPCOM/JS, PHP, Python
-*   @version: 0.7.0
+*   @version: 0.7.5
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -22,7 +22,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.7.0"}, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.7.5"}, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,trim_re = /^\s+|\s+$/g
     ,trim = String.prototype.trim
@@ -663,14 +663,14 @@ function subset2binary( item, n )
 {
     if ( 0 > n ) return [];
     var binary = array(n, 0, 0), i, l = item.length;
-    for(i=0; i<l; i++) binary[item[i]] = 1;
+    for(n=n-1,i=0; i<l; i++) binary[n-item[i]] = 1;
     return binary;
 }
 function binary2subset( item, n )
 {
     n = stdMath.min(n||item.length, item.length);
     var subset = [], i;
-    for(i=0; i<n; i++) if ( 0 < item[i] ) subset.push(i);
+    for(n=n-1,i=0; i<=n; i++) if ( 0 < item[i] ) subset.push(n-i);
     return subset;
 }
 function conjugatepartition( partition, packed )
@@ -1090,19 +1090,20 @@ function next_permutation( item, N, dir, type )
                 //else last item
                 else item = null;
             }
-            else//if ( "derangement" === type || "permutation" === type )
+            else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
             {
                 do{
                 fixed = false;
                 //Find the largest index k such that a[k] > a[k + 1].
+                // taking into account equal elements, generates multiset permutations
                 k = n-2;
-                while((k >= 0) && (item[k] < item[k+1])) k--;
+                while((k >= 0) && (item[k] <= item[k+1])) k--;
                 // If no such index exists, the permutation is the last permutation.
                 if ( k >=0 ) 
                 {
                     //Find the largest index kl greater than k such that a[k] > a[kl].
                     kl = n-1;
-                    while (kl>k && item[k]<item[kl]) kl--;
+                    while (kl>k && item[k]<=item[kl]) kl--;
                     //Swap the value of a[k] with that of a[l].
                     s = item[k]; item[k] = item[kl]; item[kl] = s;
                     //Reverse the sequence from a[k + 1] up to and including the final element a[n].
@@ -1138,19 +1139,20 @@ function next_permutation( item, N, dir, type )
                 //else last item
                 else item = null;
             }
-            else//if ( "derangement" === type || "permutation" === type )
+            else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
             {
                 do{
                 fixed = false;
                 //Find the largest index k such that a[k] < a[k + 1].
+                // taking into account equal elements, generates multiset permutations
                 k = n-2;
-                while((k >= 0) && (item[k] > item[k+1])) k--;
+                while((k >= 0) && (item[k] >= item[k+1])) k--;
                 // If no such index exists, the permutation is the last permutation.
                 if ( k >=0 ) 
                 {
                     //Find the largest index kl greater than k such that a[k] < a[kl].
                     kl = n-1;
-                    while (kl>k && item[k]>item[kl]) kl--;
+                    while (kl>k && item[k]>=item[kl]) kl--;
                     //Swap the value of a[k] with that of a[l].
                     s = item[k]; item[k] = item[kl]; item[kl] = s;
                     //Reverse the sequence from a[k + 1] up to and including the final element a[n].
@@ -2493,7 +2495,8 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         
         ,count: function( n, $ ) {
-             return $ && "tuple"===$.type ? (!n || !n[0] ? 0 : Abacus.Math.exp(n[0], n[1])) : (!n || !n.length ? 0 : Abacus.Math.product(n));
+            var O = Abacus.Arithmetic.O;
+             return $ && "tuple"===$.type ? (!n || (0 >= n[0]) ? O : Abacus.Math.exp(n[0], n[1])) : (!n || !n.length ? O : Abacus.Math.product(n));
         }
         ,initial: function( dir, n, $ ) {
             // last (0>dir) is C-symmetric of first (0<dir)
@@ -2605,7 +2608,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
     constructor: function Permutation( n, $ ) {
         var self = this;
         if ( !(self instanceof Permutation) ) return new Permutation(n, $);
-        $ = $ || {}; $.type = $.type || "permutation";
+        $ = $ || {}; $.type = String($.type || "permutation").toLowerCase();
         n = n||1;
         if ( n instanceof CombinatorialIterator )
         {
@@ -2613,25 +2616,40 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             n = $.sub.dimension();
         }
         $.base = $.dimension = n;
-        // random ordering for derangements is based on random generation, instead of random unranking
-        $.rand = {"derangement":1,"involution":1};
+        // random ordering for multisets / derangements / involutions
+        // is based on random generation, instead of random unranking
+        $.rand = {"multiset":1,"derangement":1,"involution":1};
+        if ( "multiset" === $.type )
+            $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array(n, 1, 0);
         CombinatorialIterator.call(self, "Permutation", n, $);
     }
     
     ,__static__: {
-         C: function( item, n ) {
-            return conjugation( item, -1 );
-        }
+         C: CombinatorialIterator.C
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
         
         ,count: function( n, $ ) {
-            var type = $ && $.type ? $.type : "permutation";
-            return "cyclic" === type ? Abacus.Arithmetic.N(n) : Abacus.Math.factorial(n, "derangement"===type?false:null);
+            var O = Abacus.Arithmetic.O,
+                factorial = Abacus.Math.factorial,
+                type = $ && $.type ? $.type : "permutation";
+            if ( 0 >= n )
+                return O;
+            else if ( "cyclic" === type )
+                return Abacus.Arithmetic.N(n);
+            else if ( "multiset" === type )
+                return factorial(n, $.multiplicity);
+            else if ( "derangement" === type )
+                return 2 > n ? O : factorial(n, false);
+            else if ( "involution" === type )
+                return O;
+            else//if ( "permutation" === type )
+                return factorial(n);
         }
         ,initial: function( dir, n, $ ) {
             // last (0>dir) is C-symmetric of first (0<dir)
             var item, type = $ && $.type ? $.type : "permutation";
+            if ( 0 >= n ) return null;
             if ( "cyclic" === type )
             {
                 item = 0 > dir ? [n-1].concat(array(n-1, 0, 1)) : array(n, 0, 1);
@@ -2649,6 +2667,18 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item = 0 > dir ? array(n, n-1, -1) : array(n, function(i){return i&1?i-1:i+1;});
                 }
             }
+            else if ( "multiset" === type )
+            {
+                var m = $.multiplicity, nm = m.length, ki = 0, k,
+                    dk = 1, k0 = 0, mk = ki < nm ? m[ki] : 1;
+                if ( 0 > dir ) { dk = -1; k0 = nm-1; }
+                k = k0;
+                item = array(n, function(){
+                    if ( 0 >= mk ) { ki++; k+=dk; mk = ki<nm ? m[ki] : 1; }
+                    mk--;
+                    return k;
+                });
+            }
             else//if ( ("involution" === type) || ("multiset" === type) || ("permutation" === type) )
             {
                 item = 0 > dir ? array(n, n-1, -1) : array(n, 0, 1);
@@ -2656,10 +2686,22 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             return item;
         }
         ,cascade: CombinatorialIterator.cascade
-        ,dual: CombinatorialIterator.dual
+        ,dual: function( item, index, n, $ ) {
+            if ( null == item ) return null;
+            // some C-P-T processes at play here
+            var klass = this, type = $ && $.type ? $.type : "permutation",
+                order = $ && $.order ? $.order : 0,
+                nm = "multiset" === type ? $.multiplicity.length : n,
+                C = klass.C, P = klass.P, T = klass.T;
+            if ( RANDOM & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
+            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, n ) : item.slice( );
+            else if ( COLEX & order ) item = REFLECTED & order ? C( item, nm ) : P( C( item, nm ), n );
+            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, n ) : item.slice( );
+            return item;
+        }
         ,succ: function( dir, item, index, n, $ ) {
             var type = $ && $.type ? $.type : "permutation";
-            if ( ("involution" === type) || ("multiset" === type) ) return null;
+            if ( "involution" === type ) return null;
             return next_permutation( item, n, dir, type );
         }
         ,rand: function( n, $ ) {
@@ -2697,7 +2739,17 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 }while( fixed );
                 return item;
             }
-            else if ( ("involution" === type) || ("multiset" === type) )
+            else if ( "multiset" === type )
+            {
+                // p ~ m1!*..*mk! / n!
+                var m = $.multiplicity, nm = m.length, k = 0, mk = m[k];
+                return shuffle(array(n, function(){
+                    if ( 0 >= mk ) { k++; mk = k < nm ? m[k] : 1; }
+                    mk--;
+                    return k;
+                }));
+            }
+            else if ( "involution" === type )
             {
                 return NotImplemented();
             }
@@ -2881,15 +2933,16 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         
         ,count: function( n, $ ) {
-             var type = $ && $.type ? $.type : "unordered";
+             var factorial = Abacus.Math.factorial,
+                type = $ && $.type ? $.type : "unordered";
              return "ordered+repeated" === type ? (
                 Abacus.Math.exp(n[0], n[1])
             ) : ("repeated" === type ? (
-                Abacus.Math.factorial(n[0]+n[1]-1, n[1])
+                factorial(n[0]+n[1]-1, n[1])
             ) : ("ordered" === type ? (
-                Abacus.Math.factorial(n[0], -n[1])
+                factorial(n[0], -n[1])
             ) : (
-                Abacus.Math.factorial(n[0], n[1])
+                factorial(n[0], n[1])
             )));
          }
         ,initial: function( dir, n, $ ) {
