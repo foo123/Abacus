@@ -65,7 +65,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Partition` (`test/partitions.js`)
 * `RestrictedPartition` (`test/restricted_partitions.js`) **almost complete**
 * `SetPartition` (`test/set_partitions.js`) **partialy complete**
-* algebraic composition of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js`)
+* algebraic composition of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)
 * multiple (combined) iterator orderings &amp; traversals: **lex**, **colex**, **random**, **reversed**, **reflected**, **minimal** (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 
 

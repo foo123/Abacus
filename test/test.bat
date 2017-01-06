@@ -11,6 +11,7 @@ call node ordered_combinations.js > ordered_combinations.txt
 call node combinations_repeats.js > combinations_repeats.txt
 call node ordered_combinations_repeats.js > ordered_combinations_repeats.txt
 call node permutations_of_combinations.js > permutations_of_combinations.txt
+call node permutations_of_permutations.js > permutations_of_permutations.txt
 call node subsets.js > subsets.txt
 call node partitions.js > partitions.txt
 call node restricted_partitions.js > restricted_partitions.txt

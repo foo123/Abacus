@@ -271,12 +271,12 @@ function product( x )
 function pow2( n )
 {
     var Arithmetic = Abacus.Arithmetic;
-    return Arithmetic.shl(Arithmetic.I, Arithmetic.N( n ));//(1 << n)>>>0;
+    return Arithmetic.shl(Arithmetic.I, Arithmetic.N(n));//(1 << n)>>>0;
 }
 function exp( n, k )
 {
-    var Arithmetic = Abacus.Arithmetic;
-    return Arithmetic.pow(Arithmetic.N( n ), Arithmetic.N( k ));
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.N;
+    return Arithmetic.pow(N(n), N(k));
 }
 function factorial( n, m )
 {
@@ -289,23 +289,19 @@ function factorial( n, m )
     {
         // http://www.luschny.de/math/factorial/index.html
         // simple factorial = n!
-        n = NUM( n );
-        if ( Arithmetic.lt( n, 0 ) ) return O;
-        else if ( Arithmetic.lt( n, 2 ) ) return I;
         // 2=>2 or 3=>6
-        else if ( Arithmetic.lt( n, 4 ) ) return Arithmetic.shl(n, Arithmetic.sub(n, 2))/*n<<(n-2)*/;
+        if ( 4 > n ) return 0 > n ? O : (2 > n ? I : Arithmetic.shl(NUM(n), n-2)/*n<<(n-2)*/);
         key = String(n);
         // n! = n (n-1)!
         if (null == factorial.mem1[key] )
             //factorial.mem1[key] = mul(n, factorial(n-1));
-            factorial.mem1[key] = operate(mul, I, null, 2, Arithmetic.val(n));
+            factorial.mem1[key] = operate(mul, I, null, 2, n);
         return factorial.mem1[key];
     }
     else if ( false === m )
     {
         // derangement sub-factorial
-        if ( 2 > n ) return O;
-        else if ( 2 === n ) return I;
+        if ( 3 > n ) return 2 === n ? I : O;
         key = String(n);
         // !n = n !(n-1) + (-1)^n = [(n!+1)/e]
         // !1 = 1 !0 - 1 = 0
@@ -323,12 +319,14 @@ function factorial( n, m )
     else if ( is_array(m) )
     {
         // multinomial = n!/m1!..mk!
+        if ( !m.length ) return 0 > n ? O : factorial(n);
+        else if ( 0 > n ) return O;
         key = String(n)+'@'+m.join(',');
         if ( null == factorial.mem3[key] )
         {
-            N = factorial(n);
-            if ( Arithmetic.gt( N, O ) ) for(l=m.length,k=0; k<l; k++) N = div(N, factorial(m[k]));
-            factorial.mem3[key] = N;
+            N = factorial(m[m.length-1]);
+            for(k=m.length-2; k>=0; k--) N = mul(N, factorial(m[k]));
+            factorial.mem3[key] = div(factorial(n), N);
         }
         return factorial.mem3[key];
     }
@@ -346,7 +344,7 @@ function factorial( n, m )
         if ( m+m > n  ) m = n-m; // take advantage of symmetry
         if ( (0 > m) || (1 > n) ) return O;
         else if ( (0 === m) || (1 === n) ) return I;
-        else if ( 1 === m ) return NUM( n );
+        else if ( 1 === m ) return NUM(n);
         key = String(n)+'@'+String(m);
         if ( null == factorial.mem3[key] ) factorial.mem3[key] = div(factorial(n,-m), factorial(m));
         /*{
@@ -1744,6 +1742,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             $.subcount = Abacus.Arithmetic.mul($.count, $.sub.total());
             $.submethod = String($.submethod || "project").toLowerCase();
             $.subcascade = -1 === $.subcascade ? -1 : 1;
+            if ( "concatenate" === $.submethod )
+                $.dimension = $.dimension+$.sub.dimension();
+            else if ( "compose" === $.submethod )
+                $.dimension = $.dimension*$.sub.dimension();
         }
         self.order( $.order ); 
     }
@@ -2491,7 +2493,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         
         ,count: function( n, $ ) {
-             return $ && "tuple"===$.type ? (!n || !n[0] ? 0 : Abacus.Math.exp( n[0], n[1] )) : (!n || !n.length ? 0 : Abacus.Math.product( n ));
+             return $ && "tuple"===$.type ? (!n || !n[0] ? 0 : Abacus.Math.exp(n[0], n[1])) : (!n || !n.length ? 0 : Abacus.Math.product(n));
         }
         ,initial: function( dir, n, $ ) {
             // last (0>dir) is C-symmetric of first (0<dir)
@@ -2519,12 +2521,16 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,rand: function( n, $ ) {
             var rndInt = Abacus.Math.rndInt, item;
             item = $ && "tuple"===$.type ? (
+                // p ~ 1 / n^k
                 !n[0] ? [] : array(n[0], function(i){return rndInt(0, n[1]-1);})
             ) : (
+                // p ~ 1 / n1*n2*..nk
                 !n.length ? [] : array(n.length, function(i){return rndInt(0, n[i]-1);})
             );
             return item;
         }
+        // random unranking, another method for unbiased random sampling
+        ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) { 
             var Arithmetic = Abacus.Arithmetic,
                 add = Arithmetic.add, mul = Arithmetic.mul,
@@ -2608,7 +2614,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         $.base = $.dimension = n;
         // random ordering for derangements is based on random generation, instead of random unranking
-        $.rand = {"derangement":1};
+        $.rand = {"derangement":1,"involution":1};
         CombinatorialIterator.call(self, "Permutation", n, $);
     }
     
@@ -2621,11 +2627,11 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         
         ,count: function( n, $ ) {
             var type = $ && $.type ? $.type : "permutation";
-            return "cyclic" === type ? n : Abacus.Math.factorial( n, "derangement"===type?false:null );
+            return "cyclic" === type ? Abacus.Arithmetic.N(n) : Abacus.Math.factorial(n, "derangement"===type?false:null);
         }
         ,initial: function( dir, n, $ ) {
             // last (0>dir) is C-symmetric of first (0<dir)
-            var type = $ && $.type ? $.type : "permutation", item;
+            var item, type = $ && $.type ? $.type : "permutation";
             if ( "cyclic" === type )
             {
                 item = 0 > dir ? [n-1].concat(array(n-1, 0, 1)) : array(n, 0, 1);
@@ -2643,7 +2649,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item = 0 > dir ? array(n, n-1, -1) : array(n, function(i){return i&1?i-1:i+1;});
                 }
             }
-            else//if ( "permutation" === type )
+            else//if ( ("involution" === type) || ("multiset" === type) || ("permutation" === type) )
             {
                 item = 0 > dir ? array(n, n-1, -1) : array(n, 0, 1);
             }
@@ -2652,19 +2658,22 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,cascade: CombinatorialIterator.cascade
         ,dual: CombinatorialIterator.dual
         ,succ: function( dir, item, index, n, $ ) {
-            return next_permutation( item, n, dir, $ && $.type ? $.type : "permutation" );
+            var type = $ && $.type ? $.type : "permutation";
+            if ( ("involution" === type) || ("multiset" === type) ) return null;
+            return next_permutation( item, n, dir, type );
         }
         ,rand: function( n, $ ) {
-            var type = $ && $.type ? $.type : "permutation";
+            var rndInt = Abacus.Math.rndInt, type = $ && $.type ? $.type : "permutation";
             if ( "cyclic" === type )
             {
-                var k = Abacus.Math.rndInt(0, n-1);
+                // p ~ 1 / n
+                var k = rndInt(0, n-1);
                 return 0 < k ? array(n-k, k, 1).concat(array(k, 0, 1)) : array(n, 0, 1);
             }
             else if ( "derangement" === type )
             {
-                var rndInt = Abacus.Math.rndInt, j, t, p,
-                    fixed = false, item = new Array(n);
+                // p ~ 1 / !n = e / n!
+                var j, t, p, fixed = false, item = new Array(n);
                 do{
                     for(j=0; j<n; j++) item[j] = j;
                     j = n-1; fixed = false;
@@ -2684,15 +2693,22 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                         }
                         j--;
                     }
-                    if ( !fixed && (0 !== item[0]) ) break;
-                }while(1);
+                    fixed = fixed || (0 === item[0]);
+                }while( fixed );
                 return item;
+            }
+            else if ( ("involution" === type) || ("multiset" === type) )
+            {
+                return NotImplemented();
             }
             else//if ( "permutation" === type )
             {
+                // p ~ 1 / n!
                 return shuffle(array(n, 0, 1));
             }
         }
+        // random unranking, another method for unbiased random sampling
+        ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) { 
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "permutation",
@@ -2714,6 +2730,10 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 return index;*/
                 return NotImplemented();
             }
+            else if ( ("involution" === type) || ("multiset" === type) )
+            {
+                return NotImplemented();
+            }
             else//if ( "permutation" === type )
             {
                 item = permutation2inversion( item );
@@ -2733,6 +2753,10 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 return array(n, function(i){return (index+i)%n});
             }
             else if ( "derangement" === type )
+            {
+                return NotImplemented();
+            }
+            else if ( ("involution" === type) || ("multiset" === type) )
             {
                 return NotImplemented();
             }
@@ -2861,11 +2885,11 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
              return "ordered+repeated" === type ? (
                 Abacus.Math.exp(n[0], n[1])
             ) : ("repeated" === type ? (
-                Abacus.Math.factorial( n[0]+n[1]-1, n[1] )
+                Abacus.Math.factorial(n[0]+n[1]-1, n[1])
             ) : ("ordered" === type ? (
-                Abacus.Math.factorial( n[0], -n[1] )
+                Abacus.Math.factorial(n[0], -n[1])
             ) : (
-                Abacus.Math.factorial( n[0], n[1] )
+                Abacus.Math.factorial(n[0], n[1])
             )));
          }
         ,initial: function( dir, n, $ ) {
@@ -2894,11 +2918,13 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             // O(klogk) worst/average-case, unbiased
             if ( ("repeated" === type) || ("ordered+repeated" === type) )
             {
+                // p ~ 1 / n^k (ordered+repeated), p ~ 1 / binom(n+k-1,k) (repeated)
                 item = 1 === k ? [rndInt(0, c)] : array(k, function(){return rndInt(0, c);});
                 if ( (1 < k) && ("repeated" === type) ) mergesort( item );
             }
             else if ( "ordered" === type )
             {
+                // p ~ 1 / k!binom(n,k) = 1 / n*(n-1)*..*(n-k+1)
                 selected = {};
                 item = 1 === k ? (
                     [rndInt(0, c)]
@@ -2917,6 +2943,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             else//if ( ("unordered" === type) || ("binary" === type) )
             {
+                // p ~ 1 / binom(n,k)
                 selected = {};
                 item = 1 === k ? (
                     [rndInt(0, c)]
@@ -2944,6 +2971,8 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             return item;
         }
+        // random unranking, another method for unbiased random sampling
+        ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) {
             var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add, sub = Arithmetic.sub,
                 mul = Arithmetic.mul, O = Arithmetic.O, I = Arithmetic.I,
@@ -3051,7 +3080,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return -1 === dir ? binary2subset(item, n) : subset2binary(item, n);
         }
         ,pick: function( a, k, type ) {
-            return 0 < k ? pick( a, k, ("ordered+repeated"!==type)&&("ordered"!==type), ("ordered+repeated"===type)||("repeated"===type), new Array(k) ) : [];
+            return (0 < k) && a.length ? pick(a, k, ("ordered+repeated"!==type)&&("ordered"!==type), ("ordered+repeated"===type)||("repeated"===type), new Array(k)) : [];
         }
         ,choose: function( arr, comb ) {
             return array(comb.length, function(i){return arr[comb[i]];});
@@ -3090,7 +3119,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         
         ,count: function( n, $ ) {
-             return Abacus.Math.pow2( n );
+             return Abacus.Math.pow2(n);
         }
         ,initial: function( dir, n, $ ) {
             // last (0>dir) is C-symmetric of first (0<dir)
@@ -3113,11 +3142,14 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         ,succ: CombinatorialIterator.succ
         ,rand: function( n, $ ) {
             var rndInt = Abacus.Math.rndInt, item;
+            // p ~ 1 / 2^n
             for(var list = null,i=n-1; i>=0; i--) if ( rndInt(0,1) )
                 list = {len:list?list.len+1:1, k:i, next:list};
             item = list ? array(list.len, function(i){var k = list.k; list = list.next; return k;}): [];
             return item;
         }
+        // random unranking, another method for unbiased random sampling
+        ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) { 
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, I = Arithmetic.I,
@@ -3279,6 +3311,8 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return next_partition( item, n, dir, K, M );
         }
         ,rand: CombinatorialIterator.rand
+        // random unranking, another method for unbiased random sampling
+        ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
         ,conjugate: conjugatepartition
