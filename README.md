@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.7.5** (~ 39kB minified, ~ 12kB zipped)
+**version 0.7.6** (~ 39kB minified, ~ 12kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -46,6 +46,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
 * [Features](#features)
 * [Performance](#performance)
+* [Credits and References](#credits-and-references)
 * [Example API](#example-api)
 * [Todo](#todo)
 
@@ -58,16 +59,16 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Tuple` (`test/tuples.js`)
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
 * `CyclicPermutation` (`test/cyclic_permutations.js`)
-* `MultisetPermutation` (`test/multiset_permutations.js`) **almost complete**
-* `DerangementPermutation` (`test/derangements.js`) **almost complete**
-* `InvolutionPermutation` (`test/involutions.js`) **todo**
+* `MultisetPermutation` (`test/multiset_permutations.js`) **rank/unrank methods missing**
+* `DerangementPermutation` (`test/derangements.js`) **rank/unrank methods missing**
+* `InvolutionPermutation` (`test/involutions.js`) **only counting &amp; random generation**
 * `UnorderedCombination` (`test/combinations.js`)
 * `OrderedCombination` (`test/ordered_combinations.js`)
 * `UnorderedRepeatedCombination` (`test/combinations_repeats.js`)
 * `OrderedRepeatedCombination` (`test/ordered_combinations_repeats.js`)
 * `Subset` (`test/subsets.js`)
-* `Partition` (`test/partitions.js`)
-* `RestrictedPartition` (`test/restricted_partitions.js`) **almost complete**
+* `Partition` (`test/partitions.js`) **rank/unrank methods missing**
+* `RestrictedPartition` (`test/restricted_partitions.js`) **partialy complete**
 * `SetPartition` (`test/set_partitions.js`) **partialy complete**
 * algebraic composition of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)
 * multiple (combined) iterator orderings &amp; traversals: **lex**, **colex**, **random**, **reversed**, **reflected**, **minimal** (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
@@ -75,7 +76,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 
 ###Performance
 
-all algorithms:
+(almost) all algorithms:
 
 * are **linear** `O(n)` (or log-linear `O(nlgn)`) **time and space** algorithms
 * are **statisticaly unbiased** (i.e uniform sampling methods)
@@ -84,6 +85,25 @@ all algorithms:
 * arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. 
 
 **Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
+
+
+###Credits and References
+
+See the comments in the code for algorithms and references used.
+
+A variety of combinatorial algorithms &amp; statistics are given, for example, in:
+
+* The Art of Computer Programming, Donald Knuth
+* [FXT library, Joerg Arndt]](http://www.jjj.de/fxt/) and his [PhD thesis](https://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf)
+* [Combinatorial Algorithms, Albert Nijenhuis, Herbert Wilf](https://www.math.upenn.edu/~wilf/website/CombAlgDownld.html)
+* [Combinatorial Generation, Frank Ruskey](http://www.1stworks.com/ref/ruskeycombgen.pdf)
+* [Generating Functionology, Herbert Wilf](http://www.math.upenn.edu/%7Ewilf/gfologyLinked2.pdf)
+* [Permutation Generation Methods, Robert Sedgewick](http://homepage.math.uiowa.edu/~goodman/22m150.dir/2007/Permutation%20Generation%20Methods.pdf)
+* [A Versatile Algorithm to Generate Various Combinatorial Structures, Pramod Ganapathi, Rama B](http://arxiv.org/abs/1009.4214v2)
+* [Generating All and Random Instances of a Combinatorial Object, Ivan Stojmenovic](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.211.6576)
+* [Analytic Combinatorics, Philippe Flajolet, Robert Sedgewick](http://algo.inria.fr/flajolet/Publications/book.pdf) can also be used to produce combinatorial generation algorithms instead of just generating functions for counting and statistics
+* [A Survey of Combinatorial Gray Codes, Carla Savage](http://www4.ncsu.edu/~savage/AVAILABLE_FOR_MAILING/survey.pdf)
+* [Combinatorial Generation by Fusing Loopless Algorithms, Tadao Takaoka, Stephen Violich](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.490.1604&rep=rep1&type=pdf)
 
 
 ###Example API
@@ -563,9 +583,9 @@ o.dispose()
 
 * apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
 * support `biginteger` combinatorial computations e.g large factorials [DONE, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
-* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE]
-* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `random` ordering may be optimised]
-* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised]
+* support **efficient ranking / unranking algorithms** and associated methods (of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE]
+* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `random` ordering may be optimised further]
+* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised further]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
 * add efficient `rank`/`unrank` methods for `MultisetPermutation`, `DerangementPermutation` &amp; `Partition` (TODO)

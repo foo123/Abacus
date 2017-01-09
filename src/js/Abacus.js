@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics library for Node/XPCOM/JS, PHP, Python
-*   @version: 0.7.5
+*   @version: 0.7.6
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -22,7 +22,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.7.5"}, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.7.6"}, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,trim_re = /^\s+|\s+$/g
     ,trim = String.prototype.trim
@@ -80,8 +80,8 @@ function ORDER( o )
 }
 function array( n, x0, xs )
 {
-    n = n|0;
-    var x = 0 < n ? new Array(n) : [], q, r, i, k, xi;
+    var x = is_array(n) ? n : ((n=(n|0)) > 0 ? new Array(n) : []), q, r, i, k, xi;
+    n = x.length;
     if ( (0 < n) && (null != x0) )
     {
         r = n&15; q = r&1;
@@ -288,32 +288,38 @@ function factorial( n, m )
     if ( null == m )
     {
         // http://www.luschny.de/math/factorial/index.html
-        // simple factorial = n!
-        // 2=>2 or 3=>6
-        if ( 4 > n ) return 0 > n ? O : (2 > n ? I : Arithmetic.shl(NUM(n), n-2)/*n<<(n-2)*/);
-        key = String(n);
-        // n! = n (n-1)!
+        // simple factorial = n! = n (n-1)!
+        if ( 10 >= n ) return 0 > n ? O : (0 === n ? I : NUM(([1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800])[n-1]));
+        key = String(n)/*+'!'*/;
         if (null == factorial.mem1[key] )
-            //factorial.mem1[key] = mul(n, factorial(n-1));
-            factorial.mem1[key] = operate(mul, I, null, 2, n);
+            factorial.mem1[key] = mul(factorial(n-1),n);
+            //factorial.mem1[key] = operate(mul, I, null, 2, n);
         return factorial.mem1[key];
     }
     else if ( false === m )
     {
-        // derangement sub-factorial
-        if ( 3 > n ) return 2 === n ? I : O;
-        key = String(n);
-        // !n = n !(n-1) + (-1)^n = [(n!+1)/e]
+        // derangement sub-factorial = !n = n !(n-1) + (-1)^n = [(n!+1)/e]
+        if ( 10 >= n ) return 2 > n ? O : NUM(([1, 2, 9, 44, 265, 1854, 14833, 133496, 1334961])[n-2]);
+        key = '!'+String(n);
         // !1 = 1 !0 - 1 = 0
         // !2 = 2 !1 + 1 = 1
         // !3 = 3 !2 - 1 = 2 = 3*(2*0 + 1) -1
         // !4 = 4 !3 + 1 = 9 = 4*(3*(2*0 + 1) -1) + 1
         if (null == factorial.mem2[key] )
             //factorial.mem2[key] = Math.floor((factorial(n)+1)/Math.E);
-            //factorial.mem2[key] = add(n&1 ? J : I, mul(n, factorial(n-1,false)));
-            factorial.mem2[key] = operate(function(N, n){
+            factorial.mem2[key] = add(n&1 ? J : I, mul(factorial(n-1,false),n));
+            /*factorial.mem2[key] = operate(function(N, n){
                 return add(n&1 ? J : I, mul(N,n));
-            }, I, null, 3, n);
+            }, I, null, 3, n);*/
+        return factorial.mem2[key];
+    }
+    else if ( true === m )
+    {
+        // involution factorial = I(n) = I(n-1) + (n-1) I(n-2)
+        if ( 10 >= n ) return 0 > n ? O : (0 === n ? I : NUM(([1, 2, 4, 10, 26, 76, 232, 764, 2620, 9496])[n-1]));
+        key = 'I'+String(n);
+        if (null == factorial.mem2[key] )
+            factorial.mem2[key] = add(factorial(n-1,true), mul(factorial(n-2,true),n-1));
         return factorial.mem2[key];
     }
     else if ( is_array(m) )
@@ -383,37 +389,30 @@ function partitions( n, k, m )
     return partitions.mem[key];
 }
 partitions.mem = {};
-// C process / symmetry, ie Rotation
+// C process / symmetry, ie Rotation, CC = I
 function conjugation( a, n )
 {
-    if ( null == a ) return null;
-    if ( !a.length ) return [];
-    var i, k = a.length, b = new Array(k);
-    if ( is_array(n) ) for(i=0; i<k; i++) b[i] = n[i]-1-a[i];
-    else if ( 0 > n ) for(i=0; i<k; i++) b[i] = k-1-a[i];
-    else for(n=n-1,i=0; i<k; i++) b[i] = n-a[i];
-    return b;
+    return null == a ? null : array(a, is_array(n)?function(i){
+        return n[i]-1-a[i];
+    }:function(i){
+        return n-1-a[i];
+    });
 }
-// P process / symmetry, ie Reflection
+// P process / symmetry, ie Reflection, PP = I
 function parity( a )
 {
     if ( null == a ) return null;
-    for(var l=a.length-1,b=new Array(l+1),i=0; i<=l; i++) b[i] = a[l-i];
-    return b;
+    var t, l = 0, r = a.length-1;
+    for(; l<r; l++,r--) { t = a[l]; a[l] = a[r]; a[r] = t; }
+    return a;
 }
-// T process / symmetry, ie Reversion
+// T process / symmetry, ie Reversion, TT = I
 function inversion( n, n0 )
 {
     if ( null == n0 ) n0 = 0;
-    if ( is_array(n) )
-    {
-        for(var l=n.length,invn=new Array(l),i=0; i<l; i++) invn[i] = n0-n[i];
-        return invn;
-    }
-    else
-    {
-        return (n === +n)&&(n0 === +n0) ? (n0 - n) : Abacus.Arithmetic.sub( Abacus.Arithmetic.N( n0 ), n );
-    }
+    return is_array(n) ? array(n, function(i){
+        return n0-n[i];
+    }) : ((n === +n)&&(n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.N(n0),n));
 }
 function intersect( a, b, a0, a1, b0, b1, intersection )
 {
@@ -759,6 +758,7 @@ function sets2partition( set_partition )
 function permutation2inversion( permutation, n, dir )
 {
     // O(n log n) inversion computation
+    // adapted from http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf
     n = n || permutation.length;
     var nn = permutation.length, i, ii, j, inversion = new Array(nn),
         node, ctr, k = Abacus.Math.ceil(log2(n)),
@@ -783,6 +783,7 @@ function permutation2inversion( permutation, n, dir )
 function inversion2permutation( inversion, n, dir )
 {
     // O(n log n) permutation computation
+    // adapted from http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf
     n = n || inversion.length;
     var nn = inversion.length, permutation = new Array(nn),
         i, ii, j, i2, digit, node, k, Tl, T, twok,
@@ -965,12 +966,11 @@ function is_permutation( perm, n )
 {
     n = n || perm.length;
     if ( n !== perm.length ) return false;
-    var cnt = new Array(n), i, pi;
-    for(i=0; i<n; i++) cnt[i] = 0;
+    var cnt = array(n, 0, 0), i, pi;
     for(i=0; i<n; i++)
     {
         pi = perm[i];
-        if ( (0 > pi) || (pi >= n) || (0 !== cnt[pi]) ) return false;
+        if ( (0 > pi) || (pi >= n) || (0 < cnt[pi]) ) return false;
         cnt[pi]++;
     }
     for(i=0; i<n; i++) if ( 1 !== cnt[i] ) return false;
@@ -981,18 +981,14 @@ function is_identity( perm )
     for(var n=perm.length,i=0; i<n; i++) if ( perm[i] !== i ) return false;
     return true;
 }
-function is_cyclic( perm )
+function is_involution( perm )
 {
-    for(var n=perm.length,i=1,i0=perm[0]; i<n; i++)
-        if ( perm[i] !== ((i0+i)%n) ) return false;
+    for(var pi,n=perm.length,i=0; i<n; i++)
+    {
+        pi = perm[i];
+        if ( (0 > pi) || (n <= pi) || (perm[pi] !== i) ) return false;
+    }
     return true;
-}
-function is_kthroot( perm, k )
-{
-    k = k || 1;
-    var product = new Array(k+1), i;
-    for(i=0; i<=k; i++) product[i] = perm;
-    return is_identity( permutationproduct(product) );
 }
 function is_derangement( perm, kfixed, strict )
 {
@@ -1003,6 +999,27 @@ function is_derangement( perm, kfixed, strict )
         if ( nfixed > kfixed ) return false;
     }
     return true === strict ? nfixed === kfixed : true;
+}
+function is_indecomposable/*is_connected*/( perm )
+{
+    // from: http://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf
+    for (var n=perm.length-1,m=-1,i=0; i<n; i++) // for all proper prefixes, do:
+    {
+        if ( perm[i] > m ) m = perm[i]; // update max.
+        if ( m <= i ) return false; // prefix mapped to itself, P not connected.
+    }
+    return true; // P is connected.
+}
+function is_cyclic/*_shift*/( perm )
+{
+    for(var n=perm.length,i=1,i0=perm[0]; i<n; i++)
+        if ( perm[i] !== ((i0+i)%n) ) return false;
+    return true;
+}
+function is_kthroot( perm, k )
+{
+    k = k || 0;
+    return 0===k ? is_identity(perm) : (1===k ? is_involution(perm) : (k&1 ? is_identity(permutationproduct(array(k, perm))) : is_involution(permutationproduct(array(k>>>1, perm)))));
 }
 /*function has_cycle( perm, k, strict )
 {
@@ -1092,6 +1109,10 @@ function next_permutation( item, N, dir, type )
                 //else last item
                 else item = null;
             }
+            else if ( "involution" === type )
+            {
+                item = null;
+            }
             else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
             {
                 do{
@@ -1140,6 +1161,28 @@ function next_permutation( item, N, dir, type )
                 if ( item[0]+1 < n ) item = item.slice(1).concat([item[0]]);
                 //else last item
                 else item = null;
+            }
+            else if ( "involution" === type )
+            {
+                /*
+                // adapted from http://www.jjj.de/fxt/#fxt (Jörg Arndt)
+                k = n; fixed = false;
+                while( k-- )
+                {
+                    kl = item[k];   // inverse perm == perm
+                    item[k] = k; item[kl] = kl;  // undo prior swap
+
+                    while( kl-- )
+                    {
+                        if ( item[kl] === kl )
+                        {
+                            item[k] = kl; item[kl] = k;  // swap
+                            fixed = true; break;
+                        }
+                    }
+                    if ( fixed ) break;
+                }
+                if ( !fixed )*/ item = null; // last
             }
             else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
             {
@@ -1397,10 +1440,31 @@ function next_partition( item, N, dir, K, M )
                 }
                 //else last item
                 else item = null;*/
-                M = K; K = null;
+                //M = K; K = null;
+                m = item[0];
+                i = K-1;
+                rem = m;
+                while( --i )
+                {
+                    rem += item[i];
+                    if ( item[i] + 2 <= m )  break;
+                }
+
+                if ( i < K )
+                {
+                    i0 = item[i] + 1;
+                    while( i < K )
+                    {
+                        item[i] = i0;
+                        rem -= i0;
+                        ++i;
+                    }
+                    item[0] = rem;
+                }
+                else item = null;
             }
-            /*else
-            {*/
+            else
+            {
                 i0 = M ? 1 : 0;
                 if ( (item.length > i0) && (item[i0]/*[0]*/ > 1) )
                 {
@@ -1432,7 +1496,7 @@ function next_partition( item, N, dir, K, M )
                 // if partition is all ones (so first element is also one) it is the final partition
                 //else last item
                 else item = null;
-            /*}*/
+            }
             // invC of item
         }
         else
@@ -1464,10 +1528,32 @@ function next_partition( item, N, dir, K, M )
                 }
                 //else last item
                 else item = null;*/
-                M = K; K = null;
+                //M = K; K = null;
+                
+                m = item[0];
+                i = 0;
+                rem = m;
+                while( ++i < K )
+                {
+                    rem += item[i];
+                    if ( item[i] + 2 <= m )  break;
+                }
+
+                if ( i < K )
+                {
+                    i0 = item[i] + 1;
+                    while( i < K )
+                    {
+                        item[i] = i0;
+                        rem -= i0;
+                        ++i;
+                    }
+                    item[0] = rem;
+                }
+                else item = null;
             }
-            /*else
-            {*/
+            else
+            {
                 i0 = M ? 1 : 0; i1 = M ? item.length-1 : 0;
                 m = M ? ((n%M) || M) : n;
                 if ( (item.length > i0) && (item[i1] < m) )
@@ -1490,7 +1576,7 @@ function next_partition( item, N, dir, K, M )
                 // if partition is the number itself it is the final partition
                 //else last item
                 else item = null;
-            /*}*/
+            }
         }
         return item;
     }
@@ -1790,10 +1876,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 C = klass.C, P = klass.P, //T = klass.T,
                 C0 = $ && (null!=$.base) ? $.base : n,
                 P0 = $ && (null!=$.dimension) ? $.dimension : n;
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, P0 ) : item.slice( );
-            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, P0 ) : item.slice( );
+            if ( RANDOM & order ) item = REFLECTED & order ? P( item, P0 ) : item;
+            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, P0 ) : item;
             else if ( COLEX & order ) item = REFLECTED & order ? C( item, C0 ) : P( C( item, C0 ), P0 );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, P0 ) : item.slice( );
+            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, P0 ) : item;
             return item;
         }
         ,succ: function( dir, item, index, n, $ ) {
@@ -1918,7 +2004,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             self.__item = klass.initial( dir, n, $ );
             if ( null != self.__item ) self.__index = -1 === dir ? tot_1 : O;
         }
-        self._item = null == self.__item ? null : klass.dual( self.__item, self.__index, n, $ );
+        self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
         self._index = reverse && !(RANDOM & order) ? tot_1 : O;
         if ( null === self.__index ) self.__index = O;
         self._prev = (RANDOM & order) || !reverse ? false : null != self.__item;
@@ -2029,7 +2115,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 : (Arithmetic.equ(tot_1, index)
                 ? klass.initial( dir, n, $ )
                 : klass.unrank( self.__index, n, $ ));
-                self._item = klass.dual( self.__item, self.__index, n, $ );
+                self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
                 self._prev = null != self.__item;
                 self._next = null != self.__item;
             }
@@ -2042,7 +2128,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 : (Arithmetic.equ(tot_1, index)
                 ? klass.initial( -dir, n, $ )
                 : klass.unrank( self.__index, n, $ ));
-                self._item = klass.dual( self.__item, self.__index, n, $ );
+                self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
                 self._prev = null != self.__item;
                 self._next = null != self.__item;
             }
@@ -2103,21 +2189,21 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             {
                 self._index = self.__index;
                 o = $.order; $.order = order;
-                self._item = klass.dual( self.__item, self.__index, n, $ );
+                self._item = klass.dual( self.__item.slice(), self.__index, n, $ );
                 $.order = o;
             }
             else if ( COLEX & order )
             {
                 self._index = -1 === dir ? self.__index : Arithmetic.sub(tot_1, self.__index);
                 o = $.order; $.order = order;
-                self._item = klass.dual( self.__item, self.__index, n, $ );
+                self._item = klass.dual( self.__item.slice(), self.__index, n, $ );
                 $.order = o;
             }
             else /*if ( LEX & order )*/
             {
                 self._index = -1 === dir ? Arithmetic.sub(tot_1, self.__index) : self.__index;
                 o = $.order; $.order = order;
-                self._item = klass.dual( self.__item, self.__index, n, $ );
+                self._item = klass.dual( self.__item.slice(), self.__index, n, $ );
                 $.order = o;
             }
             return self;
@@ -2282,7 +2368,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 self._index = Arithmetic.sub(self._index, I);
             }
             
-            self._item = null == self.__item ? null : klass.dual( self.__item, self.__index, n, $ );
+            self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
             
             if ( $.sub )
             {
@@ -2362,7 +2448,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             if ( null === self.__index ) self.__index = self._index;
         }
             
-        self._item = null == self.__item ? null : klass.dual( self.__item, self.__index, n, $ );
+        self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
         
         if ( $.sub )
         {
@@ -2413,11 +2499,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 ,self.__index
                 ,self._index
                 ,self.__item&&self.__item.slice()
-                ,self._item&&self._item.slice()
+                ,self._item
                 ,self.__subindex
                 ,self._subindex
-                ,self.__subitem&&self.__subitem.slice()
-                ,self._subitem&&self._subitem.slice()
+                ,self.__subitem
+                ,self._subitem
                 ,self._prev
                 ,self._next
             ];
@@ -2461,7 +2547,6 @@ if ( ('undefined' !== typeof Symbol) && ('undefined' !== typeof Symbol.iterator)
 // https://en.wikipedia.org/wiki/Outer_product
 // https://en.wikipedia.org/wiki/Kronecker_product
 // https://en.wikipedia.org/wiki/Tensor_product
-// see also: http://www.inf.ethz.ch/personal/markusp/papers/perm.ps
 Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
@@ -2650,7 +2735,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else if ( "derangement" === type )
                 return 2 > n ? O : factorial(n, false);
             else if ( "involution" === type )
-                return O;
+                return factorial(n, true);
             else//if ( "permutation" === type )
                 return factorial(n);
         }
@@ -2661,6 +2746,18 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             if ( "cyclic" === type )
             {
                 item = 0 > dir ? [n-1].concat(array(n-1, 0, 1)) : array(n, 0, 1);
+            }
+            else if ( "multiset" === type )
+            {
+                var m = $.multiplicity, nm = m.length, ki = 0, k,
+                    dk = 1, k0 = 0, mk = ki < nm ? m[ki] : 1;
+                if ( 0 > dir ) { dk = -1; k0 = nm-1; }
+                k = k0;
+                item = array(n, function(){
+                    if ( 0 >= mk ) { ki++; k+=dk; mk = ki<nm ? m[ki] : 1; }
+                    mk--;
+                    return k;
+                });
             }
             else if ( "derangement" === type )
             {
@@ -2675,19 +2772,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item = 0 > dir ? array(n, n-1, -1) : array(n, function(i){return i&1?i-1:i+1;});
                 }
             }
-            else if ( "multiset" === type )
-            {
-                var m = $.multiplicity, nm = m.length, ki = 0, k,
-                    dk = 1, k0 = 0, mk = ki < nm ? m[ki] : 1;
-                if ( 0 > dir ) { dk = -1; k0 = nm-1; }
-                k = k0;
-                item = array(n, function(){
-                    if ( 0 >= mk ) { ki++; k+=dk; mk = ki<nm ? m[ki] : 1; }
-                    mk--;
-                    return k;
-                });
-            }
-            else//if ( ("involution" === type) || ("multiset" === type) || ("permutation" === type) )
+            else//if ( ("involution" === type) || ("permutation" === type) )
             {
                 item = 0 > dir ? array(n, n-1, -1) : array(n, 0, 1);
             }
@@ -2697,7 +2782,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,dual: CombinatorialIterator.dual
         ,succ: function( dir, item, index, n, $ ) {
             var type = $ && $.type ? $.type : "permutation";
-            if ( "involution" === type ) return null;
             return next_permutation( item, n, dir, type );
         }
         ,rand: function( n, $ ) {
@@ -2708,9 +2792,21 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 var k = rndInt(0, n-1);
                 return 0 < k ? array(n-k, k, 1).concat(array(k, 0, 1)) : array(n, 0, 1);
             }
+            else if ( "multiset" === type )
+            {
+                // p ~ m1!*..*mk! / n!
+                // fisher-yates-knuth unbiased multiset shuffling
+                var m = $.multiplicity, nm = m.length, k = 0, mk = m[k];
+                return shuffle(array(n, function(){
+                    if ( 0 >= mk ) { k++; mk = k < nm ? m[k] : 1; }
+                    mk--;
+                    return k;
+                }));
+            }
             else if ( "derangement" === type )
             {
                 // p ~ 1 / !n = e / n!
+                // adapted from http://local.disia.unifi.it/merlini/papers/Derangements.pdf
                 var j, t, p, fixed = false, item = new Array(n);
                 do{
                     for(j=0; j<n; j++) item[j] = j;
@@ -2735,23 +2831,46 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 }while( fixed );
                 return item;
             }
-            else if ( "multiset" === type )
-            {
-                // p ~ m1!*..*mk! / n!
-                var m = $.multiplicity, nm = m.length, k = 0, mk = m[k];
-                return shuffle(array(n, function(){
-                    if ( 0 >= mk ) { k++; mk = k < nm ? m[k] : 1; }
-                    mk--;
-                    return k;
-                }));
-            }
             else if ( "involution" === type )
             {
-                return NotImplemented();
+                // p ~ 1 / I(n)
+                // adapted from http://www.jjj.de/fxt/#fxt (Jörg Arndt)
+                var rnd = Abacus.Math.rnd,
+                    rat = 0.5, n1 = 1.0, nr = n,
+                    x1, r1, x2, r2, t, s,
+                    // involution branch ratios
+                    b = [1.0].concat(array(n-1, function(){
+                        var bk = rat;
+                        // R(n) = 1 / ( 1 + (n-1) * R(n-1) )
+                        // R(n+1) = 1 / ( 1 + n * R(n) )
+                        n1 += 1.0;
+                        rat = 1.0/( 1.0 + n1*rat );
+                        return bk;
+                    })), r = array(n, 0, 1), item = array(n, 0, 1);
+                    while( 2 <= nr )
+                    {
+                        x1 = nr-1;   // choose last element
+                        r1 = r[x1];  // available position
+                        // remove from set:
+                        --nr;  // no swap needed if x1==last
+                        rat = b[nr];  // probability to choose fixed point
+                        t = rnd();  // 0 <= t < 1
+                        if ( t > rat )  // 2-cycle
+                        {
+                            x2 = rndInt(0, nr-1);
+                            r2 = r[x2];  // random available position != r1
+                            --nr;
+                            s = r[x2]; r[x2] = r[nr]; r[nr] = s;  // remove from set
+                            s = item[r2]; item[r2] = item[r1]; item[r1] = s;  // create a 2-cycle
+                        }
+                        // else fixed point, nothing to do
+                    }
+                    return item;
             }
             else//if ( "permutation" === type )
             {
                 // p ~ 1 / n!
+                // fisher-yates-knuth unbiased shuffling
                 return shuffle(array(n, 0, 1));
             }
         }
@@ -2768,7 +2887,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 return item[0];
             }
-            else if ( "derangement" === type )
+            else if ( ("multiset" === type) || ("derangement" === type) || ("involution" === type) )
             {
                 /*item = permutation2inversion( item );
                 for(I=n&1?-1:1,i=0; i<n-1; i++,I=-I)
@@ -2776,10 +2895,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     index = add(mul(index,n-i), I*(n-i)+item[ i ]);
                 }
                 return index;*/
-                return NotImplemented();
-            }
-            else if ( ("involution" === type) || ("multiset" === type) )
-            {
                 return NotImplemented();
             }
             else//if ( "permutation" === type )
@@ -2800,11 +2915,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 index = val(index);
                 return array(n, function(i){return (index+i)%n});
             }
-            else if ( "derangement" === type )
-            {
-                return NotImplemented();
-            }
-            else if ( ("involution" === type) || ("multiset" === type) )
+            else if ( ("multiset" === type) || ("derangement" === type) || ("involution" === type) )
             {
                 return NotImplemented();
             }
@@ -2861,21 +2972,12 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,is_identity: is_identity
         ,is_cyclic: is_cyclic
         ,is_derangement: is_derangement
-        ,is_involution: function( item ) {
-            return is_kthroot( item, 1 );
-        }
+        ,is_involution: is_involution
         ,is_kthroot: function( item, k ) {
-            return k > 1 ? is_kthroot( item, k-1 ) : false;
+            return k >= 1 ? is_kthroot( item, k-1 ) : false;
         }
-        ,is_connected: function( item ) {
-            var n = item.length, m = -1, i;
-            for (i=0; i<n-1; i++) // for all proper prefixes, do:
-            {
-                if ( item[i] > m ) m = item[i]; // update max.
-                if ( m <= i ) return false; // prefix mapped to itself, P not connected.
-            }
-            return true; // P is connected.
-        }
+        ,is_indecomposable: is_indecomposable
+        ,is_connected: is_indecomposable
     }
 });
 
@@ -3040,6 +3142,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 {
                     // adjust the order to match MSB to LSB 
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
+                    // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
                     c = N-1-item[i-1]-i+1; j = k+1-i;
                     if ( j <= c ) index = add(index, factorial(c, j));
                 }
@@ -3060,6 +3163,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 {
                     // adjust the order to match MSB to LSB 
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
+                    // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
                     c = N-1-item[i-1]; j = k+1-i;
                     if ( j <= c ) index = add(index, factorial(c, j));
                 }
@@ -3097,6 +3201,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             else//if ( ("repeated" === type) || ("unordered" === type) || ("binary" === type) )
             {
                 // adjust the order to match MSB to LSB 
+                // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
                 repeated = "repeated" === type;
                 N = repeated ? n+k-1 : n;
                 binom = $ && $.count ? $.count : Abacus.Math.factorial(N, k);
@@ -3182,10 +3287,10 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             // some C-P-T processes at play here
             var klass = this, order = $ && $.order ? $.order : 0,
                 C = klass.C, P = klass.P/*, T = klass.T*/;
-            if ( RANDOM & order ) item = REFLECTED & order ? item.slice( ) : P( item, n );
-            else if ( MINIMAL & order ) item = REFLECTED & order ? item.slice( ) : P( item, n );
+            if ( RANDOM & order ) item = REFLECTED & order ? item : P( item, n );
+            else if ( MINIMAL & order ) item = REFLECTED & order ? item : P( item, n );
             else if ( COLEX & order ) item = REFLECTED & order ? P( C( item, n ), n ) : C( item, n );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? item.slice( ) : P( item, n );
+            else/*if ( LEX & order )*/item = REFLECTED & order ? item : P( item, n );
             if ( $ && "binary"===$.type ) item = subset2binary(item, n);
             return item;
         }
@@ -3307,19 +3412,17 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 }
                 */
             }
-            /*else*/ if ( K )
+            else if ( K )
             {
-                /*
                 // restricted partition n to exactly K parts
                 // equivalent to conjugate to partition n into parts with largest part=K
                 if ( K > n ) return null;
                 m = stdMath.ceil(n/K); k = n%m;
                 item = 0 > dir ? [n-K+1].concat(array(K-1, 1, 0)) : array(K-1, m, 0).concat([k||m]);
                 //item = 0 > dir ? [[n-K+1,1],[1,K-1]] : (k?[[m,K-1],[k,1]]:[[m,K]]);
-                */
-                M = K; K = null;
+                //M = K; K = null;
             }
-            /*else */if ( M )
+            else if ( M )
             {
                 // restricted partition n into parts with largest part=M
                 // equivalent to conjugate to partition n into exactly M parts
@@ -3342,7 +3445,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             var klass = this, order = $ && $.order ? $.order : 0,
                 M = $ && $["max="] ? $["max="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null;
-            if ( K && !M ) item = conjugatepartition(item);
+            //if ( K && !M ) item = conjugatepartition(item);
             if ( $ && "unpacked"===$.type ) item = unpackpartition(item);
             item = CombinatorialIterator.dual.call(klass, item, index, n, $);
             if ( $ && "set"===$.type ) return partition2sets(item);
