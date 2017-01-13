@@ -61,23 +61,6 @@ function NotImplemented( )
 {
     throw new Error("Method not implemented!");
 }
-function ORDER( o )
-{
-    if ( !arguments.length || null == o )
-    {
-        return LEX; // default
-    }
-    if ( is_string(o) )
-    {
-        var order = 0, ord = o.toUpperCase( ).split(','), i, l = ord.length;
-        for(i=0; i<l; i++) order |= HAS.call(Abacus.ORDER,ord[i]) ? Abacus.ORDER[ord[i]] : 0;
-        if ( (0 < order) && !(order&(LEXICAL|RANDOM)) ) order |= LEX;
-        if ( order & RANDOM ) order &= ~REVERSED;
-        return 0 < order ? order : LEX;
-    }
-    if ( o & RANDOM ) o &= ~REVERSED;
-    return ORDERINGS & o ? o : LEX;
-}
 function array( n, x0, xs )
 {
     var x = is_array(n) ? n : ((n=(n|0)) > 0 ? new Array(n) : []), q, r, i, k, xi;
@@ -365,7 +348,7 @@ function factorial( n, m )
 factorial.mem1 = {};
 factorial.mem2 = {};
 factorial.mem3 = {};
-function partitions( n, k, m )
+function p_nkm( n, k, m )
 {
     // recursively compute the partition count using the recursive relation:
     // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
@@ -378,32 +361,71 @@ function partitions( n, k, m )
     if ( ((m === n) && (1 === k)) || ((k === n) && (1 === m)) ) return Arithmetic.I;
     if ( (m+k > n+1) || (k*m < n) ) return p;
     key = String(n)+','+String(k)+','+String(m);
-    if ( null == partitions.mem[key] )
+    if ( null == p_nkm.mem[key] )
     {
         // compute it directly
         jmin = stdMath.max(1, stdMath.ceil((n-m)/(k-1)));
         jmax = stdMath.min(m, n-m-k+2);
-        for(j=jmin; j<=jmax; j++) p = add(p, partitions(n-m, k-1, j));
+        for(j=jmin; j<=jmax; j++) p = add(p, p_nkm(n-m, k-1, j));
+        p_nkm.mem[key] = p;
+    }
+    return p_nkm.mem[key];
+}
+p_nkm.mem = {};
+function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null*/ )
+{
+    K = null == K ? null : K|0; M = null == M ? null : M|0;
+    var add = Abacus.Arithmetic.add,
+        key, k, m, p = Abacus.Arithmetic.O,
+        m0 = M ? M : 0, m1 = M ? M : 1,
+        k0 = K ? K : 1, k1 = K ? K : n;
+    if ( (0 > n) || (K && M && ((K+M > n+1) || (K*M < n))) || (M && M > n) || (K && K > n) ) return p;
+    if ( M && !K ) { m0 = 0; m1 = 1; k0 = M; k1 = M; K = M; M = null; } // count the conjugates, same
+    key = String(n)+'|'+String(K)+'|'+String(M);
+    if ( null == partitions.mem[key] )
+    {
+        for(k=k0; k<=k1; k++) for(m=m0?m0:n-k+1; m>=m1; m--) p = add(p, p_nkm(n, k, m));
         partitions.mem[key] = p;
     }
     return partitions.mem[key];
 }
 partitions.mem = {};
 // C process / symmetry, ie Rotation, CC = I
-function conjugation( a, n )
+function conjugation( a, n, a0, a1 )
 {
-    return null == a ? null : array(a, is_array(n)?function(i){
+    if ( null == a ) return null;
+    if ( null == a0 ) a0 = 0;
+    if ( null == a1 ) a1 = a.length-1;
+    if ( a0 <= a1 )
+    {
+        var l=a0, r=a1, lr=r-l+1, m=lr&1?l+(lr>>>1):-1;
+        if ( is_array(n) )
+            for(a[m]=0<=m?n[m]-1-a[m]:a[m]; l<r; l++,r--)
+            {
+                a[l] = n[l]-1-a[l];
+                a[r] = n[r]-1-a[r];
+            }
+        else
+            for(a[m]=0<=m?n-1-a[m]:a[m]; l<r; l++,r--)
+            {
+                a[l] = n-1-a[l];
+                a[r] = n-1-a[r];
+            }
+    }
+    return a;
+    /*return null == a ? null : array(a, is_array(n)?function(i){
         return n[i]-1-a[i];
     }:function(i){
         return n-1-a[i];
-    });
+    });*/
 }
 // P process / symmetry, ie Reflection, PP = I
-function parity( a )
+function parity( a, n, a0, a1 )
 {
     if ( null == a ) return null;
-    var t, l = 0, r = a.length-1;
-    for(; l<r; l++,r--) { t = a[l]; a[l] = a[r]; a[r] = t; }
+    if ( null == a0 ) a0 = 0;
+    if ( null == a1 ) a1 = a.length-1;
+    if ( a0 < a1 ) for(var t,l=a0,r=a1; l<r; l++,r--) { t = a[l]; a[l] = a[r]; a[r] = t; }
     return a;
 }
 // T process / symmetry, ie Reversion, TT = I
@@ -412,8 +434,26 @@ function inversion( n, n0 )
     if ( null == n0 ) n0 = 0;
     return is_array(n) ? array(n, function(i){
         return n0-n[i];
-    }) : ((n === +n)&&(n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.N(n0),n));
+    }) : ((n===+n)&&(n0===+n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.N(n0),n));
 }
+/*function gray( a, C0, a0, a1 )
+{
+    if ( null == a ) return null;
+    if ( null == a0 ) a0 = 0;
+    if ( null == a1 ) a1 = a.length-1;
+    if ( a0 < a1 )
+    {
+        // using the definition of gray code
+        // ie G{a} = a[0]+G{a[1:n/2]} + C{a[n/2]}+P{G{a[n/2:]}}
+        // taking into account even/odd indexes (ie integer/half-integer spin symmetries),
+        // can produce (generic) gray code (along with C-P-T symmetries)
+        var n = a1-a0+1;
+        gray(a, C0, a0+1, a0+n/2);
+        conjugation(a, C0, a0+n/2, a0+n/2);
+        parity(gray(a, C0, a0+n/2), null, a0+n/2);
+    }
+    return a;
+}*/
 function intersect( a, b, a0, a1, b0, b1, intersection )
 {
     if ( null == a0 ) a0 = 0;
@@ -672,69 +712,101 @@ function binary2subset( item, n )
     for(n=n-1,i=0; i<=n; i++) if ( 0 < item[i] ) subset.push(n-i);
     return subset;
 }
-function conjugatepartition( partition )
+function conjugatepartition( partition, dir )
 {
     if ( null == partition ) return null;
     // http://mathworld.wolfram.com/ConjugatePartition.html
-    var l = partition.length, n, i, j, p, conjpartition;
-    if ( is_array(partition[0]) )
+    var l = partition.length, n, i, j, k, p, conjpartition,
+        a = 1, b = 0, d = 0, push = "push", reflected = -1 === dir;
+    if ( reflected )
+    {
+        a = -a;
+        b = l-1-b;
+        push = "unshift";
+    }
+    if ( is_array(partition[b]) )
     {
         // packed representation
-        p = partition[j]; conjpartition = [[p[1], p[0]]];
+        p = partition[b];
+        conjpartition = [[p[1], p[0]]]; k = 0;
         for(j=1; j<l; j++)
         {
-            p = partition[j];
-            if ( p[1] === conjpartition[j-1][0] ) conjpartition[j-1][1] += p[0];
+            p = partition[a*j+b]; i = reflected ? 0 : k;
+            if ( p[1] === conjpartition[i][0] )
+            {
+                conjpartition[i][1] += p[0];
+            }
             // swap part with multiplicity
-            else conjpartition.push([p[1], p[0]]);
+            else
+            {
+                conjpartition[push]([p[1], p[0]]); k++;
+            }
         }
     }
     else
     {
         // unpacked representation
-        n = partition[0]; conjpartition = array(n, 1, 0);
+        n = partition[b]; conjpartition = array(n, 1, 0);
+        if ( reflected ) d = n-1-d;
         for(j=1; j<l; j++)
         {
-            i = 0; p = partition[j];
-            while( (i < n) && (p > 0) ) { conjpartition[i++]++; p--; }
+            i = 0; p = partition[a*j+b];
+            while( (i < n) && (p > 0) ) { conjpartition[a*i+d]++; p--; i++; }
         }
     }
     return conjpartition;
 }
-function packpartition( partition )
+function packpartition( partition, dir )
 {
     if ( null == partition ) return null;
-    var packed = [], i, l = partition.length, 
-        last = partition[0], part = [last, 1];
-    for(i=1; i<l; i++)
+    var packed = [], i, j, l = partition.length,
+        reflected = -1 === dir,
+        a = 1, b = 0, push = "push",
+        last, part;
+    
+    if ( reflected )
     {
-        if ( last === partition[i] )
+        a = -a;
+        b = l-1-b;
+        push = "unshift";
+    }
+    for(last=partition[b],part=[last, 1],i=1; i<l; i++)
+    {
+        j = a*i+b;
+        if ( last === partition[j] )
         {
             part[1]++;
         }
         else
         {
-            packed.push(part);
-            last = partition[i];
+            packed[push](part);
+            last = partition[j];
             part = [last, 1];
         }
     }
-    packed.push(part);
+    packed[push](part);
     return packed;
 }
-function unpackpartition( packed )
+function unpackpartition( packed, dir )
 {
     if ( null == packed ) return null;
-    var partition = [], i, j, k, v, l = packed.length, cmp;
+    var partition = [], i, j, k, v, l = packed.length,
+        cmp, reflected = -1 === dir,
+        a = 1, b = 0, push = "push";
+    if ( reflected )
+    {
+        a = -a;
+        b = l-1-b;
+        push = "unshift";
+    }
     for(i=0; i<l; i++)
     {
-        cmp = packed[i];
-        if (1 === cmp[1] ) partition.push(cmp[0]);
+        cmp = packed[a*i+b];
+        if ( 1 === cmp[1] )
+            partition[push](cmp[0]);
         else
-        {
-            k = cmp[1]; v = cmp[0];
-            for(j=0; j<k; j++) partition.push(v);
-        }
+            for(k=cmp[1],v=cmp[0],j=0; j<k; j++)
+                partition[push](v);
     }
     return partition;
 }
@@ -1028,559 +1100,667 @@ function is_kthroot( perm, k )
     for(i=0; i<n; i++) if ( (strict && cycle[i].length === k) || (!strict && cycle[i].length >= k) ) return true;
     return false;
 }*/
-function next_tensor( item, N, dir, type )
+function next_tensor( item, N, dir, type, order )
 {
-    if ( item )
+    var n = N, k, i, j, i0, i1, DI, a, b, MIN, MAX;
+    if ( "tuple" === type ) { k=n[0]; n=n[1]; }
+    else { k=n.length; }
+    // some C-P-T dualities, symmetries & processes at play here
+    // LEX
+    MIN = 0; MAX = k-1;
+    DI = 1; i0 = MAX; i1 = MIN;
+    a = 1; b = 0;
+    if ( COLEX & order )
     {
-        var n = N, k, nd = n.length, i, j;
-        
-        if ( 0 > dir )
-        {
-            // C of item
-            if ( "tuple" === type )
-            {
-                k = n[0]; n = n[1]; i = k-1;
-                while( (i >= 0) && (item[i] < 1) ) i--;
-                if ( 0 <= i )
-                {
-                    item[i]--;
-                    for(n=n-1,j=i+1; j<k; j++) item[j] = n;
-                }
-                //else last item
-                else item = null;
-            }
-            else
-            {
-                i = nd-1;
-                while( (i >= 0) && (item[i] < 1) ) i--;
-                if ( 0 <= i )
-                {
-                    item[i]--;
-                    for(j=i+1; j<nd; j++) item[j] = n[j]-1;
-                }
-                //else last item
-                else item = null;
-            }
-            // invC of item
-        }
-        else
-        {
-            if ( "tuple" === type )
-            {
-                k = n[0]; n = n[1]; i = k-1;
-                while( (i >= 0) && (item[i]+1 === n) ) i--;
-                if ( 0 <= i )
-                {
-                    item[i]++;
-                    for(j=i+1; j<k; j++) item[j] = 0;
-                }
-                //else last item
-                else item = null;
-            }
-            else
-            {
-                i = nd-1;
-                while( (i >= 0) && (item[i]+1 === n[i]) ) i--;
-                if ( 0 <= i )
-                {
-                    item[i]++;
-                    for(j=i+1; j<nd; j++) item[j] = 0;
-                }
-                //else last item
-                else item = null;
-            }
-        }
-        return item;
+        //CP-symmetric of LEX
+        DI = -DI; i0 = MAX-i0; i1 = MAX-i1;
+        a = -a; b = MAX-b;
     }
-    return null;
-}
-function next_permutation( item, N, dir, type )
-{
-    // http://en.wikipedia.org/wiki/Permutation#Systematic_generation_of_all_permutations
-    if ( item )
+    if ( REFLECTED & order )
     {
-        var n = N, k, kl, l, r, s, fixed;
-        
-        if ( 0 > dir )
-        {
-            if ( "cyclic" === type )
-            {
-                if ( item[0] > 0 ) item = [item[n-1]].concat(item.slice(0,-1));
-                //else last item
-                else item = null;
-            }
-            else if ( "involution" === type )
-            {
-                item = null;
-            }
-            else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
-            {
-                do{
-                fixed = false;
-                //Find the largest index k such that a[k] > a[k + 1].
-                // taking into account equal elements, generates multiset permutations
-                k = n-2;
-                while((k >= 0) && (item[k] <= item[k+1])) k--;
-                // If no such index exists, the permutation is the last permutation.
-                if ( k >=0 ) 
-                {
-                    //Find the largest index kl greater than k such that a[k] > a[kl].
-                    kl = n-1;
-                    while (kl>k && item[k]<=item[kl]) kl--;
-                    //Swap the value of a[k] with that of a[l].
-                    s = item[k]; item[k] = item[kl]; item[kl] = s;
-                    //Reverse the sequence from a[k + 1] up to and including the final element a[n].
-                    l = k+1; r = n-1;
-                    while (l < r)
-                    {
-                        s = item[l]; item[l] = item[r]; item[r] = s;
-                        fixed = fixed || (l === item[l]) || (r === item[r]);
-                        l++; r--;
-                    }
-                    fixed = fixed || (k === item[k]) || (r === item[r]);
-                    if ( "derangement" === type )
-                    {
-                        if ( !fixed )
-                            for(l=k-1; l>=0; l--) if( l === item[l] ) { fixed = true; break; }
-                    }
-                    else
-                    {
-                        fixed = false;
-                    }
-                }
-                //else last item
-                else item = null;
-                // every 2-3 permutations is derangement on average, ie p(D) = 1/e
-                }while( item && fixed );
-            }
-        }
-        else
-        {
-            if ( "cyclic" === type )
-            {
-                if ( item[0]+1 < n ) item = item.slice(1).concat([item[0]]);
-                //else last item
-                else item = null;
-            }
-            else if ( "involution" === type )
-            {
-                /*
-                // adapted from http://www.jjj.de/fxt/#fxt (Jörg Arndt)
-                k = n; fixed = false;
-                while( k-- )
-                {
-                    kl = item[k];   // inverse perm == perm
-                    item[k] = k; item[kl] = kl;  // undo prior swap
-
-                    while( kl-- )
-                    {
-                        if ( item[kl] === kl )
-                        {
-                            item[k] = kl; item[kl] = k;  // swap
-                            fixed = true; break;
-                        }
-                    }
-                    if ( fixed ) break;
-                }
-                if ( !fixed )*/ item = null; // last
-            }
-            else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
-            {
-                do{
-                fixed = false;
-                //Find the largest index k such that a[k] < a[k + 1].
-                // taking into account equal elements, generates multiset permutations
-                k = n-2;
-                while((k >= 0) && (item[k] >= item[k+1])) k--;
-                // If no such index exists, the permutation is the last permutation.
-                if ( k >=0 ) 
-                {
-                    //Find the largest index kl greater than k such that a[k] < a[kl].
-                    kl = n-1;
-                    while (kl>k && item[k]>=item[kl]) kl--;
-                    //Swap the value of a[k] with that of a[l].
-                    s = item[k]; item[k] = item[kl]; item[kl] = s;
-                    //Reverse the sequence from a[k + 1] up to and including the final element a[n].
-                    l = k+1; r = n-1;
-                    while (l < r)
-                    {
-                        s = item[l]; item[l] = item[r]; item[r] = s;
-                        fixed = fixed || (l === item[l]) || (r === item[r]);
-                        l++; r--;
-                    }
-                    fixed = fixed || (k === item[k]) || (r === item[r]);
-                    if ( "derangement" === type )
-                    {
-                        if ( !fixed )
-                            for(l=k-1; l>=0; l--) if( l === item[l] ) { fixed = true; break; }
-                    }
-                    else
-                    {
-                        fixed = false;
-                    }
-                }
-                //else last item
-                else item = null;
-                // every 2-3 permutations is derangement on average, ie p(D) = 1/e
-                }while( item && fixed );
-            }
-        }
-        return item;
+        //P-symmetric of LEX
+        DI = -DI; i0 = MAX-i0; i1 = MAX-i1;
+        a = -a; b = MAX-b;
     }
-    return null;
-}
-function next_combination( item, N, dir, type )
-{
-    if ( item )
+    if ( REVERSED & order )
     {
-        var k = N[1], n = N[0], selected,
-            i, j, index, limit, curr, ofs;
-        
-        if ( 0 > dir )
+        //T-symmetric of LEX
+        dir = -dir;
+    }
+    
+    if ( 0 > dir )
+    {
+        if ( "tuple" === type )
         {
-            // compute prev indexes
-            // find index to move
-            if ( "ordered+repeated" === type )
+            i = i0;
+            while( (MIN<=i && MAX>=i) && (item[i]===0) ) i-=DI;
+            if ( MIN<=i && MAX>=i )
             {
-                i = k-1;
-                while( (i >= 0) && (item[i] < 1) ) i--;
-                if ( 0 <= i )
-                {
-                    item[i]--;
-                    for(n=n-1,j=i+1; j<k; j++) item[j] = n;
-                }
-                //else last item
-                else item = null;
+                item[i]--;
+                for(n=n-1,j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = n;
             }
-            else if ( "ordered" === type )
-            {
-                for(selected={},i=0; i<k; i++) selected[item[i]] = i;
-                i = k-1; index = -1;
-                while( (-1 === index) && (0 <= i) )
-                {
-                    if ( item[i]-1 >= 0  )
-                    {
-                        for(j=item[i]-1; j>=0; j--)
-                        {
-                            if ( null == selected[j] )
-                            {
-                                index = i;
-                                selected[j] = index;
-                                break;
-                            }
-                        }
-                    }
-                    selected[item[i]] = null;
-                    i--;
-                }
-                if ( -1 < index )
-                {
-                    item[index] = j;
-                    for(j=n-1,i=index+1; i<k; i++)
-                    {
-                        while( (j>=0) && (null != selected[j]) ) j--;
-                        item[i] = j; selected[j] = i;
-                    }
-                }
-                //else last item
-                else item = null;
-            }
-            else
-            {
-                ofs = "repeated"===type ? 0 : 1; i = k-1;  index = -1;
-                while( 0 < i )
-                {
-                    if ( item[i] > item[i-1]+ofs ) { index = i; break; }
-                    i--;
-                }
-                if (-1 === index && 0 < item[0]) index = 0;
-                // adjust next indexes after the moved index
-                if ( -1 < index )
-                {
-                    curr = n-1+ofs;
-                    for(i=k-1; i>index; i--)
-                    {
-                        curr -= ofs;
-                        item[i] = curr;
-                    }
-                    item[index]--;
-                }
-                //else last item
-                else item = null;
-            }
+            //else last item
+            else item = null;
         }
         else
         {
-            // compute next indexes
-            // find index to move
-            if ( "ordered+repeated" === type )
+            i = i0;
+            while( (MIN<=i && MAX>=i) && (item[i]===0) ) i-=DI;
+            if ( MIN<=i && MAX>=i )
             {
-                i = k-1;
-                while( (i >= 0) && (item[i]+1 === n) ) i--;
-                if ( 0 <= i )
-                {
-                    item[i]++;
-                    for(j=i+1; j<k; j++) item[j] = 0;
-                }
-                //else last item
-                else item = null;
+                item[i]--;
+                for(j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = n[a*j+b]-1;
             }
-            else if ( "ordered" === type )
+            //else last item
+            else item = null;
+        }
+    }
+    else
+    {
+        if ( "tuple" === type )
+        {
+            i = i0;
+            while( (MIN<=i && MAX>=i) && (item[i]+1===n) ) i-=DI;
+            if ( MIN<=i && MAX>=i )
             {
-                for(selected={},i=0; i<k; i++) selected[item[i]] = i;
-                i = k-1; index = -1;
-                while( (-1 === index) && (0 <= i) )
-                {
-                    if ( item[i]+1 < n  )
-                    {
-                        for(j=item[i]+1; j<n; j++)
-                        {
-                            if ( null == selected[j] )
-                            {
-                                index = i;
-                                selected[j] = index;
-                                break;
-                            }
-                        }
-                    }
-                    selected[item[i]] = null;
-                    i--;
-                }
-                if ( -1 < index )
-                {
-                    item[index] = j;
-                    for(j=0,i=index+1; i<k; i++)
-                    {
-                        while( (j<n) && (null != selected[j]) ) j++;
-                        item[i] = j; selected[j] = i;
-                    }
-                }
-                //else last item
-                else item = null;
+                item[i]++;
+                for(j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = 0;
             }
-            else
+            //else last item
+            else item = null;
+        }
+        else
+        {
+            i = i0;
+            while( (MIN<=i && MAX>=i) && (item[i]+1===n[a*i+b]) ) i-=DI;
+            if ( MIN<=i && MAX>=i )
             {
-                i = k-1;  index = -1;
-                if ( "repeated" === type )
+                item[i]++;
+                for(j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = 0;
+            }
+            //else last item
+            else item = null;
+        }
+    }
+    return item;
+}
+function next_permutation( item, N, dir, type, order, multiplicity )
+{
+    var n = N, m = null == multiplicity ? n : multiplicity,
+        k, kl, l, r, s, fixed, k0, DK, a, b, da, db, MIN, MAX;
+    // some C-P-T dualities, symmetries & processes at play here
+    // LEX
+    MIN = 0; MAX = n-1;
+    DK = 1; k0 = MAX;
+    a = 1; b = 0;
+    da = 1; db = 0;
+    if ( COLEX & order )
+    {
+        //CP-symmetric of LEX
+        DK = -DK; k0 = MAX-k0;
+        a = -a; b = m-1-b;
+        dir = -dir;
+    }
+    if ( REFLECTED & order )
+    {
+        //P-symmetric of LEX
+        DK = -DK; k0 = MAX-k0;
+        da = -1; db = m-1;
+    }
+    if ( REVERSED & order )
+    {
+        //T-symmetric of LEX
+        dir = -dir;
+    }
+    
+    if ( 0 > dir )
+    {
+        if ( "cyclic" === type )
+        {
+            k = MAX-k0;
+            if ( a*item[k]+b > 0 )
+            {
+                //item = [item[n-1]].concat(item.slice(0,-1));
+                da = n-1; DK = n+DK;
+                for(l=0; l<n; l++)
                 {
-                    ofs = 0;
-                    while( 0 <= i )
-                    {
-                        if ( item[i]+1 < n ) { index = i; break; }
-                        i--;
-                    }
+                    s = (a*item[k]+b+da)%n;
+                    item[k] = a*s+b;
+                    k = (k+DK)%n;
+                }
+            }
+            //else last item
+            else item = null;
+        }
+        else if ( "involution" === type )
+        {
+            item = null;
+        }
+        else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
+        {
+            do{
+            fixed = false;
+            //Find the largest index k such that a[k] > a[k + 1].
+            // taking into account equal elements, generates multiset permutations
+            k = k0-DK;
+            while((MIN<=k && k<=MAX) && ((a*item[k]+b) <= (a*item[k+DK]+b))) k-=DK;
+            // If no such index exists, the permutation is the last permutation.
+            if ( MIN<=k && k<=MAX ) 
+            {
+                //Find the largest index kl greater than k such that a[k] > a[kl].
+                kl = k0;
+                while(MIN<=kl && kl<=MAX && DK*kl>DK*k && (a*item[k]+b)<=(a*item[kl]+b)) kl-=DK;
+                //Swap the value of a[k] with that of a[l].
+                s = item[k]; item[k] = item[kl]; item[kl] = s;
+                //Reverse the sequence from a[k + 1] up to and including the final element a[n].
+                l = k+DK; r = k0;
+                while(MIN<=l && l<=MAX && MIN<=r && r<=MAX && DK*l < DK*r)
+                {
+                    s = item[l]; item[l] = item[r]; item[r] = s;
+                    fixed = fixed || (da*l+db === item[l]) || (da*r+db === item[r]);
+                    l+=DK; r-=DK;
+                }
+                if ( "derangement" === type )
+                {
+                    fixed = fixed || (da*k+db === item[k]);
+                    if ( MIN<=kl && kl<=MAX ) fixed = fixed || (da*kl+db === item[kl]);
+                    if ( MIN<=r && r<=MAX ) fixed = fixed || (da*r+db === item[r]);
+                    for(l=k-DK; !fixed && MIN<=l && l<=MAX; l-=DK) fixed = da*l+db === item[l];
                 }
                 else
                 {
-                    ofs = 1;
-                    limit = n-k;
-                    while( 0 <= i )
-                    {
-                        if ( item[i] < limit+i ) { index = i; break; }
-                        i--;
-                    }
+                    fixed = false;
                 }
-                // adjust next indexes after the moved index
-                if ( -1 < index )
-                {
-                    curr = item[index]+1-ofs;
-                    for(i=index; i<k; i++)
-                    {
-                        curr += ofs;
-                        item[i] = curr;
-                    }
-                }
-                //else last item
-                else item = null;
             }
+            //else last item
+            else item = null;
+            // every 2-3 permutations is derangement on average, ie p(D) = 1/e
+            }while( item && fixed );
         }
-        return item;
     }
-    return null;
-}
-function next_partition( item, N, dir, K, M )
-{
-    if ( K && M ) return null;
-    if ( item )
+    else
     {
-        var n = N, i, i0, i1, k, m, rem;
-        
-        if ( 0 > dir )
+        if ( "cyclic" === type )
         {
-            // C of item
-            // compute prev partition
-            if ( K )
+            k = MAX-k0;
+            if ( a*item[k]+b < n-1 )
             {
-                /*if ( M )
+                //item = item.slice(1).concat([item[0]]);
+                da = n+1; DK = n+DK;
+                for(l=0; l<n; l++)
                 {
-                    n = n-M;
-                    K = K-1;
-                    m = stdMath.min(M, stdMath.floor(n/K)||1);
-                    i0 = 1; i1 = 1;
-                    while((i1<=K) && (M===item[i1]) ) i1++;
+                    s = (a*item[k]+b+da)%n;
+                    item[k] = a*s+b;
+                    k = (k+DK)%n;
+                }
+            }
+            //else last item
+            else item = null;
+        }
+        else if ( "involution" === type )
+        {
+            /*
+            // adapted from http://www.jjj.de/fxt/#fxt (Jörg Arndt)
+            k = n; fixed = false;
+            while( k-- )
+            {
+                kl = item[k];   // inverse perm == perm
+                item[k] = k; item[kl] = kl;  // undo prior swap
+
+                while( kl-- )
+                {
+                    if ( item[kl] === kl )
+                    {
+                        item[k] = kl; item[kl] = k;  // swap
+                        fixed = true; break;
+                    }
+                }
+                if ( fixed ) break;
+            }
+            if ( !fixed )*/ item = null; // last
+        }
+        else//if ( ("multiset" === type) || ("derangement" === type) || ("permutation" === type) )
+        {
+            // variation of  http://en.wikipedia.org/wiki/Permutation#Systematic_generation_of_all_permutations
+            do{
+            fixed = false;
+            //Find the largest index k such that a[k] < a[k + 1].
+            // taking into account equal elements, generates multiset permutations
+            k = k0-DK;
+            while((MIN<=k && k<=MAX) && ((a*item[k]+b) >= (a*item[k+DK]+b))) k-=DK;
+            // If no such index exists, the permutation is the last permutation.
+            if ( MIN<=k && k<=MAX ) 
+            {
+                //Find the largest index kl greater than k such that a[k] < a[kl].
+                kl = k0;
+                while(MIN<=kl && kl<=MAX && DK*kl>DK*k && (a*item[k]+b)>=(a*item[kl]+b)) kl-=DK;
+                //Swap the value of a[k] with that of a[l].
+                s = item[k]; item[k] = item[kl]; item[kl] = s;
+                //Reverse the sequence from a[k + 1] up to and including the final element a[n].
+                l = k+DK; r = k0;
+                while(MIN<=l && l<=MAX && MIN<=r && r<=MAX && DK*l < DK*r)
+                {
+                    s = item[l]; item[l] = item[r]; item[r] = s;
+                    fixed = fixed || (da*l+db === item[l]) || (da*r+db === item[r]);
+                    l+=DK; r-=DK;
+                }
+                if ( "derangement" === type )
+                {
+                    fixed = fixed || (da*k+db === item[k]);
+                    if ( MIN<=kl && kl<=MAX ) fixed = fixed || (da*kl+db === item[kl]);
+                    if ( MIN<=r && r<=MAX ) fixed = fixed || (da*r+db === item[r]);
+                    for(l=k-DK; !fixed && MIN<=l && l<=MAX; l-=DK) fixed = da*l+db === item[l];
                 }
                 else
                 {
-                    m = stdMath.ceil(n/K);
-                    i0 = 0; i1 = 0;
+                    fixed = false;
                 }
-                if ( item[i1] > m )
-                {
-                    k = i0+K-1;
-                    while((k>i1) && (item[k]+1>=item[k-1])) { k--; }
-                    if ( k === i0 )
-                    {
-                        item[i0]--; item[i0+1] = n-item[i0]-K+2;
-                        for(i=i0+2; i<i0+K; i++) {item[i] = 1;}
-                    }
-                    else
-                    {
-                        item[k]++; item[k-1]--;
-                    }
-                }
-                //else last item
-                else item = null;*/
-                //M = K; K = null;
-                m = item[0];
-                i = K-1;
-                rem = m;
-                while( --i )
-                {
-                    rem += item[i];
-                    if ( item[i] + 2 <= m )  break;
-                }
-
-                if ( i < K )
-                {
-                    i0 = item[i] + 1;
-                    while( i < K )
-                    {
-                        item[i] = i0;
-                        rem -= i0;
-                        ++i;
-                    }
-                    item[0] = rem;
-                }
-                else item = null;
             }
-            else
+            //else last item
+            else item = null;
+            // every 2-3 permutations is derangement on average, ie p(D) = 1/e
+            }while( item && fixed );
+        }
+    }
+    return item;
+}
+function next_combination( item, N, dir, type, order )
+{
+    var k = N[1], n = N[0], selected,
+        i, j, index, limit, curr, ofs,
+        i0, DI, MIN, MAX, a, b;
+    // some C-P-T dualities, symmetries & processes at play here
+    // LEX
+    MIN = 0; MAX = k-1;
+    DI = 1; i0 = MAX;
+    a = 1; b = 0;
+    if ( COLEX & order )
+    {
+        //CP-symmetric of LEX
+        DI = -DI; i0 = MAX-i0;
+        a = -a; b = n-1-b;
+    }
+    if ( REFLECTED & order )
+    {
+        //P-symmetric of LEX
+        DI = -DI; i0 = MAX-i0;
+    }
+    if ( REVERSED & order )
+    {
+        //T-symmetric of LEX
+        dir = -dir;
+    }
+    
+    if ( 0 > dir )
+    {
+        // compute prev indexes
+        // find index to move
+        if ( "ordered+repeated" === type )
+        {
+            i = i0;
+            while( (MIN<=i && i<=MAX) && (item[i] === 0) ) i-=DI;
+            if ( MIN<=i && i<=MAX )
             {
-                i0 = M ? 1 : 0;
-                if ( (item.length > i0) && (item[i0]/*[0]*/ > 1) )
+                item[i]--;
+                for(n=n-1,j=i+DI; MIN<=j && j<=MAX; j+=DI) item[j] = n;
+            }
+            //else last item
+            else item = null;
+        }
+        else if ( "ordered" === type )
+        {
+            for(selected={},i=0; i<k; i++) selected[a*item[i]+b] = 1;
+            i = i0; index = -1;
+            while( -1===index && MIN<=i && i<=MAX )
+            {
+                if ( a*item[i]+b-a >= 0  )
                 {
-                    i = item.length-1; rem = 0;
-                    /*if*/while((i >= i0) && (1 === item[i]/*[0]*/)) { rem+=item[i]/*[0]*item[i][1]*/; i--; }
-                    m = item[i]/*[0]*/-1; rem++;
-                    /*if( (M===m || i>i0) && (m===item[i-1][0]) )
+                    for(j=a*item[i]+b-a; 0<=j && j<n; j-=a)
                     {
-                        item[i-1][1]++;
-                        i--;
-                    }
-                    else
-                    {*/
-                        item[i] = /*[*/m/*, 1]*/;
-                    /*}*/
-                    item = item.slice(0, i+1);
-                    if ( m < rem )
-                    {
-                        item = item.concat(array(stdMath.floor(rem/m), m), (rem=rem%m)?[rem]:[]);
-                        //item[i][1] += stdMath.floor(rem/m);
-                        //if (rem=rem%m) item.push([rem,1]);
-                    }
-                    else if ( 0 < rem )
-                    {
-                        item = item.concat([rem]);
-                        //next.push([rem,1]);
+                        if ( null == selected[j] )
+                        {
+                            index = i;
+                            selected[j] = 1;
+                            break;
+                        }
                     }
                 }
-                // if partition is all ones (so first element is also one) it is the final partition
-                //else last item
-                else item = null;
+                selected[a*item[i]+b] = null;
+                i-=DI;
             }
-            // invC of item
+            if ( -1 < index )
+            {
+                item[index] = a*j+b;
+                for(j=n-1-b,i=index+DI; MIN<=i && i<=MAX; i+=DI)
+                {
+                    while( (0<=j && j<n) && (null != selected[j]) ) j-=a;
+                    item[i] = a*j+b; selected[j] = 1;
+                }
+            }
+            //else last item
+            else item = null;
         }
         else
         {
-            // compute next partition
-            if ( K )
+            ofs = "repeated"===type ? 0 : a;
+            i = i0; index = -1;
+            while( -1===index && MIN<=i && i<=MAX && MIN<=i-DI && i-DI<=MAX )
             {
-                /*if ( M )
+                if ( a*item[i] > a*item[i-DI]+ofs ) index = i;
+                i-=DI;
+            }
+            if (-1 === index && 0 < a*item[MAX-i0]+b) index = MAX-i0;
+            // adjust next indexes after the moved index
+            if ( -1 < index )
+            {
+                curr = a*(n-1)+b+ofs;
+                for(i=i0; MIN<=i && i<=MAX && DI*i>DI*index; i-=DI)
                 {
-                    n = n-M;
-                    K = K-1;
-                    m = stdMath.min(M, n-K+1);
-                    i0 = 1;
+                    curr -= ofs;
+                    item[i] = a*curr+b;
                 }
-                else
+                item[index]-=1;
+            }
+            //else last item
+            else item = null;
+        }
+    }
+    else
+    {
+        // compute next indexes
+        // find index to move
+        if ( "ordered+repeated" === type )
+        {
+            i = i0;
+            while( (MIN<=i && i<=MAX) && (item[i]+1 === n) ) i-=DI;
+            if ( MIN<=i && i<=MAX )
+            {
+                item[i]++;
+                for(j=i+DI; MIN<=j && j<=MAX; j+=DI) item[j] = 0;
+            }
+            //else last item
+            else item = null;
+        }
+        else if ( "ordered" === type )
+        {
+            for(selected={},i=0; i<k; i++) selected[a*item[i]+b] = 1;
+            i = i0; index = -1;
+            while( -1===index && MIN<=i && i<=MAX )
+            {
+                if ( a*item[i]+b+a < n  )
                 {
-                    m = n-K+1;
-                    i0 = 0;
-                }
-                if ( item[i0] < m )
-                {
-                    k = i0+1;
-                    while((k<i0+K) && (item[k]+1>item[k-1])) { k++; }
-                    if ( k === i0 + K ) k = i0;
-                    i = i0+K-1;
-                    while((i>k) && (2>item[i])) { i--; }
-                    if ( i === k ) i = k+1;
-                    item[k]++; item[i]--;
-                }
-                //else last item
-                else item = null;*/
-                //M = K; K = null;
-                
-                m = item[0];
-                i = 0;
-                rem = m;
-                while( ++i < K )
-                {
-                    rem += item[i];
-                    if ( item[i] + 2 <= m )  break;
-                }
-
-                if ( i < K )
-                {
-                    i0 = item[i] + 1;
-                    while( i < K )
+                    for(j=a*item[i]+b+a; 0<=j && j<n; j+=a)
                     {
-                        item[i] = i0;
-                        rem -= i0;
-                        ++i;
+                        if ( null == selected[j] )
+                        {
+                            index = i;
+                            selected[j] = 1;
+                            break;
+                        }
                     }
-                    item[0] = rem;
                 }
-                else item = null;
+                selected[a*item[i]+b] = null;
+                i-=DI;
+            }
+            if ( -1 < index )
+            {
+                item[index] = a*j+b;
+                for(j=b,i=index+DI; MIN<=i && i<=MAX; i+=DI)
+                {
+                    while( (0<=j && j<n) && (null != selected[j]) ) j+=a;
+                    item[i] = a*j+b; selected[j] = 1;
+                }
+            }
+            //else last item
+            else item = null;
+        }
+        else
+        {
+            i = i0; index = -1;
+            if ( "repeated" === type ) { ofs = 0; limit = n-1; }
+            else { ofs = 1; limit = n-k+MAX-i0; }
+            while( -1===index && MIN<=i && i<=MAX )
+            {
+                if ( a*item[i]+b < limit+ofs*DI*i ) index = i;
+                i-=DI;
+            }
+            // adjust next indexes after the moved index
+            if ( -1 < index )
+            {
+                curr = a*item[index]+b+a-a*ofs;
+                for(i=index; MIN<=i && i<=MAX; i+=DI)
+                {
+                    curr += a*ofs;
+                    item[i] = a*curr+b;
+                }
+            }
+            //else last item
+            else item = null;
+        }
+    }
+    return item;
+}
+function next_partition( item, N, dir, K, M, order )
+{
+    if ( (K && M) || (COLEX&order) ) return null;
+    var n = N, i, j, i0, i1, k, m, rem, DI, MIN, MAX;
+    // some C-P-T dualities, symmetries & processes at play here
+    // LEX
+    MIN = 0; MAX = item.length-1;
+    DI = 1; i0 = MIN; i1 = MAX;
+    if ( REFLECTED & order )
+    {
+        //P-symmetric of LEX
+        DI = -DI; i0 = MAX-i0; i1 = MAX-i1;
+    }
+    if ( REVERSED & order )
+    {
+        //T-symmetric of LEX
+        dir = -dir;
+    }
+    
+    if ( 0 > dir )
+    {
+        // compute prev partition
+        if ( K )
+        {
+            /*if ( M )
+            {
+                n = n-M;
+                K = K-1;
+                m = stdMath.min(M, stdMath.floor(n/K)||1);
+                i0 = 1; i1 = 1;
+                while((i1<=K) && (M===item[i1]) ) i1++;
             }
             else
             {
-                i0 = M ? 1 : 0; i1 = M ? item.length-1 : 0;
-                m = M ? ((n%M) || M) : n;
-                if ( (item.length > i0) && (item[i1] < m) )
-                {
-                    k = item.length;
-                    if ( 1 < k )
-                    {
-                        i = k-2;
-                        rem = item[k-1];
-                    }
-                    else
-                    {
-                        i = k-1;
-                        rem = 0;
-                    }
-                    while((i > i0) && (item[i] === item[i-1])) { rem+=item[i]; i--; }
-                    item[i]++; rem--;
-                    item = 0 < rem ? item.slice( 0, i+1 ).concat( array(rem, 1) ) : item.slice( 0, i+1 );
-                }
-                // if partition is the number itself it is the final partition
-                //else last item
-                else item = null;
+                m = stdMath.ceil(n/K);
+                i0 = 0; i1 = 0;
             }
+            if ( item[i1] > m )
+            {
+                k = i0+K-1;
+                while((k>i1) && (item[k]+1>=item[k-1])) { k--; }
+                if ( k === i0 )
+                {
+                    item[i0]--; item[i0+1] = n-item[i0]-K+2;
+                    for(i=i0+2; i<i0+K; i++) {item[i] = 1;}
+                }
+                else
+                {
+                    item[k]++; item[k-1]--;
+                }
+            }
+            //else last item
+            else item = null;*/
+            M = K; K = null;
+            /*
+            m = item[i1];
+            i = i0;
+            rem = m;
+            while( --i )
+            {
+                rem += item[i];
+                if ( item[i] + 2 <= m )  break;
+            }
+
+            if ( MIN<=i && i<=MAX )
+            {
+                i0 = item[i] + 1;
+                while( MIN<=i && i<=MAX )
+                {
+                    item[i] = i0;
+                    rem -= i0;
+                    i+=DI;
+                }
+                item[i1] = rem;
+            }
+            else item = null;*/
         }
-        return item;
+        /*else
+        {*/
+            j = M ? i0+DI : i0;
+            if ( (MIN<=j && j<=MAX) && (item[j]/*[0]*/ > 1) )
+            {
+                i = i1; rem = 0;
+                /*if*/while((MIN<=i && i<=MAX) && (DI*i >= DI*j) && (1 === item[i]/*[0]*/)) { rem+=item[i]/*[0]*item[i][1]*/; i-=DI; }
+                m = item[i]/*[0]*/-1; rem++;
+                /*if( (M===m || i>i0) && (m===item[i-1][0]) )
+                {
+                    item[i-1][1]++;
+                    i--;
+                }
+                else
+                {*/
+                    item[i] = /*[*/m/*, 1]*/;
+                /*}*/
+                item = 0 > DI ? item.slice(i) : item.slice(0, i+1);
+                if ( m < rem )
+                {
+                    item = 0 > DI ? ((rem=rem%m)?[rem]:[]).concat(array(stdMath.floor(rem/m), m)).concat(item) : item.concat(array(stdMath.floor(rem/m), m), (rem=rem%m)?[rem]:[]);
+                    //item[i][1] += stdMath.floor(rem/m);
+                    //if (rem=rem%m) item.push([rem,1]);
+                }
+                else if ( 0 < rem )
+                {
+                    item = 0 > DI ? [rem].concat(item) : item.concat([rem]);
+                    //next.push([rem,1]);
+                }
+            }
+            // if partition is all ones (so first element is also one) it is the final partition
+            //else last item
+            else item = null;
+        /*}*/
     }
-    return null;
+    else
+    {
+        // compute next partition
+        if ( K )
+        {
+            /*if ( M )
+            {
+                n = n-M;
+                K = K-1;
+                m = stdMath.min(M, n-K+1);
+                i0 = 1;
+            }
+            else
+            {
+                m = n-K+1;
+                i0 = 0;
+            }
+            if ( item[i0] < m )
+            {
+                k = i0+1;
+                while((k<i0+K) && (item[k]+1>item[k-1])) { k++; }
+                if ( k === i0 + K ) k = i0;
+                i = i0+K-1;
+                while((i>k) && (2>item[i])) { i--; }
+                if ( i === k ) i = k+1;
+                item[k]++; item[i]--;
+            }
+            //else last item
+            else item = null;*/
+            M = K; K = null;
+            /*
+            m = item[i0];
+            i = i1;
+            rem = m;
+            while( ++i < K )
+            {
+                rem += item[i];
+                if ( item[i] + 2 <= m )  break;
+            }
+
+            if ( MIN<=i && i<=MAX )
+            {
+                i0 = item[i] + 1;
+                while( MIN<=i && i<=MAX )
+                {
+                    item[i] = i0;
+                    rem -= i0;
+                    ++i;
+                }
+                item[0] = rem;
+            }
+            else item = null;
+            */
+        }
+        /*else
+        {*/
+            j = M ? i0+DI : i0;
+            m = M ? ((n%M) || M) : n;
+            if ( (MIN<=j && j<=MAX) && (item[M?i1:i0] < m) )
+            {
+                if ( 0 < MAX )
+                {
+                    i = i1-DI;
+                    rem = item[i1];
+                }
+                else
+                {
+                    i = i1;
+                    rem = 0;
+                }
+                while((MIN<=i && i<=MAX) && (MIN<=i-DI && i-DI<=MAX) && (DI*i > DI*j) && (item[i] === item[i-DI])) { rem+=item[i]; i-=DI; }
+                item[i]++; rem--;
+                if ( 0 < rem )
+                    item = 0 > DI ? array(rem, 1).concat(item.slice(i)) : item.slice(0, i+1).concat(array(rem, 1));
+                else
+                    item = 0 > DI ? item.slice(i) : item.slice(0, i+1);
+            }
+            // if partition is the number itself it is the final partition
+            //else last item
+            else item = null;
+        /*}*/
+    }
+    return item;
+}
+function dual( item, n, $ )
+{
+    if ( null == item ) return null;
+    // some C-P-T dualities, symmetries & processes at play here
+    var klass = this, C = klass.C, P = klass.P,//T = klass.T,
+        C0 = $ && (null!=$.base) ? $.base : n,
+        //P0 = $ && (null!=$.dimension) ? $.dimension : n,
+        order = $ && null!=$.order ? $.order : LEX;
+    if ( RANDOM & order ) item = REFLECTED & order ? P(item) : item;
+    else if (MINIMAL & order ) item = REFLECTED & order ? P(item) : item;
+    else if ( COLEX & order ) item = REFLECTED & order ? C(item,C0) : P(C(item,C0));
+    else/*if ( LEX & order )*/item = REFLECTED & order ? P(item) : item;
+    return item;
+}
+function dual_subset( item, n, $ )
+{
+    if ( null == item ) return null;
+    // some C-P-T dualities, symmetries & processes at play here
+    var klass = this, C = klass.C, P = klass.P,//T = klass.T,
+        order = $ && null!=$.order ? $.order : LEX;
+    if ( RANDOM & order ) item = REFLECTED & order ? item : P(item);
+    else if ( MINIMAL & order ) item = REFLECTED & order ? item : P(item);
+    else if ( COLEX & order ) item = REFLECTED & order ? P(C(item,n)) : C(item,n);
+    else/*if ( LEX & order )*/item = REFLECTED & order ? item : P(item);
+    return item;
 }
 
 // settings
@@ -1591,35 +1771,33 @@ Abacus.$ = {
 
 // combinatorial objects iterator ordering patterns
 // https://oeis.org/wiki/Orderings
-Abacus.ORDER = {
-    
- LEX: LEX
-,LEXICOGRAPHIC: LEX
-,REVLEX: LEX | REVERSED
-,ANTILEX: LEX | REVERSED
-,REVERSELEXICOGRAPHIC: LEX | REVERSED
-,ANTILEXICOGRAPHIC: LEX | REVERSED
-,REFLEX: LEX | REFLECTED
-,REFLECTEDLEXICOGRAPHIC: LEX | REFLECTED
-,COLEX: COLEX
-,COLEXICOGRAPHIC: COLEX
-,REVCOLEX: COLEX | REVERSED
-,ANTICOLEX: COLEX | REVERSED
-,REVERSECOLEXICOGRAPHIC: COLEX | REVERSED
-,ANTICOLEXICOGRAPHIC: COLEX | REVERSED
-,REFCOLEX: COLEX | REFLECTED
-,REFLECTEDCOLEXICOGRAPHIC: COLEX | REFLECTED
-,REV: REVERSED
-,REVERSE: REVERSED
-,REVERSED: REVERSED
-,REF: REFLECTED
-,REFLECT: REFLECTED
-,REFLECTED: REFLECTED
-,RANDOM: RANDOM
-,GRAY: MINIMAL
-,MINIMAL: MINIMAL
-
-};
+function ORDER( o )
+{
+    if ( !arguments.length || null == o ) return LEX; // default
+    if ( is_string(o) )
+    {
+        o = o.toUpperCase( ).split(',');
+        var order = 0, i, l = o.length;
+        for(i=0; i<l; i++) order |= HAS.call(ORDER.$,o[i]) ? ORDER.$[o[i]] : 0;
+        if ( (0 < order) && !(order&(LEXICAL|RANDOM)) ) order |= LEX;
+        if ( order & RANDOM ) order &= ~REVERSED;
+        return 0 < order ? order : LEX;
+    }
+    if ( o & RANDOM ) o &= ~REVERSED;
+    return ORDERINGS & o ? o : LEX;
+}
+ORDER.$ = {};
+ORDER.$.LEX = ORDER.$.LEXICOGRAPHIC = LEX;
+ORDER.$.COLEX = ORDER.$.COLEXICOGRAPHIC = COLEX;
+ORDER.$.MINIMAL = ORDER.$.GRAY = MINIMAL;
+ORDER.$.RANDOM = RANDOM;
+ORDER.$.REV = ORDER.$.ANTI = ORDER.$.REVERSE = ORDER.$.REVERSED = REVERSED;
+ORDER.$.REF = ORDER.$.REFLECT = ORDER.$.REFLECTED = REFLECTED;
+ORDER.$.REVLEX = ORDER.$.ANTILEX = ORDER.$.REVERSELEXICOGRAPHIC = ORDER.$.ANTILEXICOGRAPHIC = LEX | REVERSED;
+ORDER.$.REFLEX = ORDER.$.REFLECTEDLEXICOGRAPHIC = LEX | REFLECTED;
+ORDER.$.REVCOLEX = ORDER.$.ANTICOLEX = ORDER.$.REVERSECOLEXICOGRAPHIC = ORDER.$.ANTICOLEXICOGRAPHIC = COLEX | REVERSED;
+ORDER.$.REFCOLEX = ORDER.$.REFLECTEDCOLEXICOGRAPHIC = COLEX | REFLECTED;
+Abacus.ORDER = ORDER;
 
 // math/rnd utilities
 Abacus.Util = {
@@ -1632,6 +1810,7 @@ Abacus.Util = {
    ,conjugation: conjugation
    ,parity: parity
    ,inversion: inversion
+   ,gray: null/*gray*/
    ,mergesort: mergesort
    ,shuffle: shuffle
    ,pick: pick
@@ -1817,7 +1996,7 @@ Abacus.BitArray = Class({
 CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     
     constructor: function CombinatorialIterator( name, n, $ ) {
-        var self = this, klass = self[CLASS];
+        var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic;
         self.name = name || "CombinatorialIterator";
         self.n = n || 0;
         self.$ = $ = $ || {};
@@ -1831,6 +2010,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         $.maxdimension = null != $.maxdimension ? $.maxdimension : $.dimension;
         $.rand = $.rand || {};
         $.count = klass.count( self.n, self.$ );
+        $.first = Arithmetic.O;
+        $.last = Arithmetic.gt($.count, Arithmetic.O) ? Arithmetic.sub($.count, Arithmetic.I) : Arithmetic.J;
         if ( $.sub instanceof CombinatorialIterator )
         {
             $.subcount = Abacus.Arithmetic.mul($.count, $.sub.total());
@@ -1849,58 +2030,53 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,__static__: {
          Iterable: function CombinatorialIterable( iter, dir ) {
             var self = this;
-            if ( !(self instanceof CombinatorialIterable) ) return new CombinatorialIterable( iter );
+            if ( !(self instanceof CombinatorialIterable) ) return new CombinatorialIterable(iter, dir);
             dir = -1 === dir ? -1 : 1;
             self.next = function( ) {
-                return iter.hasNext( dir ) ? {value: iter.next( dir )/*, key: iter.index( )*/} : {done: true};
+                return iter.hasNext(dir) ? {value: iter.next(dir)/*, key: iter.index( )*/} : {done: true};
             };
         }
         
-        // some C-P-T processes at play here :))
-        ,C: function( item, C0 ) { return conjugation( item, C0 ); }
-        ,P: function( item/*, P0*/ ) { return parity( item ); }
-        ,T: function( item, T0 ) { return inversion( item, T0 ); }
-        
+        // some C-P-T dualities, symmetries & processes at play here :))
+        ,C: conjugation
+        ,P: parity
+        ,T: inversion
+        ,DUAL: dual
         ,count: NotImplemented
         ,initial: NotImplemented
+        ,succ: function( item, index, n, $, dir ) {
+            if ( (null == n) || (null == item) || (null == index) ) return null;
+            var klass = this, Arithmetic = Abacus.Arithmetic,
+                order = $ && null!=$.order ? $.order : LEX;
+            dir = -1 === dir ? -1 : 1;
+            return klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $);
+        }
+        ,rand: function( n, $ ) {
+            var item, klass = this, Arithmetic = Abacus.Arithmetic,
+                N = $ && null!=$.last ? $.last : Arithmetic.sub(klass.count(n, $), Arithmetic.I),
+                O = Arithmetic.O, index = Arithmetic.rnd(O, N);
+            
+            item = Arithmetic.equ(O, index) ? (
+                klass.initial(n, $, 1)
+            ) : (Arithmetic.equ(N, index) ? (
+                klass.initial(n, $, -1)
+            ) : (
+                klass.unrank(index, n, $)
+            ));
+            
+            return item;
+        }
+        ,rank: NotImplemented
+        ,unrank: NotImplemented
         ,cascade: function( item, subitem, method, cascade ) {
             if ( -1 === cascade ) { var t = item; item = subitem; subitem = t; }
             if ( "concatenate" === method ) return item && subitem ? item.concat(subitem) : (item || subitem || null);
             else if ( "compose" === method ) return item && subitem ? kronecker(true, item, subitem) : (item || subitem || null);
             else/*if ( "project" === method )*/ return null == item || null == subitem ? null : array(item.length, function(i){return item[i]<subitem.length ? subitem[item[i]] : null;});
         }
-        ,dual: function( item, index, n, $ ) {
-            if ( null == item ) return null;
-            // some C-P-T processes at play here
-            var klass = this, order = $ && $.order ? $.order : 0,
-                C = klass.C, P = klass.P, //T = klass.T,
-                C0 = $ && (null!=$.base) ? $.base : n,
-                P0 = $ && (null!=$.dimension) ? $.dimension : n;
-            if ( RANDOM & order ) item = REFLECTED & order ? P( item, P0 ) : item;
-            else if (MINIMAL & order ) item = REFLECTED & order ? P( item, P0 ) : item;
-            else if ( COLEX & order ) item = REFLECTED & order ? C( item, C0 ) : P( C( item, C0 ), P0 );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? P( item, P0 ) : item;
-            return item;
+        ,output: function( item, index, n, $ ) {
+            return null == item ? null : item.slice();
         }
-        ,succ: function( dir, item, index, n, $ ) {
-            if ( null == item || null == index ) return null;
-            var klass = this, Arithmetic = Abacus.Arithmetic;
-            return klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $);
-        }
-        ,rand: function( n, $ ) {
-            var klass = this, Arithmetic = Abacus.Arithmetic,
-                N = Arithmetic.sub($ && $.count ? $.count : klass.count(n, $), Arithmetic.I),
-                O = Arithmetic.O, index = Arithmetic.rnd(O, N);
-            return Arithmetic.equ(O, index) ? (
-                klass.initial(1, n, $)
-            ) : (Arithmetic.equ(N, index) ? (
-                klass.initial(-1, n, $)
-            ) : (
-                klass.unrank(index, n, $)
-            ));
-        }
-        ,rank: NotImplemented
-        ,unrank: NotImplemented
     }
     
     ,name: "CombinatorialIterator"
@@ -1965,7 +2141,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return $.sub && true!==non_recursive ? ($.subcount || $.count || 0) : ($.count || 0);
     }
     
-    ,_init: function( dir, reverse ) {
+    ,_init: function( dir ) {
         var self = this, klass = self[CLASS], $ = self.$, n = self.n,
             Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
             order = $.order, r, tot, tot_1;
@@ -1973,42 +2149,46 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         self.__index = self._index = O;
         self._item = self.__item = null;
         self._prev = false; self._next = false;
-        tot = $.count; tot_1 = Arithmetic.sub(tot, I);
+        tot = $.count; tot_1 = $.last;
         
         if ( RANDOM & order )
         {
+            // a uniform random traversal over all traversals of the combinatorial space
             if ( ("gen" === Abacus.$.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.$.MAXMEM) )
             {
-                // too big to keep in memory
-                self.__item = klass.rand( n, $ );
-                self.__index = null;
+                // no random unranking supported/enabled
+                // and/or too big to keep in memory
+                // NOTE: given unbiased random generation and large combinatorial sample space (both given)
+                // the probability of having duplicates is close to ZERO (and exactly ZERO on average)
+                // so it indeed produces uniform random traversals (on average)
+                self.__item = klass.rand(n, $);
+                self.__index = O;
             }
             else
             {
+                // random unranking supported
+                // and can keep it in memory => uniform random traversals in all cases
                 // lazy init
                 if ( self._traversed ) self._traversed.dispose();
                 self._traversed = new Abacus.BitArray( Arithmetic.val(tot) );
                 r = self.random("index");
-                self._traversed.set( +r );
-                self.__item = klass.unrank( r, n, $ );
+                self._traversed.set(+r);
+                self.__item = klass.unrank(r, n, $);
                 if ( null != self.__item ) self.__index = r;
             }
+            self._index = O;
         }
-        else if ( COLEX & order )
+        else
         {
-            self.__item = klass.initial( -dir, n, $ ); // T
-            if ( null != self.__item ) self.__index = -1 === dir ? O : tot_1;
+            // get a lexicographic or minimal ordering (eg LEX, COLEX, REVLEX, REVCOLEX, GRAY, etc..)
+            self.__item = klass.initial(n, $, dir);
+            if ( null != self.__item ) self.__index = 0 > dir ? tot_1 : O;
+            self._index = self.__index;
         }
-        else /*if ( LEX & order )*/
-        {
-            self.__item = klass.initial( dir, n, $ );
-            if ( null != self.__item ) self.__index = -1 === dir ? tot_1 : O;
-        }
-        self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
-        self._index = reverse && !(RANDOM & order) ? tot_1 : O;
-        if ( null === self.__index ) self.__index = O;
-        self._prev = (RANDOM & order) || !reverse ? false : null != self.__item;
-        self._next = reverse && !(RANDOM & order) ? false : null != self.__item;
+        
+        self._item = klass.output(self.__item, self.__index, n, $);
+        self._prev = (RANDOM & order) || (0 < dir) ? false : null != self.__item;
+        self._next = (0 > dir) && !(RANDOM & order) ? false : null != self.__item;
         
         return self;
     }
@@ -2049,16 +2229,16 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         {
             suborder = order = ORDER( order );
         }
-        dir = REVERSED & order ? -1 : 1; // T
-        dir = reverse ? -dir : dir; // T
+        //dir = REVERSED & order ? -1 : 1; // T
+        dir = reverse ? -1 : 1; // T
         $.order = order;
         
         if ( $.sub )
         {
-            if ( rewind ) $.sub.rewind(reverse ? -1 : 1);
-            else $.sub.order(suborder,reverse ? -1 : 1);
+            if ( rewind ) $.sub.rewind(dir);
+            else $.sub.order(suborder,dir);
             self.__subindex = $.sub.index();
-            self.__subitem = $.sub.next(reverse ? -1 : 1);
+            self.__subitem = $.sub.next(dir);
             self._subindex = null;
             self._subitem = null;
         }
@@ -2070,7 +2250,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             self._subitem = null;
         }
         
-        self._init(dir, reverse);
+        self._init(dir);
         
         if ( $.sub )
         {
@@ -2090,7 +2270,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             n = self.n, $ = self.$, tot = $.sub && !non_recursive ? $.subcount : $.count,
             curindex = $.sub && !non_recursive ? self._subindex : self._index,
-            order = $.order, tot_1, dir = REVERSED & order ? -1 : 1; // T
+            order = $.order, tot_1/*, dir = REVERSED & order ? -1 : 1*/; // T
         
         index = Arithmetic.wrapR(Arithmetic.N( index ), tot);
         
@@ -2104,31 +2284,18 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 index = Arithmetic.div(index, $.sub.total());
                 tot = $.count;
             }
+            tot_1 = $.last;
             
-            tot_1 = Arithmetic.sub(tot, I);
-            if ( COLEX & order )
+            if ( !(RANDOM & order) )
             {
-                self.__index = -1 === dir ? index : Arithmetic.sub(tot_1, index);
+                self.__index = index;
                 self._index = index;
                 self.__item = Arithmetic.equ(O, index)
-                ? klass.initial( -dir, n, $ )
+                ? klass.initial(n, $, 1)
                 : (Arithmetic.equ(tot_1, index)
-                ? klass.initial( dir, n, $ )
-                : klass.unrank( self.__index, n, $ ));
-                self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
-                self._prev = null != self.__item;
-                self._next = null != self.__item;
-            }
-            else if ( !(RANDOM & order) )
-            {
-                self.__index = -1 === dir ? Arithmetic.sub(tot_1, index) : index;
-                self._index = index;
-                self.__item = Arithmetic.equ(O, index)
-                ? klass.initial( dir, n, $ )
-                : (Arithmetic.equ(tot_1, index)
-                ? klass.initial( -dir, n, $ )
-                : klass.unrank( self.__index, n, $ ));
-                self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
+                ? klass.initial(n, $, -1)
+                : klass.unrank(index, n, $));
+                self._item = klass.output(self.__item, self.__index, n, $);
                 self._prev = null != self.__item;
                 self._next = null != self.__item;
             }
@@ -2180,32 +2347,24 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         {
             // set item, instead of index, eg resume from existing item
             tot = $.count;
-            dir = REVERSED & order ? -1 : 1;
-            tot_1 = Arithmetic.sub(tot, I);
+            tot_1 = $.last;
+            o = $.order; $.order = order;
             
             self.__item = index.slice( );
-            self.__index = klass.rank( self.__item, n, $ );
+            self.__index = klass.rank(self.__item, n, $);
+            self._item = klass.output(self.__item, self.__index, n, $);
+            
             if ( RANDOM & order )
             {
                 self._index = self.__index;
-                o = $.order; $.order = order;
-                self._item = klass.dual( self.__item.slice(), self.__index, n, $ );
-                $.order = o;
             }
-            else if ( COLEX & order )
+            else//if ( !(RANDOM & order) )
             {
-                self._index = -1 === dir ? self.__index : Arithmetic.sub(tot_1, self.__index);
-                o = $.order; $.order = order;
-                self._item = klass.dual( self.__item.slice(), self.__index, n, $ );
-                $.order = o;
+                self._index = self.__index;
             }
-            else /*if ( LEX & order )*/
-            {
-                self._index = -1 === dir ? Arithmetic.sub(tot_1, self.__index) : self.__index;
-                o = $.order; $.order = order;
-                self._item = klass.dual( self.__item.slice(), self.__index, n, $ );
-                $.order = o;
-            }
+            self._prev = null != self.__item;
+            self._next = null != self.__item;
+            //$.order = o;
             return self;
         }
         
@@ -2223,43 +2382,29 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 index = Arithmetic.div(index, $.sub.total());
                 tot = $.count;
             }
-            dir = REVERSED & order ? -1 : 1;
-            tot_1 = Arithmetic.sub(tot, I);
+            tot_1 = $.last;
             if ( RANDOM & order )
             {
                 indx = null;//self.random("index");
                 o = $.order; $.order = order;
-                item =  klass.dual(
-                    /*klass.unrank( indx, n, $ )*/
-                    klass.rand( n, $ )
+                item =  klass.output(
+                    /*klass.unrank(indx, n, $)*/
+                    klass.rand(n, $)
                     , indx, n, $
                 );
                 $.order = o;
                 if ( $.sub ) item = klass.cascade(item, subitem, $.submethod, $.subcascade);
                 return item;
             }
-            else if ( COLEX & order )
+            else
             {
-                indx = -1 === dir ? index : Arithmetic.sub(tot_1, index);
+                indx = index;
                 o = $.order; $.order = order;
-                item = klass.dual( Arithmetic.equ(O, index)
-                ? klass.initial( -dir, n, $ )
+                item = klass.output(Arithmetic.equ(O, index)
+                ? klass.initial(n, $, 1)
                 : (Arithmetic.equ(tot_1, index)
-                ? klass.initial( dir, n, $ )
-                : klass.unrank( indx, n, $ )), indx, n, $ );
-                $.order = o;
-                if ( $.sub ) item = klass.cascade(item, subitem, $.submethod, $.subcascade);
-                return item;
-            }
-            else /*if ( LEX & order )*/
-            {
-                indx = -1 === dir ? Arithmetic.sub(tot_1, index) : index;
-                o = $.order; $.order = order;
-                item = klass.dual( Arithmetic.equ(O, index)
-                ? klass.initial( dir, n, $ )
-                : (Arithmetic.equ(tot_1, index)
-                ? klass.initial( -dir, n, $ )
-                : klass.unrank( indx, n, $ )), indx, n, $ );
+                ? klass.initial(n, $, -1)
+                : klass.unrank(indx, n, $)), indx, n, $);
                 $.order = o;
                 if ( $.sub ) item = klass.cascade(item, subitem, $.submethod, $.subcascade);
                 return item;
@@ -2275,7 +2420,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         {
             var Arithmetic = Abacus.Arithmetic,
                 N = Arithmetic.N, O = Arithmetic.O, I = Arithmetic.I,
-                tot;
+                tot, tot_1;
             
             if ( m === !!m )
             {
@@ -2283,17 +2428,26 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 m = null;
                 M = null;
             }
-            tot = $.sub && !non_recursive ? $.subcount : $.count;
+            if ( $.sub && !non_recursive )
+            {
+                tot = $.subcount;
+                tot_1 = Arithmetic.sub(tot, I);
+            }
+            else
+            {
+                tot = $.count;
+                tot_1 = $.last;
+            }
             
             if ( (null == m) && (null == M)  )
             {
                 m = O;
-                M = Arithmetic.sub(tot, I);
+                M = tot_1;
             }
             else if ( null == M )
             {
                 m = N( m || 0 );
-                M = Arithmetic.sub(tot, I);
+                M = tot_1;
             }
             else
             {
@@ -2303,9 +2457,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             return Arithmetic.rnd( m, M );
         }
         $.order |= RANDOM;
-        item = klass.rand( self.n, $ );
+        item = klass.rand(self.n, $);
         $.order = o;
-        item = klass.dual( item, null, self.n, $ );
+        item = klass.output(item, null, self.n, $);
         return $.sub && !non_recursive ? klass.cascade(item, $.sub.random(), $.submethod, $.subcascade) : item;
     }
     
@@ -2319,86 +2473,40 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return -1 === dir ? (RANDOM & self.$.order ? false : self._prev) : self._next;
     }
     
-    // some C-P-T processes at play here as well, see below
     ,next: function( dir ) {
         var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic,
-            O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            traversed, r, reverse, n = self.n, $ = self.$,
+            O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, dI,
+            traversed, r, n = self.n, $ = self.$,
             order = $.order, tot = $.count, tot_1, rs,
-            current = $.sub ? self._subitem : self._item;
+            current = $.sub ? self._subitem : self._item,
+            has_next, has_prev = null != current;
         
-        reverse = -1 === dir;
-        dir = REVERSED & order ? -1 : 1; // T
-        //dir = reverse ? -dir : dir; // T
+        dir = -1 === dir ? -1 : 1;
+        // random order has no prev
+        if ( (0 > dir) && (RANDOM & order) ) return null;
         
-        if ( reverse )
-        {
-            // random order has no prev
-            if ( RANDOM & order ) return null;
-            
-            // compute prev, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
-            if ( COLEX & order )
-            {
-                self.__item = klass.succ( dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 > dir ? J : I);
-            }
-            else /*if ( LEX & order )*/
-            {
-                self.__item = klass.succ( -dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 < dir ? J : I);
-            }
-            
-            self._prev = null != self.__item;
-            if ( !self._prev )
-            {
-                if ( $.sub && $.sub.hasNext(-1) )
-                {
-                    self.__subindex = $.sub.index();
-                    self.__subitem = $.sub.next(-1);
-                    self._init(-dir, reverse);
-                }
-                else
-                {
-                    self.__subindex = null;
-                    self.__subitem = null;
-                }
-            }
-            else
-            {
-                self._index = Arithmetic.sub(self._index, I);
-            }
-            
-            self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
-            
-            if ( $.sub )
-            {
-                self._prev = self._prev && (null != self.__subitem);
-                self._subindex = self._prev ? Arithmetic.add(Arithmetic.mul(self._index,$.sub.total()), self.__subindex) : null;
-                self._subitem = self._prev ? klass.cascade(self._item, self.__subitem, $.submethod, $.subcascade) : null;
-            }
-            
-            return current;
-        }
-        
+        dI = 0 > dir ? J : I;
         if ( RANDOM & order )
         {
-            tot_1 = Arithmetic.sub(tot, I);
+            tot_1 = $.last;
             if ( Arithmetic.lt(self._index, tot_1) )
             {
                 traversed = self._traversed;
                 if ( !traversed )
                 {
-                    self.__item = klass.rand( n, $ );
+                    // random generation
+                    self.__item = klass.rand(n, $);
                     self.__index = null;
                 }
                 else
                 {
+                    // random unranking
                     // get next un-traversed index, reject if needed
                     r = self.random("index");
                     rs = Abacus.Math.rnd( ) > 0.5 ? J : I;
                     while ( traversed.isset( +r ) ) r = Arithmetic.wrap( Arithmetic.add(r, rs), O, tot_1 );
                     traversed.set( +r );
-                    self.__item = klass.unrank( r, n, $ );
+                    self.__item = klass.unrank(r, n, $);
                     if ( null != self.__item ) self.__index = r;
                 }
             }
@@ -2414,48 +2522,64 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         }
         else
         {
-            // compute next, using successor methods / loopless algorithms, WITHOUT using big integer arithemtic
-            if ( COLEX & order )
-            {
-                self.__item = klass.succ( -dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 < dir ? J : I);
-            }
-            else /*if ( LEX & order )*/
-            {
-                self.__item = klass.succ( dir, self.__item, self.__index, n, $ );
-                if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, 0 > dir ? J : I);
-            }
+            // compute next/prev, using successor methods / loopless algorithms,
+            // WITHOUT using big integer arithmetic
+            self.__item = klass.succ(self.__item, self.__index, n, $, dir);
+            if ( null != self.__item ) self.__index = Arithmetic.add(self.__index, dI);
         }
+        has_next = null != self.__item;
         
-        self._next = null != self.__item;
-        if ( !self._next )
+        if ( !has_next )
         {
-            if ( $.sub && $.sub.hasNext() )
+            if ( $.sub && $.sub.hasNext(dir) )
             {
                 self.__subindex = $.sub.index();
-                self.__subitem = $.sub.next();
-                self._init(dir, reverse);
+                self.__subitem = $.sub.next(dir);
+                self._init(dir);
             }
             else
             {
                 self.__subindex = null;
                 self.__subitem = null;
+                if ( 0 > dir )
+                {
+                    self._prev = has_next;
+                    self._next = has_prev;
+                }
+                else
+                {
+                    self._prev = has_prev;
+                    self._next = has_next;
+                }
             }
         }
         else
         {
-            self._index = Arithmetic.add(self._index, I);
+            self._index = Arithmetic.add(self._index, dI);
             if ( null === self.__index ) self.__index = self._index;
+            if ( 0 > dir )
+            {
+                self._prev = has_next;
+                self._next = has_prev;
+            }
+            else
+            {
+                self._prev = has_prev;
+                self._next = has_next;
+            }
         }
-            
-        self._item = null == self.__item ? null : klass.dual( self.__item.slice(), self.__index, n, $ );
+        
+        self._item = klass.output(self.__item, self.__index, n, $);
         
         if ( $.sub )
         {
-            self._next = self._next && (null != self.__subitem);
-            self._subindex = self._next ? Arithmetic.add(Arithmetic.mul(self._index,$.sub.total()), self.__subindex) : null;
-            self._subitem = self._next ? klass.cascade(self._item, self.__subitem, $.submethod, $.subcascade) : null;
+            has_next = has_next && (null != self.__subitem);
+            self._subindex = has_next ? Arithmetic.add(Arithmetic.mul(self._index,$.sub.total()), self.__subindex) : null;
+            self._subitem = has_next ? klass.cascade(self._item, self.__subitem, $.submethod, $.subcascade) : null;
+            if ( 0 > dir ) self._prev = has_next;
+            else self._next = has_next;
         }
+        
         return current;
     }
     
@@ -2463,17 +2587,16 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         var self = this, Arithmetic = Abacus.Arithmetic,
             N = Arithmetic.N, O = Arithmetic.O, I = Arithmetic.I,
             tmp, $ = self.$, tot = $.sub ? $.subcount : $.count, range, count, i, iter_state, dir = 1,
-            argslen = arguments.length, tot_1 = Arithmetic.sub(tot, I),
-            not_randomised = !(RANDOM & $.order);
+            argslen = arguments.length, not_randomised = !(RANDOM & $.order);
         if ( argslen < 1 )
         {
-            start = O;
-            end = tot_1;
+            start = $.first;
+            end = $.last;
         }
         else if ( argslen < 2 )
         {
             start = N( start );
-            end = tot_1;
+            end = $.last;
         }
         else
         {
@@ -2489,8 +2612,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             end = tmp;
             dir = -1;
         }
-        start = Arithmetic.clamp( start, O, tot_1 );
-        if ( not_randomised ) end = Arithmetic.clamp( end, O, tot_1 );
+        start = Arithmetic.clamp( start, $.first, $.last );
+        if ( not_randomised ) end = Arithmetic.clamp( end, $.first, $.last );
         if ( Arithmetic.lte(start, end) )
         {
             // store current iterator state
@@ -2592,27 +2715,38 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
          C: CombinatorialIterator.C
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
-        
+        ,DUAL: dual
         ,count: function( n, $ ) {
-            var O = Abacus.Arithmetic.O;
-             return $ && "tuple"===$.type ? (!n || (0 >= n[0]) ? O : Abacus.Math.exp(n[0], n[1])) : (!n || !n.length ? O : Abacus.Math.product(n));
+            var O = Abacus.Arithmetic.O, type = $ && $.type ? $.type : "tensor";
+            return "tuple"===type ? (!n || (0 >= n[0]) ? O : Abacus.Math.exp(n[0], n[1])) : (!n || !n.length ? O : Abacus.Math.product(n));
         }
-        ,initial: function( dir, n, $ ) {
+        ,initial: function( n, $, dir ) {
+            // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
-            var item = $ && "tuple"===$.type ? (
+            var item, klass = this, type = $ && $.type ? $.type : "tensor",
+                order = $ && $.order ? $.order : LEX;
+            dir = -1 === dir ? -1 : 1;
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                dir = -dir;
+            
+            item = "tuple"===type ? (
                 !n[0] ? [] : (0 > dir ? array(n[0], n[1]-1, 0) : array(n[0], 0, 0))
             ) : (
                 !n.length ? [] : (0 > dir ? array(n.length, function(i){return n[i]-1;}): array(n.length, 0, 0))
             );
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
-        ,cascade: CombinatorialIterator.cascade
-        ,dual: CombinatorialIterator.dual
-        ,succ: function( dir, item, index, n, $ ) {
-            return next_tensor( item, n, dir, $ && $.type ? $.type : "tensor" );
+        ,succ: function( item, index, n, $, dir ) {
+            if ( !n || !n[0] || (0 >= n[0]) || (null == item) ) return null;
+            dir = -1 === dir ? -1 : 1;
+            return next_tensor(item, n, dir, $ && $.type ? $.type : "tensor", $ && null!=$.order ? $.order : LEX);
         }
         ,rand: function( n, $ ) {
-            var rndInt = Abacus.Math.rndInt, item;
+            var rndInt = Abacus.Math.rndInt, klass = this, item;
+            
             item = $ && "tuple"===$.type ? (
                 // p ~ 1 / n^k
                 !n[0] ? [] : array(n[0], function(i){return rndInt(0, n[1]-1);})
@@ -2620,14 +2754,21 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 // p ~ 1 / n1*n2*..nk
                 !n.length ? [] : array(n.length, function(i){return rndInt(0, n[i]-1);})
             );
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) { 
-            var Arithmetic = Abacus.Arithmetic,
-                add = Arithmetic.add, mul = Arithmetic.mul,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
+                order = $ && null!=$.order?$.order:LEX,
+                add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
                 index = Arithmetic.O, J = Arithmetic.J, index, nd, i;
+            
+            item = klass.DUAL(item, n, $);
+            
             if ( $ && "tuple"===$.type )
             {
                 nd = n[0];
@@ -2640,12 +2781,22 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 if ( !nd ) return J;
                 for(i=0; i<nd; i++) index = add(mul(index, n[i]), item[ i ]);
             }
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
             return index;
         }
         ,unrank: function( index, n, $ ) { 
-            var Arithmetic = Abacus.Arithmetic,
-                mod = Arithmetic.mod, div = Arithmetic.div, val = Arithmetic.val,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
+                order = $ && null!=$.order?$.order:LEX,
+                sub = Arithmetic.sub, mod = Arithmetic.mod,
+                div = Arithmetic.div, val = Arithmetic.val,
                 r, b, i, t, item, nd;
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
             if ( $ && "tuple"===$.type )
             {
                 nd = n[0];
@@ -2668,8 +2819,13 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                     item[ i ] = val(t);
                 }
             }
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
+        ,cascade: CombinatorialIterator.cascade
+        ,output: CombinatorialIterator.output
         ,product: kronecker
         ,component: function( tensor, basev ) {
             var component = [ ], v = basev, nd = v.length, i, j, vi, vv, iv, vl;
@@ -2721,7 +2877,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
          C: CombinatorialIterator.C
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
-        
+        ,DUAL: dual
         ,count: function( n, $ ) {
             var O = Abacus.Arithmetic.O,
                 factorial = Abacus.Math.factorial,
@@ -2739,10 +2895,17 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else//if ( "permutation" === type )
                 return factorial(n);
         }
-        ,initial: function( dir, n, $ ) {
+        ,initial: function( n, $, dir ) {
+            // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
-            var item, type = $ && $.type ? $.type : "permutation";
+            var item, klass = this, type = $ && $.type ? $.type : "permutation",
+                order = $ && null!=-$.order ? $.order : LEX;
+            
             if ( 0 >= n ) return null;
+            dir = -1 === dir ? -1 : 1;
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                dir = -dir;
+            
             if ( "cyclic" === type )
             {
                 item = 0 > dir ? [n-1].concat(array(n-1, 0, 1)) : array(n, 0, 1);
@@ -2776,28 +2939,32 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 item = 0 > dir ? array(n, n-1, -1) : array(n, 0, 1);
             }
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
-        ,cascade: CombinatorialIterator.cascade
-        ,dual: CombinatorialIterator.dual
-        ,succ: function( dir, item, index, n, $ ) {
+        ,succ: function( item, index, n, $, dir ) {
+            if ( !n || (0 >= n) || (null == item) ) return null;
             var type = $ && $.type ? $.type : "permutation";
-            return next_permutation( item, n, dir, type );
+            dir = -1 === dir ? -1 : 1;
+            return next_permutation(item, n, dir, type, $ && null!=$.order ? $.order : LEX, $ && null!=$.multiplicity ? $.multiplicity.length||null : null);
         }
         ,rand: function( n, $ ) {
-            var rndInt = Abacus.Math.rndInt, type = $ && $.type ? $.type : "permutation";
+            var item, rndInt = Abacus.Math.rndInt, klass = this, type = $ && $.type ? $.type : "permutation";
+                
             if ( "cyclic" === type )
             {
                 // p ~ 1 / n
                 var k = rndInt(0, n-1);
-                return 0 < k ? array(n-k, k, 1).concat(array(k, 0, 1)) : array(n, 0, 1);
+                item = 0 < k ? array(n-k, k, 1).concat(array(k, 0, 1)) : array(n, 0, 1);
             }
             else if ( "multiset" === type )
             {
                 // p ~ m1!*..*mk! / n!
                 // fisher-yates-knuth unbiased multiset shuffling
                 var m = $.multiplicity, nm = m.length, k = 0, mk = m[k];
-                return shuffle(array(n, function(){
+                item = shuffle(array(n, function(){
                     if ( 0 >= mk ) { k++; mk = k < nm ? m[k] : 1; }
                     mk--;
                     return k;
@@ -2807,7 +2974,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 // p ~ 1 / !n = e / n!
                 // adapted from http://local.disia.unifi.it/merlini/papers/Derangements.pdf
-                var j, t, p, fixed = false, item = new Array(n);
+                item = new Array(n);
+                var j, t, p, fixed = false;
                 do{
                     for(j=0; j<n; j++) item[j] = j;
                     j = n-1; fixed = false;
@@ -2829,12 +2997,12 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     }
                     fixed = fixed || (0 === item[0]);
                 }while( fixed );
-                return item;
             }
             else if ( "involution" === type )
             {
                 // p ~ 1 / I(n)
                 // adapted from http://www.jjj.de/fxt/#fxt (Jörg Arndt)
+                item = array(n, 0, 1);
                 var rnd = Abacus.Math.rnd,
                     rat = 0.5, n1 = 1.0, nr = n,
                     x1, r1, x2, r2, t, s,
@@ -2846,7 +3014,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                         n1 += 1.0;
                         rat = 1.0/( 1.0 + n1*rat );
                         return bk;
-                    })), r = array(n, 0, 1), item = array(n, 0, 1);
+                    })), r = array(n, 0, 1);
                     while( 2 <= nr )
                     {
                         x1 = nr-1;   // choose last element
@@ -2865,27 +3033,35 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                         }
                         // else fixed point, nothing to do
                     }
-                    return item;
             }
             else//if ( "permutation" === type )
             {
                 // p ~ 1 / n!
                 // fisher-yates-knuth unbiased shuffling
-                return shuffle(array(n, 0, 1));
+                item = shuffle(array(n, 0, 1));
             }
+            
+            item = klass.DUAL(item, n, $);
+            
+            return item;
         }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) { 
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "permutation",
-                add = Arithmetic.add, mul = Arithmetic.mul,
+                order = $ && null!=-$.order ? $.order : LEX,
+                sub = Arithmetic.sub, add = Arithmetic.add, mul = Arithmetic.mul,
                 index = Arithmetic.O, i, m, I;
+            
             n = n || item.length;
             if ( !n ) return Arithmetic.J;
+            
+            item = klass.DUAL(item, n, $);
+            
             if ( "cyclic"=== type )
             {
-                return item[0];
+                index = Arithmetic.NUM(item[0]);
             }
             else if ( ("multiset" === type) || ("derangement" === type) || ("involution" === type) )
             {
@@ -2901,19 +3077,30 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 item = permutation2inversion( item );
                 for(m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[ i ]);
-                return index;
             }
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
+            return index;
         }
         ,unrank: function( index, n, $ ) { 
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "permutation",
-                mod = Arithmetic.mod, div = Arithmetic.div, val = Arithmetic.val,
+                order = $ && null!=-$.order ? $.order : LEX,
+                mod = Arithmetic.mod, div = Arithmetic.div,
+                sub = Arithmetic.sub, val = Arithmetic.val,
                 item, r, i, b, t;
+            
             if ( !n ) return [ ];
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
             if ( "cyclic"=== type )
             {
                 index = val(index);
-                return array(n, function(i){return (index+i)%n});
+                item = array(n, function(i){return (index+i)%n});
             }
             else if ( ("multiset" === type) || ("derangement" === type) || ("involution" === type) )
             {
@@ -2927,9 +3114,15 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     b = n-i; t = mod(r, b); r = div(r, b);
                     item[ i ] = val(t);
                 }
-                return inversion2permutation( item );
+                item = inversion2permutation( item );
             }
+            
+            item = klass.DUAL(item, n, $);
+            
+            return item;
         }
+        ,cascade: CombinatorialIterator.cascade
+        ,output: CombinatorialIterator.output
         ,permute: function( arr, permutation, copied ) {
             var i, l = arr.length, p, a;
             if ( true === copied ) { p = array(l); a = arr; }
@@ -3027,7 +3220,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
          C: CombinatorialIterator.C
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
-        
+        ,DUAL: dual
         ,count: function( n, $ ) {
              var factorial = Abacus.Math.factorial,
                 type = $ && $.type ? $.type : "unordered";
@@ -3041,29 +3234,34 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 factorial(n[0], n[1])
             )));
          }
-        ,initial: function( dir, n, $ ) {
+        ,initial: function( n, $, dir ) {
+            // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
-            var type = $ && $.type ? $.type : "unordered",
-                item = ("ordered+repeated" === type) || ("repeated" === type) ? (
+            var item, klass = this, type = $ && $.type ? $.type : "unordered",
+                order = $ && null!=$.order ? $.order : LEX;
+            dir = -1 === dir ? -1 : 1;
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                dir = -dir;
+            
+            item = ("ordered+repeated" === type) || ("repeated" === type) ? (
                 0 > dir ? array(n[1], n[0]-1, 0) : array(n[1], 0, 0)
             ) : ("ordered" === type ? (
                 0 > dir ? array(n[1], n[0]-1, -1) : array(n[1], 0, 1)
             ) : (
                 0 > dir ? array(n[1], n[0]-n[1], 1) : array(n[1], 0, 1)
             ));
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
-        ,cascade: CombinatorialIterator.cascade
-        ,dual: function( item, index, n, $ ) {
-            item = CombinatorialIterator.dual.call(this, item, index, n, $);
-            if ( $ && "binary" === $.type ) item = subset2binary(item, n[0]);
-            return item;
-        }
-        ,succ: function( dir, item, index, n, $ ) {
-            return next_combination( item, n, dir, $ && $.type ? $.type : "unordered" );
+        ,succ: function( item, index, n, $, dir ) {
+            if ( !n || !n[0] || (0 >= n[0]) || (null == item) ) return null;
+            dir = -1 === dir ? -1 : 1;
+            return next_combination(item, n, dir, $ && $.type ? $.type : "unordered", $ && null!=$.order ? $.order : LEX);
         }
         ,rand: function( n, $ ) {
-            var type = $ && $.type ? $.type : "unordered",
+            var klass = this, type = $ && $.type ? $.type : "unordered",
                 item, i, k = n[1], n_k, c,
                 selected, rndInt = Abacus.Math.rndInt;
             n = n[0]; n_k = n-k; c = n-1;
@@ -3121,15 +3319,23 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                     }))
                 )));
             }
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: function( item, n, $ ) {
-            var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add, sub = Arithmetic.sub,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
+                add = Arithmetic.add, sub = Arithmetic.sub,
                 mul = Arithmetic.mul, O = Arithmetic.O, I = Arithmetic.I,
                 index = O, i, c, j, k = n[1], N, binom,
+                order = $ && null!=$.order ? $.order : LEX,
                 type = $ && $.type ? $.type : "unordered", factorial = Abacus.Math.factorial;
+            
+            item = klass.DUAL(item, n, $);
+            
             if ( "ordered+repeated" === type )
             {
                 N = n[0];
@@ -3169,16 +3375,25 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 }
                 index = sub(sub(binom,Arithmetic.I),index);
             }
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
             return index;
         }
         ,unrank: function( index, n, $ ) {
-            var Arithmetic = Abacus.Arithmetic,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, I = Arithmetic.I,
                 sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod,
                 mul = Arithmetic.mul, lte = Arithmetic.lte, gt = Arithmetic.gt,
                 val = Arithmetic.val, item, binom, k = n[1], N, m, t, p,
-                type = $ && $.type ? $.type : "unordered", repeated;
+                type = $ && $.type ? $.type : "unordered", repeated,
+                order = $ && null!=$.order ? $.order : LEX;
             n = n[0];
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
             item = array(k);
             if ( "ordered+repeated" === type )
             {
@@ -3226,6 +3441,15 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                     }
                 } while( m > 0 );
             }
+            
+            item = klass.DUAL(item, n, $);
+            
+            return item;
+        }
+        ,cascade: CombinatorialIterator.cascade
+        ,output: function( item, index, n, $ ) {
+            if ( null == item ) return null;
+            item = $ && "binary" === $.type ? subset2binary(item, n[0]) : item.slice();
             return item;
         }
         ,complement: function( alpha, n, ordered ) {
@@ -3272,35 +3496,34 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
          C: function( item, n ) { return difference( n, item ); }
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
-        
+        ,DUAL: dual_subset
         ,count: function( n, $ ) {
              return Abacus.Math.pow2(n);
         }
-        ,initial: function( dir, n, $ ) {
+        ,initial: function( n, $, dir ) {
+            // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
-            var item = 0 > dir ? array(n, 0, 1) : [];
-            return item;
-        }
-        ,cascade: CombinatorialIterator.cascade
-        ,dual: function( item, index, n, $ ) {
-            if ( null == item ) return null;
-            // some C-P-T processes at play here
-            var klass = this, order = $ && $.order ? $.order : 0,
-                C = klass.C, P = klass.P/*, T = klass.T*/;
-            if ( RANDOM & order ) item = REFLECTED & order ? item : P( item, n );
-            else if ( MINIMAL & order ) item = REFLECTED & order ? item : P( item, n );
-            else if ( COLEX & order ) item = REFLECTED & order ? P( C( item, n ), n ) : C( item, n );
-            else/*if ( LEX & order )*/item = REFLECTED & order ? item : P( item, n );
-            if ( $ && "binary"===$.type ) item = subset2binary(item, n);
+            var item, klass = this, order = $ && null!=$.order ? $.order : LEX;
+            dir = -1 === dir ? -1 : 1;
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                dir = -dir;
+            
+            item = 0 > dir ? array(n, 0, 1) : [];
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
         ,succ: CombinatorialIterator.succ
         ,rand: function( n, $ ) {
-            var rndInt = Abacus.Math.rndInt, item;
+            var klass = this, rndInt = Abacus.Math.rndInt, item;
             // p ~ 1 / 2^n
             for(var list = null,i=n-1; i>=0; i--) if ( rndInt(0,1) )
                 list = {len:list?list.len+1:1, k:i, next:list};
             item = list ? array(list.len, function(i){var k = list.k; list = list.next; return k;}): [];
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
         // random unranking, another method for unbiased random sampling
@@ -3309,30 +3532,54 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, I = Arithmetic.I,
                 add = Arithmetic.add, shl = Arithmetic.shl,
-                index = O, i = 0, l = subset.length;
-            while ( i < l ) index = add(index, shl(I, subset[i++]));
+                order = $ && null!=$.order ? $.order : LEX,
+                index = O, i = 0, l = item.length;
+            
+            item = klass.DUAL(item, n, $);
+            
+            while ( i < l ) index = add(index, shl(I, item[i++]));
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            
             return index;
         }
         ,unrank: function( index, n, $ ) { 
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, J = Arithmetic.J,
                 band = Arithmetic.band, shr = Arithmetic.shr, gt = Arithmetic.gt, 
-                subset = [], i = 0;
-            if ( !Arithmetic.inside(index, J, $ && $.count ? $.count : klass.count(n, $)) ) return null;
+                sub = Arithmetic.sub,
+                order = $ && null!=$.order ? $.order : LEX,
+                item = [], i = 0, count = $ && $.count ? $.count : klass.count(n, $);
+            if ( !Arithmetic.inside(index, J, count) ) return null;
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                index = sub($ && null!=$.last?$.last:sub(count,Arithmetic.I), index);
+            
             while ( gt(index, O) )
             {
                 // loop unrolling
-                if ( gt(band(index,1),O) ) subset.push( i );
-                if ( gt(band(index,2),O) ) subset.push( i+1 );
-                if ( gt(band(index,4),O) ) subset.push( i+2 );
-                if ( gt(band(index,8),O) ) subset.push( i+3 );
-                if ( gt(band(index,16),O) ) subset.push( i+4 );
-                if ( gt(band(index,32),O) ) subset.push( i+5 );
-                if ( gt(band(index,64),O) ) subset.push( i+6 );
-                if ( gt(band(index,128),O) ) subset.push( i+7 );
+                if ( gt(band(index,1),O) ) item.push( i );
+                if ( gt(band(index,2),O) ) item.push( i+1 );
+                if ( gt(band(index,4),O) ) item.push( i+2 );
+                if ( gt(band(index,8),O) ) item.push( i+3 );
+                if ( gt(band(index,16),O) ) item.push( i+4 );
+                if ( gt(band(index,32),O) ) item.push( i+5 );
+                if ( gt(band(index,64),O) ) item.push( i+6 );
+                if ( gt(band(index,128),O) ) item.push( i+7 );
                 i+=8; index = shr(index, 8);
             }
-            return subset;
+            
+            item = klass.DUAL(item, n, $);
+            
+            return item;
+        }
+        ,cascade: CombinatorialIterator.cascade
+        ,output: function output( item, index, n, $ ) {
+            if ( null == item ) return null;
+            var _item = item;
+            if ( $ && "binary"===$.type ) item = subset2binary(item, n);
+            return _item===item ? item.slice() : item;
         }
         ,binary: function( item, n, dir ) {
             return -1 === dir ? binary2subset(item, n) : subset2binary(item, n);
@@ -3367,28 +3614,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
          C: function( item/*, n*/ ) { return conjugatepartition( item ); }
         ,P: CombinatorialIterator.P
         ,T: CombinatorialIterator.T
-        
+        ,DUAL: dual
         ,count: function( n, $ ) {
-            var add = Abacus.Arithmetic.add,
-                partitions = Abacus.Math.partitions,
-                //MM = $ && $["max>="] ? $["max>="]|0 : null,
-                //KK = $ && $["parts<="] ? $["parts<="]|0 : MM,
+            return partitions(n, $&&(null!=$["parts="])?$["parts="]:null, $&&(null!=$["max="])?$["max="]:null);
+        }
+        ,initial: function( n, $, dir ) {
+            // some C-P-T dualities, symmetries & processes at play here
+            // last (0>dir) is C-symmetric of first (0<dir)
+            var klass = this, item, k, m,
                 M = $ && $["max="] ? $["max="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
-                k, m, p = Abacus.Arithmetic.O,
-                m0 = M ? M : 0, m1 = M ? M : 1,
-                k0 = K ? K : 1, k1 = K ? K : n;
-            if ( (0 > n) || (K && M && ((K+M > n+1) || (K*M < n))) || (M && M > n) || (K && K > n) ) return p;
-            if ( M && !K ) { m0 = 0; m1 = 1; k0 = M; k1 = M; } // count the conjugates, same
-            for(k=k0; k<=k1; k++) for(m=m0?m0:n-k+1; m>=m1; m--) p = add(p, partitions(n, k, m));
-            return p;
-        }
-        ,initial: function( dir, n, $ ) {
-            // last (0>dir) is C-symmetric of first (0<dir)
-            var item, k, m,
-                M = $ && $["max="] ? $["max="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null;
+                order = $ && null!=$.order ? $.order : LEX;
             if ( 0 > n ) return null;
+            
+            dir = -1 === dir ? -1 : 1;
+            
+            if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
+                dir = -dir;
+            
             if ( K && M )
             {
                 return null;
@@ -3412,17 +3655,19 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 }
                 */
             }
-            else if ( K )
+            /*else */if ( K )
             {
                 // restricted partition n to exactly K parts
                 // equivalent to conjugate to partition n into parts with largest part=K
+                /*
                 if ( K > n ) return null;
                 m = stdMath.ceil(n/K); k = n%m;
                 item = 0 > dir ? [n-K+1].concat(array(K-1, 1, 0)) : array(K-1, m, 0).concat([k||m]);
                 //item = 0 > dir ? [[n-K+1,1],[1,K-1]] : (k?[[m,K-1],[k,1]]:[[m,K]]);
-                //M = K; K = null;
+                */
+                M = K; K = null;
             }
-            else if ( M )
+            /*else */if ( M )
             {
                 // restricted partition n into parts with largest part=M
                 // equivalent to conjugate to partition n into exactly M parts
@@ -3437,33 +3682,44 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 item = 0 > dir ? [n] : array(n, 1, 0);
                 //item = 0 > dir ? [[n,1]] : [[1,n]];
             }
+            
+            item = klass.DUAL(item, n, $);
+            
             return item;
         }
-        ,cascade: CombinatorialIterator.cascade
-        ,dual: function( item, index, n, $ ) {
-            if ( null == item ) return null;
-            var klass = this, order = $ && $.order ? $.order : 0,
-                M = $ && $["max="] ? $["max="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null;
-            //if ( K && !M ) item = conjugatepartition(item);
-            if ( $ && "unpacked"===$.type ) item = unpackpartition(item);
-            item = CombinatorialIterator.dual.call(klass, item, index, n, $);
-            if ( $ && "set"===$.type ) return partition2sets(item);
-            if ( ($ && "constant"===$['length']) && (item.length < n) ) item = item.concat(array(n-item.length, 0, 0));
-            if ( $ && "packed"===$.type ) item = packpartition(item);
-            return item;
-        }
-        ,succ: function( dir, item, index, n, $ ) {
+        ,succ: function( item, index, n, $, dir ) {
+            if ( (null == n) || (0 > n) || (null == item) ) return null;
             var M = $ && $["max="] ? $["max="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null;
-            if ( (0 > n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
-            return next_partition( item, n, dir, K, M );
+            if ( (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
+            dir = -1 === dir ? -1 : 1;
+            return next_partition(item, n, dir, K, M, $ && null!=$.order ? $.order : LEX);
         }
         ,rand: CombinatorialIterator.rand
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
+        ,cascade: CombinatorialIterator.cascade
+        ,output: function( item, index, n, $ ) {
+            if ( null == item ) return null;
+            var klass = this, _item = item,
+                order = $ && null!=$.order ? $.order : LEX,
+                dir = REFLECTED & order ? -1 : 1,
+                M = $ && $["max="] ? $["max="]|0 : null,
+                K = $ && $["parts="] ? $["parts="]|0 : null;
+            if ( K && !M )
+                item = conjugatepartition(item, dir);
+            if ( $ && "unpacked"===$.type )
+                item = unpackpartition(item, dir);
+            if ( $ && "set"===$.type )
+                return partition2sets(item);
+            if ( ($ && "constant"===$['length']) && (item.length < n) )
+                item = 0 > dir ? array(n-item.length, 0, 0).concat(item) : item.concat(array(n-item.length, 0, 0));
+            if ( $ && "packed"===$.type )
+                item = packpartition(item, dir);
+            return _item===item ? item.slice() : item;
+        }
         ,conjugate: conjugatepartition
         ,sets: function( item, dir ) {
             return -1 === dir ? sets2partition( item ) : partition2sets( item );
