@@ -70,19 +70,19 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Partition` (`test/partitions.js`) **rank/unrank methods missing**
 * `RestrictedPartition` (`test/restricted_partitions.js`) **partialy complete**
 * `SetPartition` (`test/set_partitions.js`) **partialy complete**
-* algebraic composition of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)
-* multiple (combined) iterator orderings &amp; traversals: **lex**, **colex**, **random**, **reversed**, **reflected**, **minimal** (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
+* **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
+* **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..). **Note** `rank`/`unrank` have to be implemented for this feature to work
+* **algebraic composition** of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)
+* **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
+* `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp (pseudo-)random number generators.
 
 
 ###Performance
 
-(almost) all algorithms:
-
-* are **linear** `O(n)` (or log-linear `O(nlgn)`) **time and space** algorithms
-* are **statisticaly unbiased** (i.e uniform sampling methods)
-* use **efficient successor methods** (e.g loopless, CAT/constant delay methods) to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above)
+* `first`/`last`, `random`, `rank`/`unrank` methods use **efficient linear** `O(n)` (or **log-linear** `O(nlgn)`) **time and space** algorithms
+* `random` methods are **statisticaly unbiased** (ie uniform sampling methods, see below as well)
+* `successor` methods use **efficient CAT (ie constant average time) or Loopless (ie strictly constant time)** algorithms to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above) (**note** a couple of methods use **linear time** algorithms because the lib tries not to use extra space to store information between successive runs so any extra is computed at `run-time`, but can easily be made `CAT` or even `Loopless` by storing extra information)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit ranking / unranking is needed and objects are large)
-* arithmetic routines are **pluggable** so biginteger arithmetic can be used via external implementations. 
 
 **Note** that the lib can generate **very large** (and in most cases also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary random, ranking and unranking have to be used (see above)
 
@@ -558,15 +558,14 @@ o.dispose()
 * apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
 * support `biginteger` combinatorial computations e.g large factorials [DONE, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `random` ordering may be optimised further]
-* support **efficient succesor methods** (preferably `loopless/CAT` methods) to generate next/prev object from current object [DONE]
-* support **efficient ranking / unranking algorithms** and associated methods (of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE]
+* support **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object [DONE]
+* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE]
 * support multiple combinatorial orderings (ie `lex`, `colex`, `reflex`, `refcolex`, `minimal`, ..) **directly in the successor methods**  instead of using post-transformations on object [ALMOST DONE, in progress]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised further]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
-* support algebraic composition/cascading of combinatorial objects (of fixed dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
-* add efficient `rank`/`unrank` methods for `MultisetPermutation`, `DerangementPermutation` &amp; `Partition` (TODO)
+* support algebraic composition/cascading of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
+* add efficient `rank`/`unrank` methods for `MultisetPermutation`, `DerangementPermutation`, `InvolutionPermutation` &amp; `Partition` (TODO)
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
-* add `InvolutionPermutation` (TODO)
 * add `LatinSquare`, `MagicSquare` algorithms (TODO)
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
