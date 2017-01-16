@@ -74,7 +74,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..). **Note** `rank`/`unrank` have to be implemented for this feature to work
 * **algebraic composition** of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
-* `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp (pseudo-)random number generators.
+* `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators.
 
 
 ###Performance
