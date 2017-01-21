@@ -69,7 +69,9 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Subset` (`test/subsets.js`)
 * `Partition` (`test/partitions.js`) **rank/unrank methods missing**
 * `RestrictedPartition` (`test/restricted_partitions.js`) **partialy complete**
-* `SetPartition` (`test/set_partitions.js`) **partialy complete**
+* `Composition` (`test/compositions.js`) **in progress**
+* `SetPartition` (`test/set_partitions.js`) **in progress**
+* `RestrictedComposition` (`test/restricted_compositions.js`) **in progress**
 * **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..). **Note** `rank`/`unrank` have to be implemented for this feature to work
 * **algebraic composition** of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)

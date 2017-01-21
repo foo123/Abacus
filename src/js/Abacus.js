@@ -441,6 +441,25 @@ function inversion( n, n0 )
         return n0-n[i];
     }) : ((n===+n)&&(n0===+n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.N(n0),n));
 }
+function rotate(x, n, s, RTL)
+{
+    // adapted from FXT library
+    if ( null == x || 1 >= n ) return x;
+    if ( s >= n )  s %= n;
+    if ( 0 === s ) return x;
+
+    var reflect/*reverse*/ = parity,
+        i0 = RTL ? n-s : s, i1 = n-i0, i2 = n;
+
+    // Shift is taken modulo n
+    // RTL: Rotate away from element #0
+    // LTR: Rotate towards element #0
+    return reflect(
+        reflect(
+            reflect(x, null, 0, i0)
+        ,null, i0, i1)
+    ,null, 0, i2);
+}
 /*function gray( a, C0, a0, a1 )
 {
     if ( null == a ) return null;
@@ -645,6 +664,58 @@ function mergesort( a, a0, a1 )
     }
     return a;
 }
+/*function make_btree( a, a0, a1 )
+{
+    if ( null == a0 ) a0 = 0;
+    if ( null == a1 ) a1 = a.length-1;
+    var l=a0, r=a1, m, am, tree = {t:null, l:null, r:null, v:null, k:null};
+    if ( l === r ) {tree.v = a[l]; tree.k = l;}
+    while(l<r)
+    {
+        m = l+((r-l+1)>>>1);
+        am = a[m];
+        if ( v === am ) return m;
+        else if ( v < am ) r = m-1;
+        else l = m+1;
+    }
+    return tree;
+}
+function searchtree( v, t )
+{
+    while( t )
+    {
+        if ( v === t.v ) return t.k;
+        t = v < t.v ? t.l : t.r;
+    }
+    return null;
+}*/
+function searchb( v, a, a0, a1 )
+{
+    // binary search O(logn)
+    if ( null == a0 ) a0 = 0;
+    if ( null == a1 ) a1 = a.length-1;
+    var l=a0, r=a1, m, am;
+    if ( v === a[l] ) return l;
+    if ( v === a[r] ) return r;
+    while(l<r)
+    {
+        m = l+((r-l+1)>>>1);
+        am = a[m];
+        if ( v === am ) return m;
+        else if ( v < am ) r = m-1;
+        else l = m+1;
+    }
+    return -1;
+}
+function multiset( m, n )
+{
+    var nm = m.length, k = 0, mk = m[k];
+    return array(n, function(){
+        if ( 0 >= mk ) { k++; mk = k < nm ? m[k] : 1; }
+        mk--;
+        return k;
+    });
+}
 function shuffle( a, cyclic, a0, a1 )
 {
     // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
@@ -834,6 +905,27 @@ function unpackpartition( packed, dir )
     }
     return partition;
 }
+function subset2composition( subset, x0, composition )
+{
+    if ( null == subset ) return null;
+    var y = 0;
+    x0 = x0 || 0;
+    return array(composition||subset.length, function(i){
+        var x = subset[i]-y;
+        y = subset[i];
+        return x0+x;
+    });
+}
+function composition2subset( composition, x0, subset )
+{
+    if ( null == composition ) return null;
+    var y = 0;
+    x0 = x0 || 0;
+    return array(subset||composition.length, function(i){
+        y += composition[i]-x0;
+        return y;
+    });
+}
 function partition2sets( partition )
 {
     if ( null == partition ) return null;
@@ -851,25 +943,68 @@ function sets2partition( set_partition )
         return set_partition[k].length;
     });
 }
-function permutation2inversion( permutation, n, dir )
+function permutation2inversion2( permutation, inversion, LTR )
+{
+    // O(n^2) inversion computation
+    var i, j, n = permutation.length;
+    inversion = inversion || new Array(n);
+    if ( LTR )
+    {
+        // left inversion count
+        inversion[0]=0;
+        for(i=1,inversion[i]=0; i<n; i++)for(j=0; j<i; j++)
+            if ( permutation[j] > permutation[i] ) inversion[i]++;
+    }
+    else
+    {
+        // right inversion count
+        for(i=0,inversion[i]=0; i<n; i++)for(j=i+1; j<n; j++)
+            if ( permutation[j] < permutation[i] ) inversion[i]++;
+    }
+    return inversion;
+}
+function multipermutation2inversion( permutation, multiset, inversion )
 {
     // O(n log n) inversion computation
-    // adapted from http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf
-    n = n || permutation.length;
-    var nn = permutation.length, i, ii, j, inversion = new Array(nn),
-        node, ctr, k = Abacus.Math.ceil(log2(n)),
-        Tl = (1<<(1+k))-1, T = new Array(Tl), twok = 1 << k,
-        i0 = -1===dir ? nn-1 : 0, ik = -1===dir ? -1 : 1;
-    mm = m ? m.slice() : null;
-    for(i=0; i<Tl; i++) T[i] = 0;
-    for(ii=i0,i=0; i<nn; i++,ii+=ik)
+    // "Multiset Permutations in Lexicographic Order", Ting Kuo 2014 (https://pdfs.semanticscholar.org/e944/bec5f53938cbc9381a9113b42e5c5d145faa.pdf)
+    var n = permutation.length;
+    inversion = inversion || new Array(n);
+    for(var i=n-1; i>0; i--)
     {
-        ctr = permutation[i];
-        node = twok + ctr;
+        // ordinal representation
+        inversion[i] = searchb(permutation[n-1-i], multiset);
+        // this is NOT O(1) in general
+        multiset.splice(inversion[i],1);
+    }
+    inversion[0] = 0;
+    return inversion;
+}
+function permutation2inversion( permutation, inversion, N, M, dir )
+{
+    // O(n log n) inversion computation
+    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
+    var n = permutation.length, i, pi, ii, j,
+        node, ctr, k, kk, Tl, T, twok,
+        i0 = -1===dir ? n-1 : 0, ik = -1===dir ? -1 : 1;
+    
+    k = Abacus.Math.ceil(log2(N||n)); twok = 1 << k;
+    Tl = (1<<(1+k))-1; T = array(Tl, 0, 0);
+    inversion = inversion || new Array(n);
+    
+    for(ii=i0,i=0; i<n; i++,ii+=ik)
+    {
+        pi = permutation[i];
+        ctr = pi;
+        // Starting bottom-up at the leaf associated with pi
+        kk = (M && 0 < M[pi] ? M[pi]-- : 1)-1;
+        node = ctr + twok + 1-(1 << kk);
         for(j=0; j<k; j++)
         {
+            // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
             if ( node&1 ) ctr -= T[(node >>> 1) << 1];
+            // 2) increase the value stored at the current node.
             T[node] += 1;
+            // 3) move-up the tree
             node >>>= 1;
         }
         T[node] += 1;
@@ -877,32 +1012,34 @@ function permutation2inversion( permutation, n, dir )
     }
     return inversion;
 }
-function inversion2permutation( inversion, n, dir )
+function inversion2permutation( inversion, permutation, N, dir )
 {
-    // O(n log n) permutation computation
-    // adapted from http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf
-    n = n || inversion.length;
-    var nn = inversion.length, permutation = new Array(nn),
+    // O(n log n) inversion computation
+    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
+    var n = inversion.length, permutation,
         i, ii, j, i2, digit, node, k, Tl, T, twok,
-        i0 = -1===dir ? nn-1 : 0, ik = -1===dir ? -1 : 1;
+        i0 = -1===dir ? n-1 : 0, ik = -1===dir ? -1 : 1;
     
-    k = Abacus.Math.ceil(log2(n)); Tl = (1<<(1+k))-1;
-    T = new Array(Tl); twok = 1 << k;
-    
+    k = Abacus.Math.ceil(log2(N||n)); twok = 1 << k;
+    Tl = (1<<(1+k))-1; T = new Array(Tl);
     for(i=0; i<=k; i++)
         for(j=1,i2=1<<i; j<=i2; j++) 
             T[i2-1+j] = 1 << (k-i);
     
-    for(ii=i0,i=0; i<nn; i++,ii+=ik)
+    permutation = permutation || new Array(n);
+    for(ii=i0,i=0; i<n; i++,ii+=ik)
     {
         digit = inversion[i]; 
+        // Starting top-down the tree
         node = 1;
         for(j=0; j<k; j++)
         {
             T[node] -= 1;
             node <<= 1;
-            if ( digit >= T[node] )
+            // next node as the left or right child whether digit is less than the stored value at the left child
+            if ( digit >/*=*/ T[node] )
             {
+                // If the next node is the right child, then the value of the left child is subtracted from digit
                 digit -= T[node];
                 node++;
             }
@@ -1601,26 +1738,26 @@ function next_combination( item, N, dir, type, order, item_ )
             //else last item
             else item = null;
         }
-        else
+        else//if ( ("unordered" === type) || ("repeated" === type) )
         {
-            ofs = "repeated"===type ? 0 : a;
+            ofs = "repeated"===type ? 0 : 1;
             i = i0; index = -1;
             while( -1===index && MIN<=i && i<=MAX && MIN<=i-DI && i-DI<=MAX )
             {
-                if ( a*item[i] > a*item[i-DI]+ofs ) index = i;
+                if ( a*item[i] > a*(item[i-DI]+ofs) ) index = i;
                 i-=DI;
             }
             if (-1 === index && 0 < a*item[MAX-i0]+b) index = MAX-i0;
             // adjust next indexes after the moved index
             if ( -1 < index )
             {
-                curr = a*(n-1)+b+ofs;
-                for(i=i0; MIN<=i && i<=MAX && DI*i>DI*index; i-=DI)
+                curr = a*(n-1)+b+a*ofs;
+                for(i=i0; MIN<=i && i<=MAX && DI*(i-index)>0; i-=DI)
                 {
-                    curr -= ofs;
+                    curr -= a*ofs;
                     item[i] = a*curr+b;
                 }
-                item[index]-=1;
+                item[index]-=a;
             }
             //else last item
             else item = null;
@@ -1677,14 +1814,14 @@ function next_combination( item, N, dir, type, order, item_ )
             //else last item
             else item = null;
         }
-        else
+        else//if ( ("unordered" === type) || ("repeated" === type) )
         {
+            ofs = "repeated"===type ? 0 : 1;
+            //limit = "repeated"===type ? n-1 : n-k;
             i = i0; index = -1;
-            if ( "repeated" === type ) { ofs = 0; limit = n-1; }
-            else { ofs = 1; limit = n-k+MAX-i0; }
-            while( -1===index && MIN<=i && i<=MAX )
+            while( -1===index && MIN<=i && i<=MAX && MIN<=i-DI && i-DI<=MAX )
             {
-                if ( a*item[i]+b < limit+ofs*DI*i ) index = i;
+                if ( item[i] === item[i-DI]+ofs ) index = i;
                 i-=DI;
             }
             // adjust next indexes after the moved index
@@ -1702,6 +1839,10 @@ function next_combination( item, N, dir, type, order, item_ )
         }
     }
     return item;
+}
+function next_composition( item, N, dir, K, M, order, item_ )
+{
+    return null;
 }
 function next_partition( item, N, dir, K, M, order, item_ )
 {
@@ -1792,10 +1933,10 @@ function next_partition( item, N, dir, K, M, order, item_ )
             if ( M )
             {
                 return null;
-                m = stdMath.min(M, stdMath.ceil((n-M)/(K-1)));
+                /*m = stdMath.min(M, stdMath.ceil((n-M)/(K-1)));
                 //k = ((n-M)%m)||m;
                 j = i0+DI;
-                d = n-M-item[j];
+                d = n-M-item[j];*/
             }
             else
             {
@@ -1879,8 +2020,8 @@ function dual_subset( item, n, $ )
     return item;
 }
 
-// settings
-Abacus.$ = {
+// options
+Abacus.Options = {
     MAXMEM: 1000000,
     RANDOM: "index"
 };
@@ -2273,7 +2414,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( RANDOM & order )
         {
             // a uniform random traversal over all traversals of the combinatorial space
-            if ( ("gen" === Abacus.$.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.$.MAXMEM) )
+            if ( ("gen" === Abacus.Options.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.Options.MAXMEM) )
             {
                 // no random unranking supported/enabled
                 // and/or too big to keep in memory
@@ -3112,12 +3253,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 // p ~ m1!*..*mk! / n!
                 // fisher-yates-knuth unbiased multiset shuffling
-                var m = $.multiplicity, nm = m.length, k = 0, mk = m[k];
-                item = shuffle(array(n, function(){
-                    if ( 0 >= mk ) { k++; mk = k < nm ? m[k] : 1; }
-                    mk--;
-                    return k;
-                }));
+                item = shuffle(multiset($.multiplicity, n));
             }
             else if ( "derangement" === type )
             {
@@ -3206,15 +3342,13 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             n = n || item.length;
             if ( !n ) return Arithmetic.J;
             
-            //N = $ && null!=$.base ? $.base : n;
-            
             item = klass.DUAL(item, n, $);
             
             if ( "cyclic"=== type )
             {
                 index = Arithmetic.NUM(item[0]);
             }
-            else if ( ("multiset" === type) || ("derangement" === type) || ("involution" === type) )
+            else if ( /*("multiset" === type) ||*/ ("derangement" === type) || ("involution" === type) )
             {
                 /*item = permutation2inversion( item );
                 for(I=n&1?-1:1,i=0; i<n-1; i++,I=-I)
@@ -3224,8 +3358,14 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 return index;*/
                 return NotImplemented();
             }
+            else if ( "multiset" === type )
+            {
+                item = multipermutation2inversion( item, multiset($.multiplicity, n) );
+                for(m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[ m-i ]);
+            }
             else//if ( "permutation" === type )
             {
+                // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 item = permutation2inversion( item );
                 for(m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[ i ]);
             }
@@ -3248,19 +3388,34 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
                 index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
             
-            //N = $ && null!=$.base ? $.base : n;
-            
             if ( "cyclic"=== type )
             {
                 index = val(index);
                 item = array(n, function(i){return (index+i)%n});
             }
-            else if ( ("multiset" === type) || ("derangement" === type) || ("involution" === type) )
+            else if ( /*("multiset" === type) ||*/ ("derangement" === type) || ("involution" === type) )
             {
                 return NotImplemented();
             }
+            else if ( "multiset" === type )
+            {
+                N = new Array( n ); N[n-1] = 0;
+                for (r=index,i=n-2; i>=0; i--)
+                {
+                    b = n-i; t = mod(r, b); r = div(r, b);
+                    N[ i ] = val(t);
+                }
+                M = multiset($.multiplicity, n);
+                item = new Array(n);
+                for(i=0; i<n; i++)
+                {
+                    item[i] = M[N[i]];
+                    M.splice(N[i], 1);
+                }
+            }
             else//if ( "permutation" === type )
             {
+                // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 item = array( n ); item[n-1] = 0;
                 for (r=index,i=n-2; i>=0; i--)
                 {
@@ -3298,6 +3453,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,concatenate: function( /* permutations */ ) {
             return permutationconcatenation( slice.call(arguments) );
         }
+        ,multiset: multiset
         ,inverse: function( item ) {
             return permutation2inverse( item );
         }
@@ -3499,9 +3655,9 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 N = n[0]+k-1; binom = $ && $.count ? $.count : factorial(N, k);
                 for(i=1; i<=k; i++)
                 {
+                    // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                     // adjust the order to match MSB to LSB 
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
-                    // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
                     c = N-1-item[i-1]-i+1; j = k+1-i;
                     if ( j <= c ) index = add(index, factorial(c, j));
                 }
@@ -3509,8 +3665,9 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             else if ( "ordered" === type )
             {
+                // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // rank(ordered) = rank(k-n-permutation)
-                N = n[0]; item = permutation2inversion( item, N );
+                N = n[0]; item = permutation2inversion( item, null, N );
                 for(i=0; i<k; i++) index = add(mul(index, N-i), item[ i ]);
                 return index;
             }
@@ -3520,9 +3677,9 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 binom = $ && $.count ? $.count : factorial(N, k);
                 for(i=1; i<=k; i++)
                 {
+                    // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                     // adjust the order to match MSB to LSB 
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
-                    // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
                     c = N-1-item[i-1]; j = k+1-i;
                     if ( j <= c ) index = add(index, factorial(c, j));
                 }
@@ -3558,18 +3715,19 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             }
             else if ( "ordered" === type )
             {
+                // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // unrank(ordered) = unrank(k-n-permutation)
                 for(m=index,p=k-1; p>=0; p--)
                 {
                     N = n-p; t = mod(m, N); m = div(m, N);
                     item[ p ] = val(t);
                 }
-                item = inversion2permutation( item, n );
+                item = inversion2permutation( item, null, N );
             }
             else//if ( ("repeated" === type) || ("unordered" === type) || ("binary" === type) )
             {
+                // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                 // adjust the order to match MSB to LSB 
-                // http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf
                 repeated = "repeated" === type;
                 N = repeated ? n+k-1 : n;
                 binom = $ && $.count ? $.count : Abacus.Math.factorial(N, k);
@@ -3745,6 +3903,9 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
 });
 
 // https://en.wikipedia.org/wiki/Partitions
+// https://en.wikipedia.org/wiki/Composition_(combinatorics)
+// integer compositions (or set-partitions) & restricted compositions have bijections ("isomorphisms") to subsets & k-subsets (combinations) respectively
+// via "partial-sums mapping": x_1=y_1,..,x_k=y_k-y_{k-1},..,x_m (composition) ::=> y_1=x_1,..,y_k=y_{k-1}+x_k,..,y_m (subset)
 Partition = Abacus.Partition = Class(CombinatorialIterator, {
     
     // extends and implements CombinatorialIterator
@@ -3764,6 +3925,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         $.dimension = K || n;
         $.mindimension = stdMath.min(k0,k1);
         $.maxdimension = stdMath.max(k0,k1);
+        $.rand = {"partition":1,"composition":1,"set":1,"unpacked":1,"packed":1};
         CombinatorialIterator.call(self, "Partition", n, $);
     }
     
@@ -3773,63 +3935,97 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         ,DUAL: dual
         ,count: function( n, $ ) {
-            return partitions(n, $&&(null!=$["parts="])?$["parts="]:null, $&&(null!=$["max="])?$["max="]:null);
+            var M = $ && $["max="] ? $["max="]|0 : null,
+                K = $ && $["parts="] ? $["parts="]|0 : null,
+                type = $ && $.type ? $.type : "partition";
+            
+            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) )
+                return Abacus.Arithmetic.O;
+            if ( ("composition" === type) || ("set" === type) )
+            {
+                return K & M ? Abacus.Math.factorial(n-M-1, K-2) : (K ? Abacus.Math.factorial(n-1, K-1) : Abacus.Math.pow2(n-1-(M?M:0)));
+            }
+            else
+            {
+                return Abacus.Math.partitions(n, $&&(null!=$["parts="])?$["parts="]:null, $&&(null!=$["max="])?$["max="]:null);
+            }
         }
         ,initial: function( n, $, dir ) {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
             var klass = this, item, k, m,
+                type = $ && $.type ? $.type : "partition",
                 M = $ && $["max="] ? $["max="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 order = $ && null!=$.order ? $.order : LEX;
-            if ( 0 > n ) return null;
+            
+            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
             
             dir = -1 === dir ? -1 : 1;
             
             if ( ((LEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
                 dir = -dir;
             
-            if ( K && M )
+            if ( ("composition" === type) || ("set" === type) )
             {
-                // restricted partition n into exactly K parts with largest part=M
-                // equivalent to partition n-M into K-1 parts with largest part<=M
-                if ( (K+M > n+1) || (K*M < n) ) return null;
-                if ( 1 === K )
+                if ( K && M )
                 {
-                    item = [M];
+                    item = null;
                 }
-                else if ( 0 > dir )
+                else if ( K )
                 {
-                    k = stdMath.min(K, stdMath.floor(n/M)||1); n-=k*M; K-=k;
-                    if ( (0===n) && (0<K) ) { k--; K++; n+=M; }
-                    item = [M].concat(array(k-1, M, 0)).concat((0<n)&&(0<K)?[n-K+1].concat(array(K-1, 1, 0)) : []);
+                    item = null;
+                }
+                else if ( M )
+                {
+                    item = null;
                 }
                 else
                 {
-                    m = stdMath.min(M, stdMath.ceil((n-M)/(K-1)));
-                    item = [M].concat(array(K-2, m, 0).concat([((n-M)%m)||m]));
+                    item = null;
                 }
-            }
-            else if ( K )
-            {
-                // restricted partition n to exactly K parts
-                // equivalent to conjugate to partition n into parts with largest part=K
-                if ( K > n ) return null;
-                m = stdMath.ceil(n/K); k = (n%m)||m;
-                item = 0 > dir ? [n-K+1].concat(array(K-1, 1, 0)) : array(K-1, m, 0).concat([k]);
-            }
-            else if ( M )
-            {
-                // restricted partition n into parts with largest part=M
-                // equivalent to conjugate to partition n into exactly M parts
-                if ( M > n ) return null;
-                k = stdMath.floor(n/M); m = n%M;
-                item = 0 > dir ? array(k, M, 0).concat(m?[m]:[]) : [M].concat(array(n-M, 1, 0));
             }
             else
             {
-                // unrestricted partition
-                item = 0 > dir ? [n] : array(n, 1, 0);
+                if ( K && M )
+                {
+                    // restricted partition n into exactly K parts with largest part=M
+                    // equivalent to partition n-M into K-1 parts with largest part<=M
+                    if ( 1 === K )
+                    {
+                        item = [M];
+                    }
+                    else if ( 0 > dir )
+                    {
+                        k = stdMath.min(K, stdMath.floor(n/M)||1); n-=k*M; K-=k;
+                        if ( (0===n) && (0<K) ) { k--; K++; n+=M; }
+                        item = [M].concat(array(k-1, M, 0)).concat((0<n)&&(0<K)?[n-K+1].concat(array(K-1, 1, 0)) : []);
+                    }
+                    else
+                    {
+                        m = stdMath.min(M, stdMath.ceil((n-M)/(K-1)));
+                        item = [M].concat(array(K-2, m, 0).concat([((n-M)%m)||m]));
+                    }
+                }
+                else if ( K )
+                {
+                    // restricted partition n to exactly K parts
+                    // equivalent to conjugate to partition n into parts with largest part=K
+                    m = stdMath.ceil(n/K); k = (n%m)||m;
+                    item = 0 > dir ? [n-K+1].concat(array(K-1, 1, 0)) : array(K-1, m, 0).concat([k]);
+                }
+                else if ( M )
+                {
+                    // restricted partition n into parts with largest part=M
+                    // equivalent to conjugate to partition n into exactly M parts
+                    k = stdMath.floor(n/M); m = n%M;
+                    item = 0 > dir ? array(k, M, 0).concat(m?[m]:[]) : [M].concat(array(n-M, 1, 0));
+                }
+                else
+                {
+                    // unrestricted partition
+                    item = 0 > dir ? [n] : array(n, 1, 0);
+                }
             }
             
             item = klass.DUAL(item, n, $);
@@ -3837,14 +4033,81 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return item;
         }
         ,succ: function( item, index, n, $, dir, item_ ) {
-            if ( (null == n) || (0 > n) || (null == item) ) return null;
-            var M = $ && $["max="] ? $["max="]|0 : null,
+            if ( (null == n) || (null == item) ) return null;
+            var type = $ && $.type ? $.type : "partition",
+                M = $ && $["max="] ? $["max="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null;
-            if ( (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
+            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_partition(item, n, dir, K, M, $ && null!=$.order ? $.order : LEX, item_);
+            return ("composition" === type)||("set" === type) ? next_composition(item, n, dir, K, M, $ && null!=$.order ? $.order : LEX, item_) : next_partition(item, n, dir, K, M, $ && null!=$.order ? $.order : LEX, item_);
         }
-        ,rand: CombinatorialIterator.rand
+        ,rand: function( n, $ ) {
+            return null;
+            /*var klass = this, rndInt = Abacus.Math.rndInt,
+                type = $ && $.type ? $.type : "partition",
+                M = $ && $["max="] ? $["max="]|0 : null,
+                K = $ && $["parts="] ? $["parts="]|0 : null,
+                list, c, m, item;
+            
+            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
+            
+            m = M ? n-M : n;
+            
+            if ( K )
+            {
+                if ( M )
+                {
+                    if ( 1 === K ) return [M];
+                    K--;
+                }
+                
+                K--; m--; c = m-1;
+                // generates a random combination (order matters) p ~ 1 / binom(n-1,k-1)
+                // but the order is not taken into account hence
+                // p ~ 1 / P(n,k)
+                list = {};
+                item = 1 === K ? (
+                    [rndInt(0, c)]
+                ) : (m === K ? (
+                    array(K, 1, 1)
+                ) : (m-K < K ? (
+                    difference(n, mergesort(array(m-K, function(){
+                        // select uniformly without repetition
+                        var selection = rndInt(0, c);
+                        // this is NOT an O(1) look-up operation, in general
+                        while ( 1 === list[selection] ) selection = (selection+1)%m;
+                        list[selection] = 1;
+                        return selection;
+                    })))
+                ) : (
+                    mergesort(array(K, function(){
+                        // select uniformly without repetition
+                        var selection = rndInt(0, c);
+                        // this is NOT an O(1) look-up operation, in general
+                        while ( 1 === list[selection] ) selection = (selection+1)%m;
+                        list[selection] = 1;
+                        return selection;
+                    }))
+                )));
+                item = (M?[M]:[]).concat(array(item, function(i){
+                    return 0<i ? item[i]-item[i-1] : 1+item[i];
+                }));
+            }
+            else
+            {
+                // generates a random composition (order matters) p ~ 1 / 2^(n-1)
+                // but the order is not taken into account hence
+                // p ~ 1 / P(n)
+                list = null;
+                for(var i=1; i<m; i++) if ( rndInt(0,1) )
+                    list = {len:list?list.len+1:1, k:list?i-list.k:i, next:list};
+                item = (M?[M]:[]).concat(list ? mergesort(array(list.len, function(){var k = list.k; list = list.next; return k;})).reverse() : (0<m?[m]:[]));
+            }
+            
+            item = klass.DUAL(item, n, $);
+            
+            return item;*/
+        }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
@@ -3869,8 +4132,17 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return _item===item ? item.slice() : item;
         }
         ,conjugate: conjugatepartition
+        ,subset: function( item, dir, type ) {
+            item = -1 === dir ? subset2composition(item,1) : composition2subset(item,1);
+            if ( "partition" === type )
+            {
+                mergesort(item);
+                if ( -1 === dir ) item = item.reverse();
+            }
+            return item;
+        }
         ,sets: function( item, dir ) {
-            return -1 === dir ? sets2partition( item ) : partition2sets( item );
+            return -1 === dir ? sets2partition(item) : partition2sets(item);
         }
         ,pack: function( item, dir ) {
             return -1 === dir ? unpackpartition(item) : packpartition(item)
