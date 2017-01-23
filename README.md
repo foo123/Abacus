@@ -59,7 +59,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Tuple` (`test/tuples.js`)
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
 * `CyclicPermutation` (`test/cyclic_permutations.js`)
-* `MultisetPermutation` (`test/multiset_permutations.js`) **rank/unrank methods missing**
+* `MultisetPermutation` (`test/multiset_permutations.js`)
 * `DerangementPermutation` (`test/derangements.js`) **rank/unrank methods missing**
 * `InvolutionPermutation` (`test/involutions.js`) **only counting &amp; random generation**
 * `UnorderedCombination` (`test/combinations.js`)
@@ -70,7 +70,6 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Partition` (`test/partitions.js`) **rank/unrank methods missing**
 * `RestrictedPartition` (`test/restricted_partitions.js`) **partialy complete**
 * `Composition` (`test/compositions.js`) **in progress**
-* `SetPartition` (`test/set_partitions.js`) **in progress**
 * `RestrictedComposition` (`test/restricted_compositions.js`) **in progress**
 * **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..). **Note** `rank`/`unrank` have to be implemented for this feature to work
@@ -567,7 +566,7 @@ o.dispose()
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised further]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
-* add efficient `rank`/`unrank` methods for `MultisetPermutation`, `DerangementPermutation`, `InvolutionPermutation` &amp; `Partition` (TODO)
+* add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation` &amp; `Partition` (TODO)
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * add `LatinSquare`, `MagicSquare` algorithms (TODO)
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)

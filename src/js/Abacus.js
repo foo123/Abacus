@@ -673,13 +673,13 @@ function muln( p, a )
 {
     return p*a;
 }
-function sum( x, i0, i1 )
+function sum( x, i0, i1, ik )
 {
-    return operate(Abacus.Arithmetic.add, Abacus.Arithmetic.O, x, i0, i1);
+    return operate(Abacus.Arithmetic.add, Abacus.Arithmetic.O, x, i0, i1, ik);
 }
-function product( x, i0, i1 )
+function product( x, i0, i1, ik )
 {
-    return operate(Abacus.Arithmetic.mul, Abacus.Arithmetic.I, x, i0, i1);
+    return operate(Abacus.Arithmetic.mul, Abacus.Arithmetic.I, x, i0, i1, ik);
 }
 function pow2( n )
 {
@@ -2394,8 +2394,9 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "permutation",
                 order = $ && null!=-$.order ? $.order : LEX,
-                sub = Arithmetic.sub, add = Arithmetic.add, mul = Arithmetic.mul,
-                index = Arithmetic.O, i, m, I, N, M;
+                sub = Arithmetic.sub, add = Arithmetic.add,
+                mul = Arithmetic.mul, div = Arithmetic.div,
+                index = Arithmetic.O, i, ii, m, I = Arithmetic.I, N, M;
             
             n = n || item.length;
             if ( !n ) return Arithmetic.J;
@@ -2417,11 +2418,23 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 return index;*/
                 return NotImplemented();
             }
-            else//if ( ("multiset" === type) || ("permutation" === type) )
+            else if ( "multiset" === type )
+            {
+                //item = permutation2inversion(null, multiset2permutation(item));
+                // adapted from https://github.com/WoDoInc/FindMultisetRank
+                // O(nm) ~ O(n^2)
+                N = $ && null!=$.count ? $.count : klass.count(n, $);
+                M = $.multiplicity.slice(); I = Arithmetic.I;
+                for(m=n-1,i=0; i<m && Arithmetic.gt(N, I); i++)
+                {
+                    ii = item[i]; index = add(index, div(mul(N, sum(M,0,ii-1,1)), n-i));
+                    N = div(mul(N, M[ii]), n-i); M[ii]--;
+                }
+            }
+            else//if ( "permutation" === type )
             {
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // O(nlgn)
-                if ( "multiset" === type ) item = multiset2permutation(item);
                 item = permutation2inversion(null, item);
                 for(m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[i]);
             }
@@ -2435,9 +2448,9 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "permutation",
                 order = $ && null!=-$.order ? $.order : LEX,
-                mod = Arithmetic.mod, div = Arithmetic.div,
+                mod = Arithmetic.mod, div = Arithmetic.div, mul = Arithmetic.mul,
                 sub = Arithmetic.sub, val = Arithmetic.val,
-                item, r, i, b, t, N, M;
+                item, r, i, ii, b, t, N, M;
             
             if ( !n ) return [ ];
             
@@ -2454,7 +2467,21 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 return NotImplemented();
             }
-            else//if ( ("multiset" === type) || ("permutation" === type) )
+            else if ( "multiset" === type )
+            {
+                // adapted from https://github.com/WoDoInc/FindMultisetRank
+                // O(nm) ~ O(n^2)
+                N = $ && null!=$.count ? $.count : klass.count(n, $);
+                M = $.multiplicity.slice(); item = array(n);
+                for(i=0; i<n; i++)
+                {
+                    b = 0; ii = 0; r = val(div(mul(index, n-i), N));
+                    while(ii<M.length && b+M[ii]<=r) b+=M[ii++];
+                    index = sub(index, div(mul(N, b), n-i));
+                    N = div(mul(N, M[ii]), n-i); M[ii]--; item[i] = ii;
+                }
+            }
+            else//if ( "permutation" === type )
             {
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // O(nlgn)
@@ -2465,7 +2492,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item[i] = val(t);
                 }
                 inversion2permutation(item, item);
-                if ( "multiset" === type ) permutation2multiset(item, $.multiset);
             }
             
             item = klass.DUAL(item, n, $);
