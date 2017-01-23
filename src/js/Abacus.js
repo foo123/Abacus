@@ -22,17 +22,12 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.7.6"}, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.7.6"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
+    ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
     ,trim = String.prototype.trim ? function( s ){ return s.trim(); } : function( s ){ return s.replace(trim_re, ''); }
-    ,is_array = function( x ) { return (x instanceof Array) || ('[object Array]' === toString.call(x)); }
-    ,is_string = function( x ) { return (x instanceof String) || ('[object String]' === toString.call(x)); }
-    ,stdMath = Math, log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
-    ,to_fixed_binary_string_32 = function( b ) {
-        var bs = b.toString( 2 ), n = 32-bs.length;
-        return n > 0 ? new Array(n+1).join('0') + bs : bs;
-    }
+    
     ,Extend = Object.create
     ,Merge = function Merge(a, b) {
         for (var p in b) if (HAS.call(b,p)) a[p] = b[p];
@@ -59,101 +54,15 @@ function NotImplemented( )
 {
     throw new Error("Method not implemented!");
 }
-function array( n, x0, xs )
+function is_array( x ) { return (x instanceof Array) || ('[object Array]' === toString.call(x)); }
+function is_string( x ) { return (x instanceof String) || ('[object String]' === toString.call(x)); }
+function to_fixed_binary_string_32( b )
 {
-    var x = is_array(n) ? n : ((n=(n|0)) > 0 ? new Array(n) : []), q, r, i, k, xi;
-    n = x.length;
-    if ( (0 < n) && (null != x0) )
-    {
-        r = n&15; q = r&1;
-        if ( x0 === +x0 )
-        {
-            xs = xs||0; xi = x0;
-            if ( q ) { x[0] = xi; xi += xs; }
-            for(k=q; k<r; k+=2)
-            {
-                i=k; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-            }
-            for(k=r; k<n; k+=16)
-            {
-                i=k; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-                i++; x[i] = xi; xi += xs;
-            }
-        }
-        else if ( "function" === typeof x0 )
-        {
-            if ( q ) { x[0] = x0(0); }
-            for(k=q; k<r; k+=2)
-            {
-                i=k; x[i] = x0(i);
-                i++; x[i] = x0(i);
-            }
-            for(k=r; k<n; k+=16)
-            {
-                i=k; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-                i++; x[i] = x0(i);
-            }
-        }
-        else
-        {
-            if ( q ) { x[0] = x0; }
-            for(k=q; k<r; k+=2)
-            {
-                i=k; x[i] = x0;
-                i++; x[i] = x0;
-            }
-            for(k=r; k<n; k+=16)
-            {
-                i=k; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-                i++; x[i] = x0;
-            }
-        }
-    }
-    return x;
+    var bs = b.toString( 2 ), n = 32-bs.length;
+    return n > 0 ? new Array(n+1).join('0') + bs : bs;
 }
+
+// https://github.com/foo123/FnList.js
 function operate( F, F0, x, i0, i1, ik, strict )
 {
     var Fv = F0, i, ii, ikk, di, i0r, i00, i11,
@@ -170,23 +79,34 @@ function operate( F, F0, x, i0, i1, ik, strict )
     {
         // remove not reachable range (not multiple of step ik)
         rem = (i0-i1)%(-ik); if ( rem ) last = i1;
-        i1 += rem; i00 = i1; i11 = i0; di = -1;
+        i1 += rem; i00 = i1; i11 = i0;
+        di = -1; ikk = -((-ik) << 4);
     }
     else
     {
         // remove not reachable range (not multiple of step ik)
         rem = (i1-i0)%ik; if ( rem ) last = i1;
-        i1 -= rem; i00 = i0; i11 = i1; di = 1;
+        i1 -= rem; i00 = i0; i11 = i1;
+        di = 1; ikk = (ik << 4);
     }
-    rem = stdMath.floor((i1-i0)/ik+1)&7; // unroll the rest range mod 8 + remainder
+    // unroll the rest range mod 16 + remainder
+    i0r = i0+ik*(stdMath.floor((i1-i0)/ik+1)&15);
     
     if ( x_array )
     {
         i00 = stdMath.max(0,i00); i11 = stdMath.min(x.length-1,i11);
-        for(i0r=i0+ik*rem,i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,x[i],i);
-        for(ikk=ik*8,ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
+        for(i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,x[i],i);
+        for(ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
         {
             i =ii; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
+            i+=ik; Fv = F(Fv,x[i],i);
             i+=ik; Fv = F(Fv,x[i],i);
             i+=ik; Fv = F(Fv,x[i],i);
             i+=ik; Fv = F(Fv,x[i],i);
@@ -199,10 +119,18 @@ function operate( F, F0, x, i0, i1, ik, strict )
     }
     else
     {
-        for(i0r=i0+ik*rem,i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,i,i);
-        for(ikk=ik*8,ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
+        for(i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,i,i);
+        for(ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
         {
             i =ii; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
+            i+=ik; Fv = F(Fv,i,i);
             i+=ik; Fv = F(Fv,i,i);
             i+=ik; Fv = F(Fv,i,i);
             i+=ik; Fv = F(Fv,i,i);
@@ -215,15 +143,37 @@ function operate( F, F0, x, i0, i1, ik, strict )
     }
     return Fv;
 }
+function array( n, x0, xs )
+{
+    var x = is_array(n) ? n : ((n=(n|0)) > 0 ? new Array(n) : []);
+    n = x.length;
+    if ( (0 < n) && (null != x0) )
+    {
+        xs = xs||0;
+        var xk = x0;
+        operate("function" === typeof x0 ? function(x,xi,i){
+            x[i] = x0(i); return x;
+        } : (x0 === +x0 ? function(x,xi,i){
+            x[i] = xk; xk += xs; return x;
+        } : function(x,xi,i){
+            x[i] = x0; return x;
+        }), x, x);
+    }
+    return x;
+}
+function pluck( a, k, inplace )
+{
+    return operate(function(b, ai, i){
+        b[i] = ai[k]; return b;
+    }, true === inplace ? a : new Array(a.length), a);
+}
 function conjugation( b, a, n, a0, a1 )
 {
     // C process / symmetry, ie Rotation, CC = I
     return null == a ? null : operate(is_array(n) ? function(b, ai, i){
-        b[i] = n[i]-1-ai;
-        return b;
+        b[i] = n[i]-1-ai; return b;
     } : function(b, ai, i){
-        b[i] = n-1-ai;
-        return b;
+        b[i] = n-1-ai; return b;
     }, b, a, a0, a1);
 }
 function parity( a, n, a0, a1 )
@@ -243,55 +193,15 @@ function inversion( n, n0 )
         return n0-n[i];
     }) : ((n===+n)&&(n0===+n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.N(n0),n));
 }
-/*function rotate( x, n, s, dir )
-{
-    // adapted from FXT library
-    if ( null == x || 1 >= n ) return x;
-    if ( s >= n )  s %= n;
-    if ( 0 === s ) return x;
-
-    var reflect/*reverse* / = parity,
-        i0 = -1===dir ? n-s : s, i1 = n-i0, i2 = n;
-    // Shift is taken modulo n
-    // RTL(0>dir): Rotate away from element #0
-    // LTR(0<dir): Rotate towards element #0
-    return reflect(
-        reflect(
-            reflect(x, null, 0, i0)
-        ,null, i0, i1)
-    ,null, 0, i2);
-}*/
-/*function gray( a, C0, a0, a1 )
-{
-    if ( null == a ) return null;
-    if ( null == a0 ) a0 = 0;
-    if ( null == a1 ) a1 = a.length-1;
-    if ( a0 < a1 )
-    {
-        // using the definition of gray code
-        // ie G{a} = a[0]+G{a[1:n/2]} + C{a[n/2]}+P{G{a[n/2:]}}
-        // taking into account even/odd indexes (ie integer/half-integer spin symmetries),
-        // can produce (generic) gray code (along with C-P-T symmetries)
-        var n = a1-a0+1;
-        gray(a, C0, a0+1, a0+n/2);
-        conjugation(a, C0, a0+n/2, a0+n/2);
-        parity(gray(a, C0, a0+n/2), null, a0+n/2);
-    }
-    return a;
-}*/
 function gray( b, a, n, a0, a1 )
 { 
     // adapted from https://en.wikipedia.org/wiki/Gray_code#n-ary_Gray_code
     if ( null == a ) return null;
     var s = 0;
     return operate(is_array(n) ? function(b, ai, i){
-        b[i] = n[i] > 0 ? (ai + s) % n[i] : 0;
-        s += n[i] - b[i];
-        return b;
+        b[i] = n[i] > 0 ? (ai + s) % n[i] : 0; s += n[i] - b[i]; return b;
     } : function(b, ai, i){
-        b[i] = (ai + s) % n;
-        s += n - b[i];
-        return b;
+        b[i] = (ai + s) % n; s += n - b[i]; return b;
     }, b, a, a0, a1);
 }
 function modulo( b, a, m, c1, c0, a0, a1 )
@@ -300,21 +210,9 @@ function modulo( b, a, m, c1, c0, a0, a1 )
     if ( null == c1 ) c1 = 1;
     if ( null == c0 ) c0 = 0;
     return operate(2===m ? function(b, ai, i){
-        b[i] = c0 + c1*(ai&1);
-        return b;
+        b[i] = c0 + c1*(ai&1); return b;
     } : function(b, ai, i){
-        b[i] = c0 + c1*(ai%m);
-        return b;
-    }, b, a, a0, a1);
-}
-function affine( b, a, c1, c0, a0, a1 )
-{
-    if ( null == a ) return null;
-    if ( null == c1 ) c1 = 1;
-    if ( null == c0 ) c0 = 0;
-    return operate(function(b, ai, i){
-        b[i] = c0 + c1*ai;
-        return b;
+        b[i] = c0 + c1*(ai%m); return b;
     }, b, a, a0, a1);
 }
 function fdiff/*finite_difference*/( b, a, c1, c0, a0, a1 )
@@ -324,8 +222,7 @@ function fdiff/*finite_difference*/( b, a, c1, c0, a0, a1 )
     if ( null == c0 ) c0 = 0;
     var d0 = 0;
     return operate(function(b, ai, i){
-        b[i] = c0 + c1*(ai-d0); d0 = ai;
-        return b;
+        b[i] = c0 + c1*(ai-d0); d0 = ai; return b;
     }, b, a, a0, a1);
 }
 function psum/*partial_sum*/( b, a, c1, c0, a0, a1 )
@@ -335,8 +232,7 @@ function psum/*partial_sum*/( b, a, c1, c0, a0, a1 )
     if ( null == c0 ) c0 = 0;
     var s = 0;
     return operate(function(b, ai, i){
-        s += ai; b[i] = c0 + c1*s;
-        return b;
+        s += ai; b[i] = c0 + c1*s; return b;
     }, b, a, a0, a1);
 }
 function intersection( comm, a, b, dir, a0, a1, b0, b1 )
@@ -348,11 +244,11 @@ function intersection( comm, a, b, dir, a0, a1, b0, b1 )
     if ( null == b1 ) b1 = b.length-1;
     
     var ak = a0 > a1 ? -1 : 1, bk = b0 > b1 ? -1 : 1,
-        al = ak*(a1-a0)+1, bl = bk*(b1-b0)+1,
-        ai = a0, bi = b0, il = 0;
-    if ( null === comm ) comm = new Array(stdMath.min(al,bl));
+        al = ak*(a1-a0)+1, bl = bk*(b1-b0)+1, ai = a0, bi = b0, il = 0;
+    if ( null == comm ) comm = new Array(stdMath.min(al,bl));
     if ( 0 === comm.length ) return comm;
     
+    // O(min(al,bl))
     // assume lists are already sorted ascending/descending (indepentantly)
     while( (0 <= ak*(a1-ai)) && (0 <= bk*(b1-bi)) )
     {
@@ -374,7 +270,7 @@ function intersection( comm, a, b, dir, a0, a1, b0, b1 )
     if ( il < comm.length ) comm.length = il;
     return comm;
 }
-function difference( diff, a, b, dir, a0, a1, b0, b1 )
+function difference/*complement*/( diff, a, b, dir, a0, a1, b0, b1 )
 {
     dir = -1 === dir ? -1 : 1;
     if ( null == a0 ) a0 = 0;
@@ -383,11 +279,11 @@ function difference( diff, a, b, dir, a0, a1, b0, b1 )
     if ( null == b1 ) b1 = b ? b.length-1 : -1;
     
     var ak = a0 > a1 ? -1 : 1, bk = b0 > b1 ? -1 : 1,
-        al = ak*(a1-a0)+1, bl = bk*(b1-b0)+1,
-        ai = a0, bi = a0, dl = 0;
+        al = ak*(a1-a0)+1, bl = bk*(b1-b0)+1, ai = a0, bi = a0, dl = 0;
     if ( !b || !b.length ) return a === +a ? array(a, a0, ak) : (a ? a.slice() : a);
     if ( null == diff ) diff = new Array(al);
     
+    // O(al)
     // assume lists are already sorted ascending/descending (independantly)
     if ( a === +a )
     {
@@ -431,7 +327,7 @@ function difference( diff, a, b, dir, a0, a1, b0, b1 )
     if ( dl < diff.length ) diff.length = dl;
     return diff;
 }
-function merge( union, a, b, dir, a0, a1, b0, b1, indices, unique, inplace )
+function merge/*union*/( union, a, b, dir, a0, a1, b0, b1, indices, unique, inplace )
 {
     dir = -1 === dir ? -1 : 1;
     if ( null == a0 ) a0 = 0;
@@ -455,6 +351,7 @@ function merge( union, a, b, dir, a0, a1, b0, b1, indices, unique, inplace )
     if ( null == union ) union = new Array(ul);
     if ( 0 === union.length ) return inplace ? a : union;
     
+    // O(al+bl)
     // assume lists are already sorted ascending/descending (independantly), even with duplicate values
     while( (0 <= ak*(a1-ai)) && (0 <= bk*(b1-bi)) )
     {
@@ -485,8 +382,9 @@ function merge( union, a, b, dir, a0, a1, b0, b1, indices, unique, inplace )
             }
             else // they're equal, push one unique
             {
-                union[ui++] = last=a[ai];
-                if ( with_duplicates ) union[ui++] = b[bi];
+                // make it stable
+                union[ui++] = last=(a[ai][1] < b[bi][1] ? a[ai] : b[bi]);
+                if ( with_duplicates ) union[ui++] = (a[ai][1] < b[bi][1] ? b[bi] : a[ai]);
                 ai+=ak; bi+=bk;
             }
         }
@@ -549,30 +447,29 @@ function mergesort( a, dir, indices, a0, a1 )
     // in-place
     if ( 1 >= N ) return indices ? (1 === N ? [a0] : []) : a;
     dir = -1 === dir ? -1 : 1;
-    var logN = N, j, n, size = 1, size2 = 2, min = stdMath.min, aux = new Array(N);
+    var logN = N, j, n, b, size = 1, size2 = 2, min = stdMath.min, aux = new Array(N);
     if ( indices )
     {
-        j = a0;
-        a = array(N, function(){ var ai=[a[j],j]; j+=ak; return ai; });
+        j = a0; b = new Array(N);
+        a = operate(function(b,bi,i){b[i]=[a[j],j]; j+=ak; return b;}, b, b);
         a0 = 0; a1 = N-1; ak = 1;
     }
     // O(NlgN)
-    while( logN )
+    while( 0 < logN )
     {
-        n = N-size;
-        for(j=0; j<n; j+=size2)
-        {
+        operate(function(X,j){
             merge(aux, a, a, dir, a0+ak*j, a0+ak*(j+size-1), a0+ak*(j+size), a0+ak*min(j+size2-1, N-1), indices, false, true);
-        }
+        }, null, null, 0, N-size, size2);
         size <<= 1; size2 <<= 1; logN >>= 1;
     }
-    return indices ? array(a, function(i){return a[i][1];}) : a
+    return indices ? pluck(a, 1, true) : a;
 }
 function shuffle( a, cyclic, a0, a1 )
 {
     // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
     // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Sattolo.27s_algorithm
     var rndInt = Abacus.Math.rndInt, N, perm, swap, offset = true === cyclic ? 1 : 0, inc;
+    // O(n)
     if ( is_array(a0) )
     {
         inc = a0; N = inc.length;
@@ -997,13 +894,13 @@ Abacus.Util = {
 ,parity: parity
 ,inversion: inversion
 ,gray: gray
-,affine: affine
 ,modulo: modulo
 ,finitedifference: fdiff
 ,partialsum: psum
 ,sort: mergesort
 ,shuffle: shuffle
 ,pick: pick
+,pluck: pluck
    
 };
 
@@ -1013,7 +910,7 @@ Abacus.BitArray = Class({
         var self = this;
         if ( !(self instanceof BitArray) ) return new BitArray(n);
         self.length = n;
-        self.bits = new Uint32Array(Abacus.Math.ceil(n/32));
+        self.bits = new Uint32Array(stdMath.ceil(n/32));
     }
     
     ,length: 0
@@ -1246,7 +1143,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         if ( RANDOM & order )
         {
             // a uniform random traversal over all traversals of the combinatorial space
-            if ( ("gen" === Abacus.Options.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.Options.MAXMEM) )
+            if ( ("gen" === Abacus.Options.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.Options.MAXMEM) || (Arithmetic.isDefault() && 0 > tot/*has overflowed*/) )
             {
                 // no random unranking supported/enabled
                 // and/or too big to keep in memory
@@ -1729,7 +1626,6 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 ,self.__index
                 ,self._index
                 ,self.__item&&self.__item.slice()
-                ,self.item__
                 ,self._item
                 ,self.__subindex
                 ,self._subindex
@@ -1748,14 +1644,14 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             self.__index = iter_state[1];
             self._index = iter_state[2];
             self.__item = iter_state[3];
-            self.item__ = iter_state[4];
-            self._item = iter_state[5];
-            self.__subindex = iter_state[6];
-            self._subindex = iter_state[7];
-            self.__subitem = iter_state[8];
-            self._subitem = iter_state[9];
-            self._prev = iter_state[10];
-            self._next = iter_state[11];
+            self._item = iter_state[4];
+            self.__subindex = iter_state[5];
+            self._subindex = iter_state[6];
+            self.__subitem = iter_state[7];
+            self._subitem = iter_state[8];
+            self._prev = iter_state[9];
+            self._next = iter_state[10];
+            self.item__ = null == self.__item ? null : self.item_(self.__item);
         }
         else
         {
@@ -1861,9 +1757,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 !n.length ? [] : (0 > dir ? array(n.length, function(i){return n[i]-1;}): array(n.length, 0, 0))
             );
             
-            /*if ( ("gray" === type) || ("gray+modular" === type) )
-                item = gray(item, n);*/
-            
             item = klass.DUAL(item, n, $);
             
             return item;
@@ -1897,9 +1790,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 type = $ && $.type ? $.type : "tensor",
                 add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
                 index = Arithmetic.O, J = Arithmetic.J, index, nd, i;
-            
-            /*if ( ("gray" === type) || ("gray+modular" === type) )
-                item = gray(item, n);*/
             
             // O(n)
             item = klass.DUAL(item, n, $);
@@ -1957,9 +1847,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 }
             }
             
-            /*if ( ("gray" === type) || ("gray+modular" === type) )
-                item = gray(item, n);*/
-            
             item = klass.DUAL(item, n, $);
             
             return item;
@@ -1987,135 +1874,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         }
     }
 });
-/*function next_tensor_gray( item, data, N, dir, type, order )
-{
-    if ( null == item ) return null;
-    
-    var n = N, k = n.length, j, ij, dj, j0, da, db, DI, MIN, MAX;
-    // some C-P-T dualities, symmetries & processes at play here
-    // LEX
-    MIN = 0; MAX = k-1;
-    DI = 1; j0 = MIN; da = 1; db = 0;
-    if ( REFLECTED & order )
-    {
-        //P-symmetric of LEX
-        DI = -DI; j0 = MAX-j0;
-        da = -da; db = MAX-db;
-    }
-    if ( REVERSED & order )
-    {
-        //T-symmetric of LEX
-        dir = -dir;
-    }
-    
-    // adapted from FXT library
-    /*
-    ***GRAY***
-    first: item = +1,+1,..,+1, data = 0,0,..,0
-    
-    last: item = -1,-1,..,-1, data = 0,0,..,0
-    // find position of last even radix:
-    ulong z = 0;
-    for (ulong i=0; i<n_; ++i)  if ( m1_[i]&1 )  z = i;
-    while ( z<n_ )  // last even .. end:
-    {
-        a_[z] = m1_[z];
-        i_[z] = +1;
-        ++z;
-    }
-    
-    ***MODULAR GRAY***
-    first: item = 0,0,..,0, data = 0,0,..,0
-    
-    last: item = 0,0,..,0
-    ulong j = n_;  // track j
-    ulong tt = 1;  // total of transitions to right of track j
-    ulong p = 1;   // product of all radices at and to the right of track j
-    while ( j-- )
-    {
-        ulong r = m1_[j] + 1;  // radix at track
-        p *= r;  // update product
-        ulong t = p - tt;  // this many transitions
-        tt += t;  // update total of transitions
-        ulong a = t % r;  // digit here (value after t transitions)
-        a_[j] = a;
-    }
-    * /
-    if ( 0 > dir )
-    {
-        if ( "gray+modular" === type )
-        {
-            j = j0;
-            while( MIN<=j && j<=MAX && item[j]+1 === n[da*j+db] ) { item[j] = 0; j+=DI; }
-            if ( MIN<=j && j<=MAX )
-            {
-                item[j]++;
-                // decrement:
-                dj = data[j];
-                data[j] = 0 === dj ? n[da*j+db]-1 : dj-1;
-            }
-            else item = null;
-        }
-        else//if ( "gray" === type )
-        {
-            j = j0;
-            while ( MIN<=j && j<=MAX )
-            {
-                ij = item[j];
-                dj = data[j] - ij;
-                if ( dj+1 > n[da*j+db] )
-                {
-                    item[j] = -ij;  // flip direction
-                }
-                else
-                {
-                    data[j] = dj;  // update digit
-                    break;
-                }
-                j+=DI;
-            }
-            if ( MIN>j || j>MAX ) item = null;
-        }
-    }
-    else
-    {
-        if ( "gray+modular" === type )
-        {
-            j = j0;
-            while( MIN<=j && j<=MAX && item[j]+1 === n[da*j+db] ) { item[j] = 0; j+=DI; }
-            if ( MIN<=j && j<=MAX )
-            {
-                item[j]++;
-                // increment:
-                dj = data[j] + 1;
-                if ( dj+1 > n[da*j+db] ) dj = 0;
-                data[j] = dj;
-            }
-            else item = null;
-        }
-        else//if ( "gray" === type )
-        {
-            j = j0;
-            while( MIN<=j && j<=MAX )
-            {
-                ij = item[j];
-                dj = data[j] + ij;
-                if ( dj+1 > n[da*j+db] )
-                {
-                    item[j] = -ij;  // flip direction
-                }
-                else
-                {
-                    data[j] = dj;  // update digit
-                    break;
-                }
-                j+=DI;
-            }
-            if ( MIN>j || j>MAX ) item = null;
-        }
-    }
-    return item;
-}*/
 function next_tensor( item, N, dir, type, order, item_ )
 {
     var n = N, k, i, j, i0, i1, DI, a, b, MIN, MAX;
@@ -2216,9 +1974,9 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             n = $.sub.dimension();
         }
         $.base = $.dimension = n;
-        // random ordering for multisets / derangements / involutions
+        // random ordering for derangements / involutions
         // is based on random generation, instead of random unranking
-        $.rand = {"multiset":1,"derangement":1,"involution":1};
+        $.rand = {"derangement":1,"involution":1};
         if ( "multiset" === $.type )
         {
             $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array(n, 1, 0);
@@ -2266,10 +2024,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 item = 0 > dir ? [n-1].concat(array(n-1, 0, 1)) : array(n, 0, 1);
             }
-            else if ( "multiset" === type )
-            {
-                item = 0 > dir ? $.multiset.slice().reverse() : $.multiset.slice();
-            }
             else if ( "derangement" === type )
             {
                 if ( 2 > n ) return null;
@@ -2282,6 +2036,10 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 {
                     item = 0 > dir ? array(n, n-1, -1) : array(n, function(i){return i&1?i-1:i+1;});
                 }
+            }
+            else if ( "multiset" === type )
+            {
+                item = 0 > dir ? $.multiset.slice().reverse() : $.multiset.slice();
             }
             else//if ( ("involution" === type) || ("permutation" === type) )
             {
@@ -2306,12 +2064,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 // p ~ 1 / n, O(n)
                 var k = rndInt(0, n-1);
                 item = 0 < k ? array(n-k, k, 1).concat(array(k, 0, 1)) : array(n, 0, 1);
-            }
-            else if ( "multiset" === type )
-            {
-                // p ~ m1!*..*mk! / n!, O(n)
-                // fisher-yates-knuth unbiased multiset shuffling
-                item = shuffle($.multiset.slice());
             }
             else if ( "derangement" === type )
             {
@@ -2377,6 +2129,12 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                         // else fixed point, nothing to do
                     }
             }
+            else if ( "multiset" === type )
+            {
+                // p ~ m1!*..*mk! / n!, O(n)
+                // fisher-yates-knuth unbiased multiset shuffling
+                item = shuffle($.multiset.slice());
+            }
             else//if ( "permutation" === type )
             {
                 // p ~ 1 / n!, O(n)
@@ -2422,7 +2180,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 //item = permutation2inversion(null, multiset2permutation(item));
                 // adapted from https://github.com/WoDoInc/FindMultisetRank
-                // O(nm) ~ O(n^2)
+                // O(nm) ~ O(n^2) TODO construct O(nlgn) algorithm
                 N = $ && null!=$.count ? $.count : klass.count(n, $);
                 M = $.multiplicity.slice(); I = Arithmetic.I;
                 for(m=n-1,i=0; i<m && Arithmetic.gt(N, I); i++)
@@ -2470,7 +2228,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else if ( "multiset" === type )
             {
                 // adapted from https://github.com/WoDoInc/FindMultisetRank
-                // O(nm) ~ O(n^2)
+                // O(nm) ~ O(n^2) TODO construct O(nlgn) algorithm
                 N = $ && null!=$.count ? $.count : klass.count(n, $);
                 M = $.multiplicity.slice(); item = array(n);
                 for(i=0; i<n; i++)
@@ -2522,10 +2280,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,concatenate: function( /* permutations */ ) {
             return permutationconcatenation( slice.call(arguments) );
         }
-        ,multiset: multiset
-        ,inverse: function( item ) {
-            return permutation2inverse(null, item);
-        }
         ,cycles: function( item, dir ) {
             return -1 === dir ? cycles2permutation(item) : permutation2cycles(item);
         }
@@ -2534,6 +2288,13 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         ,inversion: function( item, dir ) {
             return -1 === dir ? inversion2permutation(null, item) : permutation2inversion(null, item);
+        }
+        ,inverse: function( item ) {
+            return permutation2inverse(null, item);
+        }
+        ,multiset: function( item, multi, dir ) {
+            if ( item === +item ) return multiset(multi, item, -1===dir?-1:1) /*generate multiset*/;
+            return -1 === dir ? multiset2permutation(item) : permutation2multiset(item, multi);
         }
         ,matrix: function( item, transposed, dir ) {
             return -1 === dir ? matrix2permutation(null, item, transposed) : permutation2matrix(null, item, transposed);
@@ -3643,9 +3404,6 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,subset: function( item, dir ) {
             return -1 === dir ? fdiff(new Array(item.length), item, 1, 1) : psum(new Array(item.length), item, 1, 1);
         }
-        /*,sets: function( item, dir ) {
-            return -1 === dir ? sets2partition(item) : partition2sets(item);
-        }*/
         ,pack: function( item, dir ) {
             return -1 === dir ? unpackpartition(item) : packpartition(item)
         }
@@ -3991,57 +3749,19 @@ function unpackpartition( packed, dir )
     }
     return partition;
 }
-/*function partition2sets( partition )
-{
-    if ( null == partition ) return null;
-    var item = 0;
-    return array(partition.length, function(k){
-        var n = partition[k], subset = array(n, item, 1);
-        item += n;
-        return subset;
-    });
-}
-function sets2partition( set_partition )
-{
-    if ( null == set_partition ) return null;
-    return array(set_partition.length, function(k){
-        return set_partition[k].length;
-    });
-}*/
-/*function permutation2inversion2( permutation, dir, inversion )
-{
-    // O(n^2) inversion computation
-    var i, j, n = permutation.length;
-    inversion = inversion || new Array(n);
-    if ( -1 === dir )
-    {
-        // left inversion count
-        inversion[0]=0;
-        for(i=1,inversion[i]=0; i<n; i++)for(j=0; j<i; j++)
-            if ( permutation[j] > permutation[i] ) inversion[i]++;
-    }
-    else
-    {
-        // right inversion count
-        for(i=0,inversion[i]=0; i<n; i++)for(j=i+1; j<n; j++)
-            if ( permutation[j] < permutation[i] ) inversion[i]++;
-    }
-    return inversion;
-}*/
 function multiset( m, n, dir )
 {
     var nm = m ? m.length : 0, dk = 1, k = 0,
         ki = 0, mk = ki < nm ? m[ki]||1 : 1;
     if ( -1 === dir ){ dk = -1; k = (nm||n)-1; }
-    return array(n, function(){
+    return operate(function(m,i){
         if ( 0 >= mk )
         {
             ki++; k+=dk;
             mk = ki<nm ? m[ki]||1 : 1;
         }
-        mk--;
-        return k;
-    });
+        mk--; m[i] = k; return m;
+    }, new Array(n), null, 0, n-1);
 }
 function permutation2matrix( matrix, permutation, transposed )
 {
@@ -4080,39 +3800,34 @@ function matrix2permutation( permutation, matrix, transposed )
 }
 function multiset2permutation( multiset )
 {
-    // O(nlgn) get associated permutation(unique elements) = permutation of indices that sorts the multiset
+    // O(nlgn) get associated permutation(unique elements) = invpermutation of indices that sorts the multiset
     // from multiset permutation(repeated elements)
-    return mergesort(multiset, 1, true/*return indices*/);
+    return permutation2inverse(null, mergesort(multiset, 1, true/*return indices*/));
 }
 function permutation2multiset( permutation, multiset )
 {
     // O(n) get associated multiset permutation(repeated elements) = choose elements by permutation
     // from permutation(unique elements=indices)
-    return multiset&&multiset.length ? array(permutation, function(i){return permutation[i]<multiset.length?multiset[permutation[i]] : permutation[i];}) : permutation;
+    return multiset && multiset.length ? operate(function(p,pi,i){
+        p[i] = pi<multiset.length ? multiset[pi] : pi; return p;
+    }, permutation, permutation) : permutation;
 }
 function permutation2inverse( ipermutation, permutation )
 {
-    var i, n = permutation.length;
-    ipermutation = ipermutation || new Array(n);
-    for(i=0; i<n; i++) ipermutation[permutation[i]] = i;
-    return ipermutation;
+    return operate(function(ip,pi,i){
+        ip[pi] = i; return ip;
+    }, ipermutation||new Array(permutation.length), permutation);
 }
 function permutation2inversion( inversion, permutation, N )
 {
     // O(n log n) inversion computation
     // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
-    var n = permutation.length, i, j, node, ctr, k, kk, Tl, T, twok;
+    var n = permutation.length, k = Abacus.Math.ceil(log2(N||n)),
+        twok = 1 << k, Tl = (1<<(1+k))-1, T = array(Tl, 0, 0);
     
-    k = Abacus.Math.ceil(log2(N||n)); twok = 1 << k;
-    Tl = (1<<(1+k))-1; T = array(Tl, 0, 0);
-    
-    inversion = inversion || new Array(n);
-    for(i=0; i<n; i++)
-    {
-        ctr = permutation[i];
+    return operate(function(inv,ctr,i){
         // Starting bottom-up at the leaf associated with pi
-        node = ctr + twok;
-        for(j=0; j<k; j++)
+        for(var node=ctr+twok,j=0; j<k; j++)
         {
             // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
             if ( node&1 ) ctr -= T[(node >>> 1) << 1];
@@ -4121,28 +3836,21 @@ function permutation2inversion( inversion, permutation, N )
             // 3) move-up the tree
             node >>>= 1;
         }
-        T[node] += 1;
-        inversion[i] = ctr;
-    }
-    return inversion;
+        T[node] += 1; inv[i] = ctr;
+        return inv;
+    }, inversion||new Array(n), permutation);
 }
 function inversion2permutation( permutation, inversion, N )
 {
     // O(n log n) inversion computation
     // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
-    var n = inversion.length, i, j, i2, digit, node, k, Tl, T, twok;
+    var n = inversion.length, k = Abacus.Math.ceil(log2(N||n)),
+        twok = 1 << k, Tl = (1<<(1+k))-1, T = new Array(Tl);
     
-    k = Abacus.Math.ceil(log2(N||n)); twok = 1 << k;
-    Tl = (1<<(1+k))-1; T = new Array(Tl);
     for(i=0; i<=k; i++)for(j=1,i2=1<<i; j<=i2; j++) T[i2-1+j] = 1 << (k-i);
-    
-    permutation = permutation || new Array(n);
-    for(i=0; i<n; i++)
-    {
-        digit = inversion[i]; 
+    return operate(function(perm,digit,i){
         // Starting top-down the tree
-        node = 1;
-        for(j=0; j<k; j++)
+        for(var node=1,j=0; j<k; j++)
         {
             T[node] -= 1;
             node <<= 1;
@@ -4154,10 +3862,9 @@ function inversion2permutation( permutation, inversion, N )
                 node++;
             }
         }
-        T[node] = 0;
-        permutation[i] = node - twok;
-    }
-    return permutation;
+        T[node] = 0; perm[i] = node - twok;
+        return perm;
+    }, permutation||new Array(n), inversion);
 }
 function cycle2swaps( cycle, swaps, slen )
 {
@@ -4284,11 +3991,8 @@ function is_identity( perm )
 }
 function is_involution( perm )
 {
-    for(var pi,n=perm.length,i=0; i<n; i++)
-    {
-        pi = perm[i];
+    for(var n=perm.length,i=0,pi=perm[i]; i<n; i++,pi=perm[i])
         if ( (0 > pi) || (n <= pi) || (perm[pi] !== i) ) return false;
-    }
     return true;
 }
 function is_derangement( perm, kfixed, strict )
@@ -4313,8 +4017,7 @@ function is_indecomposable/*is_connected*/( perm )
 }
 function is_cyclic/*_shift*/( perm )
 {
-    for(var n=perm.length,i=1,i0=perm[0]; i<n; i++)
-        if ( perm[i] !== ((i0+i)%n) ) return false;
+    for(var n=perm.length,i=1,i0=perm[0]; i<n; i++) if ( perm[i] !== ((i0+i)%n) ) return false;
     return true;
 }
 function is_kthroot( perm, k )
@@ -4322,13 +4025,6 @@ function is_kthroot( perm, k )
     k = k || 0;
     return 0===k ? is_identity(perm) : (1===k ? is_involution(perm) : (k&1 ? is_identity(permutationproduct(array(k, perm))) : is_involution(permutationproduct(array(k>>>1, perm)))));
 }
-/*function has_cycle( perm, k, strict )
-{
-    var cycle = permutation2cycles( perm, false ), n = cycle.length, i;
-    strict = false !== strict;
-    for(i=0; i<n; i++) if ( (strict && cycle[i].length === k) || (!strict && cycle[i].length >= k) ) return true;
-    return false;
-}*/
 
 // export it
 return Abacus;
