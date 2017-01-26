@@ -4115,9 +4115,20 @@ function next_partition( item, N, dir, K, M, order, PI )
         }
         else
         {
-            j = M ? i0+DI : i0;
-            m = M ? ((n%M) || M) : n;
-            if ( (MIN<=j && j<=MAX) && (item[M?i1:i0] < m) )
+            if ( M )
+            {
+                m = stdMath.min(M,n-M);
+                k = stdMath.floor(n/M)+(n%M?1:0)-1;
+                //console.log([MAX, k, item[i0+(k-1)*DI], m].join('|'));
+                m = MAX > k || item[i0+(k-1)*DI] < m;
+                j = i0+DI;
+            }
+            else
+            {
+                m = item[i0] < n;
+                j = i0;
+            }
+            if ( MIN<=j && j<=MAX && m )
             {
                 if ( 0 < MAX )
                 {
