@@ -21,8 +21,8 @@ echo('---');
 
 // Partitions
 
-echo('o = Abacus.Partition(7,{length:"constant"})');
-o = Abacus.Partition(7,{length:"constant"});
+echo('o = Abacus.Partition(7)');
+o = Abacus.Partition(7);
 
 echo('o.total()'); 
 echo(o.total());
@@ -127,8 +127,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(20,{type:"packed",length:"constant"})');
-o = Abacus.Partition(20,{type:"packed",length:"constant"});
+echo('o = Abacus.Partition(20,{type:"packed"})');
+o = Abacus.Partition(20,{type:"packed"});
 
 echo('o.total()'); 
 echo(o.total());

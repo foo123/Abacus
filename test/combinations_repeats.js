@@ -23,9 +23,6 @@ echo('---');
 echo('o = Abacus.Combination(6,3,{type:"repeated"})');
 o = Abacus.Combination(6,3,{type:"repeated"});
 
-echo('o.dimension()'); 
-echo(o.dimension());
-
 echo('o.total()'); 
 echo(o.total());
 
@@ -66,6 +63,9 @@ print_all( o.order("colex,reflected") );
 
 echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
+
+/*echo('o.order("colex,reversed,reflected")');
+print_all( o.order("colex,reversed,reflected") );*/
 
 echo('o.order("random")');
 print_all( o.order("random") );

@@ -706,9 +706,9 @@ function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null
     if ( null == partitions.mem[key] )
     {
         partitions.mem[key] = operate(function(p, k){
-            return add(p, operate(function(pk, m){
+            return operate(function(pk, m){
                 return add(pk, p_nkab(n, k, 1, m));
-            }, p, null, m1, m0?m0:n-k+1, 1));
+            }, p, null, m1, m0?m0:n-k+1, 1);
         }, p, null, k0, k1, 1);
     }
     return partitions.mem[key];
@@ -3320,7 +3320,7 @@ function comb_item_( item, n, k, order, type )
 function next_combination( item, N, dir, type, order, CI )
 {
     //maybe "use asm"
-    var k = N[1], n = N[0], i, j, index, curr, i0, DI, MIN, MAX, a, b, da, db;
+    var k = N[1], n = N[0], i, j, index, curr, i0, DI, MIN, MAX, a, b, da, db, inc, repeated;
         
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
@@ -3399,30 +3399,47 @@ function next_combination( item, N, dir, type, order, CI )
         }
         else//if ( ("unordered" === type) || ("repeated" === type) )
         {
-            // IN PROGRESS, does not work for COLEX
-            if ( COLEX&order )
+            repeated = "repeated" === type; inc = repeated ? 0 : 1;
+            if ( COLEX & order )
             {
-            for(CI=[i0],i=MAX-i0; MIN<=i && i<=MAX; i+=DI) if( item[i]+DI < item[i+DI] ){ CI[0]=i; break; }
+                DI = -DI; i0 = MAX-i0; da = -da; db = MAX-db; i = MAX-i0;
+                j = 0 > DI ? MIN : MAX;
+                if ( (!repeated && item[j]+1>k) || (repeated && item[j]>0) )
+                {
+                    if ( repeated ) while(MIN<=i && i<=MAX && 0===item[i] ) i+=DI;
+                    else while(MIN<=i && i<=MAX && da*i+db===item[i] ) i+=DI;
+                    item[i]-=1; i-=DI;
+                    // attach rest of low block:
+                    while(MIN<=i && i<=MAX) { item[i] = item[i+DI]-inc; i-=DI; }
+                }
+                else item = null;
             }
             else
             {
-            for(CI=[i0],i=i0; MIN<=i && i<=MAX; i-=DI) if( item[i]+k<n+da*i+db ){ CI[0]=i; break; }
+                /*if ( null == CI )
+                {*/
+                    for(index=-1,i=i0; MIN<=i-DI && i-DI<=MAX; i-=DI)
+                        if ( item[i]>item[i-DI]+inc ) { index = i; break; }
+                /*}
+                else
+                {
+                    index = CI[0];
+                }*/
+                if (!(MIN<=index && index<=MAX) && 0 < item[0>DI?MAX:MIN]) index = 0>DI?MAX:MIN;
+                // adjust next indexes after the moved index
+                if ( MIN<=index && index<=MAX )
+                {
+                    curr = n-1+inc;
+                    for (i=i0; MIN<=i && i<=MAX && 0<DI*(i-index); i-=DI)
+                    {
+                        curr -= inc;
+                        item[i] = curr;
+                    }
+                    item[index]--;
+                    //if ( CI ) CI[0] = index+DI;
+                }
+                else item = null;
             }
-            index = CI[0]; curr = item[index]+a;
-            j = "repeated" === type ? n-1 : n-k+da*index+db;
-            if ( a*curr+b === j )
-            {
-                item[index] = curr;
-                CI[0] = index-DI;
-            }
-            else if ( 0 < DI*(j-a*curr+b) )
-            {
-                if ( "repeated" === type ) a = 0;
-                for(i=index; MIN<=i && i<=MAX; i+=DI) { item[i]=curr; curr+=a; }
-                CI[0] = 0 > DI ? MIN : MAX;
-            }
-            //else last item
-            else item = null;
         }
     }
     else
@@ -3474,48 +3491,56 @@ function next_combination( item, N, dir, type, order, CI )
         }
         else//if ( ("unordered" === type) || ("repeated" === type) )
         {
-            // IN PROGRESS, does not work for COLEX
-            a = "repeated" === type ? 0 : 1;
-            if ( COLEX&order )
-            {
-            for(CI=[i0],i=MAX-i0; MIN<=i && i<=MAX; i+=DI) if( item[i]+DI < item[i+DI] ){ CI[0]=i; break; }
-            }
-            else
-            {
-            for(CI=[i0],i=i0; MIN<=i && i<=MAX; i-=DI) if( item[i]+k<n+da*i+db ){ CI[0]=i; break; }
-            }
+            repeated = "repeated" === type; inc = repeated ? 0 : 1;
             if ( COLEX & order )
             {
-                if ( n === item[i0]+k )
+                DI = -DI; i0 = MAX-i0; da = -da; db = MAX-db; i = MAX-i0;
+                if ( (!repeated && item[i]+k<n) || (repeated && item[i]+1<n) )
                 {
-                    // last
-                    item = null;
-                }
-                else
-                {
-                    i = CI[0];
-                    while( item[i]+da === item[i+da] )
+                    curr = da*i+db;
+                    while(MIN<=i+DI && i+DI<=MAX && item[i]+inc === item[i+DI] )
                     {
-                        item[i]=i;  i+=da;
+                        item[i] = curr; i+=DI; curr += inc;
                     }
                     item[i]+=1;
                 }
+                else item = null;
             }
             else
             {
-                index = CI[0]; curr = item[index]+1;
-                j = "repeated" === type ? n-1 : n-k+da*index+db;
-                if ( curr === j )
+                /*if ( null == CI )
+                {*/
+                    if ( repeated )
+                    {
+                        for(index=-1,j=n-1,i=i0; MIN<=i && i<=MAX; i-=DI)
+                            if ( item[i] < j ) { index = i; break; }
+                    }
+                    else
+                    {
+                        for(index=-1,j=n-k,i=i0; MIN<=i && i<=MAX; i-=DI)
+                            if ( item[i] < j+da*i+db ) { index = i; break; }
+                    }
+                /*}
+                else
                 {
-                    item[index] = curr;
-                    CI[0] = index-DI;
-                }
-                else if ( curr < j )
+                    index = CI[0];
+                }*/
+                // adjust next indexes after the moved index
+                if ( MIN<=index && index<=MAX )
                 {
-                    for(i=index; MIN<=i && i<=MAX; i+=DI) { item[i]=curr; curr+=a; }
-                    CI[0] = i0;
+                    curr = item[index]+1;
+                    j = repeated ? n-1 : n-k+da*index+db;
+                    if ( curr === j )
+                    {
+                        item[index] = curr;
+                        //if ( CI ) CI[0] = index-DI;
+                    }
+                    else if ( curr < j )
+                    {
+                        for(i=index; MIN<=i && i<=MAX; i+=DI) { item[i]=curr; curr+=inc; }
+                        //if ( CI ) CI[0] = i0;
+                    }
                 }
-                //else last item
                 else item = null;
             }
         }
@@ -3998,8 +4023,8 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 // TODO, get conjugate order for now
                 if ( K && !M ) item = conjugatepartition(item, dir);
                 
-                if ( ($ && "constant"===$['length']) && (item.length < n) )
-                    item = 0 > dir ? array(n-item.length, 0, 0).concat(item) : item.concat(array(n-item.length, 0, 0));
+                /*if ( ($ && "constant"===$['length']) && (item.length < n) )
+                    item = 0 > dir ? array(n-item.length, 0, 0).concat(item) : item.concat(array(n-item.length, 0, 0));*/
                 if ( "packed" === type ) item = packpartition(item, dir);
             }
             return _item===item ? item.slice() : item;

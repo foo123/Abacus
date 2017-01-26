@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.8.0, in progress** (~ 48kB minified, ~ 15kB zipped)
+**version 0.8.0** (~ 49kB minified, ~ 16kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -563,7 +563,7 @@ o.dispose()
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward [DONE, `random` ordering may be optimised further]
 * support **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object [DONE]
 * support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings [DONE]
-* support multiple combinatorial orderings (ie `lex`, `colex`, `reflex`, `refcolex`, `minimal`, ..) **directly in the successor methods**  instead of using post-transformations on object [ALMOST DONE, in progress]
+* support multiple combinatorial orderings (ie `lex`, `colex`, `reflex`, `refcolex`, `minimal`, ..) **directly in the successor methods**  instead of using post-transformations on object [DONE]
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised further]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
