@@ -666,27 +666,33 @@ function factorial( n, m )
 factorial.mem1 = {};
 factorial.mem2 = {};
 factorial.mem3 = {};
-function p_nkm( n, k, m )
+function p_nkab( n, k, a, b )
 {
     // recursively compute the partition count using the recursive relation:
     // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
     // http://www.programminglogic.com/integer-partition-algorithm/
+    // CLOSED FORM FORMULA FOR THE NUMBER OF RESTRICTED COMPOSITIONS (http://www.fmf.uni-lj.si/~jaklicg/papers/compositions_revision.pdf)
     // compute number of integer partitions of n
-    // into exactly k parts having m as max value
-    // m + k-1 <= n <= k*m
+    // into exactly k parts having summands between a and b (inclusive)
+    // a + k-1 <= n <= k*b
     var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
         key, p = Arithmetic.O;
-    if ( ((m === n) && (1 === k)) || ((k === n) && (1 === m)) ) return Arithmetic.I;
-    if ( (m+k > n+1) || (k*m < n) ) return p;
-    key = String(n)+','+String(k)+','+String(m);
-    if ( null == p_nkm.mem[key] )
+    if ( (0 > n) || (0 >= k) || (a > b) || (a+k > n+1) || (k*b < n) ) return p;
+    if ( ((b === n) && (1 === k)) || ((k === n) && (1 === b)) ) return Arithmetic.I;
+    //if ( a === b ) return k*a === n ? Arithmetic.I : p;
+    key = String(n)+','+String(k)+','+String(a)+','+String(b);
+    if ( null == p_nkab.mem[key] )
+    {
         // compute it directly
-        p_nkm.mem[key] = operate(function(p, j){
-            return add(p, p_nkm(n-m, k-1, j));
-        }, p, null, stdMath.max(1, stdMath.ceil((n-m)/(k-1))), stdMath.min(m, n-m-k+2));
-    return p_nkm.mem[key];
+        //p_nkab(n-k*(a-1), k, 1, b-a+1);
+        n = n-k*(a-1); b = b-a+1;
+        p_nkab.mem[key] = operate(function(p, j){
+            return add(p, p_nkab(n-b, k-1, 1, j));
+        }, p, null, stdMath.max(1, stdMath.ceil((n-b)/(k-1))), stdMath.min(b, n-b-k+2), 1);
+    }
+    return p_nkab.mem[key];
 }
-p_nkm.mem = {};
+p_nkab.mem = {};
 function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null*/ )
 {
     K = null == K ? null : K|0; M = null == M ? null : M|0;
@@ -699,35 +705,56 @@ function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null
     key = String(n)+'|'+String(K)+'|'+String(M);
     if ( null == partitions.mem[key] )
     {
-        for(k=k0; k<=k1; k++)for(m=m0?m0:n-k+1; m>=m1; m--) p = add(p, p_nkm(n, k, m));
-        partitions.mem[key] = p;
+        partitions.mem[key] = operate(function(p, k){
+            return add(p, operate(function(pk, m){
+                return add(pk, p_nkab(n, k, 1, m));
+            }, p, null, m1, m0?m0:n-k+1, 1));
+        }, p, null, k0, k1, 1);
     }
     return partitions.mem[key];
 }
 partitions.mem = {};
+function c_nkab( n, k, a, b )
+{
+    // recursively compute the composition count using the recursive relation:
+    // CLOSED FORM FORMULA FOR THE NUMBER OF RESTRICTED COMPOSITIONS (http://www.fmf.uni-lj.si/~jaklicg/papers/compositions_revision.pdf)
+    // compute number of integer compositions of n
+    // into exactly k parts having summands between a and b (inclusive)
+    var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
+        key, c = Arithmetic.O;
+    if ( (0 > n) || (0 >= k) || (a > b) || (a+k > n+1) || (k*b < n) ) return c;
+    if ( a === b ) return k*a === n ? Arithmetic.I : c;
+    if ( n === b ) return factorial(n-k*a+k-1, k-1);
+    if ( a+1 === b ) return factorial(k, n-k*a);
+    key = String(n)+','+String(k)+','+String(a)+','+String(b);
+    if ( null == c_nkab.mem[key] )
+    {
+        // compute it directly
+        c_nkab.mem[key] = operate(function(c, i){
+            return add(c, c_nkab(i, k-1, a, b));
+        }, c, null, n-b, n-a, 1);
+    }
+    return c_nkab.mem[key];
+}
+c_nkab.mem = {};
 function compositions( n, K /*exactly K parts or null*/, M /*max part is M or null*/ )
 {
     K = null == K ? null : K|0; M = null == M ? null : M|0;
-    var mul = Abacus.Arithmetic.mul, key, k, c = Abacus.Arithmetic.O;
+    var key, c = Abacus.Arithmetic.O, add = Abacus.Arithmetic.add;
     if ( (0 > n) || (K && M && ((K+M > n+1) || (K*M < n))) || (M && M > n) || (K && K > n) ) return c;
     key = String(n)+'|'+String(K)+'|'+String(M);
     if ( null == compositions.mem[key] )
     {
-        if ( /*K &&*/ M )
-        {
-            //k = stdMath.floor(n/M)||1;
-            //compositions.mem[key] = mul(factorial(stdMath.min(M,n-M)-1, K-1-k),K-1);
-            // TODO
-            compositions.mem[key] = c;
-        }
+        if ( K && M )
+            compositions.mem[key] = c_nkab(n, K, 1, M);
         else if ( K )
-        {
-            compositions.mem[key] = factorial(n-1, K-1);
-        }
+            compositions.mem[key] = c_nkab(n, K, 1, n);
+        else if ( M )
+            compositions.mem[key] = operate(function(c, k){
+                return add(c, c_nkab(n, k, 1, M));
+            }, c, null, stdMath.ceil(n/M), n, 1);
         else
-        {
-            compositions.mem[key] = pow2(n-1);
-        }
+            compositions.mem[key] = 1 <= n ? pow2(n-1) : Arithmetic.I;
     }
     return compositions.mem[key];
 }
