@@ -23,9 +23,6 @@ echo('---');
 echo('o = Abacus.Combination(5,3,{type:"ordered+repeated"})');
 o = Abacus.Combination(5,3,{type:"ordered+repeated"});
 
-echo('o.dimension()'); 
-echo(o.dimension());
-
 echo('o.total()'); 
 echo(o.total());
 

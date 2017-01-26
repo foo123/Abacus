@@ -1,8 +1,6 @@
-Abacus.Permutations (VERSION = 0.7.5)
+Abacus.Permutations (VERSION = 0.8.0)
 ---
 o = Abacus.Permutation(4,{type:"cyclic"})
-o.dimension()
-4
 o.total()
 4
 o.next()
@@ -54,7 +52,7 @@ o.order("random")
 [ 3, 0, 1, 2 ]
 [ 0, 1, 2, 3 ]
 o.random()
-[ 0, 1, 2, 3 ]
+[ 1, 2, 3, 0 ]
 o.order("colex").range(-3, -1)
 [ 2, 3, 0, 1 ]
 [ 3, 0, 1, 2 ]

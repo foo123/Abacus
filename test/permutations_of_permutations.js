@@ -19,11 +19,8 @@ var o;
 echo('Abacus Algebraic Composition: Permutations OF Permutations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-echo('o = Abacus.Permutation(2, {sub:Abacus.Permutation(2),submethod:"compose"})');
-o = Abacus.Permutation(2, {sub:Abacus.Permutation(2),submethod:"compose"});
-
-echo('o.dimension()'); 
-echo(o.dimension());
+echo('o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"})');
+o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -47,8 +44,8 @@ print_all( o.rewind(-1), -1 );
 echo('o.random()');
 echo(o.random());
 
-echo('o.order("lex").range(-5, -1)');
-print_all(o.order("colex").range(-5, -1));
+echo('o.order("lex|lex").range(1,-1)');
+print_all(o.order("lex|lex").range(1,-1));
 
 
 // dispose

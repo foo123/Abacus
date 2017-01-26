@@ -23,9 +23,6 @@ echo('---');
 echo('o = Abacus.Permutation(4)');
 o = Abacus.Permutation(4);
 
-echo('o.dimension()'); 
-echo(o.dimension());
-
 echo('o.total()'); 
 echo(o.total());
 
@@ -39,9 +36,9 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
+print_all( o.rewind()/*, 1, function( item ){
     var index = o.index()-(o.hasNext()?1:0),
-        rank = Abacus.Permutation.rank(item);
+        rank = Abacus.Permutation.rank(item, o.n, o.$);
     return [
     item.slice(),
     "index          : " + index,
@@ -53,7 +50,7 @@ print_all( o.rewind(), 1, function( item ){
     "is_involution  : " + (Abacus.Permutation.is_involution(item)?"yes":"no"),
     "is_connected   : " + (Abacus.Permutation.is_connected(item)?"yes":"no")
     ];
-});
+}*/);
 
 echo('backwards');
 echo('o.rewind(-1)');

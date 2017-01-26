@@ -179,7 +179,19 @@ print_all( o.rewind() );
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
+/*
+echo('o.order("colex")');
+print_all( o.order("colex") );
 
+echo('o.order("colex,reflected")');
+print_all( o.order("colex,reflected") );
+
+echo('o.order("colex,reversed")');
+print_all( o.order("colex,reversed") );
+
+echo('o.order("random")');
+print_all( o.order("random") );
+*/
 echo('o.random()');
 echo(o.random());
 

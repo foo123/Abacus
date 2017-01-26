@@ -23,9 +23,6 @@ echo('---');
 echo('o = Abacus.Subset(5)');
 o = Abacus.Subset(5);
 
-echo('o.dimension()'); 
-echo(o.dimension());
-
 echo('o.total()'); 
 echo(o.total());
 

@@ -23,9 +23,6 @@ echo('---');
 echo('o = Abacus.Permutation(6,{type:"multiset",multiplicity:[1,2,2,1]})');
 o = Abacus.Permutation(6,{type:"multiset",multiplicity:[1,2,2,1]});
 
-echo('o.dimension()'); 
-echo(o.dimension());
-
 echo('o.total()'); 
 echo(o.total());
 
@@ -39,7 +36,16 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind()/*, 1, function(item){
+    var index = o.index()-(o.hasNext() ?1:0),
+        rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [
+    item.slice(),
+    index,
+    rank,
+    Abacus.Permutation.unrank(rank, o.n, o.$)
+    ];
+}*/ );
 
 echo('backwards');
 echo('o.rewind(-1)');

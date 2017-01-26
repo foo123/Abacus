@@ -23,9 +23,6 @@ echo('---');
 echo('o = Abacus.Tensor(3,3,{type:"tuple"})');
 o = Abacus.Tensor(3,3,{type:"tuple"});
 
-echo('o.dimension()'); 
-echo(o.dimension());
-
 echo('o.total()'); 
 echo(o.total());
 
