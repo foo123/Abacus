@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.8.0** (~ 49kB minified, ~ 16kB zipped)
+**version 0.8.1** (~ 49kB minified, ~ 16kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -62,8 +62,9 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `MultisetPermutation` (`test/multiset_permutations.js`)
 * `DerangementPermutation` (`test/derangements.js`) **rank/unrank methods missing**
 * `InvolutionPermutation` (`test/involutions.js`) **only counting &amp; random generation**
+* `ConnectedPermutation` (`test/connected_permutations.js`) **only counting &amp; random generation**
 * `UnorderedCombination` (`test/combinations.js`)
-* `OrderedCombination` (`test/ordered_combinations.js`)
+* `OrderedCombination` / `kPermutation` (`test/ordered_combinations.js`)
 * `UnorderedRepeatedCombination` (`test/combinations_repeats.js`)
 * `OrderedRepeatedCombination` (`test/ordered_combinations_repeats.js`)
 * `Subset` (`test/subsets.js`)
@@ -567,7 +568,8 @@ o.dispose()
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised further]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
-* add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `Composition` &amp; `Partition` (TODO)
+* add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
+* full support for `colex` ordering `Composition` &amp; `Partition` [DONE PARTIALY]
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * use numeric arrays (ie `Uint32`) to store combinatorial items and/or make faster `successor` methods and other numerical routines to `asm.js` (TODO?)
 * add `LatinSquare`, `MagicSquare` algorithms (TODO)

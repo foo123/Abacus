@@ -1,48 +1,54 @@
-Abacus.Compositions (VERSION = 0.8.0)
+Abacus.Compositions (VERSION = 0.8.1)
 ---
 o = Abacus.Partition(7,{type:"composition","max=":4})
 o.total()
 32
 o.next()
-[ 1, 1, 1, 4 ]
+[ 4, 2, 1 ]
 o.hasNext()
 false
 o.next()
 null
 default order is "lex", lexicographic-order
 o.rewind()
-[ 1, 1, 1, 4 ]
+[ 4, 2, 1 ]
 backwards
 o.rewind(-1)
-[ 4, 1, 1, 1 ]
+[ 1, 2, 4 ]
 o.order("lex,reflected")
-[ 4, 1, 1, 1 ]
+[ 1, 2, 4 ]
 o.order("lex,reversed")
-[ 4, 1, 1, 1 ]
+[ 1, 2, 4 ]
+o.order("colex")
+[ 1, 2, 4 ]
+o.order("colex,reflected")
+[ 4, 2, 1 ]
+o.order("colex,reversed")
+[ 4, 2, 1 ]
 o.random()
-[ 1, 1, 4, 1 ]
+[ 2, 4, 1 ]
 o.dispose()
 o = Abacus.Partition(8,{type:"composition","max=":4})
 o.total()
 64
 o.next()
-[ 1, 1, 1, 5 ]
+[ 4, 2, 2, 0 ]
 o.hasNext()
 false
 o.next()
 null
 default order is "lex", lexicographic-order
 o.rewind()
-[ 1, 1, 1, 5 ]
+[ 4, 2, 2, 0 ]
 backwards
 o.rewind(-1)
-[ 5, 1, 1, 1 ]
+[ 1, 2, 2, 3 ]
 o.order("lex,reflected")
-[ 5, 1, 1, 1 ]
+[ 0, 2, 2, 4 ]
 o.order("lex,reversed")
-[ 5, 1, 1, 1 ]
+[ 1, 2, 2, 3 ]
 o.random()
-[ 4, 1, 1, 1, 1 ]
+[ 3, 1, 4 ]
 o.dispose()
 o = Abacus.Partition(7,{type:"composition","parts=":4})
 o.total()
@@ -139,6 +145,69 @@ o.order("lex,reversed")
 [ 1, 1, 3, 2 ]
 [ 1, 1, 2, 3 ]
 [ 1, 1, 1, 4 ]
+o.order("colex")
+[ 4, 1, 1, 1 ]
+[ 3, 2, 1, 1 ]
+[ 2, 3, 1, 1 ]
+[ 1, 4, 1, 1 ]
+[ 3, 1, 2, 1 ]
+[ 2, 2, 2, 1 ]
+[ 1, 3, 2, 1 ]
+[ 2, 1, 3, 1 ]
+[ 1, 2, 3, 1 ]
+[ 1, 1, 4, 1 ]
+[ 3, 1, 1, 2 ]
+[ 2, 2, 1, 2 ]
+[ 1, 3, 1, 2 ]
+[ 2, 1, 2, 2 ]
+[ 1, 2, 2, 2 ]
+[ 1, 1, 3, 2 ]
+[ 2, 1, 1, 3 ]
+[ 1, 2, 1, 3 ]
+[ 1, 1, 2, 3 ]
+[ 1, 1, 1, 4 ]
+o.order("colex,reflected")
+[ 1, 1, 1, 4 ]
+[ 1, 1, 2, 3 ]
+[ 1, 1, 3, 2 ]
+[ 1, 1, 4, 1 ]
+[ 1, 2, 1, 3 ]
+[ 1, 2, 2, 2 ]
+[ 1, 2, 3, 1 ]
+[ 1, 3, 1, 2 ]
+[ 1, 3, 2, 1 ]
+[ 1, 4, 1, 1 ]
+[ 2, 1, 1, 3 ]
+[ 2, 1, 2, 2 ]
+[ 2, 1, 3, 1 ]
+[ 2, 2, 1, 2 ]
+[ 2, 2, 2, 1 ]
+[ 2, 3, 1, 1 ]
+[ 3, 1, 1, 2 ]
+[ 3, 1, 2, 1 ]
+[ 3, 2, 1, 1 ]
+[ 4, 1, 1, 1 ]
+o.order("colex,reversed")
+[ 1, 1, 1, 4 ]
+[ 1, 1, 2, 3 ]
+[ 1, 2, 1, 3 ]
+[ 2, 1, 1, 3 ]
+[ 1, 1, 3, 2 ]
+[ 1, 2, 2, 2 ]
+[ 2, 1, 2, 2 ]
+[ 1, 3, 1, 2 ]
+[ 2, 2, 1, 2 ]
+[ 3, 1, 1, 2 ]
+[ 1, 1, 4, 1 ]
+[ 1, 2, 3, 1 ]
+[ 2, 1, 3, 1 ]
+[ 1, 3, 2, 1 ]
+[ 2, 2, 2, 1 ]
+[ 3, 1, 2, 1 ]
+[ 1, 4, 1, 1 ]
+[ 2, 3, 1, 1 ]
+[ 3, 2, 1, 1 ]
+[ 4, 1, 1, 1 ]
 o.random()
 [ 2, 2, 2, 1 ]
 o.dispose()
@@ -298,5 +367,5 @@ o.order("lex,reversed")
 [ 1, 1, 2, 4 ]
 [ 1, 1, 1, 5 ]
 o.random()
-[ 4, 2, 1, 1 ]
+[ 1, 1, 5, 1 ]
 o.dispose()

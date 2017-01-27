@@ -1,4 +1,4 @@
-Abacus Algebraic Composition: Permutations OF Combinations (VERSION = 0.8.0)
+Abacus Algebraic Composition: Permutations OF Combinations (VERSION = 0.8.1)
 ---
 o = Abacus.Permutation(Abacus.Combination(6,3))
 o.dimension()
@@ -256,7 +256,7 @@ o.rewind(-1)
 [ 0, 2, 1 ]
 [ 0, 1, 2 ]
 o.random()
-[ 3, 0, 5 ]
+[ 4, 3, 0 ]
 o.order("lex").range(-5, -1)
 [ 4, 5, 3 ]
 [ 5, 3, 4 ]

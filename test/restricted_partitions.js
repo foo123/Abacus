@@ -41,6 +41,15 @@ print_all( o.order("lex,reflected") );
 echo('o.order("lex,reversed")');
 print_all( o.order("lex,reversed") );
 
+echo('o.order("colex")');
+print_all( o.order("colex") );
+
+echo('o.order("colex,reflected")');
+print_all( o.order("colex,reflected") );
+
+echo('o.order("colex,reversed")');
+print_all( o.order("colex,reversed") );
+
 echo('o.random()');
 echo(o.random());
 
