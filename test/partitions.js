@@ -21,8 +21,8 @@ echo('---');
 
 // Partitions
 
-echo('o = Abacus.Partition(7)');
-o = Abacus.Partition(7);
+echo('o = Abacus.Partition(6)');
+o = Abacus.Partition(6);
 
 echo('o.total()'); 
 echo(o.total());
