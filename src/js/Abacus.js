@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics library for Node/XPCOM/JS, PHP, Python, Java, C/C++
-*   @version: 0.8.1
+*   @version: 0.8.2
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -22,7 +22,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.8.1"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.8.2"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -601,7 +601,8 @@ function factorial( n, m )
     if ( null == m )
     {
         // http://www.luschny.de/math/factorial/index.html
-        // simple factorial = n! = n (n-1)!
+        // https://en.wikipedia.org/wiki/Factorial
+        // simple factorial = F(n) = n F(n-1) = n!
         if ( 10 >= n ) return 0 > n ? O : (0 === n ? I : NUM(([1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800])[n-1]));
         key = String(n)/*+'!'*/;
         if ( null == factorial.mem1[key] )
@@ -611,7 +612,9 @@ function factorial( n, m )
     }
     else if ( false === m )
     {
-        // derangement sub-factorial !n = D(n) = n D(n-1) + (-1)^n = [(n!+1)/e]
+        // http://mathworld.wolfram.com/Subfactorial.html
+        // https://en.wikipedia.org/wiki/Derangement
+        // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = !n = [(n!+1)/e]
         if ( 10 >= n ) return 2 > n ? O : NUM(([1, 2, 9, 44, 265, 1854, 14833, 133496, 1334961])[n-2]);
         key = '!'+String(n);
         if ( null == factorial.mem2[key] )
@@ -633,6 +636,7 @@ function factorial( n, m )
     }
     else if ( is_array(m) )
     {
+        // https://en.wikipedia.org/wiki/Multinomial_theorem
         // multinomial = n!/m1!..mk!
         if ( !m.length ) return 0 > n ? O : factorial(n);
         else if ( 0 > n ) return O;
@@ -654,7 +658,8 @@ function factorial( n, m )
                 factorial.mem3[key] = operate(mul, I, null, n+m+1, n);
             return factorial.mem3[key];
         }
-        // binomial = n!/m!(n-m)!
+        // https://en.wikipedia.org/wiki/Binomial_coefficient
+        // binomial = C(n,m) = C(n-1,m-1)+C(n-1,m) = n!/m!(n-m)!
         if ( m+m > n  ) m = n-m; // take advantage of symmetry
         if ( (0 > m) || (1 > n) ) return O;
         else if ( (0 === m) || (1 === n) ) return I;
@@ -664,7 +669,7 @@ function factorial( n, m )
             factorial.mem3[key] = Arithmetic.isDefault() ? stdMath.round(operate(function(Cnm, i){
                 // this is faster and will not overflow unnecesarily for default arithmetic
                 return Cnm*(1+n/i);
-            }, (n=n-m)+1, null, 2, m)) : div(factorial(n,-m), factorial(m));
+            }, (n=n-m)+1, null, 2, m)) : add(factorial(n-1,m-1),factorial(n-1,m))/*div(factorial(n,-m), factorial(m))*/;
         return factorial.mem3[key];
     }
     return O;
@@ -768,6 +773,46 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
     return compositions.mem[key];
 }
 compositions.mem = {};
+function catalan( n )
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        NUM = Arithmetic.N, div = Arithmetic.div, mul = Arithmetic.mul, key;
+    // https://en.wikipedia.org/wiki/Catalan_number
+    // catalan numbers C(n) = (4n+2)C(n-1)/(n+1)
+    if ( 14 >= n ) return 0 > n ? O : NUM(([1,1,2,5,14,42,132,429,1430,4862,16796,58786,208012,742900])[n]);
+    key = String(n);
+    if ( null == catalan.mem[key] )
+        /*catalan.mem[key] = operate(function(c,i){return add(c,mul(catalan(i),catalan(n-1-i)));},O,null,0,n-1,1);*/
+        catalan.mem[key] = div(mul(catalan(n-1),4*n-2),n+1);/* n -> n-1 */
+    return catalan.mem[key];
+}
+catalan.mem = {};
+function bell( n )
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        NUM = Arithmetic.N, add = Arithmetic.add, mul = Arithmetic.mul, key;
+    // https://en.wikipedia.org/wiki/Bell_number
+    // bell numbers B(n) = SUM[k:0->n-1] ( C(n-1,k) B(k) )
+    if ( 12 >= n ) return 0 > n ? O : NUM(([1,1,2,5,15,52,203,877,4140,21147,115975,678570])[n]);
+    key = String(n);
+    if ( null == bell.mem[key] )
+        bell.mem[key] = operate(function(b,k){return add(b,mul(factorial(n-1,k),bell(k)));},O,null,0,n-1,1);
+    return bell.mem[key];
+}
+bell.mem = {};
+function fibonacci( n )
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        NUM = Arithmetic.N, add = Arithmetic.add, key;
+    // http://en.wikipedia.org/wiki/Fibonacci_number
+    // fibonacci numbers F(n) = F(n-1) + F(n-2)
+    if ( 29 >= n ) return 0 > n ? O : NUM(([0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765, 10946,17711,28657,46368,75025,121393,196418,317811])[n]);
+    key = String(n);
+    if ( null == fibonacci.mem[key] )
+        fibonacci.mem[key] = add(fibonacci(n-1),fibonacci(n-2));
+    return fibonacci.mem[key];
+}
+fibonacci.mem = {};
 
 
 Abacus.Class = Class;
@@ -861,6 +906,9 @@ Abacus.Math = {
 ,factorial: factorial
 ,partitions: partitions
 ,compositions: compositions
+,bell: bell
+,catalan: catalan
+,fibonacci: fibonacci
 };
 
 // pluggable arithmetics, eg biginteger Arithmetic
@@ -2267,7 +2315,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,DUAL: CombinatorialIterator.DUAL
         ,count: function( n, $ ) {
             var O = Abacus.Arithmetic.O, type = $ && $.type ? $.type : "tensor";
-            return "tuple"===type ? (!n || (0 >= n[0]) ? O : Abacus.Math.exp(n[0], n[1])) : (!n || !n.length ? O : Abacus.Math.product(n));
+            return "tuple"===type ? (!n || (0 >= n[0]) ? O : Abacus.Math.exp(n[1], n[0])) : (!n || !n.length ? O : Abacus.Math.product(n));
         }
         ,initial: function( n, $, dir ) {
             // some C-P-T dualities, symmetries & processes at play here
