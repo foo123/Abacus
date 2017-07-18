@@ -19,8 +19,10 @@ var o;
 echo('Abacus Algebraic Composition: Permutations OF Permutations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-echo('o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"})');
-o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"});
+//echo('o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"})');
+//o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"});
+echo('o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2))');
+o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2));
 
 echo('o.total()'); 
 echo(o.total());

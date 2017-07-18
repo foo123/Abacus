@@ -166,8 +166,8 @@ echo('o.dispose()');
 o.dispose();
 
 
-echo('o = Abacus.Partition(7,{"parts=":4})');
-o = Abacus.Partition(7,{"parts=":4});
+echo('o = Abacus.Partition(7,{"parts=":4,output:"conjugate"})');
+o = Abacus.Partition(7,{/*"parts="*/"max=":4,output:"conjugate"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -192,8 +192,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(8,{"parts=":4})');
-o = Abacus.Partition(8,{"parts=":4});
+echo('o = Abacus.Partition(8,{"parts=":4,output:"conjugate"})');
+o = Abacus.Partition(8,{/*"parts="*/"max=":4,output:"conjugate"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -218,8 +218,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(11,{"parts=":5})');
-o = Abacus.Partition(11,{"parts=":5});
+echo('o = Abacus.Partition(11,{"parts=":5,output:"conjugate"})');
+o = Abacus.Partition(11,{/*"parts="*/"max=":5,output:"conjugate"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -245,8 +245,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(12,{"parts=":4})');
-o = Abacus.Partition(12,{"parts=":4});
+echo('o = Abacus.Partition(12,{"parts=":4,output:"conjugate"})');
+o = Abacus.Partition(12,{/*"parts="*/"max=":4,output:"conjugate"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -271,8 +271,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(20,{"parts=":4})');
-o = Abacus.Partition(20,{"parts=":4});
+echo('o = Abacus.Partition(20,{"parts=":4,output:"conjugate"})');
+o = Abacus.Partition(20,{/*"parts="*/"max=":4,output:"conjugate"});
 
 echo('o.total()'); 
 echo(o.total());

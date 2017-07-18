@@ -16,12 +16,15 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus Algebraic Composition: Permutations OF Combinations (VERSION = '+Abacus.VERSION+')');
+echo('Abacus Algebraic Composition: Permutations w/ Partial Conditions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// All Combinations = All Permutations of All Unique Combinations
-echo('o = Abacus.Permutation(Abacus.Combination(6,3))');
-o = Abacus.Permutation(Abacus.Combination(6,3));
+// Permutations w/ Partial Conditions = (n-k)-Permutations completed w/ k-Conditional values
+echo('6-Permutations where (unique)values in 0th position ARE (0,1,2) and in 4th position ARE NOT (3,4)')
+//echo('o = Abacus.Tensor(Abacus.Permutation(6-2),{type:"partial",data:[[true,0,1,2],[false,3,4]],ordering:"!=",position:[0,4]})');
+//o = Abacus.Tensor(Abacus.Permutation(6-2),{type:"partial",data:[[true,0,1,2],[false,3,4]],ordering:"!=",position:[0,4]});
+echo('o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4]],ordering:"<>",position:[0,4]}).completeWith(Abacus.Permutation(6-2))');
+o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4]],ordering:"<>",position:[0,4]}).completeWith(Abacus.Permutation(6-2));
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -47,9 +50,6 @@ print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
 echo(o.random());
-
-echo('o.order("lex").range(-5, -1)');
-print_all(o.order("lex").range(-5, -1));
 
 
 // dispose

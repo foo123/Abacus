@@ -101,8 +101,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(12,{type:"packed"})');
-o = Abacus.Partition(12,{type:"packed"});
+echo('o = Abacus.Partition(12,{output:"packed"})');
+o = Abacus.Partition(12,{output:"packed"});
 
 echo('o.total()'); 
 echo(o.total());
@@ -136,8 +136,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(20,{type:"packed"})');
-o = Abacus.Partition(20,{type:"packed"});
+echo('o = Abacus.Partition(20,{output:"packed"})');
+o = Abacus.Partition(20,{output:"packed"});
 
 echo('o.total()'); 
 echo(o.total());

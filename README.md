@@ -5,7 +5,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 (php/python/java/c implementations in progress)
 
 
-**version 0.8.2** (~ 49kB minified, ~ 16kB zipped)
+**version 0.8.8** (~ 66kB minified, ~ 22kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -41,7 +41,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * [Simulacra](https://github.com/foo123/Simulacra) a simulation, algebraic, probability and combinatorics PHP package for scientific computations
 
 
-###Contents
+### Contents
 
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
 * [Features](#features)
@@ -51,7 +51,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * [Todo](#todo)
 
 
-###Features
+### Features
 
 **Supports:** (see: `test/test.bat`)
 
@@ -79,7 +79,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators
 
 
-###Performance
+### Performance
 
 * `first`/`last`, `random`, `rank`/`unrank` methods use **efficient linear** `O(n)` (or **log-linear** `O(nlgn)`) **time and space** algorithms
 * `random` methods are **statisticaly unbiased** (ie uniform sampling methods, see below as well)
@@ -89,7 +89,7 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 **Note** that the lib can generate **very large** (and also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary `random`, `ranking` and `unranking` have to be used (see above)
 
 
-###Credits and References
+### Credits and References
 
 See the comments in the code for algorithms and references used.
 
@@ -111,7 +111,7 @@ A variety of combinatorial algorithms &amp; statistics are given, for example, i
 * [Make good (Pseudo-)Random Number Generators](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)
 
 
-###Example API
+### Example API
 
 **permutations** (see `test/permutations.js`)
 
@@ -557,7 +557,7 @@ o.dispose()
 ```
 
 
-###Todo
+### Todo
 
 * apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors [DONE]
 * support `biginteger` combinatorial computations e.g large factorials [DONE, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example]

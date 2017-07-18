@@ -16,12 +16,14 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus Algebraic Composition: Permutations OF Combinations (VERSION = '+Abacus.VERSION+')');
+echo('Abacus Algebraic Composition: k-Derangements (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// All Combinations = All Permutations of All Unique Combinations
-echo('o = Abacus.Permutation(Abacus.Combination(6,3))');
-o = Abacus.Permutation(Abacus.Combination(6,3));
+// k-Derangements = (n,k)-Combinations OF (n-k)-Derangements
+//echo('o = Abacus.Combination(6,3,{sub:Abacus.Permutation(6-3,{type:"derangement"}),submethod:"combine"})');
+//o = Abacus.Combination(6,3,{sub:Abacus.Permutation(6-3,{type:"derangement"}),submethod:"combine"});
+echo('o = Abacus.Combination(8,4).combineWith(Abacus.Permutation(8-4,{type:"derangement"}))');
+o = Abacus.Combination(8,4).combineWith(Abacus.Permutation(8-4,{type:"derangement"}));
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -39,11 +41,21 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all( o.rewind(), 1, function(item){
+    return [
+    item.join(','),
+    Abacus.Permutation.is_derangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    ];
+} );
 
 echo('backwards');
 echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
+print_all( o.rewind(-1), -1, function(item){
+    return [
+    item.join(','),
+    Abacus.Permutation.is_derangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    ];
+} );
 
 echo('o.random()');
 echo(o.random());

@@ -16,12 +16,19 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus.Subsets (VERSION = '+Abacus.VERSION+')');
+echo('Abacus Algebraic Composition: Permutations w/ Partial Boolean & Algebraic Conditions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Powersets
-echo('o = Abacus.Subset(6)');
-o = Abacus.Subset(6);
+// Permutations w/ Partial Boolean & Algebraic Conditions = (n-k)-Permutations completed w/ k-Conditional values
+echo('6-Permutations where (unique)values in 0th position ARE (0,1,2), in 4th position ARE NOT (3,4) and in 5th = (4)+1')
+echo('o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4],"[4]+1"],ordering:"<>",position:[0,4,5]}).completeWith(Abacus.Permutation(6-3))');
+o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4],"[4]+1"],ordering:"<>",position:[0,4,5]}).completeWith(Abacus.Permutation(6-3));
+
+//echo(o.$.position);
+//echo(o.$.data);
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());
@@ -36,32 +43,11 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
-
-echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
-
-echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
-
-echo('o.order("lex,reversed,reflected")');
-print_all( o.order("lex,reversed,reflected") );
-
-echo('o.order("colex")');
-print_all( o.order("colex") );
-
-echo('o.order("colex,reflected")');
-print_all( o.order("colex,reflected") );
-
-echo('o.order("colex,reversed")');
-print_all( o.order("colex,reversed") );
-
-echo('o.order("random")');
-print_all( o.order("random") );
 
 echo('o.random()');
 echo(o.random());
@@ -70,9 +56,15 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-// Powersets
-echo('o = Abacus.Subset(6,{type:"binary"})');
-o = Abacus.Subset(6,{type:"binary"});
+echo();
+echo('o = Abacus.Tensor(7,{type:"partial",data:["{0..4}","[0]+1","[1]+1","[3]-1","[4]-1"],ordering:"<>",position:[0,1,2,4,5]}).completeWith(Abacus.Permutation(7-5))');
+o = Abacus.Tensor(7,{type:"partial",data:["{0..4}","[0]+1","[1]+1","[3]-1","[4]-1"],ordering:"<>",position:[0,1,2,4,5]}); o.completeWith(Abacus.Permutation(7-o.dimension()));
+
+//echo(o.$.position);
+//echo(o.$.data);
+
+echo('o.dimension()'); 
+echo(o.dimension());
 
 echo('o.total()'); 
 echo(o.total());
@@ -87,36 +79,14 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all( o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
-echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
-
-echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
-
-echo('o.order("colex")');
-print_all( o.order("colex") );
-
-echo('o.order("colex,reflected")');
-print_all( o.order("colex,reflected") );
-
-echo('o.order("colex,reversed")');
-print_all( o.order("colex,reversed") );
-
-echo('o.order("random")');
-print_all( o.order("random") );
-
 echo('o.random()');
 echo(o.random());
-
-echo('o.order("colex").range(-5, -1)');
-print_all(o.order("colex").range(-5, -1));
-
 
 // dispose
 echo('o.dispose()');

@@ -1,4 +1,4 @@
-Abacus.Permutations (VERSION = 0.8.1)
+Abacus.Permutations (VERSION = 0.8.8)
 ---
 o = Abacus.Permutation(2,{type:"connected"})
 o.total()
@@ -9,17 +9,17 @@ o = Abacus.Permutation(3,{type:"connected"})
 o.total()
 2
 o.random()
-[ 1, 2, 0 ]
+[ 2, 0, 1 ]
 o = Abacus.Permutation(4,{type:"connected"})
 o.total()
 6
 o.random()
-[ 2, 3, 1, 0 ]
+[ 2, 0, 3, 1 ]
 o = Abacus.Permutation(5,{type:"connected"})
 o.total()
 24
 o.random()
-[ 2, 0, 3, 4, 1 ]
+[ 4, 2, 3, 0, 1 ]
 o = Abacus.Permutation(6,{type:"connected"})
 o.total()
 120

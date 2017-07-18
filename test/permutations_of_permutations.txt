@@ -1,6 +1,6 @@
-Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 0.8.1)
+Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 0.8.8)
 ---
-o = Abacus.Permutation(Abacus.Permutation(2), {submethod:"compose"})
+o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2))
 o.total()
 4
 o.next()

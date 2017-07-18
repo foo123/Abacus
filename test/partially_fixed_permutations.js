@@ -16,12 +16,13 @@ function print_all( o, prev, f )
 // generate all combinatorial objects without storing all of them in memory at once
 var o;
 
-echo('Abacus Algebraic Composition: Permutations OF Combinations (VERSION = '+Abacus.VERSION+')');
+echo('Abacus Algebraic Composition: Permutations w/ Fixed Partial Data (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// All Combinations = All Permutations of All Unique Combinations
-echo('o = Abacus.Permutation(Abacus.Combination(6,3))');
-o = Abacus.Permutation(Abacus.Combination(6,3));
+// Permutations w/ Fixed Partial Data = (n-k)-Permutations completed w/ k-Fixed values
+echo('6-Permutations where 0th position can have 0,1,2 values and 4th position can have 3,4 values')
+echo('o = Abacus.Tensor(Abacus.Permutation(6-2),{type:"partial",data:[[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]],position:[0,4]})');
+o = Abacus.Tensor(Abacus.Permutation(6-2),{type:"partial",data:[[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]],position:[0,4]});
 
 echo('o.dimension()'); 
 echo(o.dimension());
@@ -47,9 +48,6 @@ print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
 echo(o.random());
-
-echo('o.order("lex").range(-5, -1)');
-print_all(o.order("lex").range(-5, -1));
 
 
 // dispose

@@ -26,6 +26,13 @@ o = Abacus.Permutation(2,{type:"involution"});
 echo('o.total()'); 
 echo(o.total());
 
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+/*echo('o.order("colex")');
+print_all( o.order("colex") );*/
+
 echo('o.random()');
 echo(o.random());
 o.dispose();
@@ -35,6 +42,13 @@ o = Abacus.Permutation(3,{type:"involution"});
 
 echo('o.total()'); 
 echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+/*echo('o.order("colex")');
+print_all( o.order("colex") );*/
 
 echo('o.random()');
 echo(o.random());
@@ -46,6 +60,13 @@ o = Abacus.Permutation(4,{type:"involution"});
 echo('o.total()'); 
 echo(o.total());
 
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+/*echo('o.order("colex")');
+print_all( o.order("colex") );*/
+
 echo('o.random()');
 echo(o.random());
 o.dispose();
@@ -56,6 +77,13 @@ o = Abacus.Permutation(5,{type:"involution"});
 echo('o.total()'); 
 echo(o.total());
 
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+/*echo('o.order("colex")');
+print_all( o.order("colex") );*/
+
 echo('o.random()');
 echo(o.random());
 o.dispose();
@@ -65,6 +93,13 @@ o = Abacus.Permutation(6,{type:"involution"});
 
 echo('o.total()'); 
 echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+/*echo('o.order("colex")');
+print_all( o.order("colex") );*/
 
 echo('o.random()');
 echo(o.random());

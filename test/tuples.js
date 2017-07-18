@@ -20,8 +20,8 @@ echo('Abacus.Tuples (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Tuples
-echo('o = Abacus.Tensor(3,3,{type:"tuple"})');
-o = Abacus.Tensor(3,3,{type:"tuple"});
+echo('o = Abacus.Tensor(3,3,{type:"tuple",output:"gray"})');
+o = Abacus.Tensor(3,3,{type:"tuple",output:"gray"});
 
 echo('o.total()'); 
 echo(o.total());
