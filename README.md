@@ -568,11 +568,11 @@ o.dispose()
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) [DONE, see reference, used as custom iterator ordering, see above, may be optimised further]
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
+* support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. [DONE]
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` [DONE PARTIALY]
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * use numeric arrays (ie `Uint32`) to store combinatorial items and/or make faster `successor` methods and other numerical routines to `asm.js` (TODO?)
 * add `LatinSquare`, `MagicSquare` algorithms (TODO)
-* support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
