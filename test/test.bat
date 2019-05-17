@@ -26,3 +26,5 @@ call node k-derangements.js > k-derangements.txt
 call node partially_fixed_permutations.js > partially_fixed_permutations.txt
 call node conditional_permutations_boolean.js > conditional_permutations_boolean.txt
 call node conditional_permutations_algebraic.js > conditional_permutations_algebraic.txt
+call node latin_squares.js > latin_squares.txt
+call node magic_squares.js > magic_squares.txt

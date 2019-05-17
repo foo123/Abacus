@@ -1,11 +1,11 @@
 # Abacus
-A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
+A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C/C++, Java
 
 
 (php/python/java/c implementations in progress)
 
 
-**version 0.8.8** (~ 66kB minified, ~ 22kB zipped)
+**version 0.9.0** (~ 66kB minified, ~ 22kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -72,6 +72,8 @@ A combinatorics library for Node/XPCOM/JS, PHP, Python, C/C++, Java
 * `Composition` (`test/compositions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `RestrictedPartition` (`test/restricted_partitions.js`) **exactly M max. part**
 * `RestrictedComposition` (`test/restricted_compositions.js`) **exactly K #parts**
+* `LatinSquare` (`test/latin_squares.js`)
+* `MagicSquare` (`test/magic_squares.js`)
 * **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..). **Note** `rank`/`unrank` have to be implemented for this feature to work
 * **algebraic composition** of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`)
@@ -569,10 +571,10 @@ o.dispose()
 * make sure the `.random` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) [DONE]
 * support algebraic composition/cascading of combinatorial objects (of **fixed** dimensions at present) to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) [DONE]
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. [DONE]
+* add `LatinSquare`, `MagicSquare` algorithms [DONE]
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` [DONE PARTIALY]
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * use numeric arrays (ie `Uint32`) to store combinatorial items and/or make faster `successor` methods and other numerical routines to `asm.js` (TODO?)
-* add `LatinSquare`, `MagicSquare` algorithms (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
