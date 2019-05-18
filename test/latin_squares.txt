@@ -1,4 +1,4 @@
-Abacus.LatinSquares (VERSION = 0.9.0)
+Abacus.LatinSquares (VERSION = 0.9.1)
 ---
 1
 

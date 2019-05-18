@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, Java, C/C++
-*   @version: 0.9.0
+*   @version: 0.9.1
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -22,7 +22,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.9.0"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.9.1"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -2587,7 +2587,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                     return i < item.length ? item[i] : subitem[i-item.length];
                 }));
             }
-            else if ( ("complete" === method) || ("interleave" === method) || ("combine" === method) )
+            else if ( ("complete" === method) || ("interleave" === method) || ("join" === method) || ("combine" === method) )
             {
                 // O(n1 + n2)
                 var n1 = item.length, n2 = subitem.length,
@@ -2595,51 +2595,68 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                     item_i1 = i1<n1 ? item[i1] : -1,
                     pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1,
                     compl = "complete" === method ? complement(BASE, item, true) : null/*array(BASE, 0, 1)*/;
-                return array(n3, "complete" === method ? function(ii){
-                    // complete
-                    var v;
-                    if ( pos_i1 === ii )
+                if ( "combine" === method )
+                {
+                    var items = array(n3, 0, 1), output = array(n3);
+                    for(i1=0; i1<n1; i1++) output[item[i1]] = items[item[i1]];
+                    for(i1=n1-1; i1>=0; i1--) items.splice(item[i1], 1);
+                    i1=0; i2=0;
+                    while(i2 < n2)
                     {
-                        v = item_i1;
-                        i1++;
-                        item_i1 = i1<n1 ? item[i1] : -1;
-                        pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1;
+                        while((i1 < n3) && (null != output[i1])) i1++;
+                        if ( i1 < n3 ) output[i1] = items[subitem[i2]];
+                        i2++;
                     }
-                    else
-                    {
-                        v = compl[subitem[i2++]];
-                    }
-                    return v;
-                } : ("interleave" === method ? function(ii){
-                    // interleave
-                    var v;
-                    if ( pos_i1 === ii )
-                    {
-                        v = item_i1;
-                        i1++;
-                        item_i1 = i1<n1 ? item[i1] : -1;
-                        pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1;
-                    }
-                    else
-                    {
-                        v = subitem[i2++];
-                    }
-                    return v;
-                } : function(ii){
-                    // combine
-                    var v;
-                    if ( item_i1 === ii )
-                    {
-                        v = item_i1; i1++;
-                        item_i1 = i1<n1 ? item[i1] : -1;
-                        nk++;
-                    }
-                    else
-                    {
-                        v = nk + subitem[i2++];
-                    }
-                    return v;
-                }));
+                    return output;
+                }
+                else
+                {
+                    return array(n3, "complete" === method ? function(ii){
+                        // complete
+                        var v;
+                        if ( pos_i1 === ii )
+                        {
+                            v = item_i1;
+                            i1++;
+                            item_i1 = i1<n1 ? item[i1] : -1;
+                            pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1;
+                        }
+                        else
+                        {
+                            v = compl[subitem[i2++]];
+                        }
+                        return v;
+                    } : ("interleave" === method ? function(ii){
+                        // interleave
+                        var v;
+                        if ( pos_i1 === ii )
+                        {
+                            v = item_i1;
+                            i1++;
+                            item_i1 = i1<n1 ? item[i1] : -1;
+                            pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1;
+                        }
+                        else
+                        {
+                            v = subitem[i2++];
+                        }
+                        return v;
+                    } : function(ii){
+                        // join
+                        var v;
+                        if ( item_i1 === ii )
+                        {
+                            v = item_i1; i1++;
+                            item_i1 = i1<n1 ? item[i1] : -1;
+                            nk++;
+                        }
+                        else
+                        {
+                            v = nk + subitem[i2++];
+                        }
+                        return v;
+                    }));
+                }
             }
             else/*if ( "project" === method )*/
             {
@@ -2751,7 +2768,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             $.subcount = Abacus.Arithmetic.mul($.count, $.sub.total());
             if ( ("multiply" === method) )
                 $.subdimension = $.dimension*$.sub.dimension();
-            else if ( ("add" === method) || ("connect" === method) || ("concat" === method) || ("complete" === method) || ("interleave" === method) || ("combine" === method) )
+            else if ( ("add" === method) || ("connect" === method) || ("concat" === method) || ("complete" === method) || ("interleave" === method) || ("join" === method) || ("combine" === method) )
                 $.subdimension = $.dimension+$.sub.dimension();
             else
                 $.subdimension = $.dimension;
@@ -2788,6 +2805,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,interleaveWith: function( combIter, pos, dir ) {
         if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
         return this.fuse("interleave", combIter, pos||this.position(), dir);
+    }
+
+    ,joinWith: function( combIter, pos, dir ) {
+        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+        return this.fuse("join", combIter, pos||this.position(), dir);
     }
 
     ,combineWith: function( combIter, pos, dir ) {
@@ -6233,11 +6255,11 @@ LatinSquare = Abacus.LatinSquare = Class({
         isLatinSquare: is_latin
         ,make: function( n ) {
             var i, j, k=1, s = new Array(n);
-            s[0] = new Array(n); for (j=0; j<n; j++) s[0][j] = j+1;
-            for (i=1; i<n; i++)
+            //s[0] = new Array(n); for (j=0; j<n; j++) s[0][j] = j+1;
+            for (i=0; i<n; i++)
             {
                 s[i] = new Array(n);
-                for (j=0; j<n; j++) s[i][j] = s[0][(j+i)%n];
+                for (j=0; j<n; j++) s[i][j] = (j+i)%n + 1;
             }
             return s;
         }
@@ -6262,13 +6284,16 @@ MagicSquare = Abacus.MagicSquare = Class({
     ,__static__: {
         isMagicSquare: is_magic
         ,make: function magic_square( n ) {
+            // non-existent
             if ( 0 >= n || 2 === n ) return null;
-            if ( 1 === n ) return [[n]];
+            // trivial
+            if ( 1 === n ) return [[1]];
 
             var i, j, k,
                 odd = n&1, even = 1-odd,
-                doubly_even = 0 === (n%4),
+                doubly_even = 0 === (/*n%4*/n&3),
                 nn = n*n, n2 = (n-odd)>>>1,
+                O, o, n22, a, b, c, lc, rc, t,
                 n12, n21, magic;
 
             magic = new Array(n);
@@ -6276,6 +6301,7 @@ MagicSquare = Abacus.MagicSquare = Class({
 
             if ( odd ) // odd order
             {
+                // O(n^2)
                 n12 = n+n2; n21 = n2+odd;
                 for (k=0,i=0,j=0; k<nn; k++,j++)
                 {
@@ -6286,27 +6312,27 @@ MagicSquare = Abacus.MagicSquare = Class({
 
             else if ( doubly_even ) // doubly-even order
             {
+                // O(n^2)
                 for (k=0,i=0,j=0; k<nn; k++,j++)
                 {
                     if ( j >= n ) { i++; j=0; }
-                    if ( ((i+1)%4)>>>1 === ((j+1)%4)>>>1 )
-                        magic[i][j] = nn-k;
-                    else
-                        magic[i][j] = k+1;
+                    magic[i][j] = (((i+1)/*%4*/&3)>>>1 === ((j+1)/*%4*/&3)>>>1) ? nn-k : k+1;
                 }
             }
 
-            else if ( even ) // singly-even order
+            else //if ( even ) // singly-even order
             {
-                var O = magic_square(n2), o, n22 = n2*n2, a = 2*n22, b = 3*n22, lc, rc, t;
+                // O((n/2)^2)
+                O = magic_square(n2); n22 = n2*n2;
+                a = n22; b = a<<1; c = b+n22;
                 for (k=0,i=0,j=0; k<n22; k++,j++)
                 {
                     if ( j >= n2 ) { i++; j=0; }
                     o = O[i][j];
                     magic[i][j] = o;
-                    magic[i+n2][j+n2] = o + n22;
-                    magic[i+n2][j] = o + a;
-                    magic[i][j+n2] = o + b;
+                    magic[i+n2][j+n2] = o + a;
+                    magic[i+n2][j] = o + b;
+                    magic[i][j+n2] = o + c;
                 }
                 lc = n2>>>1; rc = lc;
                 for (j=0; j<n2; j++)
@@ -6353,6 +6379,7 @@ MagicSquare = Abacus.MagicSquare = Class({
             }
             return mm;
         }
+        ,pythagorean: NotImplemented
     }
 
     ,n: null

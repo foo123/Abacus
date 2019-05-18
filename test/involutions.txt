@@ -1,4 +1,4 @@
-Abacus.Permutations (VERSION = 0.9.0)
+Abacus.Permutations (VERSION = 0.9.1)
 ---
 o = Abacus.Permutation(2,{type:"involution"})
 o.total()
@@ -36,7 +36,7 @@ o.rewind()
 [ 1, 0, 2, 3 ]
 [ 1, 0, 3, 2 ]
 o.random()
-[ 2, 3, 0, 1 ]
+[ 0, 1, 2, 3 ]
 o = Abacus.Permutation(5,{type:"involution"})
 o.total()
 26
@@ -69,7 +69,7 @@ o.rewind()
 [ 1, 0, 4, 3, 2 ]
 [ 1, 0, 3, 2, 4 ]
 o.random()
-[ 0, 2, 1, 4, 3 ]
+[ 0, 1, 2, 4, 3 ]
 o = Abacus.Permutation(6,{type:"involution"})
 o.total()
 76
@@ -152,4 +152,4 @@ o.rewind()
 [ 1, 0, 3, 2, 4, 5 ]
 [ 1, 0, 3, 2, 5, 4 ]
 o.random()
-[ 5, 1, 2, 3, 4, 0 ]
+[ 2, 5, 0, 4, 3, 1 ]
