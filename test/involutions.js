@@ -4,7 +4,10 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 function print_all( o, prev, f )
 {
     if ( -1 === prev )
-        while ( o.hasNext(-1) ) echo( f ? f(o.next(-1)) : o.next(-1) );
+    {
+        var item;
+        while ( o.hasNext(-1) && (item=o.next(-1)) ) echo( f ? f(item) : item );
+    }
     else
         //while ( o.hasNext() ) echo( o.next() );
         // iterator/iterable are supported
@@ -71,10 +74,10 @@ echo('o.random()');
 echo(o.random());
 o.dispose();
 
-echo('o = Abacus.Permutation(5,{type:"involution"})');
-o = Abacus.Permutation(5,{type:"involution"});
+echo('o = Abacus.Permutation(5).filterBy(Abacus.Permutation.is_involution)');
+o = Abacus.Permutation(5).filterBy(Abacus.Permutation.is_involution);
 
-echo('o.total()'); 
+echo('o.total() /* when filtering is applied .total() and some other functions are in general inaccurate */'); 
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -88,10 +91,10 @@ echo('o.random()');
 echo(o.random());
 o.dispose();
 
-echo('o = Abacus.Permutation(6,{type:"involution"})');
-o = Abacus.Permutation(6,{type:"involution"});
+echo('o = Abacus.Permutation(6).filterBy(Abacus.Permutation.is_involution)');
+o = Abacus.Permutation(6).filterBy(Abacus.Permutation.is_involution);
 
-echo('o.total()'); 
+echo('o.total() /* when filtering is applied .total() and some other functions are in general inaccurate */'); 
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');

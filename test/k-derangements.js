@@ -21,6 +21,32 @@ echo('---');
 
 // k-Derangements (derangements with exactly k fixed points)= (n,k)-Combinations combinedWith (n-k)-Derangements
 
+echo('o = Abacus.Combination(6,3).completeWith(Abacus.Permutation(6-3,{type:"derangement"}))');
+o = Abacus.Combination(6,3).completeWith(Abacus.Permutation(6-3,{type:"derangement"}));
+
+echo('o.dimension()'); 
+echo(o.dimension());
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind(), 1, function(item){
+    return [
+    item.join(','),
+    Abacus.Permutation.is_derangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    ];
+} );
+
 echo('o = Abacus.Combination(6,3).combineWith(Abacus.Permutation(6-3,{type:"derangement"}))');
 o = Abacus.Combination(6,3).combineWith(Abacus.Permutation(6-3,{type:"derangement"}));
 

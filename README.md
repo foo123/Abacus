@@ -5,7 +5,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 (php/python/java/c implementations in progress)
 
 
-**version 0.9.1** (~ 69kB minified, ~ 22kB zipped)
+**version 0.9.2** (~ 69kB minified, ~ 22kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -63,10 +63,10 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 * `DerangementPermutation` (`test/derangements.js`) **rank/unrank methods missing**
 * `InvolutionPermutation` (`test/involutions.js`) **only counting &amp; random generation**
 * `ConnectedPermutation` (`test/connected_permutations.js`) **only counting &amp; random generation**
-* `UnorderedCombination` (`test/combinations.js`)
-* `OrderedCombination` / `kPermutation` (`test/ordered_combinations.js`)
-* `UnorderedRepeatedCombination` (`test/combinations_repeats.js`)
-* `OrderedRepeatedCombination` / `kTuple` (`test/ordered_combinations_repeats.js`)
+* `UnorderedCombination` / `Combination` (`test/combinations.js`)
+* `OrderedCombination` / `Variation` / `kPermutation` (`test/ordered_combinations.js`)
+* `UnorderedRepeatedCombination` / `RepeatedCombination` (`test/combinations_repeats.js`)
+* `OrderedRepeatedCombination` / `RepeatedVariation` / `kTuple` (`test/ordered_combinations_repeats.js`)
 * `Subset` (`test/subsets.js`)
 * `Partition` (`test/partitions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `Composition` (`test/compositions.js`) **rank/unrank methods missing, partial support for COLEX**
@@ -75,6 +75,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
 * **algebraic composition** (of **fixed** dimensions at present) and **sequences** of combinatorial objects to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`, `k-Derangements` = `(n,k) Combinations` **combined With** `(n-k) Derangements`, see `test/k-derangements.js` or `all subsets` = `(n,0)Combinations + (n,1)Combinations + .. + (n,n-1)Combinations + (n,n)Combinations`, see `test/combination_subsets.js`)
+* custom (user-supplied callable) and/or built-in **filters** which can select and generate any custom and complex combinatorial object from filtering other combinatorial objects as efficiently as possible (e.g see `test/filtered.js`, `test/filtered_partitions.js`). Also **algebraic / boolean composition of filters** (i.e `.NOT()`, `.AND()`, `.OR()` and so on..)
 * **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..). **Note** `rank`/`unrank` have to be implemented for this feature to work
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)

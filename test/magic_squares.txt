@@ -1,4 +1,4 @@
-Abacus.MagicSquares (VERSION = 0.9.1)
+Abacus.MagicSquares (VERSION = 0.9.2)
 ---
 1
 

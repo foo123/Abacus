@@ -27,51 +27,51 @@ echo('---');
 // MagicSquares
 o = Abacus.MagicSquare.make(1);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(2);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(3);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(4);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(5);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(8);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(6);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.product(Abacus.MagicSquare.make(3),Abacus.MagicSquare.make(3));
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.product(Abacus.MagicSquare.make(3),Abacus.MagicSquare.make(4));
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 
 o = Abacus.MagicSquare.make(12);
 print_square(o);
-echo(Abacus.MagicSquare.isMagicSquare(o));
+echo(Abacus.MagicSquare.is_magic(o));
 echo('---');
 

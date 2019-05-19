@@ -20,8 +20,8 @@ echo('Abacus.Combinations (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Combinations
-echo('o = Abacus.Combination(6,3,{type:"ordered"})');
-o = Abacus.Combination(6,3,{type:"ordered"});
+echo('o = Abacus.Combination(6,3,{type:"variation"})');
+o = Abacus.Combination(6,3,{type:"variation"});
 
 echo('o.total()'); 
 echo(o.total());

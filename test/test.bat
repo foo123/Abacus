@@ -22,9 +22,12 @@ call node partitions.js > partitions.txt
 call node compositions.js > compositions.txt
 call node restricted_partitions.js > restricted_partitions.txt
 call node restricted_compositions.js > restricted_compositions.txt
+call node filtered_partitions.js > filtered_partitions.txt
+call node filtered_compositions.js > filtered_compositions.txt
 call node k-derangements.js > k-derangements.txt
 call node partially_fixed_permutations.js > partially_fixed_permutations.txt
 call node conditional_permutations_boolean.js > conditional_permutations_boolean.txt
 call node conditional_permutations_algebraic.js > conditional_permutations_algebraic.txt
 call node latin_squares.js > latin_squares.txt
 call node magic_squares.js > magic_squares.txt
+call node filtered.js > filtered.txt
