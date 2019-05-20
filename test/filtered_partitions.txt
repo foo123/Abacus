@@ -1,7 +1,7 @@
-Abacus.Partitions Filtered (VERSION = 0.9.2)
+Abacus.Partitions Filtered (VERSION = 0.9.3)
 ---
 o = Abacus.Partition(10).filterBy(Abacus.Filter.UNIQUE())
-o.total() /* with filtering applied .total() and some other functions are in general not accurate */
+o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */
 42
 default order is "lex", lexicographic-order
 [ 4, 3, 2, 1 ]
@@ -27,7 +27,7 @@ o.rewind(-1)
 [ 5, 3, 2 ]
 [ 4, 3, 2, 1 ]
 o = Abacus.Partition(10).filterBy(Abacus.Filter.LEN(4).AND(Abacus.Filter.MAX(3)))
-o.total() /* with filtering applied .total() and some other functions are in general not accurate */
+o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */
 42
 default order is "lex", lexicographic-order
 [ 3, 3, 2, 2 ]

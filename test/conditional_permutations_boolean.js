@@ -57,3 +57,34 @@ echo('o.dispose()');
 o.dispose();
 
 
+// Combinations w/ Partial Conditions = (n-c,k-c)-Combinations completed w/ c-Conditional values
+echo('6,4-Combinations where values in 0th position ARE (0,1) and in 1st position [0]+1')
+echo('o = Abacus.Tensor(6,{type:"partial",data:["{0,1}","[0]+1"],ordering:"<",position:[0,1]}).completeWith(Abacus.Combination(6-2,4-2)).filterBy(Abacus.Filter.SORTED("<"))');
+o = Abacus.Tensor(6,{type:"partial",data:["{0,1}","[0]+1"],ordering:"<",position:[0,1]}).completeWith(Abacus.Combination(6-2,4-2)).filterBy(Abacus.Filter.SORTED("<"));
+
+echo('o.dimension()'); 
+echo(o.dimension());
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind());
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.order("revlex|revlex")');
+print_all( o.order("revlex|revlex") );
+
+echo('o.random()');
+echo(o.random());
+
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+

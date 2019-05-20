@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, Java, C/C++
-*   @version: 0.9.2
+*   @version: 0.9.3
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -22,7 +22,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.9.2"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.9.3"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -1543,6 +1543,7 @@ function conditional_combinatorial_tensor( v, value_conditions, extra_conditions
 function gen_combinatorial_data( n, data, pos, value_conditions, options )
 {
     options = options || {};
+    pos = pos || array(data.length||0, 0, 1);
     // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
     var min = null==options.min ? 0 : options.min,
         max = null==options.max ? n-1 : options.max,
@@ -1692,9 +1693,27 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
 
     // check additional conditions
     additional_conditions = is_callable(options.extra_conditions) ? function(v,i0,i1){
-        return (min<=v[i0] && v[i0]<=max) && options.extra_conditions(v,i0,i1);
+        var v0 = v[i0];
+        if (
+            // check in range
+            (min>v0 || v0>max) ||
+            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
+            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
+            (V_INC === value_conditions && pos[i0]>v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0]>v0)
+        ) return false
+        return options.extra_conditions(v,i0,i1);
     } : function(v,i0,i1){
-        return (min<=v[i0] && v[i0]<=max);
+        var v0 = v[i0];
+        if (
+            // check in range
+            (min>v0 || v0>max) ||
+            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
+            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
+            (V_INC === value_conditions && pos[i0]>v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0]>v0)
+        ) return false
+        return true;
     };
 
     // compute valid combinatorial data satisfying conditions
@@ -2337,6 +2356,33 @@ function is_latin( square )
     }
     return M;
 }*/
+function find( a, b, nested )
+{
+    if ( nested )
+    {
+        if ( !a || !a.length ) return -1;
+        var index, found, i, j, k, n = a.length, m = b.length;
+        for(i=0; i<n; i++)
+        {
+            k = a[i];
+            found = true;
+            for(j=0; j<m; j++)
+            {
+                if ( b[j] !== k[j] )
+                {
+                    found = false;
+                    break;
+                }
+            }
+            if ( found ) return i;
+        }
+        return -1;
+    }
+    else
+    {
+        return a && a.length ? a.indexOf(b) : -1;
+    }
+}
 
 // Abacus.Filter, Filter class used to define and combine filters to filter combinatorial object by them
 Filter = Abacus.Filter = Class({
@@ -2360,8 +2406,32 @@ Filter = Abacus.Filter = Class({
             });
         }
         ,SORTED: function( dir, strict ) {
-            dir = -1 === dir ? -1 : 1;
             if ( 2 > arguments.length || null == strict ) strict = true;
+            if ( is_string(dir) )
+            {
+                if ( "<" === dir )
+                {
+                    dir = 1;
+                    strict = true;
+                }
+                else if ( ">" === dir )
+                {
+                    dir = -1;
+                    strict = true;
+                }
+                else if ( "<=" === dir || "=<" === dir )
+                {
+                    dir = 1;
+                    strict = false;
+                }
+                else if ( ">=" === dir || "=>" === dir )
+                {
+                    dir = -1;
+                    strict = false;
+                }
+            }
+            dir = +dir;
+            dir = -1 === dir ? -1 : 1;
             return Filter(-1 === dir ? function(item){
                 for(var item0=item[0],i=1,n=item.length; i<n; i++)
                 {
@@ -2408,9 +2478,9 @@ Filter = Abacus.Filter = Class({
         }
         ,VAL: function( pos, val, comp ) {
             comp = comp || "==";
-            val = +val;
+            //val = +val;
             pos = +pos;
-            if ( ">=" === comp )
+            if ( ">=" === comp || "=>" === comp )
             {
                 return Filter(function(item){ return 0<=pos && pos<item.length && item[pos]>=val; });
             }
@@ -2422,7 +2492,7 @@ Filter = Abacus.Filter = Class({
             {
                 return Filter(function(item){ return 0<=pos && pos<item.length && item[pos]<val; });
             }
-            else if ( "<=" === comp )
+            else if ( "<=" === comp || "=<" === comp )
             {
                 return Filter(function(item){ return 0<=pos && pos<item.length && item[pos]<=val; });
             }
@@ -2438,7 +2508,7 @@ Filter = Abacus.Filter = Class({
         ,MAX: function( val, comp ) {
             comp = comp || "==";
             val = +val;
-            if ( ">=" === comp )
+            if ( ">=" === comp || "=>" === comp )
             {
                 return Filter(function(item){ return operate(function(M,i){
                     if ( item[i] > M ) M = item[i];
@@ -2459,7 +2529,7 @@ Filter = Abacus.Filter = Class({
                     return M;
                 }, -Infinity, null, 0, item.length-1, 1) < val; });
             }
-            else if ( "<=" === comp )
+            else if ( "<=" === comp || "=<" === comp )
             {
                 return Filter(function(item){ return operate(function(M,i){
                     if ( item[i] > M ) M = item[i];
@@ -2484,7 +2554,7 @@ Filter = Abacus.Filter = Class({
         ,MIN: function( val, comp ) {
             comp = comp || "==";
             val = +val;
-            if ( ">=" === comp )
+            if ( ">=" === comp || "=>" === comp )
             {
                 return Filter(function(item){ return operate(function(M,i){
                     if ( item[i] < M ) M = item[i];
@@ -2505,7 +2575,7 @@ Filter = Abacus.Filter = Class({
                     return M;
                 }, Infinity, null, 0, item.length-1, 1) < val; });
             }
-            else if ( "<=" === comp )
+            else if ( "<=" === comp || "=<" === comp )
             {
                 return Filter(function(item){ return operate(function(M,i){
                     if ( item[i] < M ) M = item[i];
@@ -3600,7 +3670,6 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 else self._next = has_next;
             }
         }while($.filter && current && !$.filter.apply(current, self)); // if custom filter, reject if invalid, try next
-
         return current;
     }
 
@@ -3830,14 +3899,20 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,succ: function( item, index, n, $, dir, TI ) {
             if ( !n || (null == item) ) return null;
             var type = $ && $.type ? $.type : "tensor",
-                order = $ && null!=$.order ? $.order : LEX;
+                order = $ && null!=$.order ? $.order : LEX,
+                Arithmetic = Abacus.Arithmetic, ind;
             dir = -1 === dir ? -1 : 1;
             if ( "partial" === type )
             {
                 if ( !$.data || !$.data.length ) return null;
-                if ( REVERSED & order ) dir = -dir;
-                var i = null == index ? $.data.indexOf(item) : Abacus.Arithmetic.val(index);
-                return 0>dir ? (0<=i-1 ? $.data[i-1] : null) : (0<=i && i+1<$.data.length ? $.data[i+1] : null);
+                if ( REVERSED & order )
+                {
+                    dir = -dir;
+                    if ( null != index ) index = Arithmetic.sub(Arithmetic.N($.data.length-1),index);
+                }
+                if ( null == index ) index = find($.data, item, true);
+                ind = Arithmetic.val(index);
+                return 0>dir ? (0<=ind-1 ? $.data[ind-1] : null) : (0<=ind && ind+1<$.data.length ? $.data[ind+1] : null);
             }
             return !n[0] || (0 >= n[0]) ? null : next_tensor(item, n, dir, type, order, TI);
         }
@@ -3876,7 +3951,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             if ( "partial" === type )
             {
-                index = Arithmetic.N($.data&&$.data.length ? $.data.indexOf(item) : -1);
+                index = Arithmetic.N(find($.data, item, true));
             }
             else
             {

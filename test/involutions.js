@@ -77,7 +77,7 @@ o.dispose();
 echo('o = Abacus.Permutation(5).filterBy(Abacus.Permutation.is_involution)');
 o = Abacus.Permutation(5).filterBy(Abacus.Permutation.is_involution);
 
-echo('o.total() /* when filtering is applied .total() and some other functions are in general inaccurate */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -94,7 +94,7 @@ o.dispose();
 echo('o = Abacus.Permutation(6).filterBy(Abacus.Permutation.is_involution)');
 o = Abacus.Permutation(6).filterBy(Abacus.Permutation.is_involution);
 
-echo('o.total() /* when filtering is applied .total() and some other functions are in general inaccurate */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');

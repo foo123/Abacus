@@ -1,8 +1,8 @@
-Abacus.Combinatorics Filtered Combinatorial Objects (VERSION = 0.9.2)
+Abacus.Combinatorics Filtered Combinatorial Objects (VERSION = 0.9.3)
 ---
 Get all Permutations filtered from all possible Tuples (an inefficient way to generate permutations)
 o = Abacus.Tensor(3,3,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE())
-o.total() /* with filtering applied .total() and some other functions are in general not accurate */
+o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */
 27
 default order is "lex", lexicographic-order
 [ 0, 1, 2 ]
@@ -22,8 +22,8 @@ o.rewind(-1)
 
 
 Get all Combinations filtered from all possible Tuples (an inefficient way to generate combinations)
-o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED(1,true))
-o.total() /* with filtering applied .total() and some other functions are in general not accurate */
+o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<"))
+o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */
 216
 default order is "lex", lexicographic-order
 [ 0, 1, 2 ]
@@ -72,7 +72,7 @@ o.rewind(-1)
 
 Get all Combinations filtered from all possible Subsets (an inefficient way to generate combinations)
 o = Abacus.Subset(6).filterBy(Abacus.Filter.LEN(3))
-o.total() /* with filtering applied .total() and some other functions are in general not accurate */
+o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */
 64
 default order is "lex", lexicographic-order
 [ 0, 1, 2 ]

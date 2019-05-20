@@ -1,4 +1,4 @@
-Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 0.9.2)
+Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 0.9.3)
 ---
 o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2))
 o.total()
@@ -22,7 +22,7 @@ o.rewind(-1)
 [ 1, 0, 3, 2 ]
 [ 0, 1, 2, 3 ]
 o.random()
-[ 2, 3, 0, 1 ]
+[ 0, 1, 2, 3 ]
 o.order("lex|lex").range(1,-1)
 [ 1, 0, 3, 2 ]
 [ 0, 1, 2, 3 ]

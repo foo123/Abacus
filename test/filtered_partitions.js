@@ -26,7 +26,7 @@ echo('---');
 echo('o = Abacus.Partition(10).filterBy(Abacus.Filter.UNIQUE())');
 o = Abacus.Partition(10).filterBy(Abacus.Filter.UNIQUE());
 
-echo('o.total() /* with filtering applied .total() and some other functions are in general not accurate */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -60,7 +60,7 @@ o = Abacus.Partition(10).filterBy(function(item){
     return true;
 });
 */
-echo('o.total() /* with filtering applied .total() and some other functions are in general not accurate */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
