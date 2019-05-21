@@ -791,6 +791,23 @@ function product( x, i0, i1, ik )
 {
     return operate(Abacus.Arithmetic.mul, Abacus.Arithmetic.I, x, i0, i1, ik);
 }
+function gcd( /* args */ )
+{
+    // https://en.wikipedia.org/wiki/Greatest_common_divisor
+    // https://en.wikipedia.org/wiki/Euclidean_algorithm
+    var args = arguments, c = args.length, a, b, t, i = 0, Arithmetic = Abacus.Arithmetic;
+    if ( 0 === c ) return Arithmetic.O;
+
+    a = Arithmetic.N(args[i++]);
+    while (i<c)
+    {
+        b = Arithmetic.N(args[i++]);
+        // swap them (a >= b)
+        if ( Arithmetic.lt(a,b) ) { t=b; b=a; a=t; }
+        while (!Arithmetic.equ(Arithmetic.O, b)) { t = b; b = Arithmetic.mod(a, t); a = t; }
+    }
+    return a;
+}
 function pow2( n )
 {
     var Arithmetic = Abacus.Arithmetic;
@@ -1199,6 +1216,7 @@ Abacus.Math = {
 
 ,sum: sum
 ,product: product
+,gcd: gcd
 ,pow2: pow2
 ,exp: exp
 ,factorial: factorial
@@ -6696,12 +6714,58 @@ LatinSquare = Abacus.LatinSquare = Class({
     ,__static__: {
         is_latin: is_latin
         ,make: function( n ) {
-            var i, j, k=1, s = new Array(n);
-            //s[0] = new Array(n); for (j=0; j<n; j++) s[0][j] = j+1;
-            for (i=0; i<n; i++)
+            // O(n x n)
+            var i, j, k=1, s = new Array(n), a, b, a2, b2, diag,
+                val = Abacus.Arithmetic.val, gcd = Abacus.Math.gcd;
+            // try to construct a (pan-)diagonal latin square first
+            if ( (n&1) /* odd */ && (n%3) /* not divisable by 3 */ )
             {
-                s[i] = new Array(n);
-                for (j=0; j<n; j++) s[i][j] = (j+i)%n + 1;
+                a = 2; b = 1;
+                diag = 2; // conditions met for (pan-)diagonal square
+            }
+            else
+            {
+                // else try an exhaustive search over the possible factors
+                diag = 0;
+                for(i=1; i<n; i++)
+                {
+                    if ( 1 === val(gcd(i, n)) ) a = i;
+                    else continue;
+                    for(j=i+1; j<n; j++)
+                    {
+                        if ( 1 === val(gcd(j, n)) ) b = j;
+                        else continue;
+                        a2 = a; b2 = b; // backup partial solution
+                        diag = 1;
+                        if ( 1 === val(gcd(a<b?b-a:a-b, n)) && 1 === val(gcd(a+b, n)) )
+                        {
+                            diag = 2; // conditions met for diagonal square
+                            break;
+                        }
+                    }
+                }
+                if ( diag )
+                {
+                    // get latest solutions
+                    a = a2; b = b2;
+                }
+            }
+            if ( diag )
+            {
+                for (i=0; i<n; i++)
+                {
+                    s[i] = new Array(n);
+                    for (j=0; j<n; j++) s[i][j] = ((i*b)+(j*a))%n + 1;
+                }
+            }
+            else
+            {
+                // else default to a normal latin square
+                for (i=0; i<n; i++)
+                {
+                    s[i] = new Array(n);
+                    for (j=0; j<n; j++) s[i][j] = (j+i)%n + 1;
+                }
             }
             return s;
         }

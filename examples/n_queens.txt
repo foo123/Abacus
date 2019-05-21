@@ -1,0 +1,20 @@
+4 Queens solutions (exhaustive search): START
+[ [ 0, 1 ], [ 1, 3 ], [ 2, 0 ], [ 3, 2 ] ]
+[ [ 0, 2 ], [ 1, 0 ], [ 2, 3 ], [ 3, 1 ] ]
+4 Queens solutions (exhaustive search): END
+---
+3 Queens solutions (exhaustive search): START
+3 Queens solutions (exhaustive search): END
+---
+4 Queens solutions (reduced exhaustive search): START
+[ [ 0, 1 ], [ 1, 3 ], [ 2, 0 ], [ 3, 2 ] ]
+[ [ 0, 2 ], [ 1, 0 ], [ 2, 3 ], [ 3, 1 ] ]
+4 Queens solutions (reduced exhaustive search): END
+---
+5 Queens solution (pan-diagonal latin square): START
+O O X O O
+O O O O X
+O X O O O
+O O O X O
+X O O O O
+5 Queen solutions (pan-diagonal latin square): END
