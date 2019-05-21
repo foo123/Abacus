@@ -45,7 +45,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
 * [Features](#features)
-* [Combinatorial Examples](https://github.com/foo123/Abacus/master/examples/README.md)
+* [Combinatorial Examples](/examples/README.md)
 * [Performance](#performance)
 * [Credits and References](#credits-and-references)
 * [Example API](#example-api)
