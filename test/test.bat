@@ -31,3 +31,4 @@ call node conditional_permutations_algebraic.js > conditional_permutations_algeb
 call node latin_squares.js > latin_squares.txt
 call node magic_squares.js > magic_squares.txt
 call node filtered.js > filtered.txt
+call node recursive_permutations.js > recursive_permutations.txt

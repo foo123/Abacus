@@ -1,4 +1,4 @@
-Abacus.Tensors (VERSION = 0.9.3)
+Abacus.Tensors (VERSION = 0.9.4)
 ---
 o = Abacus.Tensor(1,2,3)
 o.total()
@@ -61,12 +61,12 @@ o.order("colex,reversed")
 [ 1, 0, 0 ]
 [ 0, 0, 0 ]
 o.order("random")
-[ 0, 0, 1 ]
-[ 0, 0, 2 ]
-[ 0, 1, 1 ]
-[ 0, 1, 0 ]
-[ 0, 0, 0 ]
 [ 0, 1, 2 ]
+[ 0, 1, 1 ]
+[ 0, 0, 2 ]
+[ 0, 0, 0 ]
+[ 0, 0, 1 ]
+[ 0, 1, 0 ]
 o.random()
 [ 0, 0, 1 ]
 o.order("colex").range(-5, -1)

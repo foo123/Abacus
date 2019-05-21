@@ -1,0 +1,65 @@
+Abacus.Combinatorics (VERSION = 0.9.4)
+---
+Another way to generate N-Permutations from appropriate (1,2,..,N-1,N)-Tensors
+o = Abacus.Tensor(1,2,3,{"output":"inversion"})
+o.total()
+6
+default order is "lex", lexicographic-order (for original tensor)
+[ 0, 1, 2 ]
+[ 0, 2, 1 ]
+[ 2, 0, 1 ]
+[ 1, 0, 2 ]
+[ 1, 2, 0 ]
+[ 2, 1, 0 ]
+backwards
+o.rewind(-1)
+[ 2, 1, 0 ]
+[ 1, 2, 0 ]
+[ 1, 0, 2 ]
+[ 2, 0, 1 ]
+[ 0, 2, 1 ]
+[ 0, 1, 2 ]
+
+
+Still another way to generate N-Permutations from appropriate Tensors, recursive this time, including generating all N-1 Permutations along the way..
+o = Abacus.Tensor(3).intersperseWith(Abacus.Tensor(2).intersperseWith(Abacus.Tensor(1)))
+o.total()
+6
+default order is "lex", lexicographic-order (for original tensor)
+[ 0, 1, 2 ]
+[ 0, 2, 1 ]
+[ 2, 0, 1 ]
+[ 1, 0, 2 ]
+[ 1, 2, 0 ]
+[ 2, 1, 0 ]
+backwards
+o.rewind(-1)
+[ 2, 1, 0 ]
+[ 1, 2, 0 ]
+[ 1, 0, 2 ]
+[ 2, 0, 1 ]
+[ 0, 2, 1 ]
+[ 0, 1, 2 ]
+
+
+Still another way to generate N-Permutations incrementaly from appropriate Tensors and previous N-1-Permutations
+o = Abacus.Tensor(3).intersperseWith(Abacus.Permutation(2))
+o.total()
+6
+default order is "lex", lexicographic-order (for original tensor)
+[ 0, 1, 2 ]
+[ 0, 2, 1 ]
+[ 2, 0, 1 ]
+[ 1, 0, 2 ]
+[ 1, 2, 0 ]
+[ 2, 1, 0 ]
+backwards
+o.rewind(-1)
+[ 2, 1, 0 ]
+[ 1, 2, 0 ]
+[ 1, 0, 2 ]
+[ 2, 0, 1 ]
+[ 0, 2, 1 ]
+[ 0, 1, 2 ]
+
+

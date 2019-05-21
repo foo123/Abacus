@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, Java, C/C++
-*   @version: 0.9.3
+*   @version: 0.9.4
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -22,7 +22,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.9.3"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.9.4"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -2873,7 +2873,36 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
 
             return item;
         }
-        ,rank: NotImplemented
+        ,rank: function( item, n, $ ) {
+            if ( $ && ("sequence"===$.type) )
+            {
+                var klass = this, Arithmetic = Abacus.Arithmetic,
+                    O = Arithmetic.O, J = Arithmetic.J,
+                    seq = $.seq, i, l, m, index, seq_index, sub, found;
+
+                if ( null == item || !seq || !seq.length ) return J;
+
+                l = seq.length; i = 0; seq_index = O;
+                m = item.length;
+                found = false;
+                for(i=0; i<l; i++)
+                {
+                    sub = seq[i];
+                    if ( (m === sub.dimension()) || (m>=sub.$.mindimension && m<=sub.$.maxdimension))
+                    {
+                        index = sub[CLASS].rank(item, sub.n, sub.$);
+                        if ( Arithmetic.gt(index,J) )
+                        {
+                            found = true;
+                            break;
+                        }
+                        seq_index = Arithmetic.add(seq_index, sub.total());
+                    }
+                }
+                return found ? Arithmetic.add(index, seq_index) : J;
+            }
+            return NotImplemented();
+        }
         ,unrank: function( index, n, $ ) {
             if ( $ && ("sequence"===$.type) )
             {
@@ -2900,6 +2929,17 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             {
                 // O(n1 * n2)
                 return kronecker(true, item, subitem);
+            }
+            else if ( "intersperse" === method )
+            {
+                // O(n1 + n2)
+                var output = subitem.slice(), n = item.length, i;
+                for(i=0; i<n; i++)
+                {
+                    // POS plays the role of output symbol(s) here, if exists
+                    output.splice(output.length-item[i], 0, POS&&POS.length&&i<POS.length?POS[i]:item[i]);
+                }
+                return output;
             }
             else if ( ("add" === method) || ("connect" === method) || ("concat" === method) )
             {
@@ -3100,9 +3140,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
             $.sub = combIter; $.submethod = method;
             $.subpos = pos; $.subcascade = dir;
             $.subcount = Abacus.Arithmetic.mul($.count, $.sub.total());
-            if ( ("multiply" === method) )
+            if ( ("multiply" === method))
                 $.subdimension = $.dimension*$.sub.dimension();
-            else if ( ("add" === method) || ("connect" === method) || ("concat" === method) || ("complete" === method) || ("interleave" === method) || ("join" === method) || ("combine" === method) )
+            else if ( ("add" === method) || ("connect" === method) || ("concat" === method) || ("complete" === method) || ("interleave" === method) || ("join" === method) || ("combine" === method) || ("intersperse" === method) )
                 $.subdimension = $.dimension+$.sub.dimension();
             else
                 $.subdimension = $.dimension;
@@ -3149,6 +3189,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
     ,combineWith: function( combIter, pos, dir ) {
         if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
         return this.fuse("combine", combIter, pos||this.position(), dir);
+    }
+
+    ,intersperseWith: function( combIter, pos, dir ) {
+        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+        // used especially for Tensors, to generate recursively
+        pos = pos || (1===this.dimension() ? [this.base()-1] : array(this.dimension(), 0, 1));
+        return this.fuse("intersperse", combIter, pos, dir);
     }
 
     ,projectOn: function( combIter, dir ) {
@@ -3622,10 +3669,29 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
                 {
                     self.__subindex = $.sub.index();
                     self.__subitem = $.sub.next(dir);
-                    if ( "sequence" === $.type && $.seq && $.seq.length )
-                        for(i=0,l=$.seq.length; i<l; i++) $.seq[i].rewind(dir);
-                    self._reset(dir);
-                    has_next = null != self.__item;
+                    if ( null == self.__subitem )
+                    {
+                        // maybe subIter has filtering applied, so check actual .next() returns non-null
+                        self.__subindex = null;
+                        self.__subitem = null;
+                        if ( 0 > dir )
+                        {
+                            self._prev = has_next;
+                            self._next = has_curr;
+                        }
+                        else
+                        {
+                            self._prev = has_curr;
+                            self._next = has_next;
+                        }
+                    }
+                    else
+                    {
+                        if ( "sequence" === $.type && $.seq && $.seq.length )
+                            for(i=0,l=$.seq.length; i<l; i++) $.seq[i].rewind(dir);
+                        self._reset(dir);
+                        has_next = null != self.__item;
+                    }
                 }
                 else
                 {
@@ -3847,6 +3913,10 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 {
                     $.output = function(item, n){ return Tensor.gray(item,n); };
                 }
+                else if ( "inversion" === $.output )
+                {
+                    $.output = function(item, n){ return Tensor.inversion(item); };
+                }
                 else if ( is_array($.output) )
                 {
                     var BASE = $.output;
@@ -4032,6 +4102,12 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,output: CombinatorialIterator.output
         ,gray: function(item, n) {
             return gray(new Array(item.length), item, n);
+        }
+        ,inversion: function(inv) {
+            // assume inv is tensor component of dimensions: (1,2,..,n-1,n) in this order
+            var i, n = inv.length, perm = n ? [0] : [];
+            for(i=1; i<n; i++) perm.splice(i-inv[i], 0, i);
+            return perm;
         }
         ,product: kronecker
         ,directsum: cartesian

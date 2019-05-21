@@ -75,3 +75,40 @@ print_all( o.rewind(-1), -1 );
 o.dispose();
 
 echo("\n");
+
+echo('Get all Variations filtered from all possible Tuples (an inefficient way to generate variations)');
+echo('o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE()');
+o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE());
+
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+print_all( o );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+o.dispose();
+
+echo("\n");
+
+echo('Get all Repeated Combinations filtered from all possible Tuples (an inefficient way to generate combinations)');
+echo('o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<=")');
+o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<="));
+
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+print_all( o );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+o.dispose();
+
+echo("\n");
+
