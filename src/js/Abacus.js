@@ -3757,6 +3757,17 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class({
         return current;
     }
 
+    ,get: function( ) {
+        var self = this, list = [], next;
+        next = self.next();
+        while(next)
+        {
+            list.push(next);
+            next = self.next();
+        }
+        return list;
+    }
+
     ,range: function( start, end ) {
         var self = this, Arithmetic = Abacus.Arithmetic,
             N = Arithmetic.N, O = Arithmetic.O, I = Arithmetic.I,
