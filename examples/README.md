@@ -79,7 +79,7 @@ By the way let's **prove** there is **no solution for 3-Queens** using previous 
 0 Solutions for 3 Queens (reduced exhaustive search):
 ```
 
-Also let us **prove that the number of distinct solutions to the original 8-Queens problem is 92**. Simply set `N=92` to above procedure.
+Also let us **prove that the number of distinct solutions to the original 8-Queens problem is 92**. Simply set `N=8` to above procedure.
 
 ```text
 92 Solutions for 8 Queens (reduced exhaustive search):
