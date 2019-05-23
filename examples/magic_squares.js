@@ -1,7 +1,7 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
-var solutions, N, square;
+var solutions, N;
 // compute all magic squares of order N by Combinatorial methods using Abacus
 
 // utility functions
@@ -41,48 +41,50 @@ function permute_rows_cols(square, row_perm, col_perm)
     return output;
 }
 
-N = 3; // 3-Magic
-// try filtering from all possible permutations of 1..N^2
-solutions = Abacus.Permutation(N*N, {output:square}).filterBy(Abacus.MagicSquare.is_magic).get();
+function exhaustive_search( N )
+{
+    // try filtering from all possible permutations of 1..N^2
+    return Abacus.Permutation(N*N, {output:square}).filterBy(Abacus.MagicSquare.is_magic).get();
+}
+
+function limited_search( N )
+{
+    // try a limited search of variations of existing magic square
+    var square = Abacus.MagicSquare.make(N);
+    return (square ? Abacus.Permutation(N).concatWith(Abacus.Permutation(N)).get() : []).reduce(function(solutions, solution){
+        var permuted = permute_rows_cols(square, solution.slice(0,N), solution.slice(N));
+        if ( Abacus.MagicSquare.is_magic(permuted) ) solutions.push(permuted);
+        return solutions;
+    }, []);
+}
+
+
+// 3-Magic
+solutions = exhaustive_search( N=3 );
 
 echo(''+solutions.length+' Solutions for '+N+'x'+N+' Magic Squares (exhaustive search):');
 echo(solutions.map(print_square).join("\n---\n"));
 
 echo('---');
 
-N = 2; // 2-Magic
-// try filtering from all possible permutations of 1..N^2
-solutions = Abacus.Permutation(N*N, {output:square}).filterBy(Abacus.MagicSquare.is_magic).get();
+// 2-Magic
+solutions = exhaustive_search( N=2 );
 
 echo(''+solutions.length+' Solutions for '+N+'x'+N+' Magic Squares (exhaustive search):');
 echo(solutions.map(print_square).join("\n---\n"));
 
 echo('---');
 
-N = 4; // 4-Magic
-square = Abacus.MagicSquare.make(N);
-solutions = square ? Abacus.Permutation(N).concatWith(Abacus.Permutation(N)).get() : [];
-
-solutions = solutions.reduce(function(solutions, solution){
-    var permuted = permute_rows_cols(square, solution.slice(0,N), solution.slice(N));
-    if ( Abacus.MagicSquare.is_magic(permuted) ) solutions.push(permuted);
-    return solutions;
-}, []);
+// 4-Magic
+solutions = limited_search( N=4 );
 
 echo(''+solutions.length+' Solutions for '+N+'x'+N+' Magic Squares (limited search):');
 echo(solutions.map(print_square).join("\n---\n"));
 
 echo('---');
 
-N = 6; // 6-Magic
-square = Abacus.MagicSquare.make(N);
-solutions = square ? Abacus.Permutation(N).concatWith(Abacus.Permutation(N)).get() : [];
-
-solutions = solutions.reduce(function(solutions, solution){
-    var permuted = permute_rows_cols(square, solution.slice(0,N), solution.slice(N));
-    if ( Abacus.MagicSquare.is_magic(permuted) ) solutions.push(permuted);
-    return solutions;
-}, []);
+// 6-Magic
+solutions = limited_search( N=6 );
 
 echo(''+solutions.length+' Solutions for '+N+'x'+N+' Magic Squares (limited search):');
 //echo(solutions.map(print_square).join("\n---\n"));

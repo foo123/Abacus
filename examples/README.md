@@ -8,6 +8,7 @@ The solutions, to popular problems, below exhibit the combinatorial capabilities
 
 * [N-Queens Problem](#n-queens)
 * [Magic Squares](#magic-squares)
+* [Diophantine Equations](#diophantine-equations)
 * [Knapsack Problem](#knapsack)
 * [TSP Problem](#tsp)
 
@@ -26,10 +27,10 @@ With these utilities available we can start directly using an exhaustive search 
 
 
 ```javascript
-solutions = Abacus.Combination(N*N, N, {output:row_column}).filterBy(is_valid).get();
+solutions = Abacus.Combination(N*N, N, {output:row_column}).filterBy(is_valid).get().map(make_grid);
 
 echo(''+solutions.length+' Solutions for '+N+' Queens (exhaustive search):');
-echo(solutions.map(function(solution){return print_grid(make_grid(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 ```
 
 The above (for `N=4`) gives the following output:
@@ -52,10 +53,10 @@ O X O O
 However searching among all combinations as above is inefficient, we can be a little smarter and assume from the beginning that each queen is placed on different row (or column). Then we simply check among all permutations of assigning each queen on a specific (different) column.
 
 ```javascript
-solutions = Abacus.Permutation(N, {output:row_column_perm}).filterBy(is_valid).get();
+solutions = Abacus.Permutation(N, {output:row_column_perm}).filterBy(is_valid).get().map(make_grid);
 
 echo(''+solutions.length+' Solutions for '+N+' Queens (reduced exhaustive search):');
-echo(solutions.map(function(solution){return print_grid(make_grid(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 ```
 The above (for `N=4`) gives the following output:
 
@@ -78,6 +79,12 @@ By the way let's **prove** there is **no solution for 3-Queens** using previous 
 0 Solutions for 3 Queens (reduced exhaustive search):
 ```
 
+Also let us **prove that the number of distinct solutions to the original 8-Queens problem is 92**. Simply set `N=92` to above procedure.
+
+```text
+92 Solutions for 8 Queens (reduced exhaustive search):
+```
+
 
 **Exploiting Symmetries**
 
@@ -86,10 +93,10 @@ If we only need to find one solution, any solution, then there is an interesting
 Since `Abacus` can generate `LatinSquare`s and also generates **pan-diagonal latin squares** by default if possible (for example for `N=5` it is possible), then we can generate a solution to the 5-Queens problem as follows:
 
 ```javascript
-solutions = [Abacus.LatinSquare.make(N)];
+solutions = [from_latin_square(Abacus.LatinSquare.make(N))];
 
 echo(''+solutions.length+' Solution for '+N+' Queens (pan-diagonal latin square):');
-echo(solutions.map(function(solution){return print_grid(from_latin_square(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 ```
 
 For `N=5` we get the following output:
@@ -118,7 +125,7 @@ Let's try to find all possible magic squares (including rotated and reflected on
 
 **Exhaustive Search**
 
-First we can try an exhaustive search over all perumations of numbers `1..N^2` arranged in a square grid.
+First we can try an exhaustive search over all permutations of numbers `1..N^2` arranged in a square grid.
 
 ```javascript
 solutions = Abacus.Permutation(N*N, {output:square}).filterBy(Abacus.MagicSquare.is_magic).get();
@@ -171,7 +178,7 @@ Setting `N=2` we get **zero solutions**:
 0 Solutions for 2x2 Magic Squares (exhaustive search):
 ```
 
-**Reduced Search**
+**Limited Search**
 
 Exhaustive search is very inefficient as `N` grows (even for small N such as 4 or 5 we get an enormous search space).
 We can try something else. We can generate a magic square (for example using `Abacus.MagicSquare.make(N)`) and try to permute its rows and columns and see if we get different magic squares. This is considerably faster, but might not generate all possible magic squares of order `N`.
@@ -180,9 +187,7 @@ Let's try this:
 
 ```javascript
 square = Abacus.MagicSquare.make(N);
-solutions = square ? Abacus.Permutation(N).concatWith(Abacus.Permutation(N)).get() : [];
-
-solutions = solutions.reduce(function(solutions, solution){
+solutions = Abacus.Permutation(N).concatWith(Abacus.Permutation(N)).get().reduce(function(solutions, solution){
     var permuted = permute_rows_cols(square, solution.slice(0,N), solution.slice(N));
     if ( Abacus.MagicSquare.is_magic(permuted) ) solutions.push(permuted);
     return solutions;
@@ -222,6 +227,14 @@ Setting `N=4` we get:
 Setting `N=6` we get 1440 solutions with our limited search.
 
 We saw how we can investigate properties of magic squares and also enumerate them efficiently using a few lines of code with `Abacus`.
+
+### Diophantine Equations
+
+[Diophantine Equation, wikipedia](https://en.wikipedia.org/wiki/Diophantine_equation)
+
+see associated file: `examples/diophantine.js`
+
+**to be added**
 
 
 ### Knapsack

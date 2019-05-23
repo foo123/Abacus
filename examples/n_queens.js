@@ -51,7 +51,7 @@ function make_grid(queens)
 }
 function from_latin_square(latin_square, symbol)
 {
-    // generate a n-queens solution from given pan-diagonal latin square
+    // generate a N-queens solution from given pan-diagonal latin square
     var N = latin_square.length, i, j;
     symbol = symbol || N;
     for(i=0; i<N; i++)
@@ -70,45 +70,60 @@ function print_grid(grid)
     return out;
 }
 
-N = 4; // 4-Queens
-// try filtering from all possible combinations of positions placed on NxN grid
-solutions = Abacus.Combination(N*N, N, {output:row_column}).filterBy(is_valid).get();
+function exhaustive_search1( N )
+{
+    // try filtering from all possible combinations of positions placed on NxN grid
+    return Abacus.Combination(N*N, N, {output:row_column}).filterBy(is_valid).get().map(make_grid);
+}
 
+function exhaustive_search2( N )
+{
+    // try reducing original search space by using only permutation of N columns, each queen on different row
+    return Abacus.Permutation(N, {output:row_column_perm}).filterBy(is_valid).get().map(make_grid);
+}
+
+function latin_square( N )
+{
+    // for some cases can construct N-queens solution from associated pan-diagonal magic/latin squares
+    return [from_latin_square(Abacus.LatinSquare.make(N))];
+}
+
+// 4-Queens
+solutions = exhaustive_search1( N=4 );
 echo(''+solutions.length+' Solutions for '+N+' Queens (exhaustive search):');
-echo(solutions.map(function(solution){return print_grid(make_grid(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 
 echo('---');
 
-N = 3; // 3-Queens
-// try filtering from all possible combinations of positions placed on NxN grid
-solutions = Abacus.Combination(N*N, N, {output:row_column}).filterBy(is_valid).get();
-
+// 3-Queens
+solutions = exhaustive_search1( N=3 );
 echo(''+solutions.length+' Solutions for '+N+' Queens (exhaustive search):');
-echo(solutions.map(function(solution){return print_grid(make_grid(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 
 echo('---');
 
-N = 4; // 4-Queens
-// try reducing original search space by using only permutation of N!, each queen on different row
-solutions = Abacus.Permutation(N, {output:row_column_perm}).filterBy(is_valid).get();
-
+// 4-Queens
+solutions = exhaustive_search2( N=4 );
 echo(''+solutions.length+' Solutions for '+N+' Queens (reduced exhaustive search):');
-echo(solutions.map(function(solution){return print_grid(make_grid(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 
 echo('---');
 
-N = 3; // 3-Queens
-// try reducing original search space by using only permutation of N!, each queen on different row
-solutions = Abacus.Permutation(N, {output:row_column_perm}).filterBy(is_valid).get();
-
+// 3-Queens
+solutions = exhaustive_search2( N=3 );
 echo(''+solutions.length+' Solutions for '+N+' Queens (reduced exhaustive search):');
-echo(solutions.map(function(solution){return print_grid(make_grid(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));
 
 echo('---');
 
-// for some cases can construct N-queens solution from associated pan-diagonal magic/latin squares
-N = 5; // 5-Queens
-solutions = [Abacus.LatinSquare.make(N)];
+// 8-Queens (original problem)
+solutions = exhaustive_search2( N=8 );
+echo(''+solutions.length+' Solutions for '+N+' Queens (reduced exhaustive search):');
+//echo(solutions.map(print_grid).join("\n---\n"));
 
+echo('---');
+
+// 5-Queens
+solutions = latin_square( N=5 )
 echo(''+solutions.length+' Solution for '+N+' Queens (pan-diagonal latin square):');
-echo(solutions.map(function(solution){return print_grid(from_latin_square(solution));}).join("\n---\n"));
+echo(solutions.map(print_grid).join("\n---\n"));

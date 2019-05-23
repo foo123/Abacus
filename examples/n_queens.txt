@@ -26,6 +26,8 @@ O X O O
 0 Solutions for 3 Queens (reduced exhaustive search):
 
 ---
+92 Solutions for 8 Queens (reduced exhaustive search):
+---
 1 Solution for 5 Queens (pan-diagonal latin square):
 O O X O O
 O O O O X
