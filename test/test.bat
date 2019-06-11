@@ -1,6 +1,12 @@
 @echo off
 rem @echo off
 
+call node numbers.js > numbers.txt
+call node number_theory.js > number_theory.txt
+call node progressions.js > progressions.txt
+call node polynomials.js > polynomials.txt
+call node primes.js > primes.txt
+call node diophantine.js > diophantine.txt
 call node tensors.js > tensors.txt
 call node tuples.js > tuples.txt
 call node permutations.js > permutations.txt
@@ -10,6 +16,7 @@ call node involutions.js > involutions.txt
 call node connected_permutations.js > connected_permutations.txt
 call node permutations-bigint.js > permutations-bigint.txt
 call node cyclic_permutations.js > cyclic_permutations.txt
+call node recursive_permutations.js > recursive_permutations.txt
 call node combinations.js > combinations.txt
 call node ordered_combinations.js > ordered_combinations.txt
 call node combinations_repeats.js > combinations_repeats.txt
@@ -28,7 +35,6 @@ call node k-derangements.js > k-derangements.txt
 call node partially_fixed_permutations.js > partially_fixed_permutations.txt
 call node conditional_permutations_boolean.js > conditional_permutations_boolean.txt
 call node conditional_permutations_algebraic.js > conditional_permutations_algebraic.txt
+call node filtered.js > filtered.txt
 call node latin_squares.js > latin_squares.txt
 call node magic_squares.js > magic_squares.txt
-call node filtered.js > filtered.txt
-call node recursive_permutations.js > recursive_permutations.txt

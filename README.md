@@ -1,18 +1,19 @@
 # Abacus
-A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C/C++, Java
+
+A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-(php/python/java/c implementations in progress)
+(python/java implementations in progress)
 
 
-**version 0.9.4** (~ 75kB minified, ~ 23kB zipped)
+**version 0.9.8** *in progress* (~ 75kB minified, ~ 23kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
 [Abacus.js](https://raw.githubusercontent.com/foo123/Abacus/master/src/js/Abacus.js),  [Abacus.min.js](https://raw.githubusercontent.com/foo123/Abacus/master/src/js/Abacus.min.js)
 
 
-`Abacus` is a small generic library containing methods and associated math utilities for (fast) combinatorial object computation. It builds on (and extends) a [deprecated previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
+`Abacus` is a flexible library containing methods and associated math utilities for (fast) combinatorial object computation and integer / number theoretic computation. It builds on (and extends) a [deprecated previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
 
 `Abacus` uses (for the most part) self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
@@ -20,7 +21,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 [![Abacus Live](/abacus-live.png)](https://foo123.github.io/examples/abacus)
 
 
-**see also:**  
+**see also:**
 
 * [Contemplate](https://github.com/foo123/Contemplate) a fast and light-weight object-oriented Template Engine for Node.js / Browser / XPCOM Javascript, PHP, Python
 * [HtmlWidget](https://github.com/foo123/HtmlWidget) html widgets used as (template) plugins and/or standalone for Node.js / Browser / XPCOM Javascript, PHP, Python both client and server-side
@@ -45,7 +46,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
 * [Features](#features)
-* [Combinatorial Examples](/examples/README.md)
+* [Combinatorial and Number Theory Examples](/examples/README.md)
 * [Performance](#performance)
 * [Credits and References](#credits-and-references)
 * [Example API](#example-api)
@@ -75,12 +76,18 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 * `RestrictedComposition` (`test/restricted_compositions.js`) **exactly K #parts**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
+* Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
+* Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
+* `Polynomial` (`test/polynomials.js`) **univariate with integer coefficients**
+* `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
+* `PrimeSieve`, Primality Tests (`test/primes.js`)
+* `Diophantine`, Linear Equations, Linear Congruences (`test/diophantine.js`)
 * **algebraic composition** (of **fixed** dimensions at present) and **sequences** of combinatorial objects to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`, `k-Derangements` = `(n,k) Combinations` **combined With** `(n-k) Derangements`, see `test/k-derangements.js` or `all subsets` = `(n,0)Combinations + (n,1)Combinations + .. + (n,n-1)Combinations + (n,n)Combinations`, see `test/combination_subsets.js`)
-* custom (user-supplied callable) and/or built-in **filters** which can select and generate any custom and complex combinatorial object from filtering other combinatorial objects as efficiently as possible (e.g see `test/filtered.js`, `test/filtered_partitions.js`). Also **algebraic / boolean composition of filters** (i.e `.NOT()`, `.AND()`, `.OR()` and so on..). **Note** that filtering should be **used with caution and only if no other method is currently possible** to generate the desired combinatorial object as **filtering is equivalent to exhaustive search** over the space of the original combinatorial object and as such can be an inefficient way to generate a combinatorial object (e.g see `test/filtered.js`). **Note2** with filtering applied some methods like `.total()`, `.hasNext()`, `.base()`, `.dimension()` still return data of the original object **not** the filtered object since that would require to pre-generate all the data and filter them afterwards instead of doing it one-by-one on each generation and would be impractical and unachievable for very large combinatorial objects, so be careful when using, for example, `.total()` with fitering applied
+* custom (user-supplied callable) and/or built-in **filters** which can select and generate any custom and complex combinatorial object from filtering other combinatorial objects as efficiently as possible (e.g see `test/filtered.js`, `test/filtered_partitions.js`). Also **algebraic / boolean composition of filters** (i.e `.NOT()`, `.AND()`, `.OR()` and so on..). **Note** that filtering should be **used with caution and only if no other method is currently possible** to generate the desired combinatorial object as **filtering is equivalent to exhaustive search** over the space of the original combinatorial object and as such can be an inefficient way to generate a combinatorial object (e.g see `test/filtered.js`). **Note2** with filtering applied some methods like `.total()`, `.hasNext()` still return data of the original object **not** the filtered object since that would require to pre-generate all the data and filter them afterwards instead of doing it one-by-one on each generation and would be impractical and unachievable for very large combinatorial objects, so be careful when using, for example, `.total()` with fitering applied
 * **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..) (and with filtering applied, if set). **Note** `rank`/`unrank` methods have to be implemented for this feature to work
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
-* `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators
+* `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators (eg examples and tests use the excellent [BigInteger.js](https://github.com/peterolson/BigInteger.js))
 
 
 ### Performance
@@ -89,6 +96,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 * `random` methods are **statisticaly unbiased** (ie uniform sampling methods, see below as well)
 * `successor` methods use **efficient CAT (ie constant average time) or Loopless (ie strictly constant time)** algorithms to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above) (**note** a couple of methods are **linear time** algorithms because the lib does not use extra space to store information between successive runs and also support static random access to successors so any extra is computed at `run-time`, but can easily be made `CAT` or even `Loopless` by storing extra information, eg current index position)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit `ranking` / `unranking` is needed and objects are large)
+* integer/number-theoretic/math computations support pluggable arithmetics (thus if used can compute with Big Integers), algorithms implemented are efficient but not necessarily the most efficient version (theoritically) possible (eg default `gcd` algorithm used, although optimised), possible to implement even faster algorithms in future verions
 
 **Note** that the lib can generate **very large** (and also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary `random`, `ranking` and `unranking` have to be used (see above)
 
@@ -97,7 +105,7 @@ A combinatorics library for Node.js / Browser / XPCOM Javascript, PHP, Python, C
 
 See the comments in the code for algorithms and references used.
 
-A variety of combinatorial algorithms &amp; statistics are given, for example, in:
+A variety of combinatorial algorithms, number theory algorithms &amp; statistics are given, for example, in:
 
 * [The Art of Computer Programming, Donald Knuth](http://www-cs-faculty.stanford.edu/~uno/taocp.html)
 * [FXT library, Joerg Arndt](http://www.jjj.de/fxt/) and his [PhD thesis](https://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf)
@@ -113,6 +121,16 @@ A variety of combinatorial algorithms &amp; statistics are given, for example, i
 * [A Survey of Combinatorial Gray Codes, Carla Savage](http://www4.ncsu.edu/~savage/AVAILABLE_FOR_MAILING/survey.pdf)
 * [Combinatorial Generation by Fusing Loopless Algorithms, Tadao Takaoka, Stephen Violich](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.490.1604&rep=rep1&type=pdf)
 * [Make good (Pseudo-)Random Number Generators](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)
+* [Handbook of Applied Cryptography, Chapter 4](http://cacr.uwaterloo.ca/hac/)
+* [The Quadratic Sieve Factoring Algorithm, Eric Landquist](http://www.cs.virginia.edu/crab/QFS_Simple.pdf)
+* [A Beginner’s Guide To The General Number Field Sieve, Michael Case](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.219.2389&rep=rep1&type=pdf)
+* [Implementation of a New Primality Test, H. Cohen, A. K. Lenstra](https://pdfs.semanticscholar.org/76bb/023a666615ad2d28d4cc9c24068e45a94337.pdf)
+* [Finding the General Solution of a Linear Diophantine Equation, Morito, Salkin](https://www.fq.math.ca/Scanned/17-4/morito.pdf)
+* [Solving General Linear Diophantine Equations, Michael Fox](https://www.jstor.org/stable/3620787?seq=1#page_scan_tab_contents)
+* [Integer Algorithms to solve Diophantine Linear Equations and Systems, Florentin Smarandache](https://arxiv.org/ftp/math/papers/0010/0010134.pdf)
+* [Recurrence Relations for the number of solutions of a class of Diophantine Equations, M. I. Krivoruchenko](https://arxiv.org/pdf/1311.4185.pdf)
+* [Integer Programming with a Fixed Number of Variables, H. W. Lenstra](https://people.csail.mit.edu/rrw/presentations/Lenstra81.pdf)
+* [Integer Programming with 2-Variable Equations and 1-Variable Inequalities, Bodirsky, Nordh, Von Oertzen](http://www.lix.polytechnique.fr/~bodirsky/publications/2var.pdf)
 
 
 ### Example API
@@ -563,7 +581,7 @@ o.dispose()
 
 ### Todo
 
-* apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, PHP `Iterator` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
+* apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol, Python `__iter__` interface, ..). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
 * support `biginteger` combinatorial computations e.g large factorials **[DONE]**, the lib **does not support** biginteger arithmetic, but arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support combinatorics with bigintegers where needed as needed, see test examples for an example
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward **[DONE, `random` ordering may be optimised further]**
 * support **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object **[DONE]**
@@ -575,9 +593,14 @@ o.dispose()
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. **[DONE]**
 * add `LatinSquare`, `MagicSquare` algorithms **[DONE]**
 * add run-time/lazy custom and/or built-in filtering support (with support for filter composition as well) to generate and select custom and complex combinatorial objects from filtering other combinatorial objects as efficiently as possible **[DONE]**
+* support efficient primality tests and prime sieves **[DONE PARTIALY]**
+* support efficient integer factorization algorithms **[DONE PARTIALY]**
+* support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
+* implement `LLL` algorithm (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
+* use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
 * use numeric arrays (ie `Uint32`) to store combinatorial items and/or make faster `successor` methods and other numerical routines to `asm.js` (TODO?)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)

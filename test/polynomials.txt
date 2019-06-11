@@ -1,0 +1,91 @@
+Abacus.Polynomials (VERSION = 0.9.8)
+---
+Polynomials and Polynomial operations
+---
+o=Abacus.Polynomial()
+o.toString()
+0
+o.valueOf()
+0
+o.deriv()
+0
+o.dispose()
+---
+o=Abacus.Polynomial({"50":1,"2":2})
+o.toString()
+x^50+2x^2
+o.deriv()
+50x^49+4x
+o.toExpr()
+2x^2+x^50
+Abacus.Polynomial.fromExpr(o.toExpr())
+x^50+2x^2
+o.dispose()
+---
+o=Abacus.Polynomial(1,2)
+o.toString()
+2x+1
+o.valueOf(3)
+7
+o.neg()
+-2x-1
+o.add(1)
+2x+2
+o.add(Abacus.Polynomial(1,1))
+3x+2
+o.mul(2)
+4x+2
+o.mul(Abacus.Polynomial(1,1))
+2x^2+3x+1
+o.shift(1)
+2x^2+x
+o.shift(-1)
+2
+o.pow(0)
+1
+o.pow(1)
+2x+1
+o.pow(2)
+4x^2+4x+1
+o.pow(3)
+8x^3+12x^2+6x+1
+o.div(2)
+(2x+1)/(2)=(2)*(x)+(0)=2x false
+o.div(Abacus.Polynomial(2))
+(2x+1)/(2)=(2)*(x)+(1)=2x+1 true
+o.div(Abacus.Polynomial(1,1))
+(2x+1)/(x+1)=(x+1)*(2)+(-1)=2x+1 true
+o.deriv()
+2
+o.toExpr()
+1+2x
+Abacus.Polynomial.fromExpr(o.toExpr())
+2x+1
+o.dispose()
+---
+o=Abacus.Polynomial(-4,0,-2,1)
+o.toString()
+x^3-2x^2-4
+o.div(Abacus.Polynomial(-3,1))
+(x^3-2x^2-4)/(x-3)=(x-3)*(x^2+x+3)+(5)=x^3-2x^2-4 true
+o.deriv()
+3x^2-4x
+o.toExpr()
+-4-2x^2+x^3
+Abacus.Polynomial.fromExpr(o.toExpr())
+x^3-2x^2-4
+o.dispose()
+---
+Polynomial GCD
+---
+Abacus.Math.polygcd(Abacus.Polynomial(6,7,1),Abacus.Polynomial(-6,-5,1))
+12x+12
+Abacus.Math.polygcd(Abacus.Polynomial(6,7,1),Abacus.Polynomial(-6,-5,1),Abacus.Polynomial(1,1))
+x+1
+---
+Polynomial Extended GCD
+---
+Abacus.Math.polyxgcd(Abacus.Polynomial(6,7,1),Abacus.Polynomial(-6,-5,1))
+(x^2+7x+6)(1) + (x^2-5x-6)(-1) = 12x+12 true
+Abacus.Math.polyxgcd(Abacus.Polynomial(6,7,1),Abacus.Polynomial(-6,-5,1),Abacus.Polynomial(1,1))
+(x^2+7x+6)(0) + (x^2-5x-6)(0) + (x+1)(1) = x+1 true

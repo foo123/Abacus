@@ -74,8 +74,8 @@ echo('o.random()');
 echo(o.random());
 o.dispose();
 
-echo('o = Abacus.Permutation(5).filterBy(Abacus.Permutation.is_involution)');
-o = Abacus.Permutation(5).filterBy(Abacus.Permutation.is_involution);
+echo('o = Abacus.Permutation(5).filterBy(Abacus.Permutation.isInvolution)');
+o = Abacus.Permutation(5).filterBy(Abacus.Permutation.isInvolution);
 
 echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
@@ -91,8 +91,8 @@ echo('o.random()');
 echo(o.random());
 o.dispose();
 
-echo('o = Abacus.Permutation(6).filterBy(Abacus.Permutation.is_involution)');
-o = Abacus.Permutation(6).filterBy(Abacus.Permutation.is_involution);
+echo('o = Abacus.Permutation(6).filterBy(Abacus.Permutation.isInvolution)');
+o = Abacus.Permutation(6).filterBy(Abacus.Permutation.isInvolution);
 
 echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());

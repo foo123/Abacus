@@ -44,11 +44,11 @@ print_all( o.rewind()/*, 1, function( item ){
     "index          : " + index,
     "rank           : " + rank,
     "unrank         : " + Abacus.Permutation.unrank(rank, o.n).join(','),
-    "is_permutation : " + (Abacus.Permutation.is_permutation(item)?"yes":"no"),
-    "is_identity    : " + (Abacus.Permutation.is_identity(item)?"yes":"no"),
-    "is_derangement : " + (Abacus.Permutation.is_derangement(item)?"yes":"no"),
-    "is_involution  : " + (Abacus.Permutation.is_involution(item)?"yes":"no"),
-    "is_connected   : " + (Abacus.Permutation.is_connected(item)?"yes":"no")
+    "is_permutation : " + (Abacus.Permutation.isPermutation(item)?"yes":"no"),
+    "is_identity    : " + (Abacus.Permutation.isIdentity(item)?"yes":"no"),
+    "is_derangement : " + (Abacus.Permutation.isDerangement(item)?"yes":"no"),
+    "is_involution  : " + (Abacus.Permutation.isInvolution(item)?"yes":"no"),
+    "is_connected   : " + (Abacus.Permutation.isConnected(item)?"yes":"no")
     ];
 }*/);
 

@@ -1,0 +1,202 @@
+Abacus.Number Theory Functions (VERSION = 0.9.8)
+---
+Modular Arithmetic
+o=Abacus.Math.addm(4, 2, 5)
+1
+o=Abacus.Math.mulm(4, 2, 5)
+3
+o=Abacus.Math.negm(4, 5)
+1
+o=Abacus.Math.invm(4, 5)
+4
+o=Abacus.Math.powm(4, 2, 5)
+1
+---
+Integer Square roots
+o=Abacus.Math.isqrt(1)
+1
+o=Abacus.Math.isqrt(2)
+1
+o=Abacus.Math.isqrt(4)
+2
+o=Abacus.Math.isqrt(5)
+2
+o=Abacus.Math.isqrt(10)
+3
+---
+Integer kth roots
+o=Abacus.Math.ikthroot(1, 3)
+1
+o=Abacus.Math.ikthroot(2, 2)
+1
+o=Abacus.Math.ikthroot(4, 2)
+2
+o=Abacus.Math.ikthroot(27, 3)
+3
+o=Abacus.Math.ikthroot(81, 4)
+3
+o=Abacus.Math.ikthroot(90, 4)
+3
+---
+Integer Divisors
+o=Abacus.Math.divisors(1)
+[ 1 ]
+o=Abacus.Math.divisors(2)
+[ 1, 2 ]
+o=Abacus.Math.divisors(4)
+[ 1, 2, 4 ]
+o=Abacus.Math.divisors(5)
+[ 1, 5 ]
+o=Abacus.Math.divisors(10)
+[ 1, 2, 5, 10 ]
+o=Abacus.Math.divisors(100)
+[ 1, 2, 4, 5, 10, 20, 25, 50, 100 ]
+o=Abacus.Math.divisors(1000, true).get()
+o2=Abacus.Math.divisors(10000, true).get()
+[ 1, 1000, 2, 500, 4, 250, 5, 200, 8, 125, 10, 100, 20, 50, 25, 40 ]
+[ 1,
+  10000,
+  2,
+  5000,
+  4,
+  2500,
+  5,
+  2000,
+  8,
+  1250,
+  10,
+  1000,
+  16,
+  625,
+  20,
+  500,
+  25,
+  400,
+  40,
+  250,
+  50,
+  200,
+  80,
+  125,
+  100 ]
+---
+Square Root modulo Prime
+o=Abacus.Math.isqrtp(10, 13)
+6 7
+10 10
+o=Abacus.Math.isqrtp(56, 101)
+37 64
+56 56
+o=Abacus.Math.isqrtp(1030, 10009)
+1632 8377
+1030 1030
+o=Abacus.Math.isqrtp(44402, 100049)
+30468 69581
+44402 44402
+---
+Moebius Function
+o=Abacus.Math.moebius(1)
+1
+o=Abacus.Math.moebius(2)
+1
+o=Abacus.Math.moebius(6)
+-1
+o=Abacus.Math.moebius(17)
+1
+o=Abacus.Math.moebius(25)
+0
+---
+GCD of multiple numbers
+o=Abacus.Math.gcd(1, 2)
+1
+o=Abacus.Math.gcd(0, 0)
+0
+o=Abacus.Math.gcd(0, 2)
+2
+o=Abacus.Math.gcd(2, 0)
+2
+o=Abacus.Math.gcd(0, 0, 2)
+2
+o=Abacus.Math.gcd(2, 0, 0)
+2
+o=Abacus.Math.gcd(2, 0, 0, 3)
+1
+o=Abacus.Math.gcd(74, 32, 16, 153)
+1
+---
+LCM of multiple numbers
+o=Abacus.Math.lcm(1, 2)
+2 2
+o=Abacus.Math.lcm(0, 0)
+0 0
+o=Abacus.Math.lcm(0, 2)
+0 0
+o=Abacus.Math.lcm(2, 0)
+0 0
+o=Abacus.Math.lcm(0, 0, 2)
+0 0
+o=Abacus.Math.lcm(2, 0, 0)
+0 0
+o=Abacus.Math.lcm(2, 0, 0, 3)
+0 0
+o=Abacus.Math.lcm(4, 6)
+12 12
+o=Abacus.Math.lcm(21, 6)
+42 42
+o=Abacus.Math.lcm(48, 180)
+720 720
+o=Abacus.Math.lcm(74, 32, 16, 153)
+5796864
+---
+Extended GCD of multiple numbers
+o=Abacus.Math.xgcd(1)
+[ 1, 1 ]
+o=Abacus.Math.xgcd(-1)
+[ 1, -1 ]
+o=Abacus.Math.xgcd(1, 2)
+[ 1, 1, 0 ]
+o=Abacus.Math.xgcd(0, 2)
+[ 2, 1, 1 ]
+o=Abacus.Math.xgcd(2, 0)
+[ 2, 1, 1 ]
+o=Abacus.Math.xgcd(2, 0, 4)
+[ 2, 1, 0, 0 ]
+o=Abacus.Math.xgcd(0, -2)
+[ 2, 1, -1 ]
+o=Abacus.Math.xgcd(-2, 0)
+[ 2, -1, 1 ]
+o=Abacus.Math.xgcd(-2, 0, 4)
+[ 2, -1, 0, 0 ]
+o=Abacus.Math.xgcd(-15, 0, 30)
+[ 15, -1, 0, 0 ]
+o=Abacus.Math.xgcd(12, 34, 7)
+[ 1, 0, -1, 5 ]
+1 1
+o=Abacus.Math.xgcd(16, 153)
+[ 1, 67, -7 ]
+1 1
+o=Abacus.Math.xgcd(16, -153)
+[ 1, 67, 7 ]
+1 1
+o=Abacus.Math.xgcd(74, 32, 16, 153)
+[ 1, 0, 0, 67, -7 ]
+1 1
+o=Abacus.Math.xgcd(74, 32, 16, -153)
+[ 1, 0, 0, 67, 7 ]
+1 1
+o=Abacus.Math.xgcd(12, 4, 36, 128)
+[ 4, 0, 0, -7, 2 ]
+4 4
+o=Abacus.Math.xgcd(12, -4, 36, -128)
+[ 4, 0, -0, -7, -2 ]
+4 4
+o=Abacus.Math.xgcd(20, 4)
+[ 4, 0, 1 ]
+4 4
+o=Abacus.Math.xgcd(25, 20)
+[ 5, 1, -1 ]
+5 5
+o=Abacus.Math.xgcd(25, 20, 4)
+[ 1, 1, -0, -6 ]
+1 1
+---

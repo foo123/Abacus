@@ -5,9 +5,12 @@ function use_biginteger_arithmetic( Abacus )
     // plug-in bigInteger arithmetic routines
     var Arithmetic = Abacus.Arithmetic, bigInt = require( './BigInteger.js' );
     
+    Arithmetic.J = bigInt.minusOne;
     Arithmetic.O = bigInt.zero;
     Arithmetic.I = bigInt.one;
-    Arithmetic.J = bigInt.minusOne;
+    Arithmetic.II = bigInt(2);
+    
+    Arithmetic.num = function( a ){ return bigInt( a ); };
     
     Arithmetic.equ = function( a, b ){ return a.eq( b ); };
     Arithmetic.gte = function( a, b ){ return a.geq( b ); };
@@ -35,10 +38,9 @@ function use_biginteger_arithmetic( Abacus )
     Arithmetic.xor = function( a, b ){ return a.xor( b ); };
     
     Arithmetic.rnd = bigInt.randBetween;
+    Arithmetic.abs = function( a ){ return a.abs( ); };
     Arithmetic.min = bigInt.min;
     Arithmetic.max = bigInt.max;
-    
-    Arithmetic.num = function( a ){ return bigInt( a ); };
 }
 
 module.exports = use_biginteger_arithmetic;

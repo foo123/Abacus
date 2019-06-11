@@ -1,0 +1,76 @@
+Abacus.Diophantine (VERSION = 0.9.8)
+---
+Solve a1x1 + a2x2 + a3x3 + .. = c
+4x = 7
+o=Abacus.Math.diophantine([4], 7)
+No Integer solution
+No Integer solution 7
+No Integer solution 7
+---
+4x = 8
+o=Abacus.Math.diophantine([4], 8)
+x = 2
+8 8
+8 8
+---
+4x + 0y = 8
+o=Abacus.Math.diophantine([4,0], 8)
+x = 2, y = i_1
+8 8
+8 8
+---
+4x + 5y = 7
+o=Abacus.Math.diophantine([4,5], 7)
+x = -7+5i_1, y = 7-4i_1
+7 7
+7 7
+o=Abacus.Math.diophantine([4,5], 7, false)
+x = -7, y = 7
+7 7
+---
+0x + 0z + 0y + 0w = 0
+o=Abacus.Math.diophantine([0,0,0,0], 0)
+x = i_1, z = i_2, y = i_3, w = i_4
+0 0
+0 0
+---
+4x + 0z + 5y + 0w = 7
+o=Abacus.Math.diophantine([4,0,5,0], 7)
+x = -7+5i_1, z = i_2, y = 7-4i_1, w = i_3
+7 7
+7 7
+---
+4x + 6y + 3z = 2
+o=Abacus.Math.diophantine([4,6,3], 2)
+x = 2+3i_1, y = i_1+i_2, z = -2-6i_1-2i_2
+2 2
+2 2
+o=Abacus.Math.diophantine([4,6,3], 2, false)
+x = 2, y = 0, z = -2
+2 2
+---
+4x + 0w + 6y + 3z + 0g = 2
+o=Abacus.Math.diophantine([4,0,6,3,0], 2)
+x = 2+3i_1, w = i_3, y = i_1+i_2, z = -2-6i_1-2i_2, g = i_4
+2 2
+2 2
+---
+Solve a1x1 + a2x2 + ..  = b mod m
+3x = 3 mod 10
+o=Abacus.Math.congruence([3], 3, 10)
+x = 1+10i_1
+3 3
+3 3
+o=Abacus.Math.congruence([3], 3, 10, false)
+x = 1
+3 3
+---
+4x + 6y = 2 mod 10
+o=Abacus.Math.congruence([4,6], 2, 10)
+x = i_1, y = 2+i_1+5i_2
+2 2
+2 2
+o=Abacus.Math.congruence([4,6], 2, 10, false)
+x = 0, y = 2
+2 2
+---

@@ -1,4 +1,4 @@
-Abacus.Combinatorics (VERSION = 0.9.4)
+Abacus.Combinatorics (VERSION = 0.9.8)
 ---
 Another way to generate N-Permutations from appropriate (1,2,..,N-1,N)-Tensors
 o = Abacus.Tensor(1,2,3,{"output":"inversion"})

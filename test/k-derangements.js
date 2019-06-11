@@ -43,7 +43,7 @@ echo('o.rewind()');
 print_all( o.rewind(), 1, function(item){
     return [
     item.join(','),
-    Abacus.Permutation.is_derangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
     ];
 } );
 
@@ -69,7 +69,7 @@ echo('o.rewind()');
 print_all( o.rewind(), 1, function(item){
     return [
     item.join(','),
-    Abacus.Permutation.is_derangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
     ];
 } );
 
@@ -95,7 +95,7 @@ echo('o.rewind()');
 print_all( o.rewind(), 1, function(item){
     return [
     item.join(','),
-    Abacus.Permutation.is_derangement(item, 4, true) ? 'exactly 4 fixed points' : 'ERROR'
+    Abacus.Permutation.isDerangement(item, 4, true) ? 'exactly 4 fixed points' : 'ERROR'
     ];
 } );
 
@@ -104,7 +104,7 @@ echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1, function(item){
     return [
     item.join(','),
-    Abacus.Permutation.is_derangement(item, 4, true) ? 'exactly 4 fixed points' : 'ERROR'
+    Abacus.Permutation.isDerangement(item, 4, true) ? 'exactly 4 fixed points' : 'ERROR'
     ];
 } );
 
