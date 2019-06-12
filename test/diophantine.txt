@@ -74,3 +74,35 @@ o=Abacus.Math.congruence([4,6], 2, 10, false)
 x = 0, y = 2
 2 2
 ---
+Solve a1^2x1^2 + a2^2x2^2 + ..  = 0
+x^2 + y^2 + z^2 = 0
+o=Abacus.Math.pythagorean([1,1,1])
+x = 0, y = 0, z = 0
+0 0
+0 0
+2x^2 + 3y^2 - z^2 = 0
+o=Abacus.Math.pythagorean([2,3,-1])
+x = 0, y = 0, z = 0
+0 0
+0 0
+9x^2 - 4y^2 = 0
+o=Abacus.Math.pythagorean([9,-4])
+x = 2i_1, y = 3i_1
+0 0
+0 0
+x^2 + y^2 - z^2 = 0 /* pythagorean triples */
+o=Abacus.Math.pythagorean([1,1,-1])
+x = i_1^2-i_2^2, y = 2i_1i_2, z = i_1^2+i_2^2
+0 0
+0 0
+a^2 + b^2 + c^2 - d^2 = 0
+o=Abacus.Math.pythagorean([1,1,1,-1])
+a = i_1^2+i_2^2-i_3^2, b = 2i_1i_3, c = 2i_2i_3, d = i_1^2+i_2^2+i_3^2
+0 0
+0 0
+9x^2 - 4y^2 + 16z^2 + 25w^2 + g^2 = 0
+o=Abacus.Math.pythagorean([9,-4,16,25,1])
+x = 10i_1^2+10i_2^2+10i_3^2-10i_4^2, y = 15i_1^2+15i_2^2+15i_3^2+15i_4^2, z = 15i_1i_4, w = 12i_2i_4, g = 60i_3i_4
+0 0
+0 0
+---

@@ -27,6 +27,19 @@ function check_solution( sol, coeff, vars, modulo )
     }
     return res;
 }
+function check_solution2( sol, coeff, vars )
+{
+    if ( null == sol ) return 'No Integer solution';
+    
+    vars = vars || {};
+    var out = '', i, l = sol.length, res = 0, s2;
+    for(i=0; i<l; i++)
+    {
+        s2 = sol[i].valueOf(vars);
+        res += coeff[i] * s2 * s2;
+    }
+    return res;
+}
 function random(m, M)
 {
     return Abacus.Arithmetic.rnd(m, M);
@@ -133,4 +146,43 @@ echo('o=Abacus.Math.congruence([4,6], 2, 10, false)');
 o=Abacus.Math.congruence([4,6], 2, 10, false);
 echo(print_solution(o, ['x','y']));
 echo(check_solution(o, [4,6], null, 10), 2);
+echo('---');
+
+echo('Solve a1^2x1^2 + a2^2x2^2 + ..  = 0');
+echo('x^2 + y^2 + z^2 = 0');
+echo('o=Abacus.Math.pythagorean([1,1,1])');
+o=Abacus.Math.pythagorean([1,1,1]);
+echo(print_solution(o, ['x','y','z']));
+echo(check_solution2(o, [1,1,1]), 0);
+echo(check_solution2(o, [1,1,1], {"i_1":random(-100,100),"i_2":random(-100,100)}), 0);
+echo('2x^2 + 3y^2 - z^2 = 0');
+echo('o=Abacus.Math.pythagorean([2,3,-1])');
+o=Abacus.Math.pythagorean([2,3,-1]);
+echo(print_solution(o, ['x','y','z']));
+echo(check_solution2(o, [2,3,-1]), 0);
+echo(check_solution2(o, [2,3,-1], {"i_1":random(-100,100),"i_2":random(-100,100)}), 0);
+echo('9x^2 - 4y^2 = 0');
+echo('o=Abacus.Math.pythagorean([9,-4])');
+o=Abacus.Math.pythagorean([9,-4]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution2(o, [9,-4]), 0);
+echo(check_solution2(o, [9,-4], {"i_1":random(-100,100)}), 0);
+echo('x^2 + y^2 - z^2 = 0 /* pythagorean triples */');
+echo('o=Abacus.Math.pythagorean([1,1,-1])');
+o=Abacus.Math.pythagorean([1,1,-1]);
+echo(print_solution(o, ['x','y','z']));
+echo(check_solution2(o, [1,1,-1]), 0);
+echo(check_solution2(o, [1,1,-1], {"i_1":random(-100,100),"i_2":random(-100,100)}), 0);
+echo('a^2 + b^2 + c^2 - d^2 = 0');
+echo('o=Abacus.Math.pythagorean([1,1,1,-1])');
+o=Abacus.Math.pythagorean([1,1,1,-1]);
+echo(print_solution(o, ['a','b','c','d']));
+echo(check_solution2(o, [1,1,1,-1]), 0);
+echo(check_solution2(o, [1,1,1,-1], {"i_1":random(-100,100),"i_2":random(-100,100),"i_3":random(-100,100)}), 0);
+echo('9x^2 - 4y^2 + 16z^2 + 25w^2 + g^2 = 0');
+echo('o=Abacus.Math.pythagorean([9,-4,16,25,1])');
+o=Abacus.Math.pythagorean([9,-4,16,25,1]);
+echo(print_solution(o, ['x','y','z','w','g']));
+echo(check_solution2(o, [9,-4,16,25,1]), 0);
+echo(check_solution2(o, [9,-4,16,25,1], {"i_1":random(-100,100),"i_2":random(-100,100),"i_3":random(-100,100),"i_4":random(-100,100)}), 0);
 echo('---');

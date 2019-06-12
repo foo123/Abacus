@@ -2119,7 +2119,7 @@ function gcd( /* args */ )
         //if ( Arithmetic.equ(b, I) ) return I;
         if ( Arithmetic.equ(b, O) ) break;
         // swap them (a >= b)
-        if ( Arithmetic.lt(a,b) ) { t=b; b=a; a=t; }
+        if ( Arithmetic.lt(a, b) ) { t=b; b=a; a=t; }
         while (!Arithmetic.equ(b, O)) { t = b; b = Arithmetic.mod(a, t); a = t; }
     }
     return a;
@@ -2143,7 +2143,7 @@ function xgcd( /* args */ )
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         k = args.length, Arithmetic = Abacus.Arithmetic,
         N = Arithmetic.num, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-        a, b, a1 = I, b1 = O, a2 = O, b2 = I, tmp, quot, gcd, asign = I, bsign = I;
+        a, b, a1 = I, b1 = O, a2 = O, b2 = I, quot, gcd, asign = I, bsign = I;
 
     if ( 0 === k ) return;
 
@@ -2181,14 +2181,13 @@ function xgcd( /* args */ )
                 return 0===i ? a : (1===i ? asign : Arithmetic.mul(bsign, gcd[i-1]));
             });
 
-        //if (Arithmetic.gt(b, a)) {tmp = a; a = b; b = tmp;}
         for(;;)
         {
             quot = Arithmetic.div(a, b);
             a = Arithmetic.mod(a, b);
             a1 = Arithmetic.sub(a1, Arithmetic.mul(quot, a2));
             b1 = Arithmetic.sub(b1, Arithmetic.mul(quot, b2));
-            if ( Arithmetic.equ(a,O) )
+            if ( Arithmetic.equ(a, O) )
             {
                 a2 = Arithmetic.mul(a2, asign); b2 = Arithmetic.mul(b2, bsign);
                 return array(gcd.length+1,function(i){
@@ -2200,7 +2199,7 @@ function xgcd( /* args */ )
             b = Arithmetic.mod(b, a);
             a2 = Arithmetic.sub(a2, Arithmetic.mul(quot, a1));
             b2 = Arithmetic.sub(b2, Arithmetic.mul(quot, b1));
-            if ( Arithmetic.equ(b,O) )
+            if ( Arithmetic.equ(b, O) )
             {
                 a1 = Arithmetic.mul(a1, asign); b1 = Arithmetic.mul(b1, bsign);
                 return array(gcd.length+1, function(i){
@@ -2216,16 +2215,18 @@ function polygcd( /* args */ )
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
     // https://en.wikipedia.org/wiki/Euclidean_division_of_polynomials
     // https://en.wikipedia.org/wiki/Polynomial_long_division
+    // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         c = args.length, Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, I = Arithmetic.I, zeroes = 0, a, b, a0, b0, t, qr, i;
+        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, zeroes = 0, a, b, a0, b0, t, qr, i;
 
-    if ( 0 === c ) return new Polynomial([O]);
+    if ( 0 === c ) return Polynomial.C(O);
     for(i=0; i<c; i++)
     {
+        if ( Arithmetic.gt(O, args[i].lead()) ) args[i] = args[i].mul(J);
         if ( args[i].equ(O) ) zeroes++;
     }
-    if ( zeroes === c ) return new Polynomial([O]);
+    if ( zeroes === c ) return Polynomial.C(O);
     i = 0;
     while(i<c && (a=args[i++]).equ(O)) ;
     while (i<c)
@@ -2233,8 +2234,9 @@ function polygcd( /* args */ )
         while(i<c && (b=args[i++]).equ(O)) ;
         if ( b.equ(O) ) break;
         // swap them (a >= b)
-        if ( a.deg() < b.deg() ) { t=b; b=a; a=t; }
-        while ( 0 < b.deg() )
+        if ( (a.deg() < b.deg()) ||
+            ((a.deg() === b.deg()) && Arithmetic.lt(a.lead(), b.lead())) ) { t=b; b=a; a=t; }
+        while ( !b.equ(O) /*0 < b.deg()*/)
         {
             a0 = a; b0 = b;
             qr = a.div(b, true); a = b; b = qr[1];
@@ -2249,18 +2251,20 @@ function polyxgcd( /* args */ )
 {
     // Generalization of Extended GCD Algorithm for univariate polynomials
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#B%C3%A9zout's_identity_and_extended_GCD_algorithm
+    // should be a generalisation of number xgcd, meaning for constant polynomials should coincide with xgcd of respective numbers
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         k = args.length, Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, asign = I, bsign = I,
         a, b, a0, b0, a1 = Polynomial.C(I), b1 = Polynomial.C(O), a2 = Polynomial.C(O), b2 = Polynomial.C(I),
-        tmp, qr, xgcd;
+        qr, xgcd;
 
     if ( 0 === k ) return;
 
     a = args[0];
+    if ( Arithmetic.gt(O, a.lead()) ) {a = a.mul(J); asign = J;}
     if ( 1 === k )
     {
-        return [a, Polynomial.C(I)];
+        return [a, Polynomial.C(asign)];
     }
     else //if ( 2 <= k )
     {
@@ -2275,15 +2279,16 @@ function polyxgcd( /* args */ )
         // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
         xgcd = 2 === k ? [args[1], Polynomial.C(I)] : polyxgcd(slice.call(args, 1));
         b = xgcd[0];
+        if ( Arithmetic.gt(O, b.lead()) ) {b = b.mul(J); bsign = J;}
 
         // gcd with zero factor, take into account
         if ( a.equ(O) )
             return array(xgcd.length+1,function(i){
-                return 0===i ? b : (1===i ? Polynomial.C(I) : xgcd[i-1]);
+                return 0===i ? b : (1===i ? Polynomial.C(asign) : xgcd[i-1].mul(bsign));
             });
         else if ( b.equ(O) )
             return array(xgcd.length+1,function(i){
-                return 0===i ? a : (1===i ? Polynomial.C(I) : xgcd[i-1]);
+                return 0===i ? a : (1===i ? Polynomial.C(asign) : xgcd[i-1].mul(bsign));
             });
 
         for(;;)
@@ -2294,25 +2299,34 @@ function polyxgcd( /* args */ )
             a = qr[1];
             a1 = a1.sub(qr[0].mul(a2))
             b1 = b1.sub(qr[0].mul(b2));
-            if ( a.equ(O) )
+            if ( a.equ(O) /*0 === a.deg()*/ )
+            {
+                a2 = a2.mul(asign); b2 = b2.mul(bsign);
                 return array(xgcd.length+1,function(i){
-                    return 0===i ? b : (1===i ? a2 : b2.mul(xgcd[i-1]));
+                    return 0===i ? b : (1===i ? a2 : xgcd[i-1].mul(b2));
                 });
+            }
 
             qr = b.div(a, true);
             b = qr[1];
             a2 = a2.sub(qr[0].mul(a1));
             b2 = b2.sub(qr[0].mul(b1));
-            if( b.equ(O) )
+            if( b.equ(O) /*0 === b.deg()*/ )
+            {
+                a1 = a1.mul(asign); b1 = b1.mul(bsign);
                 return array(xgcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : b1.mul(xgcd[i-1]));
+                    return 0===i ? a : (1===i ? a1 : xgcd[i-1].mul(b1));
                 });
+            }
 
             if ( a.equ(a0) && b.equ(b0) )
+            {
                 // will not change anymore
+                a1 = a1.mul(asign); b1 = b1.mul(bsign);
                 return array(xgcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : b1.mul(xgcd[i-1]));
+                    return 0===i ? a : (1===i ? a1 : xgcd[i-1].mul(b1));
                 });
+            }
         }
     }
 }
@@ -2484,7 +2498,8 @@ function moebius( n )
         if ( i === inc.length ) i = 0;
         p2 = Arithmetic.mul(p, p);
     }
-    return (0===m)/*is prime*/ || (m & 1) ? I : Arithmetic.J;
+    if ( 0 === m ) m = 1; /*is prime up to now*/
+    return m & 1 ? I : Arithmetic.J;
 }
 /*function solvemod1( a, c, b, m )
 {
@@ -2554,6 +2569,8 @@ function solvedioph2( a, b, param )
         xp = xgcd(a);
         xp = [Arithmetic.mul(b, xp[1]), Arithmetic.mul(b, xp[2])];
     }
+    // fix sign to be always positive for 1st variable
+    if ( Arithmetic.gt(O, a[1]) ) { a[0] = Arithmetic.mul(J, a[0]); a[1] = Arithmetic.mul(J, a[1]); }
     x0 = [a[1], Arithmetic.mul(J, a[0])];
 
     return [
@@ -2689,7 +2706,7 @@ function solvedioph( a, b, with_param )
             symbols = b.symbols();
             for(j=0,m=symbols.length; j<m; j++)
             {
-                n = b.terms[symbols[j]].coeff;
+                n = b.terms[symbols[j]].factors['1'];
                 if ( '1' === symbols[j] )
                 {
                     // constant term
@@ -2709,8 +2726,8 @@ function solvedioph( a, b, with_param )
                 if ( '1' !== p )
                 {
                     // re-express partial solution in terms of original symbol
-                    sol2[0] = Expr([Term(p, sol2[0].terms['1']), sol2[0].terms[pnew]]);
-                    sol2[1] = Expr([Term(p, sol2[1].terms['1']), sol2[1].terms[pnew]]);
+                    sol2[0] = Expr([Term(p, sol2[0].terms['1'].factors['1']), sol2[0].terms[pnew]]);
+                    sol2[1] = Expr([Term(p, sol2[1].terms['1'].factors['1']), sol2[1].terms[pnew]]);
                 }
 
                 tot_x.push(sol2[0]); tot_y.push(sol2[1]);
@@ -2736,7 +2753,7 @@ function solvedioph( a, b, with_param )
 
     return null==solutions ? null : (false===with_param ? solutions.map(function(x){
         // return particular solution (as number), not general (as expression)
-        return x.terms['1'] ? x.terms['1'].coeff : O;
+        return x.terms['1'] ? x.terms['1'].factors['1'] : O;
     }) : solutions);
 }
 function solvecongr( a, b, m, with_param )
@@ -2759,7 +2776,7 @@ function solvecongr( a, b, m, with_param )
         else
         {
             // general solution (as expression)
-            if ( x.terms['1'] && Arithmetic.gt(O, x.terms['1'].coeff) )
+            if ( x.terms['1'] && Arithmetic.gt(O, x.terms['1'].factors['1']) )
                 x.terms['1'] = x.terms['1'].add(m);
         }
         return x;
@@ -2769,50 +2786,83 @@ function solvecongr( a, b, m, with_param )
 function sign( x )
 {
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
-    return Arithmetic.equ(O, x) ? 0 : (Arithmetic.lt(x, O) ? -1 : 1);
+    return Arithmetic.equ(O, x) ? 0 : (Arithmetic.gt(O, x) ? -1 : 1);
 }
-/*function solvepythag( a, with_param )
+function solvepythag( a, with_param )
 {
-    // solve pythagoeran diophantine equation in k variables
-    // a1^2 x_1^2 + a2^2 x_2^2 + a3&2 x_3^2 + .. + ak^2 x_k^2 = 0
+    // solve pythagorean diophantine equation in k variables
+    // a1^2 x_1^2 + a2^2 x_2^2 + a3&2 x_3^2 + .. + a{k-1}^2 x_{k-1}^2 - ak^2x_k = 0
     // where a is k-array of (integer) coefficients: [a1^2, a2^2, a3^2, .. , ak^2]
+    // eg. to generate pythagorean triples solve for [1,1,-1] ==> x^2 + y^2 - z^2 = 0
     // solution adapted from sympy/solvers/diophantine.py
     var Arithmetic = Abacus.Arithmetic,
         O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, two = Arithmetic.II,
-        k = a.length, index, sol, m, i, ith, L, ilcm, s,
+        k = a.length, index, solutions, sol, param, i, ith, L, ilcm, s, pos, neg, //z,
         symbol = is_string(with_param) && with_param.length ? with_param : 'i';
 
     if ( !k ) return null;
 
-    if ( sign(a[0])+sign(a[1])+sign(a[2]) < 0 )
-        a = a.map(function(x){return Arithmetic.mul(J, x); });
+    // NOTE: assume all coefficients are perfect squares and non-zero
+    a = a.map(Arithmetic.num);
+    pos = a.filter(function(ai){return 1 === sign(ai);}).length;
+    neg = a.filter(function(ai){return -1 === sign(ai);}).length;
+    //z = k-pos-neg;
+
+    if ( (1===k) || (0===pos) || (0===neg) )
+        // trivial solution: sum of (same sign) integer squares to be zero, all terms have to be zero
+        return array(k, function(){return Expr(); /* zero */});
+
+    s = array(k, function(i){return isqrt(Arithmetic.abs(a[i]));});
+
+    if ( k !== a.filter(function(ai,i){return Arithmetic.equ(Arithmetic.abs(ai), Arithmetic.mul(s[i], s[i]));}).length )
+        // no general solution in integers, coefficients are not perfect squares, return trivial solution
+        return array(k, function(){return Expr(); /* zero */});
+
+    param = array(k-1, function(i){return symbol+'_'+(i+1);});
+
+    if ( 2 === k )
+        // different sign, parametrised solution:
+        // a1^2 x1^2 = a2^2 x2^2 ==> x1 = a2*i_1, x2 = a1*i_1
+        return [
+            Expr(Term(param[0], s[1])),
+            Expr(Term(param[0], s[0]))
+        ];
+
+    // k >= 3
+    if ( 0 > sign(a[0])+sign(a[1])+sign(a[2]) )
+        a = a.map(function(ai){return Arithmetic.mul(J, ai); });
 
     index = 0;
-
     for (i=0; i<k; i++)
         if ( -1 === sign(a[i]) )
-            index = i;
+            index = i; // find last negative coefficient, to be solved with respect to that
 
-    m = array(k, function(i){return symbol+'_'+(i+1);});
-    s = array(k, function(i){return isqrt(Arithmetic.abs(a[i]));});
-    ith = Expr(array(m.length, function(i){return Term(m[i]+'^2');}));
-    L = [Expr([ith, Term(m[k-2]+'^2', -2)])];
-    L = L.concat(array(k-2, function(i){return null;}));//[2*m[i]*m[n-2] for i in range(n - 2)])
-    //sol = L[:index] + [ith] + L[index:];
+    ith = Expr(array(param.length, function(i){return Term(param[i]+'^2');}));
+    L = [
+        Expr([ith, Term(param[k-2]+'^2', Arithmetic.mul(J, two))])
+    ].concat(array(k-2, function(i){
+        return Expr(Term([param[i],param[k-2]], two));
+    }));
+    solutions = L.slice(0, index).concat(ith).concat(L.slice(index));
 
     ilcm = I;
     for(i=0; i<k; i++)
     {
-        if (i == index || (index > 0 && i == 0) || (index == 0 && i == 1))
+        if ( i === index || (index > 0 && i === 0) || (index === 0 && i === 1) )
             ilcm = lcm(ilcm, s[i]);
         else
             ilcm = lcm(ilcm, Arithmetic.equ(O, Arithmetic.mod(s[i], two)) ? Arithmetic.div(s[i], two) : s[i]);
     }
     for(i=0; i<k; i++)
-        sol[i] = sol[i].mul(Arithmetic.div(ilcm, s[i]));
-
-    return sol;
-}*/
+    {
+        sol = solutions[i];
+        solutions[i] = solutions[i].mul(Arithmetic.div(ilcm, s[i]));
+        // has a remainder, since it is always a multiple of 2, add 1 only
+        if ( !Arithmetic.equ(O, Arithmetic.mod(ilcm, s[i])) )
+            solutions[i] = solutions[i].add(sol.div(two));
+    }
+    return solutions;
+}
 function pow2( n )
 {
     var Arithmetic = Abacus.Arithmetic;
@@ -4536,6 +4586,7 @@ Abacus.Math = {
 
 ,diophantine: solvedioph
 ,congruence: solvecongr
+,pythagorean: solvepythag
 
 };
 
@@ -4621,249 +4672,528 @@ Node = Abacus.Node = function Node(value, left, right, top) {
     };
 };
 
-// Abacus.Term, represents symbolic multiplicative terms in (linear) algebraic expressions, including terms with variables
-Term = Abacus.Term = function Term( symb, coeff ) {
-    var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I;
-    if ( !(self instanceof Term) ) return new Term(symb, coeff);
+// Abacus.Term, represents multiplicative terms in (linear) algebraic expressions, including terms with mixed factors of (powers of) symbolic variables
+Term = Abacus.Term = Class({
 
-    self.symbol = null == symb ? '1' /* constant term */ : String(symb) /* another symbol */;
-    self.coeff = null == coeff ? I : (coeff instanceof Term ? coeff.coeff : coeff);
+    constructor: function Term( s, c ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( !(self instanceof Term) ) return new Term(s, c);
 
-    self.neg = function( ) {
-        return new Term(self.symbol, Arithmetic.mul(Arithmetic.J, self.coeff));
-    };
-    self.add = function( a ) {
-        return new Term(self.symbol, Arithmetic.add(self.coeff, a instanceof Term ? a.coeff : a));
-    };
-    self.sub = function( a ) {
-        return new Term(self.symbol, Arithmetic.sub(self.coeff, a instanceof Term ? a.coeff : a));
-    };
-    self.mul = function( a ) {
-        return new Term(self.symbol, Arithmetic.mul(self.coeff, a instanceof Term ? a.coeff : a));
-    };
-    self.div = function( a ) {
-        return new Term(self.symbol, Arithmetic.div(self.coeff, a instanceof Term ? a.coeff : a));
-    };
-    self.valueOf = function( x ) {
-        if ( (null==x) || ('1'===self.symbol) ) return self.coeff;
-        else if ( Arithmetic.equ(O, x) ) return O;
-        var p = '1' === self.symbol ? -1 : self.symbol.indexOf('^'); // eg x^2
-        return Arithmetic.mul(self.coeff, -1 !== p ? Arithmetic.pow(x, +(self.symbol.slice(p+1))) : x);
-    };
-    self.toString = function( ) {
-        return (Arithmetic.equ(I, self.coeff)&&('1'!==self.symbol) ? '' : String(self.coeff)) + ('1'===self.symbol ? '' : self.symbol);
-    };
-    self.dispose = function( ) {
-        self.symbol = null;
-        self.coeff = null;
-        return self;
-    };
-};
-// Abacus.Expr, represents symbolic algebraic expressions of sums of (multiplicative) terms
-Expr = Abacus.Expr = function Expr( /* args */ ) {
-    var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, l, term,
-        terms = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+        self.factors = Obj();
+        self.factors['1'] = null == c ? Arithmetic.I : c; // default
+        if ( !Arithmetic.equ(Arithmetic.O, self.factors['1']) ) Term.Merge(s, self);
+        Term.Symbol(self);
+    }
 
-    if ( !(self instanceof Expr) ) return new Expr(terms);
+    ,__static__: {
+        Merge: function( factors, T, remove ) {
+            var Arithmetic = Abacus.Arithmetic,
+                O = Arithmetic.O, I = Arithmetic.I,
+                keys, i, l;
 
-    self.terms = Obj();
-    self.terms['1'] = Term(1, O); // constant term is default
-    function _add( x, E )
-    {
-        if ( Arithmetic.isNumber(x) )
-        {
-            if ( E.terms['1'] )
+            function merge_factor( f, e ) {
+                var i = f.indexOf('^'); // eg x^2
+                e = e || O;
+                if ( -1 !== i )
+                {
+                    e = /*Arithmetic.add(e,*/Arithmetic.num(f.slice(i+1))/*)*/;
+                    f = f.slice(0, i);
+                }
+                if ( ('1' === f) || !f.length ) return; // handled elsewhere
+                if ( -1 === remove )
+                {
+                    if ( T.factors[f] )
+                    {
+                        T.factors[f] = Arithmetic.sub(T.factors[f], e);
+                        if ( Arithmetic.gte(O, T.factors[f]) ) delete T.factors[f];
+                    }
+                }
+                else
+                {
+                    if ( !T.factors[f] ) T.factors[f] = e;
+                    else T.factors[f] = Arithmetic.add(T.factors[f], e);
+                    //if ( Arithmetic.gte(O, T.factors[f]) ) delete T.factors[f];
+                }
+            };
+
+            if ( is_array(factors) || is_args(factors) )
             {
-                E.terms['1'] = E.terms['1'].add(x);
+                for(i=0,l=factors.length; i<l; i++)
+                    merge_factor(String(factors[i]), I);
             }
-            else
+            else if ( /*Arithmetic.isNumber(factors)*/('1' === factors) || (1 === factors) || (Arithmetic.isNumber(factors) && Arithmetic.equ(I, factors)) )
             {
-                E.terms['1'] = Term(1, x);
+                // skip, handled elsewhere
+                //merge_factor(String(factors), I);
             }
+            else if ( is_string(factors) )
+            {
+                merge_factor(factors, I);
+            }
+            else if ( is_obj(factors) )
+            {
+                for(keys=KEYS(factors)i=0,l=keys.length; i<l; i++)
+                    merge_factor(keys[i], Arithmetic.num(factors[keys[i]]));
+            }
+            return T;
         }
-        else if ( x instanceof Term )
+        ,Symbol: function( T ) {
+            var Arithmetic = Abacus.Arithmetic, I = Arithmetic.I;
+            T.symbol = KEYS(T.factors).sort().reduce(function(s, f){
+                var e = T.factors[f];
+                return s + ('1' === f ? '' : (Arithmetic.equ(I, e) ? f : (f+'^'+String(e))));
+            }, '');
+            if ( !T.symbol.length ) T.symbol = '1'; // default constant term
+            return T;
+        }
+    }
+
+    ,factors: null
+    ,symbol: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.factors = null;
+        self.symbol = null;
+        return self;
+    }
+
+    ,symbols: function( sorted ) {
+        var factors = this.factors;
+        return sorted ? KEYS(factors).sort() : KEYS(factors);
+    }
+    ,equ: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
+        if ( Arithmetic.isNumber(a) )
+            return Arithmetic.equ(O, a) ? Arithmetic.equ(O, self.factors['1']) : (('1' === self.symbol) && Arithmetic.equ(self.factors['1'], a));
+        else if ( a instanceof Term )
+            return (a.equ(O) && self.equ(O)) || ((self.symbol === a.symbol) && Arithmetic.equ(self.factors['1'], a.factors['1']));
+        else if ( a instanceof Expr )
+            return a.equ(self);
+        return false;
+    }
+    ,neg: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Term(self.factors, Arithmetic.mul(Arithmetic.J, self.factors['1']));
+    }
+    ,add: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( Arithmetic.isNumber(a) )
+            return Term(self.factors, Arithmetic.add(self.factors['1'], a));
+        else if ( a instanceof Term )
+            return self.symbol===a.symbol ? Term(self.factors, Arithmetic.add(self.factors['1'], a.factors['1'])) : Expr([self, a]);
+        else if ( a instanceof Expr )
+            return a.add(self);
+        return self;
+    }
+    ,sub: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( Arithmetic.isNumber(a) )
+            return Term(self.factors, Arithmetic.sub(self.factors['1'], a));
+        else if ( a instanceof Term )
+            return self.symbol===a.symbol ? Term(self.factors, Arithmetic.sub(self.factors['1'], a.factors['1'])) : Expr([self, a.neg()]);
+        else if ( a instanceof Expr )
+            return Expr([self, a.neg()]);
+        return self;
+    }
+    ,mul: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, T;
+        if ( Arithmetic.isNumber(a) )
         {
-            if ( E.terms[x.symbol] )
+            return Term(self.factors, Arithmetic.mul(self.factors['1'], a));
+        }
+        else if ( a instanceof Term )
+        {
+            T = Term(self.factors,  Arithmetic.mul(self.factors['1'], a.factors['1']));
+            if ( !Arithmetic.equ(O, T.factors['1']) ) Term.Merge(a.factors, T);
+            Term.Symbol(T);
+            return T;
+        }
+        else if ( a instanceof Expr )
+        {
+            return a.mul(self);
+        }
+        return self;
+    }
+    ,div: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, T;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Term(self.factors, Arithmetic.div(self.factors['1'], a));
+        }
+        else if ( a instanceof Term )
+        {
+            T = Term(self.factors, Arithmetic.div(self.factors['1'], a.factors['1']));
+            if ( !Arithmetic.equ(O, T.factors['1']) ) Term.Merge(a.factors, T, -1);
+            Term.Symbol(T);
+            return T;
+        }
+        return self;
+    }
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, factors, f;
+        if ( Arithmetic.isNumber(n) )
+        {
+            if ( Arithmetic.gt(O, n) ) return null;
+            if ( self.equ(O) ) return Term(1, O);
+            if ( Arithmetic.equ(O, n) ) return Term(1, I);
+            if ( Arithmetic.equ(I, n) ) return Term(self.factors, self.factors['1']);
+            factors = {};
+            for(f in self.factors)
             {
-                E.terms[x.symbol] = E.terms[x.symbol].add(x);
-                if ( '1' !== x.symbol && Arithmetic.equ(O, E.terms[x.symbol]) )
-                    delete E.terms[x.symbol];
+                if ( !HAS.call(self.factors, f) || ('1' === f) ) continue;
+                factors[f] = Arithmetic.mul(self.factors[f], n);
             }
-            else if ( ('1' === x.symbol) || !Arithmetic.equ(O, x.coeff) )
+            return Term(factors, Arithmetic.pow(self.factors['1'], n));
+        }
+        return self;
+    }
+    ,valueOf: function( symbolValues ) {
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            O = Arithmetic.O, I = Arithmetic.I, res;
+        symbolValues = symbolValues || {};
+        if ( '1'===self.symbol ) res = self.factors['1'];
+        else res = KEYS(self.factors).reduce(function(r, f){
+            if ( Arithmetic.equ(O, r) ) return O;
+            var e = self.factors[f], x = symbolValues[f] || O,
+                t = '1' === f ? e : (Arithmetic.equ(O, x) ? O : (Arithmetic.equ(I, e) ? x : Arithmetic.pow(x, e)));
+            return Arithmetic.mul(r, t);
+        }, I);
+        return res;
+    }
+    ,toString: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return ('1'===self.symbol) ? String(self.factors['1']) : ((Arithmetic.equ(Arithmetic.J, self.factors['1']) ? '-' : (Arithmetic.equ(Arithmetic.I, self.factors['1']) ? '' : String(self.factors['1']))) + self.symbol);
+    }
+});
+// Abacus.Expr, represents (symbolic) (linear) algebraic expressions of sums of (multiplicative) terms
+Expr = Abacus.Expr = Class({
+
+    constructor: function Expr( /* args */ ) {
+        var self = this, i, l,
+            terms = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+
+        if ( !(self instanceof Expr) ) return new Expr(terms);
+
+        self.terms = Obj();
+        self.terms['1'] = Term(1, Abacus.Arithmetic.O); // constant term is default
+        for(i=0,l=terms.length; i<l; i++) Expr.Merge(terms[i], self);
+    }
+
+    ,__static__: {
+        Merge: function Merge( x, E ) {
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
+            if ( Arithmetic.isNumber(x) )
             {
-                E.terms[x.symbol] = x;
+                if ( E.terms['1'] )
+                {
+                    E.terms['1'] = E.terms['1'].add(x);
+                }
+                else
+                {
+                    E.terms['1'] = Term(1, x);
+                }
             }
+            else if ( x instanceof Term )
+            {
+                if ( E.terms[x.symbol] )
+                {
+                    E.terms[x.symbol] = E.terms[x.symbol].add(x);
+                    if ( '1' !== x.symbol && Arithmetic.equ(O, E.terms[x.symbol].factors['1']) )
+                        delete E.terms[x.symbol];
+                }
+                else if ( ('1' === x.symbol) || !Arithmetic.equ(O, x.factors['1']) )
+                {
+                    E.terms[x.symbol] = x;
+                }
+            }
+            else if ( x instanceof Expr )
+            {
+                for(var i=0,keys=x.symbols(),l=keys.length; i<l; i++)
+                    Merge(x.terms[keys[i]], E);
+            }
+            return E;
+        }
+    }
+
+    ,terms: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.terms = null;
+        return self;
+    }
+
+    ,symbols: function( ) {
+        return KEYS(this.terms);
+    }
+    ,args: function( sorted ) {
+        var self = this;
+        return (sorted ? KEYS(self.terms).sort() : KEYS(self.terms)).map(function(t){return self.terms[t];});
+    }
+    ,equ: function ( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, l, keys;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return (1 === KEYS(self.terms).length) && self.terms['1'].equ(a);
+        }
+        else if ( a instanceof Term )
+        {
+            return '1' === a.symbol ? ((1 === KEYS(self.terms).length) && self.terms['1'].equ(a)) : (HAS.call(self.terms, a.symbol) && (2 === KEYS(self.terms).length) && self.terms['1'].equ(O) && self.terms[a.symbol].equ(a));
+        }
+        else if ( a instanceof Expr )
+        {
+            keys = a.symbols(); l = keys.length;
+            if ( KEYS(self.terms).length !== l ) return false;
+            for(i=0; i<l; i++)
+                if ( !HAS.call(self.terms, keys[i]) || !a.terms[keys[i]].equ(self.terms[keys[i]]) )
+                    return false;
+            return true;
+        }
+        return false;
+    }
+    ,neg: function( x ) {
+        var self = this;
+        return Expr(self.args().map(function(t){return t.neg();}));
+    }
+    ,add: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.isNumber(x) || (x instanceof Term) || (x instanceof Expr) ? Expr([self, x]) : self;
+    }
+    ,sub: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, J = Arithmetic.J;
+        if ( Arithmetic.isNumber(x) ) return self.add(Arithmetic.mul(J, x));
+        else if ( (x instanceof Term) || (x instanceof Expr) ) return self.add(x.neg());
+        return self;
+    }
+    ,mul: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            symbols, symbols2;
+        if ( Arithmetic.isNumber(x) || (x instanceof Term) )
+        {
+            if ( self.equ(O) || ((x instanceof Term) && x.equ(O)) || (Arithmetic.isNumber(x) && Arithmetic.equ(O, x)) ) return Expr();
+            symbols = KEYS(self.terms);
+            return Expr(array(symbols.length, function(i){
+                return self.terms[symbols[i]].mul(x);
+            }));
         }
         else if ( x instanceof Expr )
         {
-            for(var i=0,keys=x.symbols(),l=keys.length; i<l; i++)
-                _add(x.terms[keys[i]], E);
-        }
-        return E;
-    }
-
-    for(i=0,l=terms.length; i<l; i++) _add(terms[i], self);
-
-    self.symbols = function( ) {
-        return KEYS(self.terms);
-    };
-    self.args = function( sorted ) {
-        return (sorted ? KEYS(self.terms).sort() : KEYS(self.terms)).map(function(t){return self.terms[t];});
-    };
-    self.add = function( x ) {
-        return Arithmetic.isNumber(x) || (x instanceof Term) || (x instanceof Expr) ? _add(self, _add( x, new Expr() )) : self;
-    };
-    self.mul = function( x ) {
-        if ( Arithmetic.isNumber(x) )
-        {
-            if ( Arithmetic.equ(O, x) ) return Expr();
-            var symbols = KEYS(self.terms);
-            return Expr(array(symbols.length, function(i){
-                return Term(symbols[i], Arithmetic.mul(self.terms[symbols[i]].coeff, x));
+            if ( self.equ(O) || x.equ(O) ) return Expr();
+            symbols = KEYS(self.terms); symbols2 = KEYS(x.terms);
+            return Expr(array(symbols.length*symbols2.length, function(k){
+                var i = ~~(k/symbols2.length), j = k%symbols2.length;
+                return self.terms[symbols[i]].mul(x.terms[symbols2[j]]);
             }));
         }
         return self;
-    };
-    self.valueOf = function( symbolValues ) {
+    }
+    ,div: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, symbols;
+        if ( Arithmetic.isNumber(x) || (x instanceof Term) )
+        {
+            symbols = KEYS(self.terms);
+            return Expr(array(symbols.length, function(i){
+                return self.terms[symbols[i]].div(x);
+            }));
+        }
+        return self;
+    }
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, pow, e;
+        if ( Arithmetic.isNumber(n) )
+        {
+            if ( Arithmetic.gt(O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
+            if ( self.equ(O) ) return Expr();
+            if ( Arithmetic.equ(O, n) ) return Expr([Term(1, I)]);
+            if ( Arithmetic.equ(I, n) ) return Expr(self.args());
+            n = Arithmetic.val(n);
+            e = self; pow = Expr([Term(1, I)]);
+            while( 0 !== n )
+            {
+                // exponentiation by squaring
+                if ( n & 1 ) pow = pow.mul(e);
+                n >>= 1;
+                e = e.mul(e);
+            }
+            return pow;
+        }
+        return self;
+    }
+    ,valueOf: function( symbolValues ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
         symbolValues = symbolValues || {};
         return KEYS(self.terms).reduce(function(r, t){
-            var term = self.terms[t];
-            return Arithmetic.add(r, term.valueOf(symbolValues[term.symbol]||O));
+            return Arithmetic.add(r, self.terms[t].valueOf(symbolValues));
         }, O);
-    };
-    self.toString = function( ) {
-        var keys = KEYS(self.terms), i, l = keys.length, out = '', prev = false;
+    }
+    ,toString: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            keys = KEYS(self.terms), i, l = keys.length, out = '', prev = false;
         keys.sort();
         for(i=0; i<l; i++)
         {
-            if ( Arithmetic.equ(O, self.terms[keys[i]].coeff) ) continue;
-            out += (prev && Arithmetic.lt(O, self.terms[keys[i]].coeff) ? '+' : '') + self.terms[keys[i]].toString();
+            if ( self.terms[keys[i]].equ(O) ) continue;
+            out += (prev && Arithmetic.lt(O, self.terms[keys[i]].factors['1']) ? '+' : '') + self.terms[keys[i]].toString();
             prev = true;
         }
         return out.length ? out : '0';
-    };
-    self.dispose = function( ) {
-        self.terms = null;
-        return self;
-    };
-};
+    }
+});
+
 // Abacus.Polynomial, represents a (univariate) polynomial
-Polynomial = Abacus.Polynomial = function Polynomial( /* args */ ) {
-    var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, J = Arithmetic.J, I = Arithmetic.I,
-        coeffs = arguments.length && (is_array(arguments[0]) || is_args(arguments[0]) || is_obj(arguments[0])) ? arguments[0] : arguments;
+Polynomial = Abacus.Polynomial = Class({
 
-    if ( !(self instanceof Polynomial) ) return new Polynomial(coeffs);
+    constructor: function Polynomial( /* args */ ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            coeffs = arguments.length && (is_array(arguments[0]) || is_args(arguments[0]) || is_obj(arguments[0])) ? arguments[0] : arguments;
 
-    if ( is_obj(coeffs) )
-    {
-        // sparse representation, object with keys only to existing powers
-        // convert to dense coefficient representation
-        self.coeff = array(KEYS(coeffs).reduce(function(M, k){k = +k; return k > M ? k : M;}, 0)+1, function(i){
-            return HAS.call(coeffs, i) ? coeffs[i] : O;
-        });
-    }
-    else
-    {
-        // dense representation, array with all powers
-        self.coeff = coeffs && coeffs.length ? (is_args(coeffs) ? slice.call(coeffs) : coeffs) : [O];
-    }
-    _degree(self);
+        if ( !(self instanceof Polynomial) ) return new Polynomial(coeffs);
 
-    function _degree( P ) {
-        var i = P.coeff.length-1;
-        while(0<i && Arithmetic.equ(O, P.coeff[i])) i--;
-        // truncate to first non-zero coefficient
-        P.coeff.length = i+1;
+        if ( is_obj(coeffs) )
+            // sparse representation, object with keys only to existing powers
+            // convert to dense coefficient representation
+            self.coeff = array(KEYS(coeffs).reduce(function(M, k){k = +k; return k > M ? k : M;}, 0)+1, function(i){
+                return HAS.call(coeffs, i) ? coeffs[i] : O;
+            });
+        else
+            // dense representation, array with all powers
+            self.coeff = coeffs && coeffs.length ? (is_args(coeffs) ? slice.call(coeffs) : coeffs) : [O];
+
+        Polynomial.Degree(self);
     }
 
-    function _add( x, P, sub ) {
-        if ( sub )
-        {
-            // substraction
+    ,__static__: {
+        Degree: function( P ) {
+            var Arithmetic = Abacus.Arithmetic, i = P.coeff.length-1;
+            while(0<i && Arithmetic.equ(Arithmetic.O, P.coeff[i])) i--;
+            // truncate to first non-zero coefficient
+            P.coeff.length = i+1;
+            return P;
+        }
+
+        ,Add: function( x, P, do_sub ) {
+            var Arithmetic = Abacus.Arithmetic;
+            if ( do_sub )
+            {
+                // substraction
+                if ( Arithmetic.isNumber(x) )
+                {
+                    // O(1)
+                    P.coeff[0] = Arithmetic.sub(P.coeff[0], x);
+                }
+                else if ( x instanceof Polynomial )
+                {
+                    // O(max(n1,n2))
+                    P.coeff = array(stdMath.max(x.coeff.length,P.coeff.length), function(i){
+                        if ( i >= P.coeff.length ) return Arithmetic.mul(Arithmetic.J, x.coeff[i]);
+                        else if ( i >= x.coeff.length ) return P.coeff[i];
+                        return Arithmetic.sub(P.coeff[i], x.coeff[i]);
+                    });
+                    Polynomial.Degree(P);
+                }
+                return P;
+            }
             if ( Arithmetic.isNumber(x) )
             {
                 // O(1)
-                P.coeff[0] = Arithmetic.sub(P.coeff[0], x);
+                P.coeff[0] = Arithmetic.add(P.coeff[0], x);
             }
             else if ( x instanceof Polynomial )
             {
                 // O(max(n1,n2))
                 P.coeff = array(stdMath.max(x.coeff.length,P.coeff.length), function(i){
-                    if ( i >= P.coeff.length ) return Arithmetic.mul(J, x.coeff[i]);
+                    if ( i >= P.coeff.length ) return x.coeff[i];
                     else if ( i >= x.coeff.length ) return P.coeff[i];
-                    return Arithmetic.sub(P.coeff[i], x.coeff[i]);
+                    return Arithmetic.add(x.coeff[i], P.coeff[i]);
                 });
-                _degree(P);
+                Polynomial.Degree(P);
             }
             return P;
         }
-        if ( Arithmetic.isNumber(x) )
-        {
-            // O(1)
-            P.coeff[0] = Arithmetic.add(P.coeff[0], x);
+
+        ,Mul: function( x, P ) {
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+                i, j, n1, n2, n, c1, c2;
+            if ( Arithmetic.isNumber(x) )
+            {
+                // O(n)
+                if ( Arithmetic.equ(O, x) )
+                {
+                    P.coeff = [O];
+                }
+                else if ( Arithmetic.equ(Arithmetic.I, x) )
+                {
+                    // do nothing
+                }
+                else
+                {
+                    for(i=P.coeff.length-1; i>=0; i--)
+                        P.coeff[i] = Arithmetic.mul(P.coeff[i], x);
+                }
+            }
+            else if ( x instanceof Polynomial )
+            {
+                // O(n1*n2), can be done a bit faster
+                // 1. by using FFT multiplication, not implemented here
+                // 2. by Divide&Conquer and using eg. Strassen multiplication, not implemented here
+                c1 = P.coeff; n1 = c1.length;
+                c2 = x.coeff; n2 = c2.length;
+                n = n1+n2-1; P.coeff = array(n, function(){return O;});
+                for(i=0; i<n1; i++)
+                    for(j=0; j<n2; j++)
+                        P.coeff[i+j] = Arithmetic.add(P.coeff[i+j], Arithmetic.mul(c1[i], c2[j]));
+                Polynomial.Degree(P);
+            }
+            return P;
         }
-        else if ( x instanceof Polynomial )
-        {
-            // O(max(n1,n2))
-            P.coeff = array(stdMath.max(x.coeff.length,P.coeff.length), function(i){
-                if ( i >= P.coeff.length ) return x.coeff[i];
-                else if ( i >= x.coeff.length ) return P.coeff[i];
-                return Arithmetic.add(x.coeff[i], P.coeff[i]);
-            });
-            _degree(P);
+
+        ,C: function( c ) {
+            return new Polynomial([c || Abacus.Arithmetic.O]);
         }
-        return P;
+
+        ,fromExpr: function( e, x ) {
+            if ( !(e instanceof Expr) ) return null;
+            x = x || 'x';
+            var symbols = e.symbols(), i, s, coeff = {};
+            for(i=symbols.length-1; i>=0; i--)
+            {
+                s = symbols[i];
+                if ( '1' === s )
+                    coeff['0'] = e.terms[s].factors['1'];
+                else if ( x === s )
+                    coeff['1'] = e.terms[s].factors['1'];
+                else if ( (s.length > x.length+1) && (x+'^' === s.slice(0, x.length+1)) )
+                    coeff[s.slice(x.length+1)] = e.terms[s].factors['1'];
+            }
+            return new Polynomial(coeff);
+        }
     }
 
-    function _mul( x, P ) {
-        var i, j, n1, n2, n, c1, c2;
-        if ( Arithmetic.isNumber(x) )
-        {
-            // O(n)
-            if ( Arithmetic.equ(O, x) )
-            {
-                P.coeff = [O];
-            }
-            else if ( Arithmetic.equ(I, x) )
-            {
-                // do nothing
-            }
-            else
-            {
-                for(i=P.coeff.length-1; i>=0; i--)
-                    P.coeff[i] = Arithmetic.mul(P.coeff[i], x);
-            }
-        }
-        else if ( x instanceof Polynomial )
-        {
-            // O(n1*n2), can be done a bit faster
-            // 1. by using FFT multiplication, not implemented here
-            // 2. by Divide&Conquer and using eg. Strassen multiplication, not implemented here
-            c1 = x.coeff; n1 = c1.length;
-            c2 = P.coeff; n2 = c2.length;
-            n = n1+n2-1; P.coeff = array(n, function(){return O;});
-            for(i=0; i<n1; i++)
-                for(j=0; j<n2; j++)
-                    P.coeff[i+j] = Arithmetic.add(P.coeff[i+j], Arithmetic.mul(c1[i],c2[j]));
-            _degree(P);
-        }
-        return P;
+    ,coeff: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.coeff = null;
+        return self;
     }
 
-    self.deg = function( ) {
+    ,deg: function( ) {
         // polynomial degree
-        return self.coeff.length-1;
-    };
-    self.lead = function( ) {
+        return this.coeff.length-1;
+    }
+    ,lead: function( ) {
         // leading coefficient
-        return self.coeff[self.coeff.length-1];
-    };
-    self.c = function( ) {
+        var c = this.coeff;
+        return c[c.length-1];
+    }
+    ,c: function( ) {
         // constant coefficient
-        return self.coeff[0];
-    };
-    self.equ = function( p ) {
-        var c = self.coeff, cp, i, n;
+        return this.coeff[0];
+    }
+    ,equ: function( p ) {
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            c = self.coeff, cp, i, n;
         if ( Arithmetic.isNumber(p) )
         {
             return (1===c.length) && Arithmetic.equ(c[0], p);
@@ -4878,21 +5208,27 @@ Polynomial = Abacus.Polynomial = function Polynomial( /* args */ ) {
             return true;
         }
         return false;
-    };
-    self.neg = function( ) {
-        return new Polynomial(array(self.coeff.length, function(i){ return Arithmetic.mul(J, self.coeff[i]); }));
-    };
-    self.add = function( x ) {
-        return Arithmetic.isNumber(x) || (x instanceof Polynomial) ? _add( x, new Polynomial(self.coeff.slice()) ) : self;
-    };
-    self.sub = function( x ) {
-        return Arithmetic.isNumber(x) || (x instanceof Polynomial) ? _add( x, new Polynomial(self.coeff.slice()), true ) : self;
-    };
-    self.mul = function( x ) {
-        return Arithmetic.isNumber(x) || (x instanceof Polynomial) ? _mul( x, new Polynomial(self.coeff.slice()) ) : self;
-    };
-    self.div = function( x, q_and_r ) {
-        var q, r, r0, d, diff;
+    }
+    ,neg: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return new Polynomial(array(self.coeff.length, function(i){ return Arithmetic.mul(Arithmetic.J, self.coeff[i]); }));
+    }
+    ,add: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Add(x, new Polynomial(self.coeff.slice())) : self;
+    }
+    ,sub: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Add(x, new Polynomial(self.coeff.slice()), true) : self;
+    }
+    ,mul: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Mul(x, new Polynomial(self.coeff.slice())) : self;
+    }
+    ,div: function( x, q_and_r ) {
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            O = Arithmetic.O, I = Arithmetic.I,
+            q, r, r0, d, diff, diff0;
         if ( Arithmetic.isNumber(x) )
         {
             q = new Polynomial(Arithmetic.equ(I, x) ? self.coeff.slice() : array(self.coeff.length, function(i){
@@ -4910,12 +5246,12 @@ Polynomial = Abacus.Polynomial = function Polynomial( /* args */ ) {
                 q = array(diff+1, function(){return O;});
                 while ( 0 <= diff )
                 {
-                    r0 = r;
+                    /*r0 = r;*/ diff0 = diff;
                     d = x.shift(diff);
                     q[diff] = Arithmetic.div(r.lead(), d.lead());
                     r = r.sub( d.mul( q[diff] ) );
-                    if ( r.equ(r0) ) break; // remainder won't change anymore
                     diff = r.deg()-x.deg();
+                    if ( (diff === diff0) /* || r.equ(r0)*/ ) break; // remainder won't change anymore
                 }
             }
             else
@@ -4927,14 +5263,14 @@ Polynomial = Abacus.Polynomial = function Polynomial( /* args */ ) {
             return q_and_r ? [q, r] : q;
         }
         return self;
-    };
-    self.pow = function( n ) {
-        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
-        var pow, b;
+    }
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
+        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
         n = Arithmetic.val(n);
         if ( 0 === n )
         {
-            return new Polynomial([I]);
+            return new Polynomial([Arithmetic.I]);
         }
         else if ( 1 === n )
         {
@@ -4942,24 +5278,26 @@ Polynomial = Abacus.Polynomial = function Polynomial( /* args */ ) {
         }
         else if ( 2 === n )
         {
-            return _mul(self, new Polynomial(self.coeff));
+            return Polynomial.Mul(self, new Polynomial(self.coeff));
         }
         else
         {
             // exponentiation by squaring
-            pow = new Polynomial([I]);
+            pow = new Polynomial([Arithmetic.I]);
             b = new Polynomial(self.coeff);
             while ( 0 !== n )
             {
-                if ( n & 1 ) pow = _mul(b, pow);
+                if ( n & 1 ) pow = Polynomial.Mul(b, pow);
                 n >>= 1;
-                b = _mul(b, b);
+                b = Polynomial.Mul(b, b);
             }
             return pow;
         }
-    };
-    self.shift = function( s ) {
+    }
+    ,shift: function( s ) {
         // shift <-> equivalent to multiplication/division by a monomial x^s
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        s = Arithmetic.val(s);
         if ( 0 === s )
             return new Polynomial(self.coeff.slice());
         else if ( 0 > s )
@@ -4968,70 +5306,51 @@ Polynomial = Abacus.Polynomial = function Polynomial( /* args */ ) {
             }));
         //else if ( 0 < s )
         return new Polynomial(array(self.coeff.length+s, function(i){
-            return i < s ? O : self.coeff[i-s];
+            return i < s ? Arithmetic.O : self.coeff[i-s];
         }));
-    };
-    self.deriv = function( ) {
+    }
+    ,deriv: function( ) {
         // polynomial derivative
+        var self = this, Arithmetic = Abacus.Arithmetic;
         return new Polynomial(array(stdMath.max(0, self.coeff.length-1), function(i){
             return Arithmetic.mul(self.coeff[i+1], i+1);
         }));
-    };
-    self.valueOf = function( x ) {
+    }
+    ,valueOf: function( x ) {
         // Horner's algorithm for fast evaluation
         // https://en.wikipedia.org/wiki/Horner%27s_method
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            c = self.coeff, i, v;
         x = x || O;
-        var c = self.coeff, i, v;
         if ( Arithmetic.equ(O, x) ) return c[0];
         i = c.length-1; v = c[i];
         while(i--) v = Arithmetic.add(c[i], Arithmetic.mul(v, x));
         return v;
-    };
-    self.toString = function( ) {
-        var c = self.coeff, i, n = c.length, x = 'x', out = '', prev = false;
+    }
+    ,toString: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            c = self.coeff, i, n = c.length, x = 'x', out = '', prev = false;
         for(i=n-1; i>=0; i--)
         {
             if ( Arithmetic.equ(O, c[i]) ) continue;
-            out += (prev && Arithmetic.lt(O, c[i]) ? '+' : '') + ((0===i) || !Arithmetic.equ(I, c[i]) ? c[i].toString() : '') + (0!==i ? (x+(1!==i?('^'+String(i)):'')) : '');
+            out += (prev && Arithmetic.lt(O, c[i]) ? '+' : '') + (0===i ? c[i].toString() : (Arithmetic.equ(Arithmetic.I, c[i]) ? '' : (Arithmetic.equ(Arithmetic.J, c[i]) ? '-' : c[i].toString()))) + (0!==i ? (x+(1!==i?('^'+String(i)):'')) : '');
             prev = true;
         }
         return out.length ? out : '0';
-    };
-    self.toExpr = function( x ) {
+    }
+    ,toExpr: function( x ) {
         x = x || 'x';
-        var c = self.coeff, i, terms = [];
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            c = self.coeff, i, terms = [];
         for(i=c.length-1; i>=0; i--)
         {
             if ( Arithmetic.equ(O, c[i]) ) continue;
-            terms.push(new Term(0===i?'1':(1===i?x:(x+'^'+i)), c[i]));
+            terms.push(Term(0===i?'1':(1===i?x:(x+'^'+i)), c[i]));
         }
-        if ( !terms.length ) terms.push(new Term(1, O));
-        return new Expr(terms);
-    };
-    self.dispose = function( ) {
-        self.coeff = null;
-        return self;
-    };
-};
-Polynomial.C = function( c ) {
-    return new Polynomial([c || Abacus.Arithmetic.O]);
-};
-Polynomial.fromExpr = function( e, x ) {
-    if ( !(e instanceof Expr) ) return null;
-    x = x || 'x';
-    var symbols = e.symbols(), i, s, coeff = {};
-    for(i=symbols.length-1; i>=0; i--)
-    {
-        s = symbols[i];
-        if ( '1' === s )
-            coeff['0'] = e.terms[s].coeff;
-        else if ( x === s )
-            coeff['1'] = e.terms[s].coeff;
-        else if ( (s.length > x.length+1) && (x+'^' === s.slice(0, x.length+1)) )
-            coeff[s.slice(x.length+1)] = e.terms[s].coeff;
+        if ( !terms.length ) terms.push(Term(1, O));
+        return Expr(terms);
     }
-    return new Polynomial(coeff);
-};
+});
 
 // Abacus.BiArray, Packed Bit Array Implementation
 Abacus.BitArray = Class({
