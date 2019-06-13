@@ -44,16 +44,16 @@ function permute_rows_cols(square, row_perm, col_perm)
 function exhaustive_search( N )
 {
     // try filtering from all possible permutations of 1..N^2
-    return Abacus.Permutation(N*N, {output:square}).filterBy(Abacus.MagicSquare.is_magic).get();
+    return Abacus.Permutation(N*N).mapTo(square).filterBy(Abacus.MagicSquare.isMagic).get();
 }
 
 function limited_search( N )
 {
     // try a limited search of variations of existing magic square
     var square = Abacus.MagicSquare.make(N);
-    return (square ? Abacus.Permutation(N).concatWith(Abacus.Permutation(N)).get() : []).reduce(function(solutions, solution){
-        var permuted = permute_rows_cols(square, solution.slice(0,N), solution.slice(N));
-        if ( Abacus.MagicSquare.is_magic(permuted) ) solutions.push(permuted);
+    return (square ? Abacus.Permutation(N).juxtaposeWith(Abacus.Permutation(N)).get() : []).reduce(function(solutions, permutation){
+        var permuted = permute_rows_cols(square, permutation[0], permutation[1]);
+        if ( Abacus.MagicSquare.isMagic(permuted) ) solutions.push(permuted);
         return solutions;
     }, []);
 }

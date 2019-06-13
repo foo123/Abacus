@@ -91,3 +91,23 @@ echo(o.random());
 // dispose
 echo('o.dispose()');
 o.dispose();
+
+echo('Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]"},ordering:"<>"}).completeWith(Abacus.Permutation(6-3))');
+o = Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]"},ordering:"<>"}).completeWith(Abacus.Permutation(6-3));
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.rewind()');
+print_all( o.rewind());
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();

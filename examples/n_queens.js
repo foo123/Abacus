@@ -73,13 +73,13 @@ function print_grid(grid)
 function exhaustive_search1( N )
 {
     // try filtering from all possible combinations of positions placed on NxN grid
-    return Abacus.Combination(N*N, N, {output:row_column}).filterBy(is_valid).get().map(make_grid);
+    return Abacus.Combination(N*N, N).mapTo(row_column).filterBy(is_valid).get().map(make_grid);
 }
 
 function exhaustive_search2( N )
 {
     // try reducing original search space by using only permutation of N columns, each queen on different row
-    return Abacus.Permutation(N, {output:row_column_perm}).filterBy(is_valid).get().map(make_grid);
+    return Abacus.Permutation(N).mapTo(row_column_perm).filterBy(is_valid).get().map(make_grid);
 }
 
 function latin_square( N )
