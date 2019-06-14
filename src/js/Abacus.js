@@ -61,7 +61,7 @@ var  Abacus = {VERSION: "0.9.8"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,Iterator, CombinatorialIterator, DefaultArithmetic
-    ,Filter, Node, HashSieve, Term, Expr, Polynomial
+    ,Filter, Node, Cache, HashSieve, Term, Expr, Polynomial
     ,Tensor, Permutation, Combination, Subset, Partition
     ,LatinSquare, MagicSquare, Progression, PrimeSieve, Diophantine
 ;
@@ -834,9 +834,9 @@ function is_mirror_image( x )
     return true;
 }
 
-function diffn( a, b )
+function sorter( Arithmetic )
 {
-    return a-b;
+    return Arithmetic ? function(a, b){return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b){return a===b ? 0 : (a<b ? -1 : 1);};
 }
 function addn( s, a )
 {
@@ -1193,6 +1193,16 @@ function trailing_zeroes( n, bits, with_remaining )
     while(0<=i && '0'===bits.charAt(i) ) { i--; z++; }
     return with_remaining ? [z, 0 > i ? '0' : bits.slice(0, i+1)] : z;
 }
+function small_primes( )
+{
+    var N = Abacus.Arithmetic.num;
+    if ( !small_primes.list )
+    {
+        // a list of the first primes up to a limit (first 1000 primes)
+        small_primes.list = [N(2),N(3),N(5),N(7),N(11),N(13),N(17),N(19),N(23),N(29),N(31),N(37),N(41),N(43),N(47),N(53),N(59),N(61),N(67),N(71),N(73),N(79),N(83),N(89),N(97),N(101),N(103),N(107),N(109),N(113),N(127),N(131),N(137),N(139),N(149),N(151),N(157),N(163),N(167),N(173),N(179),N(181),N(191),N(193),N(197),N(199),N(211),N(223),N(227),N(229),N(233),N(239),N(241),N(251),N(257),N(263),N(269),N(271),N(277),N(281),N(283),N(293),N(307),N(311),N(313),N(317),N(331),N(337),N(347),N(349),N(353),N(359),N(367),N(373),N(379),N(383),N(389),N(397),N(401),N(409),N(419),N(421),N(431),N(433),N(439),N(443),N(449),N(457),N(461),N(463),N(467),N(479),N(487),N(491),N(499),N(503),N(509),N(521),N(523),N(541),N(547),N(557),N(563),N(569),N(571),N(577),N(587),N(593),N(599),N(601),N(607),N(613),N(617),N(619),N(631),N(641),N(643),N(647),N(653),N(659),N(661),N(673),N(677),N(683),N(691),N(701),N(709),N(719),N(727),N(733),N(739),N(743),N(751),N(757),N(761),N(769),N(773),N(787),N(797),N(809),N(811),N(821),N(823),N(827),N(829),N(839),N(853),N(857),N(859),N(863),N(877),N(881),N(883),N(887),N(907),N(911),N(919),N(929),N(937),N(941),N(947),N(953),N(967),N(971),N(977),N(983),N(991),N(997),N(1009),N(1013),N(1019),N(1021),N(1031),N(1033),N(1039),N(1049),N(1051),N(1061),N(1063),N(1069),N(1087),N(1091),N(1093),N(1097),N(1103),N(1109),N(1117),N(1123),N(1129),N(1151),N(1153),N(1163),N(1171),N(1181),N(1187),N(1193),N(1201),N(1213),N(1217),N(1223),N(1229),N(1231),N(1237),N(1249),N(1259),N(1277),N(1279),N(1283),N(1289),N(1291),N(1297),N(1301),N(1303),N(1307),N(1319),N(1321),N(1327),N(1361),N(1367),N(1373),N(1381),N(1399),N(1409),N(1423),N(1427),N(1429),N(1433),N(1439),N(1447),N(1451),N(1453),N(1459),N(1471),N(1481),N(1483),N(1487),N(1489),N(1493),N(1499),N(1511),N(1523),N(1531),N(1543),N(1549),N(1553),N(1559),N(1567),N(1571),N(1579),N(1583),N(1597),N(1601),N(1607),N(1609),N(1613),N(1619),N(1621),N(1627),N(1637),N(1657),N(1663),N(1667),N(1669),N(1693),N(1697),N(1699),N(1709),N(1721),N(1723),N(1733),N(1741),N(1747),N(1753),N(1759),N(1777),N(1783),N(1787),N(1789),N(1801),N(1811),N(1823),N(1831),N(1847),N(1861),N(1867),N(1871),N(1873),N(1877),N(1879),N(1889),N(1901),N(1907),N(1913),N(1931),N(1933),N(1949),N(1951),N(1973),N(1979),N(1987),N(1993),N(1997),N(1999),N(2003),N(2011),N(2017),N(2027),N(2029),N(2039),N(2053),N(2063),N(2069),N(2081),N(2083),N(2087),N(2089),N(2099),N(2111),N(2113),N(2129),N(2131),N(2137),N(2141),N(2143),N(2153),N(2161),N(2179),N(2203),N(2207),N(2213),N(2221),N(2237),N(2239),N(2243),N(2251),N(2267),N(2269),N(2273),N(2281),N(2287),N(2293),N(2297),N(2309),N(2311),N(2333),N(2339),N(2341),N(2347),N(2351),N(2357),N(2371),N(2377),N(2381),N(2383),N(2389),N(2393),N(2399),N(2411),N(2417),N(2423),N(2437),N(2441),N(2447),N(2459),N(2467),N(2473),N(2477),N(2503),N(2521),N(2531),N(2539),N(2543),N(2549),N(2551),N(2557),N(2579),N(2591),N(2593),N(2609),N(2617),N(2621),N(2633),N(2647),N(2657),N(2659),N(2663),N(2671),N(2677),N(2683),N(2687),N(2689),N(2693),N(2699),N(2707),N(2711),N(2713),N(2719),N(2729),N(2731),N(2741),N(2749),N(2753),N(2767),N(2777),N(2789),N(2791),N(2797),N(2801),N(2803),N(2819),N(2833),N(2837),N(2843),N(2851),N(2857),N(2861),N(2879),N(2887),N(2897),N(2903),N(2909),N(2917),N(2927),N(2939),N(2953),N(2957),N(2963),N(2969),N(2971),N(2999),N(3001),N(3011),N(3019),N(3023),N(3037),N(3041),N(3049),N(3061),N(3067),N(3079),N(3083),N(3089),N(3109),N(3119),N(3121),N(3137),N(3163),N(3167),N(3169),N(3181),N(3187),N(3191),N(3203),N(3209),N(3217),N(3221),N(3229),N(3251),N(3253),N(3257),N(3259),N(3271),N(3299),N(3301),N(3307),N(3313),N(3319),N(3323),N(3329),N(3331),N(3343),N(3347),N(3359),N(3361),N(3371),N(3373),N(3389),N(3391),N(3407),N(3413),N(3433),N(3449),N(3457),N(3461),N(3463),N(3467),N(3469),N(3491),N(3499),N(3511),N(3517),N(3527),N(3529),N(3533),N(3539),N(3541),N(3547),N(3557),N(3559),N(3571),N(3581),N(3583),N(3593),N(3607),N(3613),N(3617),N(3623),N(3631),N(3637),N(3643),N(3659),N(3671),N(3673),N(3677),N(3691),N(3697),N(3701),N(3709),N(3719),N(3727),N(3733),N(3739),N(3761),N(3767),N(3769),N(3779),N(3793),N(3797),N(3803),N(3821),N(3823),N(3833),N(3847),N(3851),N(3853),N(3863),N(3877),N(3881),N(3889),N(3907),N(3911),N(3917),N(3919),N(3923),N(3929),N(3931),N(3943),N(3947),N(3967),N(3989),N(4001),N(4003),N(4007),N(4013),N(4019),N(4021),N(4027),N(4049),N(4051),N(4057),N(4073),N(4079),N(4091),N(4093),N(4099),N(4111),N(4127),N(4129),N(4133),N(4139),N(4153),N(4157),N(4159),N(4177),N(4201),N(4211),N(4217),N(4219),N(4229),N(4231),N(4241),N(4243),N(4253),N(4259),N(4261),N(4271),N(4273),N(4283),N(4289),N(4297),N(4327),N(4337),N(4339),N(4349),N(4357),N(4363),N(4373),N(4391),N(4397),N(4409),N(4421),N(4423),N(4441),N(4447),N(4451),N(4457),N(4463),N(4481),N(4483),N(4493),N(4507),N(4513),N(4517),N(4519),N(4523),N(4547),N(4549),N(4561),N(4567),N(4583),N(4591),N(4597),N(4603),N(4621),N(4637),N(4639),N(4643),N(4649),N(4651),N(4657),N(4663),N(4673),N(4679),N(4691),N(4703),N(4721),N(4723),N(4729),N(4733),N(4751),N(4759),N(4783),N(4787),N(4789),N(4793),N(4799),N(4801),N(4813),N(4817),N(4831),N(4861),N(4871),N(4877),N(4889),N(4903),N(4909),N(4919),N(4931),N(4933),N(4937),N(4943),N(4951),N(4957),N(4967),N(4969),N(4973),N(4987),N(4993),N(4999),N(5003),N(5009),N(5011),N(5021),N(5023),N(5039),N(5051),N(5059),N(5077),N(5081),N(5087),N(5099),N(5101),N(5107),N(5113),N(5119),N(5147),N(5153),N(5167),N(5171),N(5179),N(5189),N(5197),N(5209),N(5227),N(5231),N(5233),N(5237),N(5261),N(5273),N(5279),N(5281),N(5297),N(5303),N(5309),N(5323),N(5333),N(5347),N(5351),N(5381),N(5387),N(5393),N(5399),N(5407),N(5413),N(5417),N(5419),N(5431),N(5437),N(5441),N(5443),N(5449),N(5471),N(5477),N(5479),N(5483),N(5501),N(5503),N(5507),N(5519),N(5521),N(5527),N(5531),N(5557),N(5563),N(5569),N(5573),N(5581),N(5591),N(5623),N(5639),N(5641),N(5647),N(5651),N(5653),N(5657),N(5659),N(5669),N(5683),N(5689),N(5693),N(5701),N(5711),N(5717),N(5737),N(5741),N(5743),N(5749),N(5779),N(5783),N(5791),N(5801),N(5807),N(5813),N(5821),N(5827),N(5839),N(5843),N(5849),N(5851),N(5857),N(5861),N(5867),N(5869),N(5879),N(5881),N(5897),N(5903),N(5923),N(5927),N(5939),N(5953),N(5981),N(5987),N(6007),N(6011),N(6029),N(6037),N(6043),N(6047),N(6053),N(6067),N(6073),N(6079),N(6089),N(6091),N(6101),N(6113),N(6121),N(6131),N(6133),N(6143),N(6151),N(6163),N(6173),N(6197),N(6199),N(6203),N(6211),N(6217),N(6221),N(6229),N(6247),N(6257),N(6263),N(6269),N(6271),N(6277),N(6287),N(6299),N(6301),N(6311),N(6317),N(6323),N(6329),N(6337),N(6343),N(6353),N(6359),N(6361),N(6367),N(6373),N(6379),N(6389),N(6397),N(6421),N(6427),N(6449),N(6451),N(6469),N(6473),N(6481),N(6491),N(6521),N(6529),N(6547),N(6551),N(6553),N(6563),N(6569),N(6571),N(6577),N(6581),N(6599),N(6607),N(6619),N(6637),N(6653),N(6659),N(6661),N(6673),N(6679),N(6689),N(6691),N(6701),N(6703),N(6709),N(6719),N(6733),N(6737),N(6761),N(6763),N(6779),N(6781),N(6791),N(6793),N(6803),N(6823),N(6827),N(6829),N(6833),N(6841),N(6857),N(6863),N(6869),N(6871),N(6883),N(6899),N(6907),N(6911),N(6917),N(6947),N(6949),N(6959),N(6961),N(6967),N(6971),N(6977),N(6983),N(6991),N(6997),N(7001),N(7013),N(7019),N(7027),N(7039),N(7043),N(7057),N(7069),N(7079),N(7103),N(7109),N(7121),N(7127),N(7129),N(7151),N(7159),N(7177),N(7187),N(7193),N(7207),N(7211),N(7213),N(7219),N(7229),N(7237),N(7243),N(7247),N(7253),N(7283),N(7297),N(7307),N(7309),N(7321),N(7331),N(7333),N(7349),N(7351),N(7369),N(7393),N(7411),N(7417),N(7433),N(7451),N(7457),N(7459),N(7477),N(7481),N(7487),N(7489),N(7499),N(7507),N(7517),N(7523),N(7529),N(7537),N(7541),N(7547),N(7549),N(7559),N(7561),N(7573),N(7577),N(7583),N(7589),N(7591),N(7603),N(7607),N(7621),N(7639),N(7643),N(7649),N(7669),N(7673),N(7681),N(7687),N(7691),N(7699),N(7703),N(7717),N(7723),N(7727),N(7741),N(7753),N(7757),N(7759),N(7789),N(7793),N(7817),N(7823),N(7829),N(7841),N(7853),N(7867),N(7873),N(7877),N(7879),N(7883),N(7901),N(7907),N(7919)];
+    }
+    return small_primes.list;
+}
 /*function fermat_test( n, k )
 {
     // https://en.wikipedia.org/wiki/Fermat_primality_test
@@ -1264,7 +1274,7 @@ function euler_test( n, k )
     }
     return true;
 }*/
-function miller_rabin_test( n, k )
+function miller_rabin_test( n, k, k2 )
 {
     // https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test
     //  O(num_trials*log^3(n))
@@ -1285,7 +1295,6 @@ function miller_rabin_test( n, k )
         s = s+1;//Arithmetic.add(s, I);
         d = q;
     }
-    //if ( !Arithmetic.equ(n_1, Arithmetic.mul(d, Arithmetic.pow(two, s))) ) return false;
 
     // test the base a to see whether it is a witness for the compositeness of n
     function try_composite( a ) {
@@ -1312,6 +1321,13 @@ function miller_rabin_test( n, k )
     else
     {
         k = +k;
+        for (i=0; i<k; i++)
+            if ( try_composite(Arithmetic.rnd(two, n_2)) )
+                return false;
+    }
+    if ( null != k2 )
+    {
+        k = +k2;
         for (i=0; i<k; i++)
             if ( try_composite(Arithmetic.rnd(two, n_2)) )
                 return false;
@@ -1345,7 +1361,7 @@ function lucas_sequence( n, P, Q, k, bits )
             U = Arithmetic.mod(Arithmetic.mul(U, V), n);
             V = Arithmetic.mod(Arithmetic.sub(Arithmetic.mul(V, V), two), n);
             //b -= 1;
-            if ( '1' === bits.charAt(bit-1) /*(k >> (b - 1)) & 1*/ )
+            if ( '1' === bits.charAt(bit) /*(k >> (b - 1)) & 1*/ )
             {
                 U0 = U; V0 = V;
                 U = Arithmetic.add(Arithmetic.mul(U0, P), V0);
@@ -1373,7 +1389,7 @@ function lucas_sequence( n, P, Q, k, bits )
                 Qk = I;
             }
             //b -= 1;
-            if ( '1' === bits.charAt(bit-1) /*(k >> (b - 1)) & 1*/ )
+            if ( '1' === bits.charAt(bit) /*(k >> (b - 1)) & 1*/ )
             {
                 U0 = U; V0 = V;
                 U = Arithmetic.add(U0, V0);
@@ -1395,7 +1411,7 @@ function lucas_sequence( n, P, Q, k, bits )
             V = Arithmetic.mod(Arithmetic.sub(Arithmetic.mul(V, V), Arithmetic.mul(two, Qk)), n);
             Qk = Arithmetic.mul(Qk, Qk);
             //b -= 1;
-            if ( '1' === bits.charAt(bit-1) /*(k >> (b - 1)) & 1*/ )
+            if ( '1' === bits.charAt(bit) /*(k >> (b - 1)) & 1*/ )
             {
                 U0 = U; V0 = V;
                 U = Arithmetic.add(Arithmetic.mul(U0, P), V0);
@@ -1542,30 +1558,23 @@ function extra_strong_lucas_test( n )
     }
     return false;
 }
-function baillie_psw_test( n )
+function baillie_psw_test( n, extra_mr )
 {
     // https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, two = Arithmetic.II,
-        N = Arithmetic.num, sqrt, i, l, p;
+        i, l, p, primes = small_primes();
 
-    if ( null == baillie_psw_test.small_primes )
+    // Check divisibility by a short list of small primes
+    if ( Arithmetic.lt(n, primes[0]) ) return false;
+    for (i=0,l=stdMath.min(primes.length,50); i<l; i++)
     {
-        // compute only once
-        // a short list of primes less than 50
-        baillie_psw_test.small_primes = [
-            two,N(3),N(5),N(7),N(11),N(13),N(17),N(19),N(23),N(29),N(31),N(37),N(41),N(43),N(47)
-        ];
-    }
-    // Check divisibility by a short list of primes
-    for (i=0,l=baillie_psw_test.small_primes.length; i<l; i++)
-    {
-        p = baillie_psw_test.small_primes[i];
+        p = primes[i];
         if ( Arithmetic.equ(n, p) ) return true;
         else if ( Arithmetic.equ(O, Arithmetic.mod(n, p)) ) return false;
     }
 
-    // Perform the Miller-Rabin primality test with base 2
-    if ( !miller_rabin_test(n, [two]) ) return false;
+    // Perform the Miller-Rabin primality test with base 2 (plus any extra miller-rabin tests as well)
+    if ( !miller_rabin_test(n, [two], extra_mr||null) ) return false;
 
     // Finally perform the (strong) Lucas primality test
     return extra_strong_lucas_test(n);
@@ -1574,16 +1583,19 @@ function is_probable_prime( n )
 {
     // https://en.wikipedia.org/wiki/Primality_test
     // https://primes.utm.edu/prove/prove2_3.html#quick
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II;
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        i, l, p, primes = small_primes();
 
-    //n = Arithmetic.abs(/*N(*/n/*)*/);
-    if ( Arithmetic.lte(n, two) ) return Arithmetic.equ(n, two); // dont count 1 as prime, etc
-
-    // ensure n is odd
-    if ( Arithmetic.equ(O, Arithmetic.mod(n, two)) ) return false;
-
-    return miller_rabin_test(n, 5);
+    // Check divisibility by a short list of small primes
+    if ( Arithmetic.lt(n, primes[0]) ) return false;
+    for (i=0,l=stdMath.min(primes.length,100); i<l; i++)
+    {
+        p = primes[i];
+        if ( Arithmetic.equ(n, p) ) return true;
+        else if ( Arithmetic.equ(O, Arithmetic.mod(n, p)) ) return false;
+    }
+    // do a sufficient miller-rabin probabilistic test
+    return miller_rabin_test(n, 10);
 }
 function wheel( /* args */ )
 {
@@ -1626,7 +1638,7 @@ function wheel_trial_div_test( n )
         three, five, seven, four, six, eight, ten, inc, i, p;
 
     // trial division with a wheel of {2,3,5,7}, faster than simple trial division
-    if ( null == wheel_trial_div_test.wheel )
+    if ( !wheel_trial_div_test.wheel )
     {
         // compute only once
         four = N(4); six = N(6); eight = N(8); ten = N(10);
@@ -1661,7 +1673,6 @@ function wheel_trial_div_test( n )
         p = Arithmetic.add(p, inc[i++]);
         if ( i === inc.length ) i = 0;
     }
-
     return true; // is definately prime
 }
 function apr_cl_test( n )
@@ -1676,11 +1687,11 @@ function is_prime( n )
 {
     // https://en.wikipedia.org/wiki/Primality_test
     // https://primes.utm.edu/prove/prove2_3.html#quick
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num, two = Arithmetic.II, ndigits;
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num, two = Arithmetic.II, ndigits, r;
     //n = Arithmetic.abs(/*N(*/n/*)*/);
     ndigits = Arithmetic.digits(n).length;
     // try to use fastest algorithm based on size of number (number of digits)
-    if ( ndigits <= 6 )
+    if ( ndigits <= 8 )
     {
         // deterministic test
         return wheel_trial_div_test(n);
@@ -1709,12 +1720,13 @@ function is_prime( n )
         else if ( Arithmetic.lt(n, N("341550071728321")) )
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13), N(17)]);
 
-        return baillie_psw_test(n);//apr_cl_test(n);
+        //return apr_cl_test(n);
+        return baillie_psw_test(n, 10);
     }
     else
     {
         // strong probabilistic test for very large numbers ie > 1000 digits
-        return baillie_psw_test(n);
+        return baillie_psw_test(n, 10);
     }
 }
 function next_prime( n, dir )
@@ -1794,7 +1806,7 @@ function trial_div_fac( n, maxlimit )
         three, five, seven, four, six, eight, ten, inc, i, p, p2, fac;
 
     // trial division with a wheel of {2,3,5,7}, faster than simple trial division
-    if ( null == trial_div_fac.wheel )
+    if ( !trial_div_fac.wheel )
     {
         // compute only once
         four = N(4); six = N(6); eight = N(8); ten = N(10);
@@ -2011,7 +2023,7 @@ function factorize( n )
         // trial division for small numbers
         return trial_div_fac(n);
     }
-    else if ( ndigits <= 200 )
+    else if ( ndigits <= 300 )
     {
         // recursive (heuristic) factorization for medium-to-large numbers
         f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
@@ -2433,7 +2445,13 @@ function moebius( n )
         O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         three, five, seven, four, six, eight, ten, inc, i, p, p2, m;
 
-    if ( null == moebius.wheel )
+    // use factorization of n
+    p = factorize(n); m = p.length;
+    for(i=0; i<m; i++)
+        if ( Arithmetic.lt(I, p[i][1]) )
+            return O; // is not square-free
+    return m & 1 ? I : Arithmetic.J;
+    /*if ( !moebius.wheel )
     {
         // compute only once
         four = N(4); six = N(6); eight = N(8); ten = N(10);
@@ -2490,7 +2508,7 @@ function moebius( n )
     }
 
     inc = moebius.wheel.inc; i = 0;
-    p = moebius.wheel.next; /* next prime */ p2 = moebius.wheel.next2;
+    p = moebius.wheel.next; /* next prime * / p2 = moebius.wheel.next2;
     while (Arithmetic.lte(p2, n))
     {
         if ( Arithmetic.equ(O, Arithmetic.mod(n, p)) )
@@ -2504,8 +2522,8 @@ function moebius( n )
         if ( i === inc.length ) i = 0;
         p2 = Arithmetic.mul(p, p);
     }
-    if ( 0 === m ) m = 1; /*is prime up to now*/
-    return m & 1 ? I : Arithmetic.J;
+    if ( 0 === m ) m = 1; /*is prime up to now* /
+    return m & 1 ? I : Arithmetic.J;*/
 }
 /*function solvemod1( a, c, b, m )
 {
@@ -2783,7 +2801,7 @@ function solvecongr( a, b, m, with_param )
         {
             // general solution (as expression)
             if ( Arithmetic.gt(O, x.c()) )
-                x.terms['1'] = x.terms['1'].add(m);
+                x = x.add(m);
         }
         return x;
     });
@@ -3434,9 +3452,9 @@ function cartesian( /* var args here */ )
 }
 function conditional_combinatorial_tensor( v, value_conditions, extra_conditions )
 {
-    var k, kl, a, r, l, i, j, vv, nv = v.length, v0, v1,
-        tensor, t0, t1, ok, nvalid, product, p, pv, pe, npv,
-        seen = null, valid = null, invalid, queue, ql, expr, e, el;
+    var k, kl, a, r, l, i, vv, nv = v.length, v0, v1,
+        tensor, t0, t1, ok, nvalid, product, p, pv, pe, pea, pl, npv,
+        seen = null, valid = null, invalid, expr, e, el;
 
     if ( !nv ) return [];
 
@@ -3455,17 +3473,26 @@ function conditional_combinatorial_tensor( v, value_conditions, extra_conditions
         value_conditions = false;
     }
 
-    pe = new Array(nv); pv = [];
+    pe = new Array(nv); pea = []; pl = 0; pv = [];
     for(kl=1,k=0; k<nv; k++)
     {
         if ( is_callable(v[k][0]) )
         {
             // fixed expression for position k, store it to be added after actual values are added
-            // expr v[k][0] for pos k, depends on value at positions v[k][1][]
-            for(j=0; j<v[k][1].length; j++)
+            if ( !v[k][1].length )
             {
-                if ( null == pe[v[k][1][j]] ) pe[v[k][1][j]] = [[v[k][0],k,v[k][1]]];
-                else pe[v[k][1][j]].push([v[k][0],k,v[k][1]]);
+                // autonomous expression, which does not depend on any position
+                pea.push([v[k][0],k]);
+            }
+            else
+            {
+                // depends on one or multiple other positions
+                // expr v[k][0] for pos k, depends on value at positions v[k][1][]
+                for(e=0,el=v[k][1].length; e<el; e++)
+                {
+                    if ( null == pe[v[k][1][e]] ) pe[v[k][1][e]] = [[v[k][0],k,v[k][1]]];
+                    else pe[v[k][1][e]].push([v[k][0],k,v[k][1]]);
+                }
             }
             // this makes the computation faster, since fixed/expression values
             // are not counted as extra and then checked if valid, but generated directly validly
@@ -3482,13 +3509,12 @@ function conditional_combinatorial_tensor( v, value_conditions, extra_conditions
 
     product = new Array(kl); nvalid = 0;
     t1 = nv-1; npv = pv.length-1;
-    // pre-allocate queue for speed
-    queue = new Array(nv); ql = 0;
     // O(kl), count only necessary values, minus any outliers (as few as possible)
     for(k=0; k<kl; k++)
     {
         // O(nv)
         tensor = new Array(nv); invalid = false;
+        // explicit tensor values, not expressions
         for(r=k,a=npv; a>=0; a--)
         {
             p = pv[a];
@@ -3496,13 +3522,14 @@ function conditional_combinatorial_tensor( v, value_conditions, extra_conditions
             i = r % l;
             r = ~~(r / l);
             tensor[p] = v[p][i];
-            // expression depends on this position, delay evaluation for later
-            /*if ( null != pe[p] )
-            {
-                //tensor[pe[p][1]] = null;
-            }*/
         }
-        // evaluate expressions now after explicit tensor values were calculated previously
+        // evaluate expressions which are autonomous, do not depend on any position
+        for(a=0,pl=pea.length; a<pl; a++)
+        {
+            expr = pea[a];
+            tensor[expr[1]] = expr[0]();
+        }
+        // evaluate expressions now after any explicit tensor values were calculated previously
         for(a=0; a<nv; a++)
         {
             // if expression and not already avaluated (eg by previous expression)
@@ -3512,22 +3539,23 @@ function conditional_combinatorial_tensor( v, value_conditions, extra_conditions
                 expr = pe[a];
                 for(e=0,el=expr.length; e<el; e++)
                 {
-                    if ( null == tensor[expr[e][1]] )
+                    p = expr[e][1];
+                    if ( null == tensor[p] )
                     {
                         // not computed already
                         ok = true;
                         vv = expr[e][2].map(function(k){
-                            if ( null == tensor[k] ) ok = false;
+                            if ( (null == tensor[k]) || isNaN(tensor[k]) ) ok = false; // not computed already, abort
                             return tensor[k];
                         });
-                        if ( ok ) tensor[expr[e][1]] = expr[e][0].apply(null, vv);
+                        if ( ok ) tensor[p] = expr[e][0].apply(null, vv);
                     }
                 }
             }
         }
         if ( value_conditions || extra_conditions )
         {
-            if ( (null == tensor[t1]) || extra_conditions && !valid(tensor,t1,t1) )
+            if ( (null == tensor[t1]) || isNaN(tensor[t1]) || extra_conditions && !valid(tensor,t1,t1) )
             {
                 invalid = true;
             }
@@ -3539,7 +3567,7 @@ function conditional_combinatorial_tensor( v, value_conditions, extra_conditions
                 {
                     v0 = tensor[t0];
                     if (
-                        (null == v0) ||
+                        (null == v0) || isNaN(v0) ||
                         (V_EQU === value_conditions && v1 !== v0) ||
                         (V_DIFF === value_conditions && 1 === seen[v0]) ||
                         (V_INC === value_conditions && v0 >= v1) ||
@@ -3569,11 +3597,11 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
     options = options || {};
     pos = pos || array(data.length||0, 0, 1);
     // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
+    // NOTE: needs at least one non-autonomous expression or one range of values, else will return empty set
     var min = null==options.min ? 0 : options.min,
         max = null==options.max ? n-1 : options.max,
         nn = max-min+1, D = data, m, d, i, a, j, pi, l = D.length, none = false,
-        pos_ref, var_name, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
-        sort_numeric = function(a, b){ return a-b; },
+        pos_ref, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
         in_range = function in_range(x){ return min<=x && x<=max; }, additional_conditions;
 
     data = []; none = false;
@@ -3615,15 +3643,11 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
             }
             else
             {
-                is_valid = true; pos_ref = []; var_name = []; expr = null;
+                is_valid = true; pos_ref = []; expr = null;
                 d = d.replace(pos_re, function(m, d){
                     var posref = parseInt(d, 10), varname = 'v'+String(posref);
-                    if ( !in_range(posref) ) is_valid = false;
-                    if ( is_valid )
-                    {
-                        if ( -1 === var_name.indexOf(varname) ) var_name.push(varname);
-                        if ( -1 === pos_ref.indexOf(posref) ) pos_ref.push(posref);
-                    }
+                    if ( isNaN(posref) || !in_range(posref) ) is_valid = false;
+                    if ( is_valid && (-1 === pos_ref.indexOf(posref)) ) pos_ref.push(posref);
                     return varname;
                 });
                 if ( !is_valid )
@@ -3631,9 +3655,9 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
                     if ( pos ) pos.splice(pi--, 1);
                     continue;
                 }
-                pos_ref.sort(sort_numeric);
+                pos_ref.sort(sorter());
                 try{
-                    expr = new Function(pos_ref.map(function(p){return 'v'+p;}).join(','),'return Math.floor('+d+');');
+                    expr = new Function(pos_ref.map(function(p){return 'v'+String(p);}).join(','),'return Math.floor('+d+');');
                 } catch(e){
                     expr = null;
                 }
@@ -3646,7 +3670,7 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
                 {
                     if ( !ref[pos_ref[j]] ) ref[pos_ref[j]] = [expr];
                     else ref[pos_ref[j]].push(expr);
-                    if ( -1===pos.indexOf(pos_ref[j]) ) missing.push(pos_ref[j]);
+                    if ( (-1===pos.indexOf(pos_ref[j])) && (-1===missing.indexOf(pos_ref[j])) ) missing.push(pos_ref[j]);
                 }
                 algebraic.push([expr,null,null,pos_ref,pos[pi]]);
                 data.push(algebraic[algebraic.length-1]);
@@ -3654,7 +3678,7 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
         }
         else if ( is_array(d) )
         {
-            a = false===d[0] ? complement(n,d.slice(1).filter(in_range)) : d.slice(1).filter(in_range);
+            a = false===d[0] ? complement(n,d.slice(1).filter(in_range)) : (true===d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
             if ( !a.length ) { none = true; break; }
             data.push(a);
         }
@@ -3697,17 +3721,17 @@ function gen_combinatorial_data( n, data, pos, value_conditions, options )
             for(j=0; j<m[3].length; j++)
             {
                 // by the way, filter out some invalid values here for all expr on the same pos ref
-                // for expr that depend on single position
+                // for expr that depend on single position only, else leave for actual combinatorial generation later on
                 expr = ref[m[3][j]];
-                if ( !is_callable(data[m[1][j]][0]) )
+                if ( !is_callable(data[m[1][j]][0]) /*expression does not reference another expression*/)
                 {
                     a = data[m[1][j]].filter(function(x){
                         for(var ex,i=0,l=expr.length; i<l; i++)
                         {
-                            // for expr that depend on single position
-                            if ( 1 !== expr[i].length ) continue;
+                            // for expr that depend on single position only
+                            if ( 1 !== expr[i].length /*num of func args*/ ) continue;
                             ex = expr[i](x);
-                            if ( min>ex || ex>max ) return false;
+                            if ( isNaN(ex) || min>ex || ex>max ) return false;
                         }
                         return true;
                     });
@@ -4753,6 +4777,43 @@ Node = Abacus.Node = function Node(value, left, right, top) {
     };
 };
 
+/*Cache = Abacus.Cache = function Cache(MAX_ITEMS, MAX_TIME) {
+    var self = this, storage, nitems;
+    if ( !(self instanceof Cache) ) return new Cache(MAX_ITEMS, MAX_TIME);
+
+    MAX_ITEMS = null == MAX_ITEMS ? Infinity : +MAX_ITEMS;
+    MAX_TIME = null == MAX_TIME ? null : (+MAX_TIME)*1000;
+    storage = Obj(); nitems = 0;
+
+    self.dispose = function( ) {
+        storage = null;
+        nitems = 0;
+        return self;
+    };
+    self.set = function( key, val ) {
+        key = String(key);
+        if ( !storage[key] && (nitems+1 >= MAX_ITEMS) )
+        {
+            // which one to delete
+        }
+        if ( !storage[key] ) nitems++;
+        storage[key] = [val, null==MAX_TIME ? null : new Date().getTime()+MAX_TIME];
+    };
+    self.get = function( key ) {
+    };
+    self.has = function( key ) {
+    };
+    self.del = function( key ) {
+        key = String(key);
+        if ( storage[key] )
+        {
+            delete storage[key];
+            nitems--;
+        }
+        return self;
+    };
+};*/
+
 // Abacus.Term, represents multiplicative terms in (linear) algebraic expressions, including terms with mixed factors of (powers of) symbolic variables
 Term = Abacus.Term = Class({
 
@@ -4823,7 +4884,7 @@ Term = Abacus.Term = Class({
             T._symb = null;
             T.symbol = T.symbols().reduce(function(s, f){
                 var e = T.factors[f];
-                return s + ('1' === f ? '' : (Arithmetic.equ(I, e) ? f : (f+'^'+String(e))));
+                return s + ('1' === f ? '' : ((s.length ? '*' : '') + (Arithmetic.equ(I, e) ? f : (f+'^'+String(e)))));
             }, '');
             if ( !T.symbol.length ) T.symbol = '1'; // default constant term
             return T;
@@ -4966,7 +5027,7 @@ Term = Abacus.Term = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( null == self._str )
         {
-            self._str = ('1'===self.symbol) ? String(self.factors['1']) : ((Arithmetic.equ(Arithmetic.J, self.factors['1']) ? '-' : (Arithmetic.equ(Arithmetic.I, self.factors['1']) ? '' : String(self.factors['1']))) + self.symbol);
+            self._str = ('1'===self.symbol) ? String(self.factors['1']) : ((Arithmetic.equ(Arithmetic.J, self.factors['1']) ? '-' : (Arithmetic.equ(Arithmetic.I, self.factors['1']) ? '' : (String(self.factors['1'])+'*'))) + self.symbol);
         }
         return self._str;
     }
@@ -5274,7 +5335,7 @@ Polynomial = Abacus.Polynomial = Class({
                     coeff['0'] = t.c();
                 else if ( x === s )
                     coeff['1'] = t.c();
-                else if ( (s.length > x.length+1) && (x+'^' === s.slice(0, x.length+1)) )
+                else if ( (s.length > x.length+1) && (x+'^' === s.slice(0, x.length+1)) && (-1===s.indexOf('*')) )
                     coeff[s.slice(x.length+1)] = t.c();
             }
             return new Polynomial(coeff, x);
@@ -5476,7 +5537,7 @@ Polynomial = Abacus.Polynomial = Class({
             for(i=c.length-1; i>=0; i--)
             {
                 if ( Arithmetic.equ(O, c[i]) ) continue;
-                out += (prev && Arithmetic.lt(O, c[i]) ? '+' : '') + (0===i ? c[i].toString() : (Arithmetic.equ(Arithmetic.I, c[i]) ? '' : (Arithmetic.equ(Arithmetic.J, c[i]) ? '-' : c[i].toString()))) + (0!==i ? (x+(1!==i?('^'+String(i)):'')) : '');
+                out += (prev && Arithmetic.lt(O, c[i]) ? '+' : '') + (0===i ? c[i].toString() : (Arithmetic.equ(Arithmetic.I, c[i]) ? '' : (Arithmetic.equ(Arithmetic.J, c[i]) ? '-' : (c[i].toString()+'*')))) + (0!==i ? (x+(1!==i?('^'+String(i)):'')) : '');
                 prev = true;
             }
             self._str = out.length ? out : '0';
@@ -5492,7 +5553,7 @@ Polynomial = Abacus.Polynomial = Class({
             for(i=c.length-1; i>=0; i--)
             {
                 if ( Arithmetic.equ(O, c[i]) ) continue;
-                terms.push(Term(0===i?'1':(1===i?x:(x+'^'+i)), c[i]));
+                terms.push(Term(0===i?'1':(1===i?x:(x+'^'+String(i))), c[i]));
             }
             if ( !terms.length ) terms.push(Term(1, O));
             self._expr = Expr(terms);
@@ -10481,15 +10542,16 @@ LatinSquare = Abacus.LatinSquare = Class({
             var i, j, k=1, s = new Array(n), a, b, a2, b2, diag, Nn,
                 val = Abacus.Arithmetic.val, N = Abacus.Arithmetic.num;
             // try to construct a (pan-)diagonal latin square first
+            diag = 0;
             if ( (n&1) /* odd */ && (n%3) /* not divisable by 3 */ )
             {
                 a = 2; b = 1;
                 diag = 2; // conditions met for (pan-)diagonal square
             }
-            else
+            else if ( n&1 /* odd */ )
             {
                 // else try an exhaustive search over the possible factors
-                Nn = N(n); diag = 0;
+                Nn = N(n);
                 for(i=1; i<n; i++)
                 {
                     if ( 1 === val(gcd(N(i), Nn)) ) a = i;

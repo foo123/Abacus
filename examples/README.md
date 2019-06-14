@@ -94,16 +94,42 @@ If we only need to find one solution, any solution, then there is an interesting
 Since `Abacus` can generate `LatinSquare`s and also generates **pan-diagonal latin squares** by default if possible (for example for `N=5` it is possible), then we can generate a solution to the 5-Queens problem as follows:
 
 ```javascript
-solutions = [from_latin_square(Abacus.LatinSquare.make(N))];
+solutions = [];
+latin = Abacus.LatinSquare.make(N);
+for(i=1; i<=N; i++) solutions.push(from_latin_square(latin, i));
 
-echo(''+solutions.length+' Solution for '+N+' Queens (pan-diagonal latin square):');
+echo(''+solutions.length+' Solutions for '+N+' Queens (pan-diagonal latin square):');
 echo(solutions.map(print_grid).join("\n---\n"));
 ```
 
 For `N=5` we get the following output:
 
 ```text
-1 Solution for 5 Queens (pan-diagonal latin square):
+5 Solutions for 5 Queens (pan-diagonal latin square):
+X O O O O
+O O X O O
+O O O O X
+O X O O O
+O O O X O
+---
+O O O X O
+X O O O O
+O O X O O
+O O O O X
+O X O O O
+---
+O X O O O
+O O O X O
+X O O O O
+O O X O O
+O O O O X
+---
+O O O O X
+O X O O O
+O O O X O
+X O O O O
+O O X O O
+---
 O O X O O
 O O O O X
 O X O O O

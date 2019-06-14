@@ -28,7 +28,31 @@ O X O O
 ---
 92 Solutions for 8 Queens (reduced exhaustive search):
 ---
-1 Solution for 5 Queens (pan-diagonal latin square):
+5 Solutions for 5 Queens (pan-diagonal latin square):
+X O O O O
+O O X O O
+O O O O X
+O X O O O
+O O O X O
+---
+O O O X O
+X O O O O
+O O X O O
+O O O O X
+O X O O O
+---
+O X O O O
+O O O X O
+X O O O O
+O O X O O
+O O O O X
+---
+O O O O X
+O X O O O
+O O O X O
+X O O O O
+O O X O O
+---
 O O X O O
 O O O O X
 O X O O O

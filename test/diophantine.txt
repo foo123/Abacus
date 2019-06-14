@@ -21,7 +21,7 @@ x = 2, y = i_1
 ---
 4x + 5y = 7
 o=Abacus.Math.diophantine([4,5], 7)
-x = -7+5i_1, y = 7-4i_1
+x = -7+5*i_1, y = 7-4*i_1
 7 7
 7 7
 o=Abacus.Math.diophantine([4,5], 7, false)
@@ -36,13 +36,13 @@ x = i_1, z = i_2, y = i_3, w = i_4
 ---
 4x + 0z + 5y + 0w = 7
 o=Abacus.Math.diophantine([4,0,5,0], 7)
-x = -7+5i_1, z = i_2, y = 7-4i_1, w = i_3
+x = -7+5*i_1, z = i_2, y = 7-4*i_1, w = i_3
 7 7
 7 7
 ---
 4x + 6y + 3z = 2
 o=Abacus.Math.diophantine([4,6,3], 2)
-x = 2+3i_1, y = i_1+i_2, z = -2-6i_1-2i_2
+x = 2+3*i_1, y = i_1+i_2, z = -2-6*i_1-2*i_2
 2 2
 2 2
 o=Abacus.Math.diophantine([4,6,3], 2, false)
@@ -51,14 +51,14 @@ x = 2, y = 0, z = -2
 ---
 4x + 0w + 6y + 3z + 0g = 2
 o=Abacus.Math.diophantine([4,0,6,3,0], 2)
-x = 2+3i_1, w = i_3, y = i_1+i_2, z = -2-6i_1-2i_2, g = i_4
+x = 2+3*i_1, w = i_3, y = i_1+i_2, z = -2-6*i_1-2*i_2, g = i_4
 2 2
 2 2
 ---
 Solve a1x1 + a2x2 + ..  = b mod m
 3x = 3 mod 10
 o=Abacus.Math.congruence([3], 3, 10)
-x = 1+10i_1
+x = 1+10*i_1
 3 3
 3 3
 o=Abacus.Math.congruence([3], 3, 10, false)
@@ -67,7 +67,7 @@ x = 1
 ---
 4x + 6y = 2 mod 10
 o=Abacus.Math.congruence([4,6], 2, 10)
-x = i_1, y = 2+i_1+5i_2
+x = i_1, y = 2+i_1+5*i_2
 2 2
 2 2
 o=Abacus.Math.congruence([4,6], 2, 10, false)
@@ -87,22 +87,22 @@ x = 0, y = 0, z = 0
 0 0
 9x^2 - 4y^2 = 0
 o=Abacus.Math.pythagorean([9,-4])
-x = 2i_1, y = 3i_1
+x = 2*i_1, y = 3*i_1
 0 0
 0 0
 x^2 + y^2 - z^2 = 0 /* pythagorean triples */
 o=Abacus.Math.pythagorean([1,1,-1])
-x = i_1^2-i_2^2, y = 2i_1i_2, z = i_1^2+i_2^2
+x = i_1^2-i_2^2, y = 2*i_1*i_2, z = i_1^2+i_2^2
 0 0
 0 0
 a^2 + b^2 + c^2 - d^2 = 0
 o=Abacus.Math.pythagorean([1,1,1,-1])
-a = i_1^2+i_2^2-i_3^2, b = 2i_1i_3, c = 2i_2i_3, d = i_1^2+i_2^2+i_3^2
+a = i_1^2+i_2^2-i_3^2, b = 2*i_1*i_3, c = 2*i_2*i_3, d = i_1^2+i_2^2+i_3^2
 0 0
 0 0
 9x^2 - 4y^2 + 16z^2 + 25w^2 + g^2 = 0
 o=Abacus.Math.pythagorean([9,-4,16,25,1])
-x = 10i_1^2+10i_2^2+10i_3^2-10i_4^2, y = 15i_1^2+15i_2^2+15i_3^2+15i_4^2, z = 15i_1i_4, w = 12i_2i_4, g = 60i_3i_4
+x = 10*i_1^2+10*i_2^2+10*i_3^2-10*i_4^2, y = 15*i_1^2+15*i_2^2+15*i_3^2+15*i_4^2, z = 15*i_1*i_4, w = 12*i_2*i_4, g = 60*i_3*i_4
 0 0
 0 0
 ---

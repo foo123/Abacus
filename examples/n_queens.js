@@ -52,16 +52,17 @@ function make_grid(queens)
 function from_latin_square(latin_square, symbol)
 {
     // generate a N-queens solution from given pan-diagonal latin square
-    var N = latin_square.length, i, j;
+    var N = latin_square.length, grid = new Array(N), i, j;
     symbol = symbol || N;
     for(i=0; i<N; i++)
     {
+        grid[i] = new Array(N);
         for(j=0; j<N; j++)
         {
-            latin_square[i][j] = symbol === latin_square[i][j] ? 'X' : 'O';
+            grid[i][j] = symbol === latin_square[i][j] ? 'X' : 'O';
         }
     }
-    return latin_square;
+    return grid;
 }
 function print_grid(grid)
 {
@@ -85,7 +86,9 @@ function exhaustive_search2( N )
 function latin_square( N )
 {
     // for some cases can construct N-queens solution from associated pan-diagonal magic/latin squares
-    return [from_latin_square(Abacus.LatinSquare.make(N))];
+    var solutions = [], latin = Abacus.LatinSquare.make(N), i;
+    for(i=1; i<=N; i++) solutions.push(from_latin_square(latin, i));
+    return solutions;
 }
 
 // 4-Queens
@@ -125,5 +128,5 @@ echo('---');
 
 // 5-Queens
 solutions = latin_square( N=5 )
-echo(''+solutions.length+' Solution for '+N+' Queens (pan-diagonal latin square):');
+echo(''+solutions.length+' Solutions for '+N+' Queens (pan-diagonal latin square):');
 echo(solutions.map(print_grid).join("\n---\n"));
