@@ -79,6 +79,7 @@ A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascri
 * Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
 * Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
 * `Polynomial` (`test/polynomials.js`) **univariate with integer coefficients**
+* `Matrix` (`test/matrices.js`) **with integer coefficients**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
@@ -124,13 +125,19 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Handbook of Applied Cryptography, Chapter 4](http://cacr.uwaterloo.ca/hac/)
 * [The Quadratic Sieve Factoring Algorithm, Eric Landquist](http://www.cs.virginia.edu/crab/QFS_Simple.pdf)
 * [A Beginner’s Guide To The General Number Field Sieve, Michael Case](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.219.2389&rep=rep1&type=pdf)
-* [Implementation of a New Primality Test, H. Cohen, A. K. Lenstra](https://pdfs.semanticscholar.org/76bb/023a666615ad2d28d4cc9c24068e45a94337.pdf)
+* [Implementation of a New Primality Test, H. Cohen, A.K. Lenstra](https://pdfs.semanticscholar.org/76bb/023a666615ad2d28d4cc9c24068e45a94337.pdf)
+* [Linear Diophantine Equations, William J. Gilbert](https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf)
 * [Finding the General Solution of a Linear Diophantine Equation, Morito, Salkin](https://www.fq.math.ca/Scanned/17-4/morito.pdf)
 * [Solving General Linear Diophantine Equations, Michael Fox](https://www.jstor.org/stable/3620787?seq=1#page_scan_tab_contents)
 * [Integer Algorithms to solve Diophantine Linear Equations and Systems, Florentin Smarandache](https://arxiv.org/ftp/math/papers/0010/0010134.pdf)
+* [Solving Systems of Linear Diophantine Equations: An Algebraic Approach, Eric Domenjoud](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.52.9120&rep=rep1&type=pdf)
+* [Solving a System of Linear Diophantine Equations with Lower and Upper Bounds on the Variables, K. Aardal, C.A.J. Hurkens, A.K. Lenstra](https://www.jstor.org/stable/3690477?seq=1#page_scan_tab_contents)
 * [Recurrence Relations for the number of solutions of a class of Diophantine Equations, M. I. Krivoruchenko](https://arxiv.org/pdf/1311.4185.pdf)
-* [Integer Programming with a Fixed Number of Variables, H. W. Lenstra](https://people.csail.mit.edu/rrw/presentations/Lenstra81.pdf)
+* [Integer Programming with a Fixed Number of Variables, H.W. Lenstra](https://people.csail.mit.edu/rrw/presentations/Lenstra81.pdf)
 * [Integer Programming with 2-Variable Equations and 1-Variable Inequalities, Bodirsky, Nordh, Von Oertzen](http://www.lix.polytechnique.fr/~bodirsky/publications/2var.pdf)
+* [SMITH NORMAL FORM IN COMBINATORICS, RICHARD P. STANLEY](http://www-math.mit.edu/~rstan/papers/snf_survey.pdf)
+* [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
+* [Solving Linear Diophantine Matrix Equations Using the Smith Normal Form, Raymond N. Greenwell, Stanley Kertzner](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.169.4280&rep=rep1&type=pdf)
 
 
 ### Example API

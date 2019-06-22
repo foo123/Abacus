@@ -17,7 +17,7 @@ else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
-}(  /* current root */          this,
+}(  /* current root */          'undefined' !== typeof self ? self : this,
     /* module name */           "Abacus",
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
@@ -61,7 +61,7 @@ var  Abacus = {VERSION: "0.9.8"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,Iterator, CombinatorialIterator, DefaultArithmetic
-    ,Filter, Node, Cache, HashSieve, Term, Expr, Polynomial
+    ,Filter, Node, /*Cache,*/ HashSieve, Term, Expr, Polynomial, Matrix
     ,Tensor, Permutation, Combination, Subset, Partition
     ,LatinSquare, MagicSquare, Progression, PrimeSieve, Diophantine
 ;
@@ -783,7 +783,7 @@ function binarysearch( v, a, dir, a0, a1, Arithmetic )
             m = l+((r-l+1)>>>1);
             am = a[m];
             if ( Arithmetic.equ(v, am) ) return m;
-            else if ( (1===dir && Arithmetic.lt(v,am)) || (-1===dir && Arithmetic.gt(v,am)) ) r = m-1;
+            else if ( (1===dir && Arithmetic.lt(v, am)) || (-1===dir && Arithmetic.gt(v, am)) ) r = m-1;
             else l = m+1;
         }
     }
@@ -814,20 +814,19 @@ function bitreverse( b, nbits )
 }
 function is_mirror_image( x )
 {
-    var i, j, l, l2;
-    if ( is_array(x) )
+    var i, j;
+    if ( is_array(x) || is_args(x) )
     {
-        l = x.length
-        if ( 1 === l ) return true;
-        for(l2=l>>1,i=0,j=l-1; i<l2; i++,j--)
+        if ( 1 >= x.length ) return true;
+        for(i=0,j=x.length-1; i<j; i++,j--)
             if ( x[i] !== x[j] )
                 return false;
     }
     else
     {
-        x = String(x); l = x.length;
-        if ( 1 === l ) return true;
-        for(l2=l>>1,i=0,j=l-1; i<l2; i++,j--)
+        x = String(x);
+        if ( 1 >= x.length ) return true;
+        for(i=0,j=x.length-1; i<j; i++,j--)
             if ( x.charAt(i) !== x.charAt(j) )
                 return false;
     }
@@ -837,6 +836,12 @@ function is_mirror_image( x )
 function sorter( Arithmetic )
 {
     return Arithmetic ? function(a, b){return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b){return a===b ? 0 : (a<b ? -1 : 1);};
+}
+function pad( x, n, s )
+{
+    var l = x.length;
+    s = s || ' ';
+    return l < n ? (new Array(n-l+1).join(s)+x) : x;
 }
 function addn( s, a )
 {
@@ -1177,7 +1182,14 @@ function ilog( x, b )
     // integer logarithm, greatest integer l such that b^l <= x.
     var Arithmetic = Abacus.Arithmetic,
         O = Arithmetic.O, I = Arithmetic.I, log = O;
-    if ( Arithmetic.lt(b, Arithmetic.II) ) return log; // 0 or 1 as base, return 0
+
+    if ( Arithmetic.lt(b, Arithmetic.II) ) return O; // 0 or 1 as base, return 0
+
+    if ( Arithmetic.lte(x, b) ) return Arithmetic.equ(x, b) ? I : O; // base greater or equal to x, either 0 or 1
+
+    if ( Arithmetic.isDefault() || Arithmetic.lte(x, MAX_DEFAULT) )
+        return Arithmetic.num(stdMath.floor(stdMath.log(Arithmetic.val(x))/stdMath.log(Arithmetic.val(b))));
+
     while ( Arithmetic.gte(x, b) )
     {
         x = Arithmetic.div(x, b);
@@ -1274,7 +1286,7 @@ function euler_test( n, k )
     }
     return true;
 }*/
-function miller_rabin_test( n, k, k2 )
+function miller_rabin_test( n, k, kextra )
 {
     // https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test
     //  O(num_trials*log^3(n))
@@ -1317,17 +1329,18 @@ function miller_rabin_test( n, k, k2 )
         for (i=0,kl=k.length; i<kl; i++)
             if ( try_composite(k[i]) )
                 return false;
+        // extra tests
+        if ( null != kextra )
+        {
+            kextra = +kextra;
+            for (i=0; i<kextra; i++)
+                if ( try_composite(Arithmetic.rnd(two, n_2)) )
+                    return false;
+        }
     }
     else
     {
         k = +k;
-        for (i=0; i<k; i++)
-            if ( try_composite(Arithmetic.rnd(two, n_2)) )
-                return false;
-    }
-    if ( null != k2 )
-    {
-        k = +k2;
         for (i=0; i<k; i++)
             if ( try_composite(Arithmetic.rnd(two, n_2)) )
                 return false;
@@ -1427,7 +1440,7 @@ function lucas_sequence( n, P, Q, k, bits )
     }
     return [Arithmetic.mod(U, n), Arithmetic.mod(V, n), Qk];
 }
-function lucas_selfridge_params( n )
+/*function lucas_selfridge_params( n )
 {
     // https://en.wikipedia.org/wiki/Lucas_pseudoprime
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, J = Arithmetic.J,
@@ -1442,7 +1455,7 @@ function lucas_selfridge_params( n )
         D = Arithmetic.gt(D, O) ? Arithmetic.sub(Arithmetic.mul(J, D), two) : Arithmetic.add(Arithmetic.mul(J, D), two);
     }
     return [D, I, Arithmetic.div(Arithmetic.sub(I, D), 4)];
-}
+}*/
 function lucas_extrastrong_params( n )
 {
     // https://en.wikipedia.org/wiki/Lucas_pseudoprime
@@ -1459,7 +1472,7 @@ function lucas_extrastrong_params( n )
     }
     return [D, P, Q];
 }
-function lucas_test( n )
+/*function lucas_test( n )
 {
     // https://en.wikipedia.org/wiki/Lucas_primality_test
     // https://en.wikipedia.org/wiki/Lucas_pseudoprime
@@ -1519,7 +1532,7 @@ function strong_lucas_test( n )
         Qk = Arithmetic.mod(Arithmetic.mul(Qk, Qk), n);
     }
     return false;
-}
+}*/
 function extra_strong_lucas_test( n )
 {
     // https://en.wikipedia.org/wiki/Lucas_primality_test
@@ -1595,7 +1608,7 @@ function is_probable_prime( n )
         else if ( Arithmetic.equ(O, Arithmetic.mod(n, p)) ) return false;
     }
     // do a sufficient miller-rabin probabilistic test
-    return miller_rabin_test(n, 10);
+    return miller_rabin_test(n, 7);
 }
 function wheel( /* args */ )
 {
@@ -1707,11 +1720,11 @@ function is_prime( n )
         If n < 3474749660383 is a 2, 3, 5, 7, 11 and 13-SPRP, then n is prime [Jaeschke93].
         If n < 341550071728321 is a 2, 3, 5, 7, 11, 13 and 17-SPRP, then n is prime [Jaeschke93].
         */
-        if ( Arithmetic.lt(n, N(1373653)) )
+        /*if ( Arithmetic.lt(n, N(1373653)) )
             return miller_rabin_test(n, [two, N(3)]);
         else if ( Arithmetic.lt(n, N("25326001")) )
             return miller_rabin_test(n, [two, N(3), N(5)]);
-        else if ( Arithmetic.lt(n, N("25000000000")) )
+        else*/ if ( Arithmetic.lt(n, N("25000000000")) )
             return Arithmetic.equ(n, N("3215031751")) ? false : miller_rabin_test(n, [two, N(3), N(5), N(7)]);
         else if ( Arithmetic.lt(n, N("2152302898747")) )
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11)]);
@@ -1721,12 +1734,12 @@ function is_prime( n )
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13), N(17)]);
 
         //return apr_cl_test(n);
-        return baillie_psw_test(n, 10);
+        return baillie_psw_test(n, 7);
     }
     else
     {
         // strong probabilistic test for very large numbers ie > 1000 digits
-        return baillie_psw_test(n, 10);
+        return baillie_psw_test(n, 7);
     }
 }
 function next_prime( n, dir )
@@ -1795,6 +1808,49 @@ function pollard_rho( n, s, a, retries, max_steps, F )
         V = Arithmetic.rnd(O, n_1);
         a = Arithmetic.rnd(I, n_3)  // for x^2 + a, a%n should not be 0 or -2
         F = null;
+    }
+    return null;
+}
+function pollard_pm1( n, B, a, retries )
+{
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        i, aM, p, e, g, n_2, B_1, ip,
+        primes = small_primes(), pl = primes.length;
+
+    if ( null == retries ) retries = 0;
+    if ( null == a ) a = two;
+    if ( null == B ) B = N(10);
+    retries = +retries;
+    //a = N(a); B = N(B);
+
+    if ( Arithmetic.lt(n, 4) || Arithmetic.lt(B, 3) ) return null;
+
+    n_2 = Arithmetic.sub(n, two); //B_1 = Arithmetic.add(B, I);
+    // computing a**lcm(1,2,3,..B) % n for B > 2
+    // it looks weird, but it's right: primes run [2, B]
+    // and the answer's not right until the loop is done.
+    for (i=0; i<=retries; i++)
+    {
+        aM = a;
+        for (ip=0; ip<pl; ip++)
+        {
+            // these are pre-computed (small) primes and may not cover whole range up to B
+            // for small values of B, no problem, else it will cover up to largest pre-computed small prime
+            p = primes[ip];
+            if ( Arithmetic.gt(p, B) ) break;
+            e = ilog(B, p);
+            aM = powm(aM, Arithmetic.pow(p, e), n);
+        }
+        g = gcd(Arithmetic.sub(aM, I), n);
+        if ( Arithmetic.gt(g, I) && Arithmetic.lt(g, n) ) return g;
+
+        // get a new a:
+        // since the exponent, lcm(1..B), is even, if we allow 'a' to be 'n-1'
+        // then (n - 1)**even % n will be 1 which will give a g of 0 and 1 will
+        // give a zero, too, so we set the range as [2, n-2]. Some references
+        // say 'a' should be coprime to n, but either will detect factors.
+        a = Arithmetic.rnd(two, n_2);
     }
     return null;
 }
@@ -2018,18 +2074,21 @@ function factorize( n )
     var Arithmetic = Abacus.Arithmetic, ndigits, f;
     ndigits = Arithmetic.digits(n).length;
     // try to use fastest algorithm based on size of number (number of digits)
-    if ( ndigits <= 12 )
+    if ( ndigits <= 10 )
     {
         // trial division for small numbers
         return trial_div_fac(n);
     }
-    else if ( ndigits <= 300 )
+    else if ( ndigits <= 500 )
     {
         // recursive (heuristic) factorization for medium-to-large numbers
         f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
         if ( null == f )
         {
-            return [[n, Arithmetic.I]];
+            // try another heuristic as well
+            f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
+            if ( null == f ) return [[n, Arithmetic.I]];
+            else return merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
         }
         else
         {
@@ -2042,58 +2101,6 @@ function factorize( n )
         return siqs_fac(n);
     }
 }
-/*function tmat( matrix )
-{
-    // transpose matrix
-    var n = matrix.length, m = n ? matrix[0].length : 0;
-    return array(m, function(j){
-        return array(n, function(i){
-            return matrix[i][j];
-        });
-    });
-}
-function gauss_elim_GF2( M )
-{
-    // reduced form of gaussian elimination
-    // https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
-    var n = M.length, m = M[0].length, i, j, k, l, row, marks, num, sol_rows;
-    marks = new Array(m);
-
-    for (i=0; i<n; i++) //do for all rows
-    {
-        row = M[i];
-        for (j=0; j<m; j++) //search for pivot
-        {
-            num = row[j];
-            if ( 1 === num )
-            {
-                marks[j] = true;
-                for (k=0; k<n; k++) //search for other 1s in the same column
-                {
-                    if ( i === k ) continue;
-                    if ( 1 === M[k][j] )
-                    {
-                        for (l=0; l<m; l++)
-                        {
-                            M[k][l] = (M[k][l] + row[l]) & 1;
-                        }
-                    }
-                }
-                break;
-            }
-        }
-    }
-
-    M = tmat(M);
-
-    sol_rows = [];
-    for (i=0; i<m; i++) //find free columns (which have now become rows)
-    {
-        if ( !marks[i] ) sol_rows.push([M[i],i]);
-    }
-
-    return sol_rows.length ? [sol_rows,marks,M] : null;
-}*/
 function gcd( /* args */ )
 {
     // https://en.wikipedia.org/wiki/Greatest_common_divisor
@@ -2573,10 +2580,10 @@ function solvedioph2( a, b, param )
     d = gcd(a);
 
     // no solution
-    if ( !Arithmetic.equ(Arithmetic.mod(b, d), O) ) return null;
+    if ( !Arithmetic.equ(O, Arithmetic.mod(b, d)) ) return null;
 
     // infinite solutions parametrized by 1 free parameter
-    if ( !Arithmetic.equ(d, I) )
+    if ( !Arithmetic.equ(I, d) )
     {
         a = [Arithmetic.div(a[0], d), Arithmetic.div(a[1], d)];
         b = Arithmetic.div(b, d);
@@ -2599,8 +2606,8 @@ function solvedioph2( a, b, param )
 
     return [
     // general solution = any particular solution of non-homogeneous + general solution of homogeneous
-    Expr([Term(1, xp[0]), Term(param, x0[0])]),
-    Expr([Term(1, xp[1]), Term(param, x0[1])])
+    Expr([xp[0], Term(param, x0[0])]),
+    Expr([xp[1], Term(param, x0[1])])
     ];
 }
 function solvedioph( a, b, with_param )
@@ -2612,15 +2619,13 @@ function solvedioph( a, b, with_param )
     // https://en.wikipedia.org/wiki/Diophantine_equation
     // https://arxiv.org/ftp/math/papers/0010/0010134.pdf
     // solution adapted from sympy/solvers/diophantine.py
-    var Arithmetic = Abacus.Arithmetic,
-        N = Arithmetic.num, O = Arithmetic.O, I = Arithmetic.I,
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         ok = a.length, k = ok, d, p, index, i, j, m, n, l, symbols, pnew,
         pos = [], ab, sol2, tot_x, tot_y, solutions, parameters,
         symbol = is_string(with_param) && with_param.length ? with_param : 'i';
 
     if ( !ok ) return null;
 
-    a = a.map(N); b = N(b||0);
     // filter out zero coefficients and mark positions of non-zero coeffs to restore later
     a = a.filter(function(ai, i){
         var NZ = !Arithmetic.equ(ai, O);
@@ -2643,7 +2648,7 @@ function solvedioph( a, b, with_param )
         // equation of 1 variable has infinite (if other zero variables) or only 1 (if only 1 variable) or 0 solutions
         index = 0;
         solutions = Arithmetic.equ(O, Arithmetic.mod(b, a[0])) ? array(ok, function(i){
-            return i===pos[0] ? Expr(Term(1, Arithmetic.div(b, a[0]))) : Expr(Term(symbol+'_'+(++index)));
+            return i===pos[0] ? Expr(Arithmetic.div(b, a[0])) : Expr(Term(symbol+'_'+(++index)));
         }) /* one/infinite */: null /* none */
     }
 
@@ -2744,7 +2749,7 @@ function solvedioph( a, b, with_param )
                     pnew = parameters[parameters.indexOf(p)+1];
                 }
 
-                sol2 = solvedioph2([a[i],ab[i]], n, pnew);
+                sol2 = solvedioph2([a[i], ab[i]], n, pnew);
                 if ( null == sol2 ) return null; // no solutions
 
                 if ( '1' !== p )
@@ -2780,12 +2785,61 @@ function solvedioph( a, b, with_param )
         return x.c();
     }) : solutions);
 }
+function solvediophs( a, b, with_param )
+{
+    // solve general system of m linear diophantine equations in k variables, by substitution
+    // a11 x_1 + a12 x_2 + a13 x_3 + .. + a1k x_k = b1, a21 x_1 + a22 x_2 + a23 x_3 + .. + a2k x_k = b2,..
+    // where a is m x k-matrix of (integer) coefficients: [[a11, a12, a13, .. , a1k],..,[am1, am2, am3, .. , amk]]
+    // and b is m-array right hand side factor (default [0,..,0])
+    // https://arxiv.org/ftp/math/papers/0010/0010134.pdf
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num, O = Arithmetic.O, I = Arithmetic.I,
+        m = a.length, k, x, ith, i, e, lhs, rhs, symbol = is_string(with_param) && with_param.length ? with_param : 'i';
+
+    if ( !m ) return null;
+    if ( !is_array(a[0]) ) return solvedioph(a, (is_array(b)||is_args(b)?b[0]:b)||O, with_param);
+    k = a[0].length; if ( !k ) return null;
+
+    // solve 1st equation
+    lhs = a[0]; rhs = b[0];
+    x = solvedioph(lhs, rhs, symbol);
+    if ( null == x ) return null; // no solution
+    console.log('Eq 1: '+x.map(function(xe,ii){return 'x_'+(ii+1)+' = '+xe.toString();}).join(', '));
+    for(i=1; i<m; i++)
+    {
+        // substitute solution of prev equation into next equation
+        e = Expr(array(k, function(j){
+            return j >= a[i].length ? O : x[j].mul(a[i][j]);
+        }));
+        rhs = Arithmetic.sub(b[i], e.c()); e = e.sub(e.c()); // move constant term to rhs
+        if ( e.equ(rhs) ) continue; // satisfied trivially, redundant equation
+        else if ( e.equ(O) ) return null; // no solution
+        lhs = array(k, function(j){
+            var s_j = symbol+'_'+(j+1);
+            // return coefficient of symbol j
+            return e.terms[s_j] ? e.terms[s_j].c() : O;
+        });
+        console.log('Reduced '+i+': '+lhs.map(function(ai,ii){return '('+ai+'*i_'+(ii+1)+'\')';}).join(' + ')+' = '+rhs);
+        ith = solvedioph(lhs, rhs, symbol); // solve new equation
+        if ( null == ith ) return null; // no solution
+        console.log('Reduced '+i+': '+ith.map(function(ii, jj){
+            return symbol+'_'+(jj+1)+'\' = '+ii.toString();
+        }).join(', '));
+        // re-express original solution in terms of new reduced solution
+        x = array(k, function(j){
+            return Expr(array(k+1, function(n){
+                var s_n = symbol+'_'+n; // nth symbol
+                return 0 === n ? x[j].c() : (n<=ith.length && x[j].terms[s_n] ? ith[n-1].mul(x[j].terms[s_n].c()) : O);
+            }));
+        });
+        console.log('Eq '+(i+1)+': '+x.map(function(xe,ii){return 'x_'+(ii+1)+' = '+xe.toString();}).join(', '));
+    }
+    return x;
+}
 function solvecongr( a, b, m, with_param )
 {
     // solve linear congruence using the associated linear diophantine equation
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, solution;
     if ( !a.length ) return null;
-    m = Arithmetic.num(m);
     solution = solvedioph(a.concat(m), b, with_param);
     // skip last variable
     return null==solution ? null : array(solution.length-1, function(i){
@@ -2795,7 +2849,7 @@ function solvecongr( a, b, m, with_param )
         {
             // a particular solution (as number)
             if ( Arithmetic.gt(O, x) )
-                x = Arithmetic.add(m, x);
+                x = Arithmetic.add(x, m);
         }
         else
         {
@@ -2827,7 +2881,6 @@ function solvepythag( a, with_param )
     if ( !k ) return null;
 
     // NOTE: assume all coefficients are perfect squares and non-zero
-    a = a.map(Arithmetic.num);
     pos = a.filter(function(ai){return 1 === sign(ai);}).length;
     neg = a.filter(function(ai){return -1 === sign(ai);}).length;
     //z = k-pos-neg;
@@ -4687,9 +4740,36 @@ Abacus.Math = {
     return next_prime(Arithmetic.num(n), dir);
 }
 
-,diophantine: solvedioph
-,congruence: solvecongr
-,pythagorean: solvepythag
+,diophantine: function( a, b, with_param ) {
+    var N = Abacus.Arithmetic.num;
+    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+    a = (is_args(a)?slice.call(a):a).map(N); b = N(b||0);
+    return solvedioph(a, b, with_param);
+}
+,diophantines: function( a, b, with_param ) {
+    var N = Abacus.Arithmetic.num;
+    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+    if ( !is_array(a[0]) && !is_args(a[0]) )
+        return Abacus.Math.diophantine(a, is_array(b)||is_args(b)?b[0]:b, with_param);
+    a = (is_args(a)?slice.call(a):a).map(function(ai){
+        return (is_args(ai)?slice.call(ai):ai).map(N);
+    });
+    if ( !is_array(b) && !is_args(b) ) b = array(a.length, function(){return b||0;});
+    b = (is_args(b)?slice.call(b):b).map(N);
+    return solvediophs(a, b, with_param);
+}
+,congruence: function( a, b, m, with_param ) {
+    var N = Abacus.Arithmetic.num;
+    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+    a = (is_args(a)?slice.call(a):a).map(N); b = N(b||0); m = N(m||0);
+    return solvecongr(a, b, m, with_param);
+}
+,pythagorean: function( a, with_param ) {
+    var N = Abacus.Arithmetic.num;
+    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+    a = (is_args(a)?slice.call(a):a).map(N);
+    return solvepythag(a, with_param)
+}
 
 };
 
@@ -5562,6 +5642,593 @@ Polynomial = Abacus.Polynomial = Class({
     }
 });
 
+// Abacus.Matrix, represents a (2-dimensional) matrix with integer coefficients
+Matrix = Abacus.Matrix = Class({
+
+    constructor: function Matrix( r, c ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( !(self instanceof Matrix) ) return new Matrix(r, c);
+
+        if ( is_array(r) || is_args(r) )
+        {
+            if ( !is_array(r[0]) && !is_args(r[0]) )
+            {
+                self.val = c ? /*column*/array(r.length, function(i){
+                    return array(1, function(j){
+                        return r[i];
+                    });
+                }) : /*row*/array(1, function(i){
+                    return array(r.length, function(j){
+                        return r[j];
+                    });
+                });
+            }
+            else
+            {
+                if ( is_args(r) ) r = slice.call(r);
+                self.val = r;
+            }
+        }
+        else //if ( is_number(m) && is_number(n) )
+        {
+            if ( null == c ) c = r; // square
+            r = +(r||0); c = +(c||0);
+            self.val = array(r, function(i){
+                return array(c, function(j){
+                    return Arithmetic.O;
+                });
+            });
+        }
+        self.nr = self.val.length;
+        self.nc = self.nr ? self.val[0].length : 0;
+    }
+
+    ,__static__: {
+        C: function( r, c, v ) {
+            var Arithmetic = Abacus.Arithmetic;
+            v = v || Arithmetic.O;
+            if ( null == c ) c = r; // square
+            r = +r; c = +c;
+            return (0 > r) || (0 > c) ? null : new Matrix(array(r, function(i){
+                return array(c, function(j){
+                    return v;
+                });
+            }));
+        }
+        ,D: function( r, c, v ) {
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
+            v = v || O;
+            if ( null == c ) c = r; // square
+            r = +r; c = +c;
+            return (0 > r) || (0 > c) ? null : new Matrix(array(r, function(i){
+                return array(c, function(j){
+                    return i===j ? v : O;
+                });
+            }));
+        }
+        ,I: function( n ) {
+            return Matrix.D(n, n, Abacus.Arithmetic.I);
+        }
+        ,T: function( m ) {
+            // transpose
+            var rows = m.length, columns = rows ? m[0].length : 0;
+            return array(columns, function(j){
+                return array(rows, function(i){
+                    return m[i][j];
+                });
+            });
+        }
+        ,SWAPR: function( m, i, j ) {
+            // swap rows i and j
+            var t = m[i];
+            m[i] = m[j];
+            m[j] = t;
+            return m;
+        }
+        ,SWAPC: function( m, i, j ) {
+            // swap columns i and j
+            var k, n = m.length, t;
+            for(k=0; k<n; k++)
+            {
+                t = m[k][i];
+                m[k][i] = m[k][j];
+                m[k][j] = t;
+            }
+            return m;
+        }
+        ,ADDR: function( m, i, j, a, b, k0 ) {
+            // add (a multiple of) row j to (a multiple of) row i
+            var Arithmetic = Abacus.Arithmetic, k, n = m[0].length;
+            if ( null == a ) a = Arithmetic.I;
+            if ( null == b ) b = Arithmetic.I;
+            for(k=k0||0; k<n; k++)
+                m[i][k] = Arithmetic.add(Arithmetic.mul(b, m[i][k]), Arithmetic.mul(a, m[j][k]));
+            return m;
+        }
+        ,ADDC: function( m, i, j, a, b, k0 ) {
+            // add (a multiple of) column j to (a multiple of) column i
+            var Arithmetic = Abacus.Arithmetic, k, n = m.length;
+            if ( null == a ) a = Arithmetic.I;
+            if ( null == b ) b = Arithmetic.I;
+            for(k=k0||0; k<n; k++)
+                m[k][i] = Arithmetic.add(Arithmetic.mul(b, m[k][i]), Arithmetic.mul(a, m[k][j]));
+            return m;
+        }
+        ,MULR: function( m, i0, i1, a, b, c, d ) {
+            var Arithmetic = Abacus.Arithmetic, j, l = m[0].length, x, y;
+            for (j=0; j<l; j++)
+            {
+                x = m[i0][j]; y = m[i1][j];
+                m[i0][j] = Arithmetic.add(Arithmetic.mul(a, x), Arithmetic.mul(b, y));
+                m[i1][j] = Arithmetic.add(Arithmetic.mul(c, x), Arithmetic.mul(d, y));
+            }
+            return m;
+        }
+        ,MULC: function( m, j0, j1, a, b, c, d ) {
+            var Arithmetic = Abacus.Arithmetic, i, l = m.length, x, y;
+            for (i=0; i<l; i++)
+            {
+                x = m[i][j0]; y = m[i][j1];
+                m[i][j0] = Arithmetic.add(Arithmetic.mul(a, x), Arithmetic.mul(c, y));
+                m[i][j1] = Arithmetic.add(Arithmetic.mul(b, x), Arithmetic.mul(d, y));
+            }
+            return m;
+        }
+    }
+
+    ,nr: 0
+    ,nc: 0
+    ,val: null
+    ,_str: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self._str = null;
+        self.nr = null;
+        self.nc = null;
+        self.val = null;
+        return self;
+    }
+
+    ,clone: function( raw ) {
+        var m = this.val.map(function(vi){return vi.slice();});
+        return raw ? m : Matrix(m);
+    }
+    ,row: function( r ) {
+        var self = this;
+        return 0<=r && r<self.nr ? array(self.nc, function(j){return self.val[r][j];}) : null;
+    }
+    ,col: function( c ) {
+        var self = this;
+        return 0<=c && c<self.nc ? array(self.nr, function(i){return self.val[i][c];}) : null;
+    }
+    ,diag: function( ) {
+        var self = this;
+        return array(stdMath.min(self.nr, self.nc), function(i){return self.val[i][i];});
+    }
+    ,coeff: function( r, c, v ) {
+        var self = this, rows = self.nr, columns = self.nc;
+        if ( 0 > r ) r += rows;
+        if ( 0 > c ) c += columns;
+        if ( !(0<=r && r<rows && 0<=c && c<columns) ) return null==v ? null : self;
+        if ( null != v )
+        {
+            self.val[r][c] = v;
+            self._str = null;
+            return self;
+        }
+        return self.val[r][c];
+    }
+
+    ,equ: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, i, j, r = self.nr, c = self.nc;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return (1===r) && (1===c) && Arithmetic.equ(self.val[0][0], a);
+        }
+        else if ( a instanceof Matrix )
+        {
+            if ( (r !== a.nr) || (c !== a.nc) ) return false;
+            for(i=0; i<r; i++)
+                for(j=0; j<c; j++)
+                    if ( !Arithmetic.equ(self.val[i][j], a.val[i][j]) )
+                        return false;
+            return true;
+        }
+        return false;
+    }
+    ,t: function( ) {
+        // transpose
+        return Matrix(Matrix.T(this.val));
+    }
+    ,neg: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, J = Arithmetic.J;
+        return Matrix(self.val.map(function(vi){
+            return vi.map(function(vij){
+                return Arithmetic.mul(J, vij);
+            });
+        }));
+    }
+    ,add: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.add(vij, a);
+                });
+            }));
+        }
+        else if ( a instanceof Matrix )
+        {
+            // NOTE: pads with zeroes if dims do not match
+            return Matrix(array(stdMath.max(self.nr, a.nr), function(i){
+                if ( i >= a.nr ) return self.val[i].slice();
+                else if ( i >= self.nr ) return a.val[i].slice();
+                return array(stdMath.max(self.nc, a.nc), function(j){
+                    if ( j >= a.nc ) return self.val[i][j];
+                    else if ( j >= self.nc ) return a.val[i][j];
+                    return Arithmetic.add(self.val[i][j], a.val[i][j]);
+                });
+            }));
+        }
+        return self;
+    }
+    ,sub: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, J = Arithmetic.J;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.sub(vij, a);
+                });
+            }));
+        }
+        else if ( a instanceof Matrix )
+        {
+            // NOTE: pads with zeroes if dims do not match
+            return Matrix(array(stdMath.max(self.nr, a.nr), function(i){
+                if ( i >= a.nr ) return self.val[i].slice();
+                else if ( i >= self.nr ) return a.val[i].map(function(aij){return Arithmetic.mul(J, aij);});
+                return array(stdMath.max(self.nc, a.nc), function(j){
+                    if ( j >= a.nc ) return self.val[i][j];
+                    else if ( j >= self.nc ) return Arithmetic.mul(J, a.val[i][j]);
+                    return Arithmetic.sub(self.val[i][j], a.val[i][j]);
+                });
+            }));
+        }
+        return self;
+    }
+    ,mul: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, n;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.mul(vij, a);
+                });
+            }));
+        }
+        else if ( a instanceof Matrix )
+        {
+            //if ( self.nc !== a.nr ) return null; // dims do not match for multiplication
+            n = stdMath.min(self.nc, a.nr); // generalise multiplication
+            return Matrix(array(self.nr, function(i){
+                return array(a.nc, function(j){
+                    for(var d=Arithmetic.O,k=0; k<n; k++)
+                        d = Arithmetic.add(d, Arithmetic.mul(self.val[i][k], a.val[k][j]));
+                    return d;
+                });
+            }));
+        }
+        return self;
+    }
+    ,elim2: function( ) {
+        // reduced form of gaussian elimination
+        // https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
+        var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, two = Arithmetic.II,
+            n = self.nr, m = self.nc, M = self.clone(true), i, j, k, l, row, marks, num, sol_rows;
+        marks = new Array(m);
+
+        for (i=0; i<n; i++) //do for all rows
+        {
+            row = M[i];
+            for (j=0; j<m; j++) //search for pivot
+            {
+                num = row[j];
+                if ( Arithmetic.equ(I, num) )
+                {
+                    marks[j] = true;
+                    for (k=0; k<n; k++) //search for other 1s in the same column
+                    {
+                        if ( i === k ) continue;
+                        if ( Arithmetic.equ(I, M[k][j]) )
+                            for (l=0; l<m; l++)
+                                M[k][l] = Arithmetic.mod(Arithmetic.add(M[k][l], row[l]), two);
+                    }
+                    break;
+                }
+            }
+        }
+
+        M = Matrix.T(M);
+
+        sol_rows = [];
+        for (i=0; i<m; i++) //find free columns (which have now become rows)
+            if ( !marks[i] )
+                sol_rows.push([M[i], i]);
+
+        return [Matrix(M), sol_rows.length ? sol_rows : null, marks];
+    }
+    ,rref: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+            rows = self.nr, columns = self.nc, dim = stdMath.min(rows, columns)-1,
+            i, k, kmin, min, a, z, m = self.clone(true);
+        // reduced row echelon form (for unimodular integer matrices)
+        if ( 0 === dim )
+        {
+            if ( Arithmetic.gt(O, m[0][0]) ) Matrix.ADDR(m, 0, 0, O, J, 0); // make it positive
+            return new Matrix(m);
+        }
+        for(i=0; i<dim; i++)
+        {
+            // row reduce one column only, start from 1st row, 1st column
+            // and then fix the sub-matrix of n-1 rows, m-1 columns, except 1st row, 1st column and so on..
+            do{
+                kmin = -1; min = null; z = 0;
+                // find row with min abs leading value non-zero for current column i
+                for(k=i; k<rows; k++)
+                {
+                    a = Arithmetic.abs(m[k][i]);
+                    if ( Arithmetic.equ(O, a) ) z++;
+                    else if ( (null == min) || Arithmetic.lt(a, min) )
+                    {
+                        min = a;
+                        kmin = k;
+                    }
+                }
+                if ( -1 === kmin ) break; // all zero, nothing else to do
+                if ( rows-i === z+1 )
+                {
+                    // only one non-zero, swap row to put it first
+                    Matrix.SWAPR(m, i, kmin);
+                    if ( Arithmetic.gt(O, m[i][i]) ) Matrix.ADDR(m, i, i, O, J, i); // make it positive
+                    break;
+                }
+                else
+                {
+                    for(k=i; k<rows; k++)
+                    {
+                        if ( k === kmin ) continue;
+                        // subtract min row from other rows
+                        Matrix.ADDR(m, k, kmin, Arithmetic.mul(J, Arithmetic.div(m[k][i], m[kmin][i])), I, i);
+                    }
+                }
+            }while(true);
+        }
+        return new Matrix(m);
+    }
+    ,snf: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+            rows = self.nr, columns = self.nc, dim = stdMath.min(rows, columns), m, s, t, last_j,
+            i, j, upd, ii, jj, non_zero, is_zero, i1, i0, g, coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
+        // smith normal form
+        m = self.clone(); s = Matrix.I(rows); t = Matrix.I(columns)
+        last_j = -1;
+        for(i=0; i<rows; i++)
+        {
+            non_zero = false;
+            for(j=last_j+1; j<columns; j++)
+            {
+                for(i0=0; i0<rows; i0++)
+                    if ( !Arithmetic.equ(O, m.val[i0][j]) )
+                        break;
+                if ( i0 < rows )
+                {
+                    non_zero = true;
+                    break;
+                }
+            }
+            if ( !non_zero ) break;
+
+            if ( Arithmetic.equ(O, m.val[i][j]) )
+            {
+                for(ii=0; ii<rows; ii++)
+                {
+                    if ( !Arithmetic.equ(O, m.val[ii][j]) ) break;
+                }
+                Matrix.MULR(m.val, i, ii, O, I, I, O);
+                Matrix.MULC(s.val, i, ii, O, I, I, O);
+            }
+            Matrix.MULC(m.val, j, i, O, I, I, O);
+            Matrix.MULR(t.val, j, i, O, I, I, O);
+            j = i;
+            upd = true;
+            while ( upd )
+            {
+                upd = false;
+                for(ii=i+1; ii<rows; ii++)
+                {
+                    if ( Arithmetic.equ(O, m.val[ii][j]) ) continue;
+                    upd = true;
+                    if ( !Arithmetic.equ(O, Arithmetic.mod(m.val[ii][j], m.val[i][j])) )
+                    {
+                        g = xgcd(m.val[i][j], m.val[ii][j]);
+                        coef1 = g[1]; coef2 = g[2];
+                        coef3 = Arithmetic.div(m.val[ii][j], g[0]);
+                        coef4 = Arithmetic.div(m.val[i][j], g[0]);
+                        Matrix.MULR(m.val, i, ii, coef1, coef2, Arithmetic.mul(J, coef3), coef4);
+                        Matrix.MULC(s.val, i, ii, coef4, Arithmetic.mul(J, coef2), coef3, coef1);
+                    }
+                    coef5 = Arithmetic.div(m.val[ii][j], m.val[i][j]);
+                    Matrix.MULR(m.val, i, ii, I, O, -coef5, I);
+                    Matrix.MULC(s.val, i, ii, I, O, coef5, I);
+                }
+                for(jj=j+1; jj<columns; jj++)
+                {
+                    if ( Arithmetic.equ(O, m.val[i][jj]) ) continue;
+                    upd = true;
+                    if ( !Arithmetic.equ(O, Arithmetic.mod(m.val[i][jj], m.val[i][j])) )
+                    {
+                        g = xgcd(m.val[i][j], m.val[i][jj]);
+                        coef1 = g[1]; coef2 = g[2];
+                        coef3 = Arithmetic.div(m.val[i][jj], g[0]);
+                        coef4 = Arithmetic.div(m.val[i][j], g[0]);
+                        Matrix.MULC(m.val, j, jj, coef1, Arithmetic.mul(J, coef3), coef2, coef4);
+                        Matrix.MULR(t.val, j, jj, coef4, coef3, Arithmetic.mul(J, coef2), coef1);
+                    }
+                    coef5 = Arithmetic.div(m.val[i][jj], m.val[i][j]);
+                    Matrix.MULC(m.val, j, jj, I, Arithmetic.mul(J, coef5), O, I);
+                    Matrix.MULR(t.val, j, jj, I, coef5, O, I);
+                }
+            }
+            last_j = j;
+        }
+        for(i1=0; i1<dim; i1++)
+        {
+            for(i0=i1-1; i0>=0; i0--)
+            {
+                g = xgcd(m.val[i0][i0], m.val[i1][i1]);
+                if ( Arithmetic.equ(O, g[0]) ) continue;
+                coef1 = g[1]; coef2 = g[2];
+                coef3 = Arithmetic.div(m.val[i1][i1], g[0]);
+                coef4 = Arithmetic.div(m.val[i0][i0], g[0]);
+                tmp = Arithmetic.mul(coef2, coef3);
+                tmp2 = Arithmetic.sub(I, Arithmetic.mul(coef1, coef4));
+                Matrix.MULR(m.val, i0, i1, I, coef2, coef3, Arithmetic.sub(tmp, I));
+                Matrix.MULC(s.val, i0, i1, Arithmetic.sub(I, tmp), coef2, coef3, J);
+                Matrix.MULC(m.val, i0, i1, coef1, tmp2, I, Arithmetic.mul(J, coef4));
+                Matrix.MULR(t.val, i0, i1, coef4, tmp2, I, Arithmetic.mul(J, coef1));
+            }
+        }
+        return [m/*diagonal center matrix*/, s/*left matrix*/, t/*right matrix*/];
+    }
+    ,slice: function( r1, c1, r2, c2 ) {
+        var self = this, rows = self.nr, columns = self.nc;
+        if ( !rows || !columns ) return Matrix();
+        if ( null == r1 ) r1 = 0;
+        if ( null == c1 ) c1 = 0;
+        if ( null == r2 ) r2 = rows-1;
+        if ( null == c2 ) c2 = columns-1;
+        if ( 0 > r1 ) r1 += rows;
+        if ( 0 > c1 ) c1 += columns;
+        if ( 0 > r2 ) r2 += rows;
+        if ( 0 > c2 ) c2 += columns;
+        r1 = stdMath.max(0, stdMath.min(rows-1, r1));
+        r2 = stdMath.max(0, stdMath.min(rows-1, r2));
+        c1 = stdMath.max(0, stdMath.min(columns-1, c1));
+        c2 = stdMath.max(0, stdMath.min(columns-1, c2));
+        return r1<=r2 && c1<=c2 ? Matrix(array(r2-r1+1, function(i){
+            return array(c2-c1+1, function(j){
+                return self.val[r1+i][c1+j];
+            });
+        })) : Matrix();
+    }
+    ,concat: function( a, axis ) {
+        var self = this, O = Abacus.Arithmetic.O;
+        if ( !(a instanceof Matrix) ) return self;
+        axis = axis || 'horizontal';
+        if ( 'vertical' === axis )
+        {
+            // | self |
+            // | ---- |
+            // |  a   |
+            return Matrix(array(self.nr+a.nr, function(i){
+                return array(stdMath.max(self.nc, a.nc), function(j){
+                    if ( j >= self.nc )
+                        return i < self.nr ? O : a.val[i-self.nr][j];
+                    else if ( j >= a.nc )
+                        return i < self.nr ? self.val[i][j] : O;
+                    else
+                        return i < self.nr ? self.val[i][j] : a.val[i-self.nr][j];
+                });
+            }));
+        }
+        else //if ( 'horizontal' === axis )
+        {
+            // | self | a |
+            return Matrix(array(stdMath.max(self.nr, a.nr), function(i){
+                return array(self.nc+a.nc, function(j){
+                    if ( i >= self.nr )
+                        return j < self.nc ? O : a.val[i][j-self.nc];
+                    else if ( i >= a.nr )
+                        return j < self.nc ? self.val[i][j] : O;
+                    else
+                        return j < self.nc ? self.val[i][j] : a.val[i][j-self.nc];
+                });
+            }));
+        }
+    }
+    ,swap: function( what, k1, k2, in_place ) {
+        var self = this, rows = self.nr, columns = self.nc;
+        if ( 'columns' === what )
+        {
+            if ( 0 > k1 ) k1 += columns;
+            if ( 0 > k2 ) k2 += columns;
+            if ( !((0 <= k1) && (0 <= k2) && (k1 < columns) && (k2 < columns)) ) return self;
+            if ( in_place )
+            {
+                Matrix.SWAPC(self.val, k1, k2);
+                self._str = null;
+                return self;
+            }
+            else
+            {
+                return Matrix(array(rows, function(i){
+                    return array(columns, function(j){
+                        if ( j === k1 ) return self.val[i][k2];
+                        else if ( j === k2 ) return self.val[i][k1];
+                        return self.val[i][j];
+                    });
+                }));
+            }
+        }
+        else if ( 'rows' === what )
+        {
+            if ( 0 > k1 ) k1 += rows;
+            if ( 0 > k2 ) k2 += rows;
+            if ( !((0 <= k1) && (0 <= k2) && (k1 < rows) && (k2 < rows)) ) return self;
+            if ( in_place )
+            {
+                Matrix.SWAPR(self.val, k1, k2);
+                self._str = null;
+                return self;
+            }
+            else
+            {
+                return Matrix(array(rows, function(i){
+                    return array(columns, function(j){
+                        if ( i === k1 ) return self.val[k2][j];
+                        else if ( i === k2 ) return self.val[k1][j];
+                        return self.val[i][j];
+                    });
+                }));
+            }
+        }
+        return self;
+    }
+    ,toString: function( ) {
+        var self = this, max;
+        if ( null == self._str )
+        {
+            // compute length of greatest num in matrix so to pad other nums same to aling properly
+            max = self.val.reduce(function(max, vi){
+                return vi.reduce(function(max, vij){
+                    var sij = String(vij);
+                    if ( sij.length > max ) max = sij.length;
+                    return max;
+                }, max);
+            }, 0);
+            self._str = self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return pad(String(vij), max);
+                }).join(' ');
+            }).join("\n");
+        }
+        return self._str;
+    }
+});
+
 // Abacus.BiArray, Packed Bit Array Implementation
 Abacus.BitArray = Class({
 
@@ -6059,6 +6726,11 @@ Iterator = Abacus.Iterator = Class({
     ,unfuse: function( ) {
         return this.fuse(false);
     }
+    ,juxtaposeWith: function( iter, dir ) {
+        return this.fuse(function(item, subitem){
+            return [].concat(item).concat(subitem);
+        }, iter, dir);
+    }
     ,state: function( state ){
         // custom state control for custom generator functions typecasted as iterators
         var self = this;
@@ -6070,6 +6742,13 @@ Iterator = Abacus.Iterator = Class({
     ,output: function( item ) {
         var output = this.$.output;
         return null == item ? null : (is_callable(output) ? output(item): item);
+    }
+    ,fusion: function( item, subitem ) {
+        var self = this, $ = self.$, t;
+        if ( !$.sub ) return item;
+        if ( null == item || null == subitem ) return item || subitem || null;
+        if ( -1 === $.subcascade ){ t = item; item = subitem; subitem = t; }
+        return $.submethod(item, subitem);
     }
     ,order: function( ) {
         return this;
@@ -7553,7 +8232,7 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
 
     // extends and implements Iterator
     constructor: function PrimeSieve( $ ) {
-        var self = this, Arithmetic = Abacus.Arithmetic, two = Arithmetic.II;
+        var self = this, Arithmetic = Abacus.Arithmetic;
 
         if ( !(self instanceof PrimeSieve) ) return new PrimeSieve($);
 
@@ -7561,37 +8240,31 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
         $.type = String($.type || "eratosthenes").toLowerCase();
         $.count = Arithmetic.I; // infinite
 
+        // (Eratosthenes) Sieve with pre-computed small primes list
         self._multiples = new HashSieve();
-        // a simple wheel of {2}
-        self._base = [two]; self._baseNext = Arithmetic.num(3); // is prime
-        self._wheel = two;
-        self._w = 0; self._p = 0;
+        self._small_primes = small_primes();
+        if ( !self._small_primes.length ) self._small_primes = [Arithmetic.II]; // first prime
+        self._p = 0;
 
         Iterator.call(self, "PrimeSieve", $);
     }
 
     ,_multiples: null
-    ,_wheel: null
-    ,_base: null
-    ,_baseNext: null
-    ,_w: 0
+    ,_small_primes: null
     ,_p: 0
 
     ,dispose: function( ) {
         var self = this;
         if ( self._multiples ) self._multiples.dispose();
         self._multiples = null;
-        self._wheel = null;
-        self._base = null;
-        self._baseNext = null;
-        self._w = null;
+        self._small_primes = null;
         self._p = null;
         return Iterator[PROTO].dispose.call(self);
     }
     ,rewind: function( dir ) {
         var self = this;
         self._multiples.reset();
-        self._w = 0; self._p = 0;
+        self._p = 0;
         return self;
     }
     ,hasNext: function( dir ){
@@ -7602,44 +8275,63 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
         dir = -1 === dir ? -1 : 1;
         if ( 0 > dir ) return null;
 
-        var self = this, $ = self.$, multiples = self._multiples,
-            wheel = self._wheel, base = self._base, baseNext = self._baseNext,
-            Arithmetic = Abacus.Arithmetic, prime = self.__item, output;
+        var self = this, $ = self.$, pp, p2, pl, ps,
+            multiples = self._multiples, small_primes = self._small_primes,
+            Arithmetic = Abacus.Arithmetic, two = Arithmetic.II,
+            prime = self.__item, output;
 
         do{
-            // Eratosthenes sieve with a division wheel
+            // Eratosthenes sieve with pre-computed small primes list
             // O(n log(log(n))) for getting all primes up to n
-            if ( self._p < base.length )
+            if ( self._p < small_primes.length )
             {
-                // get primes from the base
+                // get primes from the pre-computed list
                 //self.__index = Arithmetic.num(self._p);
-                prime = base[self._p++];
+                prime = small_primes[self._p++];
+
+                // add odd multiples of this prime to the list for crossing out later on,
+                // start from p^2 since lesser multiples are already crossed out by previous primes
+                if ( Arithmetic.gt(prime, two) )
+                {
+                    pp = Arithmetic.mul(prime, prime); p2 = Arithmetic.add(prime, prime);
+                    pl = small_primes[small_primes.length-1]; // last prime in list
+                    if ( Arithmetic.lt(pp, pl) )
+                    {
+                        // take multiples of this prime AFTER the last prime in list
+                        // lesser multiples have already been taken care of
+                        ps = Arithmetic.div(Arithmetic.sub(pl, pp), p2);
+                        pp = Arithmetic.add(pp, Arithmetic.mul(ps, p2));
+                        if ( Arithmetic.lte(pp, pl) ) pp = Arithmetic.add(pp, p2);
+                    }
+                    multiples.add(new Progression(pp, p2, Arithmetic.INF));
+                }
             }
             else
             {
-                if ( Arithmetic.equ(prime, base[base.length-1]) )
+                if ( Arithmetic.equ(prime, two) )
                 {
-                    // returned last prime from base, start from next prime and count
-                    prime = baseNext; // should be prime
-                    //self._w = 0;
+                    // first odd prime
+                    prime = Arithmetic.num(3);
                 }
                 else
                 {
-                    // check candidate primes, using wheel increments, ie avoid multiples of the base faster
+                    // check candidate primes, using odd increments, ie avoid multiples of two faster
                     do{
 
-                        prime = Arithmetic.add(prime, wheel);
+                        prime = Arithmetic.add(prime, two);
 
                     }while(multiples.has(prime));
                 }
 
-                // add (odd/wheel) multiples of this prime to the list for crossing out later on,
+                // add odd multiples of this prime to the list for crossing out later on,
                 // start from p^2 since lesser multiples are already crossed out by previous primes
-                multiples.add(new Progression(Arithmetic.mul(prime, prime), Arithmetic.add(prime, prime), Arithmetic.INF));
+                pp = Arithmetic.mul(prime, prime); p2 = Arithmetic.add(prime, prime);
+                multiples.add(new Progression(pp, p2, Arithmetic.INF));
 
                 //self.__index = Arithmetic.add(self.__index, Arithmetic.I);
-                output = self.output(prime);
             }
+
+            output = self.output(prime);
         }while($.filter && (null!=output) && !$.filter.apply(output, self));
 
         self.__item = prime;

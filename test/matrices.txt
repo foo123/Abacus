@@ -1,0 +1,115 @@
+Abacus.Matrices (VERSION = 0.9.8)
+---
+Matrices and Matrix operations
+---
+o=Abacus.Matrix(3)
+o.toString()
+0 0 0
+0 0 0
+0 0 0
+o.dispose()
+---
+o=Abacus.Matrix.I(3)
+o.toString()
+1 0 0
+0 1 0
+0 0 1
+o.slice(0, 0, 1, 1)
+1 0
+0 1
+o.add(1)
+2 1 1
+1 2 1
+1 1 2
+o.mul(2)
+2 0 0
+0 2 0
+0 0 2
+o.add(Abacus.Matrix.I(3))
+2 0 0
+0 2 0
+0 0 2
+o.mul(Abacus.Matrix.I(3))
+1 0 0
+0 1 0
+0 0 1
+o.dispose()
+---
+o=Abacus.Matrix([91, 21], true).concat(Abacus.Matrix.I(2))
+o.toString()
+91  1  0
+21  0  1
+o.rref()
+ 7  1 -4
+ 0 -3 13
+o.rref().slice(0, 1)
+ 1 -4
+-3 13
+o.rref().slice(0, 1).mul(Abacus.Matrix([91, 21], true))
+7
+0
+o.rref().slice(0, 1).t().mul(Abacus.Matrix([7, 0], true))
+  7
+-28
+---
+o=Abacus.Matrix([[5, 6], [6, -11], [8, 7]]).concat(Abacus.Matrix.I(3))
+o.toString()
+  5   6   1   0   0
+  6 -11   0   1   0
+  8   7   0   0   1
+o.rref()
+  1 -17  -1   1   0
+  0  13  -2  -1   2
+  0   0  10   1  -7
+o.rref().slice(0, 2)
+-1  1  0
+-2 -1  2
+10  1 -7
+o.rref().slice(0, 2).mul(Abacus.Matrix([[5, 6], [6, -11], [8, 7]]))
+  1 -17
+  0  13
+  0   0
+o.rref().slice(0, 2).t().mul(Abacus.Matrix([[1, -17], [0, 13], [0, 0]]))
+ -1  -9
+  1 -30
+  0  26
+---
+o=Abacus.Matrix([91, 21], true)
+o.toString()
+91
+21
+o.snf()
+Left:
+13  4
+ 3  1
+Diagonal:
+7
+0
+Right:
+1
+Reconstructed:
+91
+21
+---
+o=Abacus.Matrix([[5, 6], [6, -11], [8, 7]])
+o.toString()
+  5   6
+  6 -11
+  8   7
+o.snf()
+Left:
+ 96  -7   2
+ 97  -7   2
+151 -11   3
+Diagonal:
+ 1  0
+ 0 13
+ 0  0
+Right:
+  1 -17
+  1 -18
+Reconstructed:
+  5   6
+  6 -11
+  8   7
+---
