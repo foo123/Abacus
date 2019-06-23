@@ -2083,17 +2083,10 @@ function factorize( n )
     {
         // recursive (heuristic) factorization for medium-to-large numbers
         f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
-        if ( null == f )
-        {
-            // try another heuristic as well
-            f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
-            if ( null == f ) return [[n, Arithmetic.I]];
-            else return merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
-        }
-        else
-        {
-            return merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
-        }
+        // try another heuristic as well
+        if ( null == f ) f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
+        if ( null == f ) return [[n, Arithmetic.I]];
+        else return merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
     }
     else
     {
@@ -5702,7 +5695,17 @@ Matrix = Abacus.Matrix = Class({
             r = +r; c = +c;
             return (0 > r) || (0 > c) ? null : new Matrix(array(r, function(i){
                 return array(c, function(j){
-                    return i===j ? v : O;
+                    if ( i === j )
+                    {
+                        if ( is_array(v) || is_args(v) )
+                            return i < v.length ? v[i] : O;
+                        else
+                            return v;
+                    }
+                    else
+                    {
+                        return O;
+                    }
                 });
             }));
         }
@@ -5780,10 +5783,22 @@ Matrix = Abacus.Matrix = Class({
     ,nc: 0
     ,val: null
     ,_str: null
+    ,_rref: null
+    ,_snf: null
+    ,_rnull: null
+    ,_lnull: null
+    ,_rspace: null
+    ,_cspace: null
 
     ,dispose: function( ) {
         var self = this;
         self._str = null;
+        self._rref = null;
+        self._snf = null;
+        self._rnull = null;
+        self._lnull = null;
+        self._rspace = null;
+        self._cspace = null;
         self.nr = null;
         self.nc = null;
         self.val = null;
@@ -5802,9 +5817,11 @@ Matrix = Abacus.Matrix = Class({
         var self = this;
         return 0<=c && c<self.nc ? array(self.nr, function(i){return self.val[i][c];}) : null;
     }
-    ,diag: function( ) {
-        var self = this;
-        return array(stdMath.min(self.nr, self.nc), function(i){return self.val[i][i];});
+    ,diag: function( k ) {
+        // k = 0 chooses center diagonal, k>0 chooses diagonal to the right, k<0 diagonal to the left
+        var self = this, r, c;
+        k = k || 0; r = 0 < k ? 0 : -k; c = r ? 0 : k;
+        return 0<=c && c<self.nc && 0<=r && r<self.nr ? array(stdMath.min(self.nr-r, self.nc-c), function(i){return self.val[r+i][c+i];}) : null;
     }
     ,coeff: function( r, c, v ) {
         var self = this, rows = self.nr, columns = self.nc;
@@ -5815,16 +5832,33 @@ Matrix = Abacus.Matrix = Class({
         {
             self.val[r][c] = v;
             self._str = null;
+            self._rref = null;
+            self._snf = null;
+            self._rnull = null;
+            self._lnull = null;
+            self._rspace = null;
+            self._cspace = null;
             return self;
         }
         return self.val[r][c];
     }
 
-    ,equ: function( a ) {
+    ,equ: function( a, eq_all ) {
         var self = this, Arithmetic = Abacus.Arithmetic, i, j, r = self.nr, c = self.nc;
         if ( Arithmetic.isNumber(a) )
         {
-            return (1===r) && (1===c) && Arithmetic.equ(self.val[0][0], a);
+            if ( eq_all )
+            {
+                for(i=0; i<r; i++)
+                    for(j=0; j<c; j++)
+                        if ( !Arithmetic.equ(self.val[i][j], a) )
+                            return false;
+                return true;
+            }
+            else
+            {
+                return (1===r) && (1===c) && Arithmetic.equ(self.val[0][0], a);
+            }
         }
         else if ( a instanceof Matrix )
         {
@@ -5923,7 +5957,85 @@ Matrix = Abacus.Matrix = Class({
         }
         return self;
     }
-    ,elim2: function( ) {
+    ,dot: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        // pointwise multiplication
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.mul(vij, a);
+                });
+            }));
+        }
+        else if ( a instanceof Matrix )
+        {
+            return Matrix(array(stdMath.max(self.nr, a.nr), function(i){
+                if ( i >= self.nr ) return a.val[i].slice();
+                else if ( i >= a.nr ) return self.val[i].slice();
+                return array(stdMath.max(self.nc, a.nc), function(j){
+                    if ( j >= self.nc ) return a.val[i][j];
+                    else if ( j >= a.nc ) return self.val[i][j];
+                    return Arithmetic.mul(self.val[i][j], a.val[i][j]);
+                })
+            }));
+        }
+        return self;
+    }
+    ,div: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.div(vij, a);
+                });
+            }));
+        }
+        return self;
+    }
+    ,mod: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.mod(vij, a);
+                });
+            }));
+        }
+        return self;
+    }
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
+        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
+        n = Arithmetic.val(n);
+        if ( 0 === n )
+        {
+            return Matrix.I(/*stdMath.min(self.nr,*/ self.nc/*)*/);
+        }
+        else if ( 1 === n )
+        {
+            return self.clone();
+        }
+        else if ( 2 === n )
+        {
+            return self.mul(self);
+        }
+        else
+        {
+            // exponentiation by squaring
+            pow = null; b = self;
+            while ( 0 !== n )
+            {
+                if ( n & 1 ) pow = null == pow ? b : b.mul(pow);
+                n >>= 1;
+                b = b.mul(b);
+            }
+            return pow;
+        }
+    }
+    ,ge2: function( ) {
         // reduced form of gaussian elimination
         // https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
         var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, two = Arithmetic.II,
@@ -5960,148 +6072,228 @@ Matrix = Abacus.Matrix = Class({
 
         return [Matrix(M), sol_rows.length ? sol_rows : null, marks];
     }
-    ,rref: function( ) {
+    ,rref: function( with_pivots, odim ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            rows = self.nr, columns = self.nc, dim = stdMath.min(rows, columns)-1,
-            i, k, kmin, min, a, z, m = self.clone(true);
-        // reduced row echelon form (for unimodular integer matrices)
-        if ( 0 === dim )
+            rows = self.nr, columns = self.nc, dim, pivots, pl = 0,
+            i, k, kmin, min, a, z, m;
+        // reduced row echelon form (for integer matrices)
+        if ( null == self._rref )
         {
-            if ( Arithmetic.gt(O, m[0][0]) ) Matrix.ADDR(m, 0, 0, O, J, 0); // make it positive
-            return new Matrix(m);
-        }
-        for(i=0; i<dim; i++)
-        {
-            // row reduce one column only, start from 1st row, 1st column
-            // and then fix the sub-matrix of n-1 rows, m-1 columns, except 1st row, 1st column and so on..
-            do{
-                kmin = -1; min = null; z = 0;
-                // find row with min abs leading value non-zero for current column i
-                for(k=i; k<rows; k++)
-                {
-                    a = Arithmetic.abs(m[k][i]);
-                    if ( Arithmetic.equ(O, a) ) z++;
-                    else if ( (null == min) || Arithmetic.lt(a, min) )
-                    {
-                        min = a;
-                        kmin = k;
-                    }
-                }
-                if ( -1 === kmin ) break; // all zero, nothing else to do
-                if ( rows-i === z+1 )
-                {
-                    // only one non-zero, swap row to put it first
-                    Matrix.SWAPR(m, i, kmin);
-                    if ( Arithmetic.gt(O, m[i][i]) ) Matrix.ADDR(m, i, i, O, J, i); // make it positive
-                    break;
-                }
-                else
-                {
+            dim = stdMath.min(rows, columns);
+            // original dimensions, eg when having augmented matrix
+            if ( is_array(odim) ) dim = stdMath.min(dim, odim[0], odim[1]);
+            m = self.clone(true);
+            pivots = new Array(dim);
+
+            for(i=0; i<dim; i++)
+            {
+                // row reduce one column only, start from 1st row, 1st column
+                // and then fix the sub-matrix of n-1 rows, m-1 columns, except 1st row, 1st column and so on..
+                do{
+                    kmin = -1; min = null; z = 0;
+                    // find row with min abs leading value non-zero for current column i
                     for(k=i; k<rows; k++)
                     {
-                        if ( k === kmin ) continue;
-                        // subtract min row from other rows
-                        Matrix.ADDR(m, k, kmin, Arithmetic.mul(J, Arithmetic.div(m[k][i], m[kmin][i])), I, i);
+                        a = Arithmetic.abs(m[k][i]);
+                        if ( Arithmetic.equ(O, a) ) z++;
+                        else if ( (null == min) || Arithmetic.lt(a, min) )
+                        {
+                            min = a;
+                            kmin = k;
+                        }
                     }
-                }
-            }while(true);
+                    if ( -1 === kmin ) break; // all zero, nothing else to do
+                    if ( rows-i === z+1 )
+                    {
+                        // only one non-zero, swap row to put it first
+                        Matrix.SWAPR(m, i, kmin);
+                        if ( Arithmetic.gt(O, m[i][i]) ) Matrix.ADDR(m, i, i, O, J, i); // make it positive
+                        pivots[pl++] = i;
+                        break;
+                    }
+                    else
+                    {
+                        for(k=i; k<rows; k++)
+                        {
+                            if ( k === kmin ) continue;
+                            // subtract min row from other rows
+                            Matrix.ADDR(m, k, kmin, Arithmetic.mul(J, Arithmetic.div(m[k][i], m[kmin][i])), I, i);
+                        }
+                    }
+                }while(true);
+            }
+            m = new Matrix(m);
+            // truncate if needed
+            if ( pivots.length > pl ) pivots.length = pl;
+
+            self._rref = [m, pivots];
         }
-        return new Matrix(m);
+        return with_pivots ? self._rref.slice() : self._rref[0];
     }
     ,snf: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            rows = self.nr, columns = self.nc, dim = stdMath.min(rows, columns), m, s, t, last_j,
-            i, j, upd, ii, jj, non_zero, is_zero, i1, i0, g, coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
+            rows = self.nr, columns = self.nc, dim, m, left, right, last_j,
+            i, j, upd, ii, jj, non_zero, i1, i0, g, coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
         // smith normal form
-        m = self.clone(); s = Matrix.I(rows); t = Matrix.I(columns)
-        last_j = -1;
-        for(i=0; i<rows; i++)
+        if ( null == self._snf )
         {
-            non_zero = false;
-            for(j=last_j+1; j<columns; j++)
+            dim = stdMath.min(rows, columns);
+            m = self.clone(); left = Matrix.I(rows); right = Matrix.I(columns)
+            last_j = -1;
+            for(i=0; i<rows; i++)
             {
-                for(i0=0; i0<rows; i0++)
-                    if ( !Arithmetic.equ(O, m.val[i0][j]) )
+                non_zero = false;
+                for(j=last_j+1; j<columns; j++)
+                {
+                    for(i0=0; i0<rows; i0++)
+                        if ( !Arithmetic.equ(O, m.val[i0][j]) )
+                            break;
+                    if ( i0 < rows )
+                    {
+                        non_zero = true;
                         break;
-                if ( i0 < rows )
-                {
-                    non_zero = true;
-                    break;
+                    }
                 }
-            }
-            if ( !non_zero ) break;
+                if ( !non_zero ) break;
 
-            if ( Arithmetic.equ(O, m.val[i][j]) )
-            {
-                for(ii=0; ii<rows; ii++)
+                if ( Arithmetic.equ(O, m.val[i][j]) )
                 {
-                    if ( !Arithmetic.equ(O, m.val[ii][j]) ) break;
-                }
-                Matrix.MULR(m.val, i, ii, O, I, I, O);
-                Matrix.MULC(s.val, i, ii, O, I, I, O);
-            }
-            Matrix.MULC(m.val, j, i, O, I, I, O);
-            Matrix.MULR(t.val, j, i, O, I, I, O);
-            j = i;
-            upd = true;
-            while ( upd )
-            {
-                upd = false;
-                for(ii=i+1; ii<rows; ii++)
-                {
-                    if ( Arithmetic.equ(O, m.val[ii][j]) ) continue;
-                    upd = true;
-                    if ( !Arithmetic.equ(O, Arithmetic.mod(m.val[ii][j], m.val[i][j])) )
+                    for(ii=0; ii<rows; ii++)
                     {
-                        g = xgcd(m.val[i][j], m.val[ii][j]);
-                        coef1 = g[1]; coef2 = g[2];
-                        coef3 = Arithmetic.div(m.val[ii][j], g[0]);
-                        coef4 = Arithmetic.div(m.val[i][j], g[0]);
-                        Matrix.MULR(m.val, i, ii, coef1, coef2, Arithmetic.mul(J, coef3), coef4);
-                        Matrix.MULC(s.val, i, ii, coef4, Arithmetic.mul(J, coef2), coef3, coef1);
+                        if ( !Arithmetic.equ(O, m.val[ii][j]) ) break;
                     }
-                    coef5 = Arithmetic.div(m.val[ii][j], m.val[i][j]);
-                    Matrix.MULR(m.val, i, ii, I, O, -coef5, I);
-                    Matrix.MULC(s.val, i, ii, I, O, coef5, I);
+                    Matrix.MULR(m.val, i, ii, O, I, I, O);
+                    Matrix.MULC(left.val, i, ii, O, I, I, O);
                 }
-                for(jj=j+1; jj<columns; jj++)
+                Matrix.MULC(m.val, j, i, O, I, I, O);
+                Matrix.MULR(right.val, j, i, O, I, I, O);
+                j = i;
+                upd = true;
+                while ( upd )
                 {
-                    if ( Arithmetic.equ(O, m.val[i][jj]) ) continue;
-                    upd = true;
-                    if ( !Arithmetic.equ(O, Arithmetic.mod(m.val[i][jj], m.val[i][j])) )
+                    upd = false;
+                    for(ii=i+1; ii<rows; ii++)
                     {
-                        g = xgcd(m.val[i][j], m.val[i][jj]);
-                        coef1 = g[1]; coef2 = g[2];
-                        coef3 = Arithmetic.div(m.val[i][jj], g[0]);
-                        coef4 = Arithmetic.div(m.val[i][j], g[0]);
-                        Matrix.MULC(m.val, j, jj, coef1, Arithmetic.mul(J, coef3), coef2, coef4);
-                        Matrix.MULR(t.val, j, jj, coef4, coef3, Arithmetic.mul(J, coef2), coef1);
+                        if ( Arithmetic.equ(O, m.val[ii][j]) ) continue;
+                        upd = true;
+                        if ( !Arithmetic.equ(O, Arithmetic.mod(m.val[ii][j], m.val[i][j])) )
+                        {
+                            g = xgcd(m.val[i][j], m.val[ii][j]);
+                            coef1 = g[1]; coef2 = g[2];
+                            coef3 = Arithmetic.div(m.val[ii][j], g[0]);
+                            coef4 = Arithmetic.div(m.val[i][j], g[0]);
+                            Matrix.MULR(m.val, i, ii, coef1, coef2, Arithmetic.mul(J, coef3), coef4);
+                            Matrix.MULC(left.val, i, ii, coef4, Arithmetic.mul(J, coef2), coef3, coef1);
+                        }
+                        coef5 = Arithmetic.div(m.val[ii][j], m.val[i][j]);
+                        Matrix.MULR(m.val, i, ii, I, O, -coef5, I);
+                        Matrix.MULC(left.val, i, ii, I, O, coef5, I);
                     }
-                    coef5 = Arithmetic.div(m.val[i][jj], m.val[i][j]);
-                    Matrix.MULC(m.val, j, jj, I, Arithmetic.mul(J, coef5), O, I);
-                    Matrix.MULR(t.val, j, jj, I, coef5, O, I);
+                    for(jj=j+1; jj<columns; jj++)
+                    {
+                        if ( Arithmetic.equ(O, m.val[i][jj]) ) continue;
+                        upd = true;
+                        if ( !Arithmetic.equ(O, Arithmetic.mod(m.val[i][jj], m.val[i][j])) )
+                        {
+                            g = xgcd(m.val[i][j], m.val[i][jj]);
+                            coef1 = g[1]; coef2 = g[2];
+                            coef3 = Arithmetic.div(m.val[i][jj], g[0]);
+                            coef4 = Arithmetic.div(m.val[i][j], g[0]);
+                            Matrix.MULC(m.val, j, jj, coef1, Arithmetic.mul(J, coef3), coef2, coef4);
+                            Matrix.MULR(right.val, j, jj, coef4, coef3, Arithmetic.mul(J, coef2), coef1);
+                        }
+                        coef5 = Arithmetic.div(m.val[i][jj], m.val[i][j]);
+                        Matrix.MULC(m.val, j, jj, I, Arithmetic.mul(J, coef5), O, I);
+                        Matrix.MULR(right.val, j, jj, I, coef5, O, I);
+                    }
+                }
+                last_j = j;
+            }
+            for(i1=0; i1<dim; i1++)
+            {
+                for(i0=i1-1; i0>=0; i0--)
+                {
+                    g = xgcd(m.val[i0][i0], m.val[i1][i1]);
+                    if ( Arithmetic.equ(O, g[0]) ) continue;
+                    coef1 = g[1]; coef2 = g[2];
+                    coef3 = Arithmetic.div(m.val[i1][i1], g[0]);
+                    coef4 = Arithmetic.div(m.val[i0][i0], g[0]);
+                    tmp = Arithmetic.mul(coef2, coef3);
+                    tmp2 = Arithmetic.sub(I, Arithmetic.mul(coef1, coef4));
+                    Matrix.MULR(m.val, i0, i1, I, coef2, coef3, Arithmetic.sub(tmp, I));
+                    Matrix.MULC(left.val, i0, i1, Arithmetic.sub(I, tmp), coef2, coef3, J);
+                    Matrix.MULC(m.val, i0, i1, coef1, tmp2, I, Arithmetic.mul(J, coef4));
+                    Matrix.MULR(right.val, i0, i1, coef4, tmp2, I, Arithmetic.mul(J, coef1));
                 }
             }
-            last_j = j;
+            self._snf = [m/*diagonal center matrix*/, left/*left matrix*/, right/*right matrix*/];
         }
-        for(i1=0; i1<dim; i1++)
+        return self._snf.slice();
+    }
+    ,space: function( row_or_column ) {
+        var self = this, reduced, pivots, tmp;
+
+        if ( 'row' === row_or_column )
         {
-            for(i0=i1-1; i0>=0; i0--)
+            // rowspace
+            if ( null == self._rspace )
             {
-                g = xgcd(m.val[i0][i0], m.val[i1][i1]);
-                if ( Arithmetic.equ(O, g[0]) ) continue;
-                coef1 = g[1]; coef2 = g[2];
-                coef3 = Arithmetic.div(m.val[i1][i1], g[0]);
-                coef4 = Arithmetic.div(m.val[i0][i0], g[0]);
-                tmp = Arithmetic.mul(coef2, coef3);
-                tmp2 = Arithmetic.sub(I, Arithmetic.mul(coef1, coef4));
-                Matrix.MULR(m.val, i0, i1, I, coef2, coef3, Arithmetic.sub(tmp, I));
-                Matrix.MULC(s.val, i0, i1, Arithmetic.sub(I, tmp), coef2, coef3, J);
-                Matrix.MULC(m.val, i0, i1, coef1, tmp2, I, Arithmetic.mul(J, coef4));
-                Matrix.MULR(t.val, i0, i1, coef4, tmp2, I, Arithmetic.mul(J, coef1));
+                tmp = self.rref(true);
+                reduced = tmp[0]; pivots = tmp[1];
+                self._rspace = array(pivots.length, function(i){
+                    return Matrix(reduced.row(i), false);
+                });
             }
+            return self._rspace.slice();
         }
-        return [m/*diagonal center matrix*/, s/*left matrix*/, t/*right matrix*/];
+        else //if ( 'column' === row_or_column )
+        {
+            // columnspace
+            if ( null == self._cspace )
+            {
+                tmp = self.rref(true);
+                pivots = tmp[1];
+                self._cspace = array(pivots.length, function(i){
+                    return Matrix(self.col(pivots[i]), true);
+                });
+            }
+            return self._cspace.slice();
+        }
+    }
+    ,nullspace: function( left_else_right ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
+            columns = self.nc, reduced, pivots, vec, basis, free_vars, p, pl, tmp;
+
+        if ( left_else_right )
+        {
+            // left nullspace
+            if ( null == self._lnull )
+            {
+                // get right nullspace of transpose matrix and return transposed vectors
+                self._lnull = self.t().nullspace().map(function(vec){return vec.t();});
+            }
+            return self._lnull.slice();
+        }
+        else
+        {
+            // right nullspace
+            if ( null == self._rnull )
+            {
+                tmp = self.rref(true); reduced = tmp[0]; pivots = tmp[1];
+                free_vars = complement(columns, pivots);
+                pl = pivots.length;
+                basis = array(free_vars.length, function(i){
+                    // for each free variable, we will set it to 1 and all others
+                    // to 0.  Then, we will use back substitution to solve the system
+                    vec = array(columns, function(j){return j===free_vars[i] ? I : O;});
+                    for (p=0; p<pl; p++)
+                        vec[pivots[p]] = Arithmetic.sub(vec[pivots[p]], reduced.val[p][free_vars[i]]);
+                    return Matrix(vec, true);
+                });
+                self._rnull = basis;
+            }
+            return self._rnull.slice();
+        }
     }
     ,slice: function( r1, c1, r2, c2 ) {
         var self = this, rows = self.nr, columns = self.nc;
@@ -6158,54 +6350,6 @@ Matrix = Abacus.Matrix = Class({
                 });
             }));
         }
-    }
-    ,swap: function( what, k1, k2, in_place ) {
-        var self = this, rows = self.nr, columns = self.nc;
-        if ( 'columns' === what )
-        {
-            if ( 0 > k1 ) k1 += columns;
-            if ( 0 > k2 ) k2 += columns;
-            if ( !((0 <= k1) && (0 <= k2) && (k1 < columns) && (k2 < columns)) ) return self;
-            if ( in_place )
-            {
-                Matrix.SWAPC(self.val, k1, k2);
-                self._str = null;
-                return self;
-            }
-            else
-            {
-                return Matrix(array(rows, function(i){
-                    return array(columns, function(j){
-                        if ( j === k1 ) return self.val[i][k2];
-                        else if ( j === k2 ) return self.val[i][k1];
-                        return self.val[i][j];
-                    });
-                }));
-            }
-        }
-        else if ( 'rows' === what )
-        {
-            if ( 0 > k1 ) k1 += rows;
-            if ( 0 > k2 ) k2 += rows;
-            if ( !((0 <= k1) && (0 <= k2) && (k1 < rows) && (k2 < rows)) ) return self;
-            if ( in_place )
-            {
-                Matrix.SWAPR(self.val, k1, k2);
-                self._str = null;
-                return self;
-            }
-            else
-            {
-                return Matrix(array(rows, function(i){
-                    return array(columns, function(j){
-                        if ( i === k1 ) return self.val[k2][j];
-                        else if ( i === k2 ) return self.val[k1][j];
-                        return self.val[i][j];
-                    });
-                }));
-            }
-        }
-        return self;
     }
     ,toString: function( ) {
         var self = this, max;
