@@ -138,6 +138,8 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [SMITH NORMAL FORM IN COMBINATORICS, RICHARD P. STANLEY](http://www-math.mit.edu/~rstan/papers/snf_survey.pdf)
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
 * [Solving Linear Diophantine Matrix Equations Using the Smith Normal Form, Raymond N. Greenwell, Stanley Kertzner](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.169.4280&rep=rep1&type=pdf)
+* [A Simplified Fraction-Free Integer Gauss Elimination Algorithm, Peter R. Turner](https://www.researchgate.net/publication/235134418_A_Simplified_Fraction-Free_Integer_Gauss_Elimination_Algorithm)
+* [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
 
 
 ### Example API

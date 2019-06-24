@@ -11,8 +11,6 @@ if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&
     (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));
 else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
     (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));
-else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */
-    System.register(name,[],function($__export){$__export(name, factory.call(root));});
 else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
@@ -2108,27 +2106,27 @@ function gcd( /* args */ )
         O = Arithmetic.O, I = Arithmetic.I;
     if ( 0 === c ) return O;
 
-    zeroes = 0;
+    /*zeroes = 0;
     for(i=0; i<c; i++)
     {
-        args[i] = Arithmetic.abs(args[i]);
+        //args[i] = Arithmetic.abs(args[i]); // not mutate passed array, may break original caller
         // break early
-        if ( Arithmetic.equ(I, args[i]) ) return I;
+        if ( Arithmetic.equ(I, Arithmetic.abs(args[i])) ) return I;
         else if ( Arithmetic.equ(O, args[i]) ) zeroes++;
     }
-    if ( zeroes === c ) return O;
+    if ( zeroes === c ) return O;*/
 
     i = 0;
     while (i<c && Arithmetic.equ(a=args[i++], O) );
-    //a = Arithmetic.abs(a);
+    a = Arithmetic.abs(a);
     while (i<c)
     {
         // break early
-        //if ( Arithmetic.equ(a, I) ) return I;
+        if ( Arithmetic.equ(a, I) ) return I;
         while (i<c && Arithmetic.equ(b=args[i++], O) );
-        //b = Arithmetic.abs(b);
+        b = Arithmetic.abs(b);
         // break early
-        //if ( Arithmetic.equ(b, I) ) return I;
+        if ( Arithmetic.equ(b, I) ) return I;
         if ( Arithmetic.equ(b, O) ) break;
         // swap them (a >= b)
         if ( Arithmetic.lt(a, b) ) { t=b; b=a; a=t; }
@@ -2233,18 +2231,20 @@ function polygcd( /* args */ )
         O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, zeroes = 0, a, b, a0, b0, t, qr, i;
 
     if ( 0 === c ) return Polynomial.C(O);
-    for(i=0; i<c; i++)
+    /*for(i=0; i<c; i++)
     {
         if ( Arithmetic.gt(O, args[i].lead()) ) args[i] = args[i].mul(J);
         if ( args[i].equ(O) ) zeroes++;
     }
-    if ( zeroes === c ) return Polynomial.C(O, args[0].symbol);
+    if ( zeroes === c ) return Polynomial.C(O, args[0].symbol);*/
     i = 0;
     while(i<c && (a=args[i++]).equ(O)) ;
+    if ( Arithmetic.gt(O, a.lead()) ) a = a.mul(J);
     while (i<c)
     {
         while(i<c && (b=args[i++]).equ(O)) ;
         if ( b.equ(O) ) break;
+        if ( Arithmetic.gt(O, b.lead()) ) b = b.mul(J);
         // swap them (a >= b)
         if ( (a.deg() < b.deg()) ||
             ((a.deg() === b.deg()) && Arithmetic.lt(a.lead(), b.lead())) ) { t=b; b=a; a=t; }
@@ -2524,6 +2524,36 @@ function moebius( n )
     }
     if ( 0 === m ) m = 1; /*is prime up to now* /
     return m & 1 ? I : Arithmetic.J;*/
+}
+function dotp( a, b, Arithmetic )
+{
+    Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
+    var c = Arithmetic.O, n = stdMath.min(a.length, b.length), i;
+    for(i=0; i<n; i++) c = Arithmetic.add(c, Arithmetic.mul(a[i], b[i]));
+    return c;
+}
+function gramschmidt( v )
+{
+    // https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+    // without orthonormalisation, fraction-free, only orthogonal basis not necessarily orthonormal
+    var Arithmetic = Abacus.Arithmetic, n = v.length,
+        u = new Array(n), pjj = new Array(n), ui, uj, vi, pij, i, j, k, kl, g;
+    // O(k*n^2)
+    for(i=0; i<n; i++)
+    {
+        vi = v[i]; u[i] = ui = vi.slice();
+        kl = ui.length;
+        for(j=0; j<i; j++)
+        {
+            uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
+            for(k=0; k<kl; k++) ui[k] = Arithmetic.sub(Arithmetic.mul(pjj[j], ui[k]), Arithmetic.mul(pij, uj[k]));
+        }
+        g = gcd(ui);
+        if ( Arithmetic.gt(g, Arithmetic.I) )
+            for(k=0; k<kl; k++) ui[k] = Arithmetic.div(ui[k], g);
+        pjj[i] = dotp(ui, ui, Arithmetic);
+    }
+    return u;
 }
 /*function solvemod1( a, c, b, m )
 {
@@ -4697,6 +4727,13 @@ Abacus.Math = {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
     return lcm(array(args.length, function(i){return Arithmetic.num(args[i]);}));
 }
+,dotp: function( a, b ) {
+    var Arithmetic = Abacus.Arithmetic;
+    return (is_array(a)||is_args(a)) && (is_array(b)||is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
+}
+,gramschmidt: function( v ) {
+    return is_array(v) && v.length ? gramschmidt(v) : [];
+}
 ,divisors: function( n, as_generator ) {
     var Arithmetic = Abacus.Arithmetic;
     return divisors(Arithmetic.num(n), as_generator);
@@ -5646,13 +5683,13 @@ Matrix = Abacus.Matrix = Class({
         {
             if ( !is_array(r[0]) && !is_args(r[0]) )
             {
-                self.val = c ? /*column*/array(r.length, function(i){
-                    return array(1, function(j){
-                        return r[i];
-                    });
-                }) : /*row*/array(1, function(i){
+                self.val = c ? /*row*/array(1, function(i){
                     return array(r.length, function(j){
                         return r[j];
+                    });
+                }) : /*column*/array(r.length, function(i){
+                    return array(1, function(j){
+                        return r[i];
                     });
                 });
             }
@@ -5721,21 +5758,36 @@ Matrix = Abacus.Matrix = Class({
                 });
             });
         }
+        ,ARR: function( a, r, c ) {
+            // shape 1-D array into an r x c matrix
+            return Matrix(array(r, function(i){
+                return array(c, function(j){
+                    var k = i*c + j;
+                    return k < a.length ? a[k] : Abacus.Arithmetic.O;
+                });
+            }));
+        }
         ,SWAPR: function( m, i, j ) {
             // swap rows i and j
-            var t = m[i];
-            m[i] = m[j];
-            m[j] = t;
+            if ( i !== j )
+            {
+                var t = m[i];
+                m[i] = m[j];
+                m[j] = t;
+            }
             return m;
         }
         ,SWAPC: function( m, i, j ) {
             // swap columns i and j
-            var k, n = m.length, t;
-            for(k=0; k<n; k++)
+            if ( i !== j )
             {
-                t = m[k][i];
-                m[k][i] = m[k][j];
-                m[k][j] = t;
+                var k, n = m.length, t;
+                for(k=0; k<n; k++)
+                {
+                    t = m[k][i];
+                    m[k][i] = m[k][j];
+                    m[k][j] = t;
+                }
             }
             return m;
         }
@@ -5783,6 +5835,7 @@ Matrix = Abacus.Matrix = Class({
     ,nc: 0
     ,val: null
     ,_str: null
+    ,_ref: null
     ,_rref: null
     ,_snf: null
     ,_rnull: null
@@ -5793,6 +5846,7 @@ Matrix = Abacus.Matrix = Class({
     ,dispose: function( ) {
         var self = this;
         self._str = null;
+        self._ref = null;
         self._rref = null;
         self._snf = null;
         self._rnull = null;
@@ -5817,6 +5871,13 @@ Matrix = Abacus.Matrix = Class({
         var self = this;
         return 0<=c && c<self.nc ? array(self.nr, function(i){return self.val[i][c];}) : null;
     }
+    ,array: function( ) {
+        var self = this;
+        // return matrix as 1-D array of stacking row after row
+        return array(self.nr*self.nc, function(k){
+            return self.val[~~(k / self.nc)][k % self.nc];
+        });
+    }
     ,diag: function( k ) {
         // k = 0 chooses center diagonal, k>0 chooses diagonal to the right, k<0 diagonal to the left
         var self = this, r, c;
@@ -5832,6 +5893,7 @@ Matrix = Abacus.Matrix = Class({
         {
             self.val[r][c] = v;
             self._str = null;
+            self._ref = null;
             self._rref = null;
             self._snf = null;
             self._rnull = null;
@@ -6072,69 +6134,101 @@ Matrix = Abacus.Matrix = Class({
 
         return [Matrix(M), sol_rows.length ? sol_rows : null, marks];
     }
-    ,rref: function( with_pivots, odim ) {
-        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            rows = self.nr, columns = self.nc, dim, pivots, pl = 0,
-            i, k, kmin, min, a, z, m;
-        // reduced row echelon form (for integer matrices)
-        if ( null == self._rref )
+    ,ge: function( b ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, j, k, p, t,
+            n = stdMath.min(self.nr, self.nc), a = self.clone(true);
+        // fraction-free gaussian elimination with exact integer arithmetic
+        // O(n^3)
+        if ( is_array(b) )
         {
-            dim = stdMath.min(rows, columns);
-            // original dimensions, eg when having augmented matrix
-            if ( is_array(odim) ) dim = stdMath.min(dim, odim[0], odim[1]);
-            m = self.clone(true);
-            pivots = new Array(dim);
-
-            for(i=0; i<dim; i++)
+            // if solving system
+            b = b.slice();
+            n = stdMath.min(n, b.length);
+        }
+        else
+        {
+            b = null;
+        }
+        for(i=0; i<n-1; i++)
+        {
+            if ( Arithmetic.equ(O, a[i][i]) )
             {
-                // row reduce one column only, start from 1st row, 1st column
-                // and then fix the sub-matrix of n-1 rows, m-1 columns, except 1st row, 1st column and so on..
-                do{
-                    kmin = -1; min = null; z = 0;
-                    // find row with min abs leading value non-zero for current column i
-                    for(k=i; k<rows; k++)
+                // search for pivot
+                p = -1;
+                for(k=i+1; k<n; k++)
+                {
+                    if ( !Arithmetic.equ(O, a[k][i]) )
                     {
-                        a = Arithmetic.abs(m[k][i]);
-                        if ( Arithmetic.equ(O, a) ) z++;
-                        else if ( (null == min) || Arithmetic.lt(a, min) )
-                        {
-                            min = a;
-                            kmin = k;
-                        }
-                    }
-                    if ( -1 === kmin ) break; // all zero, nothing else to do
-                    if ( rows-i === z+1 )
-                    {
-                        // only one non-zero, swap row to put it first
-                        Matrix.SWAPR(m, i, kmin);
-                        if ( Arithmetic.gt(O, m[i][i]) ) Matrix.ADDR(m, i, i, O, J, i); // make it positive
-                        pivots[pl++] = i;
+                        p = k;
                         break;
                     }
-                    else
-                    {
-                        for(k=i; k<rows; k++)
-                        {
-                            if ( k === kmin ) continue;
-                            // subtract min row from other rows
-                            Matrix.ADDR(m, k, kmin, Arithmetic.mul(J, Arithmetic.div(m[k][i], m[kmin][i])), I, i);
-                        }
-                    }
-                }while(true);
+                }
+                if ( -1 === p ) break;
+                Matrix.SWAPR(a, i, p);
+                if ( b )
+                {
+                    t = b[i];
+                    b[i] = b[p];
+                    b[p] = t;
+                }
             }
-            m = new Matrix(m);
-            // truncate if needed
-            if ( pivots.length > pl ) pivots.length = pl;
-
-            self._rref = [m, pivots];
+            for(j=i+1; j<n; j++)
+            {
+                // if solving system
+                if ( b ) b[j] = Arithmetic.sub(Arithmetic.mul(a[i][i], b[j]), Arithmetic.mul(a[j][i], b[i]));
+                for(k=i+1; k<n; k++)
+                    a[j][k] = Arithmetic.sub(Arithmetic.mul(a[i][i], a[j][k]), Arithmetic.mul(a[j][i], a[i][k]));
+                a[j][i] = O;
+            }
+            if ( 2 <= i )
+            {
+                // removal of common factors
+                for(j=i+1; j<n; j++)
+                {
+                    if ( b ) b[j] = Arithmetic.div(b[j], a[i-1][i-1]);
+                    for(k=i+1; k<n; k++)
+                        a[j][k] = Arithmetic.div(a[j][k], a[i-1][i-1]);
+                }
+            }
         }
-        return with_pivots ? self._rref.slice() : self._rref[0];
+        return b ? [Matrix(a), b] : Matrix(a);
+    }
+    ,fwdsub: function( b ) {
+        // self is assumed lower triangular
+        var self = this, Arithmetic = Abacus.Arithmetic, i, j, t, L = self.val,
+            n = stdMath.min(self.nr, self.nc, b.length), x = new Array(n);
+        // fraction-free forward substitution
+        for(i=0; i<n; i++)
+        {
+            t = Arithmetic.O;
+            for(j=0; j<i; j++)
+                t = Arithmetic.add(t, Arithmetic.mul(L[i][j], x[j]));
+            x[i] = Arithmetic.sub(Arithmetic.mul(L[i][i], b[i]), t);
+            //x[i] = Arithmetic.div(x[i], L[i][i]);
+        }
+        return x;
+    }
+    ,backsub: function( b ) {
+        // self is assumed upper triangular
+        var self = this, Arithmetic = Abacus.Arithmetic, i, j, t, U = self.val,
+            n = stdMath.min(self.nr, self.nc, b.length), x = new Array(n);
+        // fraction-free back substitution
+        for(i=n-1; i>=0; i--)
+        {
+            t = Arithmetic.O;
+            for(j=n-1; j>i; j--)
+                t = Arithmetic.sub(t, Arithmetic.mul(U[i][j], x[j]));
+            x[i] = Arithmetic.sub(Arithmetic.mul(U[i][i], b[i]), t);
+            //x[i] = Arithmetic.div(x[i], U[i][i]);
+        }
+        return x;
     }
     ,snf: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             rows = self.nr, columns = self.nc, dim, m, left, right, last_j,
             i, j, upd, ii, jj, non_zero, i1, i0, g, coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
         // smith normal form
+        // adapted from Smith Normal Form with sympy (https://gist.github.com/qnighy/ec08799484080343a2da297657ccba65)
         if ( null == self._snf )
         {
             dim = stdMath.min(rows, columns);
@@ -6159,9 +6253,8 @@ Matrix = Abacus.Matrix = Class({
                 if ( Arithmetic.equ(O, m.val[i][j]) )
                 {
                     for(ii=0; ii<rows; ii++)
-                    {
-                        if ( !Arithmetic.equ(O, m.val[ii][j]) ) break;
-                    }
+                        if ( !Arithmetic.equ(O, m.val[ii][j]) )
+                            break;
                     Matrix.MULR(m.val, i, ii, O, I, I, O);
                     Matrix.MULC(left.val, i, ii, O, I, I, O);
                 }
@@ -6230,39 +6323,178 @@ Matrix = Abacus.Matrix = Class({
         }
         return self._snf.slice();
     }
-    ,space: function( row_or_column ) {
-        var self = this, reduced, pivots, tmp;
+    ,ref: function( with_pivots, odim ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+            rows = self.nr, columns = self.nc, dim, pivots, pl = 0,
+            i, k, kmin, min, k0, p0, a, z, m;
+        // integer row echelon form (ref)
+        if ( null == self._ref )
+        {
+            dim = columns; //stdMath.min(rows, columns);
+            // original dimensions, eg when having augmented matrix
+            if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
+            m = self.clone(true);
+            pivots = new Array(dim);
+            function find_dupl( k0, k ) {
+                k = k || 0;
+                for(var p=pl-1; p>=0; p--)
+                    if ( k0===pivots[p][k] )
+                        return p;
+                return -1;
+            }
 
-        if ( 'row' === row_or_column )
-        {
-            // rowspace
-            if ( null == self._rspace )
+            for(i=0; i<dim; i++)
             {
-                tmp = self.rref(true);
-                reduced = tmp[0]; pivots = tmp[1];
-                self._rspace = array(pivots.length, function(i){
-                    return Matrix(reduced.row(i), false);
-                });
+                // row reduce one column only, start from 1st row, 1st column
+                // and then fix the sub-matrix of n-1 rows, m-1 columns, except 1st row, 1st column and so on..
+                do{
+                    kmin = -1; min = null; z = 0;
+                    // find row with min abs leading value non-zero for current column i
+                    for(k=i; k<rows; k++)
+                    {
+                        a = Arithmetic.abs(m[k][i]);
+                        if ( Arithmetic.equ(O, a) ) z++;
+                        else if ( (null == min) || Arithmetic.lt(a, min) )
+                        {
+                            min = a;
+                            kmin = k;
+                        }
+                    }
+                    if ( -1 === kmin ) break; // all zero, nothing else to do
+                    if ( rows-i === z+1 )
+                    {
+                        // only one non-zero, swap row to put it first
+                        if ( i !== kmin ) Matrix.SWAPR(m, i, kmin);
+                        if ( Arithmetic.gt(O, m[i][i]) ) Matrix.ADDR(m, i, i, O, J, i); // make it positive
+                        k0 = kmin;
+                        while ( -1!==(p0=find_dupl(k0)) ){ k0 = i-(pl-p0); }
+                        pivots[pl++] = [k0, i]; // row/column of pivot
+                        break;
+                    }
+                    else
+                    {
+                        for(k=i; k<rows; k++)
+                        {
+                            if ( k === kmin ) continue;
+                            // subtract min row from other rows
+                            Matrix.ADDR(m, k, kmin, Arithmetic.mul(J, Arithmetic.div(m[k][i], m[kmin][i])), I, i);
+                        }
+                    }
+                }while(true);
             }
-            return self._rspace.slice();
+            m = new Matrix(m);
+            // truncate if needed
+            if ( pivots.length > pl ) pivots.length = pl;
+
+            self._ref = [m, pivots];
         }
-        else //if ( 'column' === row_or_column )
+        return with_pivots ? self._ref.slice() : self._ref[0];
+    }
+    ,rref: function( with_pivots, odim ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+            rows = self.nr, columns = self.nc, dim, pivots, pl = 0,
+            lead, r, i, j, a, g;
+        // integer reduced row echelon form (rref)
+        // adapted from http://people.sc.fsu.edu/~jburkardt%20/py_src/row_echelon_integer/row_echelon_integer.html
+        if ( null == self._rref )
         {
-            // columnspace
-            if ( null == self._cspace )
+            dim = columns; //stdMath.min(rows, columns);
+            // original dimensions, eg when having augmented matrix
+            if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
+            a = self.clone(true);
+            pivots = new Array(dim);
+            lead = 0;
+            for (r=0; r<rows; r++)
             {
-                tmp = self.rref(true);
-                pivots = tmp[1];
-                self._cspace = array(pivots.length, function(i){
-                    return Matrix(self.col(pivots[i]), true);
-                });
+                if ( dim <= lead ) break;
+                //  Start I at row R, and search for nonzero pivot entry A(I,LEAD).
+                i = r;
+                while ( Arithmetic.equ(O, a[i][lead]) )
+                {
+                    i++;
+                    //  If reach last row, reset I to R, and increment LEAD.
+                    if ( rows <= i )
+                    {
+                        i = r;
+                        lead++;
+                        //  If reach last column, we can find no more pivots.
+                        if ( dim <= lead )
+                        {
+                            lead = -1;
+                            break;
+                        }
+                    }
+                }
+                if ( 0 > lead ) break; // nothing to do
+
+                pivots[pl++] = [i, lead];
+
+                //  Move pivot I into row R.
+                if ( i !== r ) Matrix.SWAPR(a, i, r);
+
+                //  Ensure pivot is positive.
+                if ( Arithmetic.gt(O, a[r][lead]) ) Matrix.ADDR(a, r, r, O, J);
+
+                //  Remove any common factor from row R.
+                if ( Arithmetic.lt(I, g=gcd(a[r])) )
+                    for (j=0; j<columns; j++)
+                        a[r][j] = Arithmetic.div(a[r][j], g);
+
+                //  Use a multiple of A(R,LEAD) to eliminate A(R+1:M,LEAD).
+                for (i=0; i<rows; i++)
+                {
+                    if ( i == r ) continue;
+                    Matrix.ADDR(a, i, r, Arithmetic.mul(J, a[i][lead]), a[r][lead]);
+                    if ( Arithmetic.lt(I, g=gcd(a[i])) )
+                        for (j=0; j<columns; j++)
+                            a[i][j] = Arithmetic.div(a[i][j], g);
+                }
+                lead++;
             }
-            return self._cspace.slice();
+            a = new Matrix(a);
+            // truncate if needed
+            if ( pivots.length > pl ) pivots.length = pl;
+            self._rref = [a, pivots];
         }
+        return with_pivots ? self._rref.slice() : self._rref[0];
+    }
+    ,rank: function( ) {
+        var ref = this.ref(true);
+        return ref[1].length;
+    }
+    ,rowspace: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, pivots;
+        // rowspace
+        if ( null == self._rspace )
+        {
+            pivots = self.ref(true);
+            // produce orthogonal basis via gramschmidt
+            self._rspace = gramschmidt(pivots[1].map(function(p){
+                return /*Matrix([*/self.row(p[0])/*])*/;
+            })).map(function(vec){
+                return Matrix([vec]);
+            }); // row vector
+        }
+        return self._rspace.slice();
+    }
+    ,colspace: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, pivots;
+        // columnspace
+        if ( null == self._cspace )
+        {
+            pivots = self.ref(true);
+            // produce orthogonal basis via gramschmidt
+            self._cspace = gramschmidt(pivots[1].map(function(p){
+                return /*Matrix(*/self.col(p[1])/*)*/;
+            })).map(function(vec){
+                return Matrix(vec);
+            }); // column vector
+        }
+        return self._cspace.slice();
     }
     ,nullspace: function( left_else_right ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
-            columns = self.nc, reduced, pivots, vec, basis, free_vars, p, pl, tmp;
+            columns = self.nc, reduced, pivots, free_vars, pl, tmp;
 
         if ( left_else_right )
         {
@@ -6280,17 +6512,42 @@ Matrix = Abacus.Matrix = Class({
             if ( null == self._rnull )
             {
                 tmp = self.rref(true); reduced = tmp[0]; pivots = tmp[1];
-                free_vars = complement(columns, pivots);
+                free_vars = complement(columns, pivots.map(function(p){return p[1];}));
+                console.log(reduced.toString());
+                console.log(pivots);
+                console.log(free_vars);
                 pl = pivots.length;
-                basis = array(free_vars.length, function(i){
+                self._rnull = free_vars.map(function(free_var){
+                    /*
+                    If A = (a_{ij}) \in Mat(m x n, F) is a matrix in reduced row echelon form with r nonzero rows and pivots in the columns numbered j_1 < ... < j_r, then the kernel ker(A) is generated by the n-r elements w_k = e_k - \sum\limits_{1 \le i \le r, j_i \le k} a_{ik}/a_{ii}e_{j_i} for k \in {1, .. , n} \ {j_1, .., j_r}, where e_1, .., e_n are the standard generators of F^n.
+                    */
                     // for each free variable, we will set it to 1 and all others
                     // to 0.  Then, we will use back substitution to solve the system
-                    vec = array(columns, function(j){return j===free_vars[i] ? I : O;});
+                    var p, i, vec = array(columns, function(j){return j===free_var ? I : O;}), denom = Obj(), fact = 0;
                     for (p=0; p<pl; p++)
-                        vec[pivots[p]] = Arithmetic.sub(vec[pivots[p]], reduced.val[p][free_vars[i]]);
-                    return Matrix(vec, true);
+                    {
+                        i = pivots[p][1];
+                        if ( i <= free_var )
+                        {
+                            if ( Arithmetic.lt(I, reduced.val[p][p]) )
+                            {
+                                fact = 1;
+                                denom[i] = reduced.val[p][p];
+                            }
+                            vec[i] = Arithmetic.sub(vec[i], reduced.val[p][free_var]);
+                        }
+                    }
+                    if ( fact )
+                    {
+                        fact = lcm(KEYS(denom).map(function(pos){return denom[pos];}));
+                        for(i=0; i<columns; i++)
+                        {
+                            vec[i] = Arithmetic.mul(fact, vec[i]);
+                            if ( denom[i] ) vec[i] = Arithmetic.div(vec[i], denom[i]);
+                        }
+                    }
+                    return Matrix(vec); // column vector
                 });
-                self._rnull = basis;
             }
             return self._rnull.slice();
         }
