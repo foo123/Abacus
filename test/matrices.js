@@ -65,6 +65,12 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
+echo('o=Abacus.Matrix([[1,2],[3,4]]).kron(Abacus.Matrix([[1,1],[2,2]]))');
+o=Abacus.Matrix([[1,2],[3,4]]).kron(Abacus.Matrix([[1,1],[2,2]]));
+echo(o.toString());
+o.dispose();
+echo('---');
+
 //echo('o=Abacus.Matrix([[91, 1, 0],[21, 0, 1]])');
 //o=Abacus.Matrix([[91, 1, 0],[21, 0, 1]]);
 echo('o=Abacus.Matrix([91, 21]).concat(Abacus.Matrix.I(2))');
@@ -156,6 +162,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(o.mul(m[i]).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 echo('o.nullspace(true)');
 m=o.nullspace(true);
 for(var i=0; i<m.length; i++)
@@ -163,6 +170,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(m[i].mul(o).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 o.dispose();
 echo('---');
 
@@ -185,6 +193,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(o.mul(m[i]).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 echo('o.nullspace(true)');
 m=o.nullspace(true);
 for(var i=0; i<m.length; i++)
@@ -192,6 +201,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(m[i].mul(o).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 o.dispose();
 echo('---');
 
@@ -214,6 +224,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(o.mul(m[i]).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 echo('o.nullspace(true)');
 m=o.nullspace(true);
 for(var i=0; i<m.length; i++)
@@ -221,6 +232,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(m[i].mul(o).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 o.dispose();
 echo('---');
 
@@ -243,6 +255,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(o.mul(m[i]).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 echo('o.nullspace(true)');
 m=o.nullspace(true);
 for(var i=0; i<m.length; i++)
@@ -250,6 +263,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(m[i].mul(o).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 o.dispose();
 echo('---');
 
@@ -272,6 +286,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(o.mul(m[i]).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 echo('o.nullspace(true)');
 m=o.nullspace(true);
 for(var i=0; i<m.length; i++)
@@ -279,6 +294,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(m[i].mul(o).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 o.dispose();
 echo('---');
 
@@ -301,6 +317,7 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(o.mul(m[i]).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 echo('o.nullspace(true)');
 m=o.nullspace(true);
 for(var i=0; i<m.length; i++)
@@ -308,5 +325,6 @@ for(var i=0; i<m.length; i++)
     echo('Vector '+i+'('+(m[i].mul(o).equ(0, true)?'true':'false')+'): ');
     echo(m[i].toString());
 }
+print_dots( m );
 o.dispose();
 echo('---');

@@ -35,6 +35,12 @@ o.mul(Abacus.Matrix.I(3))
 0 0 1
 o.dispose()
 ---
+o=Abacus.Matrix([[1,2],[3,4]]).kron(Abacus.Matrix([[1,1],[2,2]]))
+1 1 2 2
+2 2 4 4
+3 3 4 4
+6 6 8 8
+---
 o=Abacus.Matrix([91, 21]).concat(Abacus.Matrix.I(2))
 o.toString()
 91  1  0
@@ -121,11 +127,6 @@ o.toString()
 o.rowspace()
 o.colspace()
 o.nullspace()
-0 0 0
-0 0 0
-0 0 0
-[]
-[ 0, 1, 2 ]
 Vector 0(true): 
 1
 0
@@ -138,18 +139,19 @@ Vector 2(true):
 0
 0
 1
+<0,1> = 0
+<0,2> = 0
+<1,2> = 0
 o.nullspace(true)
-0 0 0
-0 0 0
-0 0 0
-[]
-[ 0, 1, 2 ]
 Vector 0(true): 
 1 0 0
 Vector 1(true): 
 0 1 0
 Vector 2(true): 
 0 0 1
+<0,1> = 0
+<0,2> = 0
+<1,2> = 0
 ---
 o=Abacus.Matrix.I(3)
 o.toString()
@@ -183,17 +185,7 @@ Vector 2:
 <0,2> = 0
 <1,2> = 0
 o.nullspace()
-1 0 0
-0 1 0
-0 0 1
-[ [ 0, 0 ], [ 1, 1 ], [ 2, 2 ] ]
-[]
 o.nullspace(true)
-1 0 0
-0 1 0
-0 0 1
-[ [ 0, 0 ], [ 1, 1 ], [ 2, 2 ] ]
-[]
 ---
 o=Abacus.Matrix([[ 1,  3, 0],[-2, -6, 0],[ 3,  9, 6]])
 o.toString()
@@ -217,21 +209,11 @@ Vector 1:
  5
 <0,1> = 0
 o.nullspace()
-1 3 0
-0 0 1
-0 0 0
-[ [ 0, 0 ], [ 2, 2 ] ]
-[ 1 ]
 Vector 0(true): 
 -3
  1
  0
 o.nullspace(true)
- 1 -2  0
- 0  0  1
- 0  0  0
-[ [ 0, 0 ], [ 2, 2 ] ]
-[ 1 ]
 Vector 0(true): 
 2 1 0
 ---
@@ -257,21 +239,11 @@ Vector 1:
 -266
 <0,1> = 0
 o.nullspace()
-1 2 0
-0 0 1
-0 0 0
-[ [ 0, 0 ], [ 1, 2 ] ]
-[ 1 ]
 Vector 0(true): 
 -2
  1
  0
 o.nullspace(true)
-16  0 -7
- 0 16 49
- 0  0  0
-[ [ 0, 0 ], [ 2, 1 ] ]
-[ 2 ]
 Vector 0(true): 
   7 -49  16
 ---
@@ -297,21 +269,11 @@ Vector 1:
 -25
 <0,1> = 0
 o.nullspace()
- 1  0 -2
- 0  3 17
- 0  0  0
-[ [ 0, 0 ], [ 2, 1 ] ]
-[ 2 ]
-Vector 0(false): 
- 2
--6
- 1
+Vector 0(true): 
+  6
+-17
+  3
 o.nullspace(true)
-1 2 0
-0 0 1
-0 0 0
-[ [ 0, 0 ], [ 1, 2 ] ]
-[ 1 ]
 Vector 0(true): 
 -2  1  0
 ---
@@ -329,11 +291,6 @@ Vector 0:
 2
 3
 o.nullspace()
-1 1 1
-0 0 0
-0 0 0
-[ [ 0, 0 ] ]
-[ 1, 2 ]
 Vector 0(true): 
 -1
  1
@@ -342,14 +299,11 @@ Vector 1(true):
 -1
  0
  1
+<0,1> = 1
 o.nullspace(true)
-1 2 3
-0 0 0
-0 0 0
-[ [ 0, 0 ] ]
-[ 1, 2 ]
 Vector 0(true): 
 -2  1  0
 Vector 1(true): 
 -3  0  1
+<0,1> = 6
 ---

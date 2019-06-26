@@ -2259,6 +2259,17 @@ function polygcd( /* args */ )
     //if ( 0 < a.deg() ) a = a.div(gcd(a.coeff));
     return a;
 }
+function polylcm( /* args */ )
+{
+    // least common multiple for univariate polynomials
+    // https://en.wikipedia.org/wiki/Least_common_multiple
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = polygcd(args);
+    return g.equ(O) ? O : operate(function(a, b){
+        if ( g ) { b = b.div(g); g = null; }
+        return a.mul(b);
+    }, new Polynomial([Arithmetic.I]), args);
+}
 function polyxgcd( /* args */ )
 {
     // Generalization of Extended GCD Algorithm for univariate polynomials
@@ -2529,13 +2540,34 @@ function dotp( a, b, Arithmetic )
 {
     Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
     var c = Arithmetic.O, n = stdMath.min(a.length, b.length), i;
-    for(i=0; i<n; i++) c = Arithmetic.add(c, Arithmetic.mul(a[i], b[i]));
+    for(i=0; i<n; i++)
+    {
+        // support dot product of polynomials as well
+        if ( c instanceof Polynomial )
+        {
+            if ( a[i] instanceof Polynomial )
+                c = c.add(a[i].mul(b[i]));
+            else if ( b[i] instanceof Polynomial )
+                c = c.add(b[i].mul(a[i]));
+            else
+                c = c.add(Arithmetic.mul(a[i], b[i]));
+        }
+        else
+        {
+            if ( a[i] instanceof Polynomial )
+                c = a[i].mul(b[i]).add(c);
+            else if ( b[i] instanceof Polynomial )
+                c = b[i].mul(a[i]).add(c);
+            else
+                c = Arithmetic.add(c, Arithmetic.mul(a[i], b[i]));
+        }
+    }
     return c;
 }
 function gramschmidt( v )
 {
     // https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-    // without orthonormalisation, fraction-free, only orthogonal basis not necessarily orthonormal
+    // exact integer fraction-free, only orthogonal basis not necessarily orthonormal
     var Arithmetic = Abacus.Arithmetic, n = v.length,
         u = new Array(n), pjj = new Array(n), ui, uj, vi, pij, i, j, k, kl, g;
     // O(k*n^2)
@@ -2810,20 +2842,29 @@ function solvedioph( a, b, with_param )
 }
 function solvediophs( a, b, with_param )
 {
-    // solve general system of m linear diophantine equations in k variables, by substitution
+    // solve general system of m linear diophantine equations in k variables
     // a11 x_1 + a12 x_2 + a13 x_3 + .. + a1k x_k = b1, a21 x_1 + a22 x_2 + a23 x_3 + .. + a2k x_k = b2,..
     // where a is m x k-matrix of (integer) coefficients: [[a11, a12, a13, .. , a1k],..,[am1, am2, am3, .. , amk]]
     // and b is m-array right hand side factor (default [0,..,0])
     // https://arxiv.org/ftp/math/papers/0010/0010134.pdf
+    // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num, O = Arithmetic.O, I = Arithmetic.I,
-        m = a.length, k, x, ith, i, e, lhs, rhs, symbol = is_string(with_param) && with_param.length ? with_param : 'i';
+        m, k, x, ith, i, e, lhs, rhs, symbol = is_string(with_param) && with_param.length ? with_param : 'i';
 
-    if ( !m ) return null;
-    if ( !is_array(a[0]) ) return solvedioph(a, (is_array(b)||is_args(b)?b[0]:b)||O, with_param);
-    k = a[0].length; if ( !k ) return null;
+    if ( !(a instanceof Matrix) ) a = Matrix(a);
+    m = a.nr; if ( !m ) return null;
+    k = a.nc; if ( !k ) return null;
+    var ref = a.t().concat(Matrix.I(k)).ref(null, [k, m]),
+        T = ref.slice(0,m,-1,-1), R = ref.slice(0,0,k-1,m-1);
 
+    console.log(ref.toString());
+    console.log(R.toString());
+    console.log(T.toString());
+
+    /*
+    // solve by successive substitution
     // solve 1st equation
-    lhs = a[0]; rhs = b[0];
+    lhs = a.row(0); rhs = b[0];
     x = solvedioph(lhs, rhs, symbol);
     if ( null == x ) return null; // no solution
     console.log('Eq 1: '+x.map(function(xe,ii){return 'x_'+(ii+1)+' = '+xe.toString();}).join(', '));
@@ -2831,7 +2872,7 @@ function solvediophs( a, b, with_param )
     {
         // substitute solution of prev equation into next equation
         e = Expr(array(k, function(j){
-            return j >= a[i].length ? O : x[j].mul(a[i][j]);
+            return j >= a.val[i].length ? O : x[j].mul(a.coeff(i,j));
         }));
         rhs = Arithmetic.sub(b[i], e.c()); e = e.sub(e.c()); // move constant term to rhs
         if ( e.equ(rhs) ) continue; // satisfied trivially, redundant equation
@@ -2856,6 +2897,7 @@ function solvediophs( a, b, with_param )
         });
         console.log('Eq '+(i+1)+': '+x.map(function(xe,ii){return 'x_'+(ii+1)+' = '+xe.toString();}).join(', '));
     }
+    */
     return x;
 }
 function solvecongr( a, b, m, with_param )
@@ -3154,7 +3196,7 @@ function stirling( n, k, s )
     // https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind
     // https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind
     var Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, I = Arithmetic.I, V = Arithmetic.V,
+        O = Arithmetic.O, I = Arithmetic.I,
         add = Arithmetic.add, mul = Arithmetic.mul,
         key, Nn = Arithmetic.num(n), res = O, MAXMEM = Abacus.Options.MAXMEM;
 
@@ -3205,7 +3247,7 @@ function stirling( n, k, s )
         if ( null == stirling.mem1[key] )
             stirling.mem1[key] = add(stirling(n-1,k-1,1), mul(stirling(n-1,k,1),n-1));
         return stirling.mem1[key];*/
-        res = (n-k)&1 ? V(stirling(n,k,-1)) : stirling(n,k,-1);
+        res = (n-k)&1 ? Arithmetic.neg(stirling(n,k,-1)) : stirling(n,k,-1);
     }
     return res;
 }
@@ -4606,8 +4648,8 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     return s;
 }
 
-,N: function( a ) { return +a; }
-,V: function( a ) { return 0-(+a); }
+,neg: function( a ) { return -(+a); }
+,inv: NotImplemented
 
 ,equ: function( a, b ) { return a===b; }
 ,gte: function( a, b ) { return a>=b; }
@@ -4643,8 +4685,7 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
 // pluggable arithmetics, eg biginteger Arithmetic
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
     isDefault: function( ){return (0 === this.O) && (this.add === addn);}
-    ,N: function( a ){return Abacus.Arithmetic.add(Abacus.Arithmetic.O, a);}
-    ,V: function( a ){return Abacus.Arithmetic.sub(Abacus.Arithmetic.O, a);}
+    ,neg: function( a ){return Abacus.Arithmetic.mul(Abacus.Arithmetic.J, a);}
 });
 
 // math / num theory utilities
@@ -4708,31 +4749,35 @@ Abacus.Math = {
     return ilog(Arithmetic.num(x), Arithmetic.num(b));
 }
 ,gcd: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
+    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
     return gcd(array(args.length, function(i){return Arithmetic.num(args[i]);}));
 }
 ,xgcd: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
+    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
     return xgcd(array(args.length, function(i){return Arithmetic.num(args[i]);}));
 }
 ,polygcd: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
-    return polygcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial(Arithmetic.num(args[i])) : args[i];}));
+    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
+    return polygcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([Arithmetic.num(args[i])]) : args[i];}));
 }
 ,polyxgcd: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
-    return polyxgcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial(Arithmetic.num(args[i])) : args[i];}));
+    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
+    return polyxgcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([Arithmetic.num(args[i])]) : args[i];}));
 }
 ,lcm: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
+    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
     return lcm(array(args.length, function(i){return Arithmetic.num(args[i]);}));
+}
+,polylcm: function( /* args */ ) {
+    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
+    return polylcm(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([Arithmetic.num(args[i])]) : args[i];}));
 }
 ,dotp: function( a, b ) {
     var Arithmetic = Abacus.Arithmetic;
     return (is_array(a)||is_args(a)) && (is_array(b)||is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
 }
 ,gramschmidt: function( v ) {
-    return is_array(v) && v.length ? gramschmidt(v) : [];
+    return (is_array(v)||is_args(v)) && v.length ? gramschmidt(v) : [];
 }
 ,divisors: function( n, as_generator ) {
     var Arithmetic = Abacus.Arithmetic;
@@ -5004,6 +5049,7 @@ Term = Abacus.Term = Class({
     ,factors: null
     ,symbol: null
     ,_str: null
+    ,_n: null
     ,_symb: null
 
     ,dispose: function( ) {
@@ -5011,6 +5057,7 @@ Term = Abacus.Term = Class({
         self.factors = null;
         self.symbol = null;
         self._str = null;
+        self._n = null;
         self._symb = null;
         return self;
     }
@@ -5042,8 +5089,15 @@ Term = Abacus.Term = Class({
     }
     ,neg: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return Term(self.factors, Arithmetic.mul(Arithmetic.J, self.factors['1']));
+        if ( null == self._n )
+        {
+            self._n = Term(self.factors, Arithmetic.neg(self.factors['1']));
+            self._n._n = self;
+        }
+        return self._n;
     }
+    ,inv: NotImplemented
+
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
@@ -5065,7 +5119,7 @@ Term = Abacus.Term = Class({
         else if ( a instanceof Expr )
             return Expr([self, a.neg()]);
         else if ( a instanceof Polynomial )
-            return Expr([self, a.toExpr().neg()]);
+            return Expr([self, a.neg().toExpr()]);
         return self;
     }
     ,mul: function( a ) {
@@ -5194,12 +5248,14 @@ Expr = Abacus.Expr = Class({
 
     ,terms: null
     ,_str: null
+    ,_n: null
     ,_symb: null
 
     ,dispose: function( ) {
         var self = this;
         self.terms = null;
         self._str = null;
+        self._n = null;
         self._symb = null;
         return self;
     }
@@ -5246,17 +5302,24 @@ Expr = Abacus.Expr = Class({
         }
         return false;
     }
-    ,neg: function( x ) {
+    ,neg: function( ) {
         var self = this;
-        return Expr(self.args().map(function(t){return t.neg();}));
+        if ( null == self._n )
+        {
+            self._n = Expr(self.args().map(function(t){return t.neg();}));
+            self._n._n = self;
+        }
+        return self._n;
     }
+    ,inv: NotImplemented
+
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         return Arithmetic.isNumber(x) || (x instanceof Term) || (x instanceof Expr) || (x instanceof Polynomial) ? Expr([self, x]) : self;
     }
     ,sub: function( x ) {
-        var self = this, Arithmetic = Abacus.Arithmetic, J = Arithmetic.J;
-        if ( Arithmetic.isNumber(x) ) return self.add(Arithmetic.mul(J, x));
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( Arithmetic.isNumber(x) ) return self.add(Arithmetic.neg(x));
         else if ( (x instanceof Term) || (x instanceof Expr) || (x instanceof Polynomial) ) return self.add(x.neg());
         return self;
     }
@@ -5339,7 +5402,6 @@ Expr = Abacus.Expr = Class({
         return self._str;
     }
 });
-
 // Abacus.Polynomial, represents a (univariate) polynomial
 Polynomial = Abacus.Polynomial = Class({
 
@@ -5455,6 +5517,7 @@ Polynomial = Abacus.Polynomial = Class({
     ,coeff: null
     ,symbol: null
     ,_str: null
+    ,_n: null
     ,_expr: null
 
     ,dispose: function( ) {
@@ -5462,7 +5525,8 @@ Polynomial = Abacus.Polynomial = Class({
         self.coeff = null;
         self.symbol = null;
         self._str = null;
-        if ( self._expr ) self._expr.dispose();
+        self._n = null;
+        //if ( self._expr ) self._expr.dispose();
         self._expr = null;
         return self;
     }
@@ -5522,8 +5586,15 @@ Polynomial = Abacus.Polynomial = Class({
     }
     ,neg: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return Polynomial(array(self.coeff.length, function(i){return Arithmetic.mul(Arithmetic.J, self.coeff[i]);}), self.symbol);
+        if ( null == self._n )
+        {
+            self._n = Polynomial(array(self.coeff.length, function(i){return Arithmetic.neg(self.coeff[i]);}), self.symbol);
+            self._n._n = self;
+        }
+        return self._n;
     }
+    ,inv: NotImplemented
+
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
@@ -5671,7 +5742,6 @@ Polynomial = Abacus.Polynomial = Class({
         return self._expr;
     }
 });
-
 // Abacus.Matrix, represents a (2-dimensional) matrix with integer coefficients
 Matrix = Abacus.Matrix = Class({
 
@@ -5696,10 +5766,11 @@ Matrix = Abacus.Matrix = Class({
             else
             {
                 if ( is_args(r) ) r = slice.call(r);
+                if ( is_args(r[0]) ) r = r.map(function(ri){return slice.call(ri);});
                 self.val = r;
             }
         }
-        else //if ( is_number(m) && is_number(n) )
+        else //if ( is_number(r) && is_number(c) )
         {
             if ( null == c ) c = r; // square
             r = +(r||0); c = +(c||0);
@@ -5835,24 +5906,32 @@ Matrix = Abacus.Matrix = Class({
     ,nc: 0
     ,val: null
     ,_str: null
+    ,_n: null
+    ,_t: null
+    ,_snf: null
     ,_ref: null
     ,_rref: null
-    ,_snf: null
-    ,_rnull: null
-    ,_lnull: null
-    ,_rspace: null
-    ,_cspace: null
+    ,_rn: null
+    ,_ln: null
+    ,_rs: null
+    ,_cs: null
+    ,_tr: null
+    ,_det: null
 
     ,dispose: function( ) {
         var self = this;
         self._str = null;
+        self._n = null;
+        self._t = null;
+        self._snf = null;
         self._ref = null;
         self._rref = null;
-        self._snf = null;
-        self._rnull = null;
-        self._lnull = null;
-        self._rspace = null;
-        self._cspace = null;
+        self._rn = null;
+        self._ln = null;
+        self._rs = null;
+        self._cs = null;
+        self._tr = null;
+        self._det = null;
         self.nr = null;
         self.nc = null;
         self.val = null;
@@ -5891,15 +5970,23 @@ Matrix = Abacus.Matrix = Class({
         if ( !(0<=r && r<rows && 0<=c && c<columns) ) return null==v ? null : self;
         if ( null != v )
         {
-            self.val[r][c] = v;
-            self._str = null;
-            self._ref = null;
-            self._rref = null;
-            self._snf = null;
-            self._rnull = null;
-            self._lnull = null;
-            self._rspace = null;
-            self._cspace = null;
+            if ( self.val[r][c] !== v )
+            {
+                // force update of associated cached entries
+                self._str = null;
+                self._n = null;
+                self._t = null;
+                self._snf = null;
+                self._ref = null;
+                self._rref = null;
+                self._rn = null;
+                self._ln = null;
+                self._rs = null;
+                self._cs = null;
+                self._tr = null;
+                self._det = null;
+                self.val[r][c] = v;
+            }
             return self;
         }
         return self.val[r][c];
@@ -5935,16 +6022,29 @@ Matrix = Abacus.Matrix = Class({
     }
     ,t: function( ) {
         // transpose
-        return Matrix(Matrix.T(this.val));
+        var self = this;
+        if ( null == self._t )
+        {
+            self._t = Matrix(Matrix.T(self.val));
+            self._t._t = self; // avoid recomputations we have it already
+        }
+        return self._t;
     }
     ,neg: function( ) {
-        var self = this, Arithmetic = Abacus.Arithmetic, J = Arithmetic.J;
-        return Matrix(self.val.map(function(vi){
-            return vi.map(function(vij){
-                return Arithmetic.mul(J, vij);
-            });
-        }));
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._n )
+        {
+            self._n = Matrix(self.val.map(function(vi){
+                return vi.map(function(vij){
+                    return Arithmetic.neg(vij);
+                });
+            }));
+            self._n._n = self;
+        }
+        return self._n;
     }
+    ,inv: NotImplemented
+
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
@@ -6024,11 +6124,7 @@ Matrix = Abacus.Matrix = Class({
         // pointwise multiplication
         if ( Arithmetic.isNumber(a) )
         {
-            return Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.mul(vij, a);
-                });
-            }));
+            return self.mul(a);
         }
         else if ( a instanceof Matrix )
         {
@@ -6040,6 +6136,28 @@ Matrix = Abacus.Matrix = Class({
                     else if ( j >= a.nc ) return self.val[i][j];
                     return Arithmetic.mul(self.val[i][j], a.val[i][j]);
                 })
+            }));
+        }
+        return self;
+    }
+    ,kron: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, r1, c1, r2, c2, r, c;
+        // kronecker product
+        if ( Arithmetic.isNumber(a) )
+        {
+            return self.mul(a);
+        }
+        else if ( a instanceof Matrix )
+        {
+            r1 = self.nr; c1 = self.nc;
+            r2 = a.nr; c2 = a.nc;
+            r = r1*r2; c = c1*c2;
+            return Matrix(array(r, function(i){
+                var i1 = ~~(i / r2), i2 = i % r2;
+                return array(c, function(j){
+                    var j1 = ~~(j / c2), j2 = j % c2;
+                    return Arithmetic.mul(self.val[i1][j1], a.val[i2][j2]);
+                });
             }));
         }
         return self;
@@ -6097,7 +6215,7 @@ Matrix = Abacus.Matrix = Class({
             return pow;
         }
     }
-    ,ge2: function( ) {
+    /*,ge2: function( ) {
         // reduced form of gaussian elimination
         // https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
         var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, two = Arithmetic.II,
@@ -6180,7 +6298,7 @@ Matrix = Abacus.Matrix = Class({
                     a[j][k] = Arithmetic.sub(Arithmetic.mul(a[i][i], a[j][k]), Arithmetic.mul(a[j][i], a[i][k]));
                 a[j][i] = O;
             }
-            if ( 2 <= i )
+            if ( /*2* /1 <= i )
             {
                 // removal of common factors
                 for(j=i+1; j<n; j++)
@@ -6192,7 +6310,7 @@ Matrix = Abacus.Matrix = Class({
             }
         }
         return b ? [Matrix(a), b] : Matrix(a);
-    }
+    }*/
     ,fwdsub: function( b ) {
         // self is assumed lower triangular
         var self = this, Arithmetic = Abacus.Arithmetic, i, j, t, L = self.val,
@@ -6325,8 +6443,7 @@ Matrix = Abacus.Matrix = Class({
     }
     ,ref: function( with_pivots, odim ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            rows = self.nr, columns = self.nc, dim, pivots, pl = 0,
-            i, k, kmin, min, k0, p0, a, z, m;
+            rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, min, a, z, m;
         // integer row echelon form (ref)
         if ( null == self._ref )
         {
@@ -6335,6 +6452,7 @@ Matrix = Abacus.Matrix = Class({
             if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
             m = self.clone(true);
             pivots = new Array(dim);
+            lead = 0; det = I;
             function find_dupl( k0, k ) {
                 k = k || 0;
                 for(var p=pl-1; p>=0; p--)
@@ -6342,65 +6460,119 @@ Matrix = Abacus.Matrix = Class({
                         return p;
                 return -1;
             }
-
-            for(i=0; i<dim; i++)
+            for (r=0; r<rows; r++)
             {
-                // row reduce one column only, start from 1st row, 1st column
-                // and then fix the sub-matrix of n-1 rows, m-1 columns, except 1st row, 1st column and so on..
-                do{
-                    kmin = -1; min = null; z = 0;
-                    // find row with min abs leading value non-zero for current column i
-                    for(k=i; k<rows; k++)
+                if ( dim <= lead ) break;
+
+                i = r;
+                while ( Arithmetic.equ(O, m[i][lead]) )
+                {
+                    i++;
+                    if ( rows <= i )
                     {
-                        a = Arithmetic.abs(m[k][i]);
+                        i = r; lead++;
+                        if ( dim <= lead )
+                        {
+                            lead = -1;
+                            break;
+                        }
+                    }
+                }
+                if ( -1 === lead ) break; // nothing to do
+
+                i0 = i;
+                do{
+                    imin = -1; min = null; z = 0;
+                    // find row with min abs leading value non-zero for current column lead
+                    for(i=i0; i<rows; i++)
+                    {
+                        a = Arithmetic.abs(m[i][lead]);
                         if ( Arithmetic.equ(O, a) ) z++;
                         else if ( (null == min) || Arithmetic.lt(a, min) )
                         {
                             min = a;
-                            kmin = k;
+                            imin = i;
                         }
                     }
-                    if ( -1 === kmin ) break; // all zero, nothing else to do
-                    if ( rows-i === z+1 )
+                    if ( -1 === imin ) break; // all zero, nothing else to do
+                    if ( rows-i0 === z+1 )
                     {
                         // only one non-zero, swap row to put it first
-                        if ( i !== kmin ) Matrix.SWAPR(m, i, kmin);
-                        if ( Arithmetic.gt(O, m[i][i]) ) Matrix.ADDR(m, i, i, O, J, i); // make it positive
-                        k0 = kmin;
-                        while ( -1!==(p0=find_dupl(k0)) ){ k0 = i-(pl-p0); }
-                        pivots[pl++] = [k0, i]; // row/column of pivot
+                        if ( r !== imin )
+                        {
+                            Matrix.SWAPR(m, r, imin);
+                            // determinant changes sign for row swaps
+                            det = Arithmetic.neg(det);
+                        }
+                        if ( Arithmetic.gt(O, m[r][lead]) )
+                        {
+                            Matrix.ADDR(m, r, r, O, J, lead); // make it positive
+                            // determinant is multiplied by same constant for row multiplication, here simply changes sign
+                            det = Arithmetic.neg(det);
+                        }
+                        i = imin; i0 = r;
+                        while ( -1!==(p0=find_dupl(i)) ){ i0 -= pl-p0; i = i0; }
+                        pivots[pl++] = [i, lead]; // row/column of pivot
+                        // update determinant
+                        det = Arithmetic.mul(det, r<dim ? m[r][r/*lead*/] : O);
                         break;
                     }
                     else
                     {
-                        for(k=i; k<rows; k++)
+                        for(i=i0; i<rows; i++)
                         {
-                            if ( k === kmin ) continue;
+                            if ( i === imin ) continue;
                             // subtract min row from other rows
-                            Matrix.ADDR(m, k, kmin, Arithmetic.mul(J, Arithmetic.div(m[k][i], m[kmin][i])), I, i);
+                            Matrix.ADDR(m, i, imin, Arithmetic.mul(J, Arithmetic.div(m[i][lead], m[imin][lead])), I, lead);
+                            // determinant does not change for this operation
                         }
                     }
                 }while(true);
+
+                lead++;
             }
+
             m = new Matrix(m);
             // truncate if needed
             if ( pivots.length > pl ) pivots.length = pl;
 
-            self._ref = [m, pivots];
+            self._ref = [m, pivots, det];
         }
         return with_pivots ? self._ref.slice() : self._ref[0];
     }
     ,rref: function( with_pivots, odim ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            rows = self.nr, columns = self.nc, dim, pivots, pl = 0,
-            lead, r, i, j, a, g;
+            rows = self.nr, columns = self.nc, dim, pivots, det, pl,
+            lead, r, i, j, a, g, ref;
         // integer reduced row echelon form (rref)
         // adapted from http://people.sc.fsu.edu/~jburkardt%20/py_src/row_echelon_integer/row_echelon_integer.html
         if ( null == self._rref )
         {
-            dim = columns; //stdMath.min(rows, columns);
+            //dim = columns; //stdMath.min(rows, columns);
             // original dimensions, eg when having augmented matrix
-            if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
+            //if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
+
+            // build rref incremental from ref
+            ref = self.ref(true, odim);
+            a = ref[0].clone();
+            pivots = ref[1]; det = ref[2];
+            pl = pivots.length;
+            for(r=0; r<pl; r++)
+            {
+                for (i=0; i<r; i++)
+                {
+                    //if ( i == r ) continue;
+                    lead = pivots[r][1];
+                    Matrix.ADDR(a.val, i, r, Arithmetic.mul(J, a.val[i][lead]), a.val[r][lead]);
+                    if ( Arithmetic.lt(I, g=gcd(a.val[i])) )
+                        for (j=0; j<columns; j++)
+                            a.val[i][j] = Arithmetic.div(a.val[i][j], g);
+                }
+            }
+            self._rref = [a, pivots, det];
+
+            /*
+            // compute rref directly
             a = self.clone(true);
             pivots = new Array(dim);
             lead = 0;
@@ -6454,7 +6626,7 @@ Matrix = Abacus.Matrix = Class({
             a = new Matrix(a);
             // truncate if needed
             if ( pivots.length > pl ) pivots.length = pl;
-            self._rref = [a, pivots];
+            self._rref = [a, pivots];*/
         }
         return with_pivots ? self._rref.slice() : self._rref[0];
     }
@@ -6462,94 +6634,117 @@ Matrix = Abacus.Matrix = Class({
         var ref = this.ref(true);
         return ref[1].length;
     }
+    ,tr: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, n, i;
+        // trace
+        if ( null == self._tr )
+        {
+            n = stdMath.min(self.nr, self.nc);
+            self._tr = Arithmetic.O;
+            for(i=0; i<n; i++)
+                self._tr = Arithmetic.add(self._tr, self.val[i][i]);
+        }
+        return self._tr;
+    }
+    ,det: function( ) {
+        var self = this, ref;
+        // determinant
+        if ( null == self._det )
+        {
+            if ( self.nr !== self.nc )
+            {
+                self._det = Abacus.Arithmetic.O;
+            }
+            else
+            {
+                ref = self.ref(true);
+                self._det = ref[2];
+            }
+        }
+        return self._det;
+    }
     ,rowspace: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pivots;
         // rowspace
-        if ( null == self._rspace )
+        if ( null == self._rs )
         {
             pivots = self.ref(true);
             // produce orthogonal basis via gramschmidt
-            self._rspace = gramschmidt(pivots[1].map(function(p){
+            self._rs = gramschmidt(pivots[1].map(function(p){
                 return /*Matrix([*/self.row(p[0])/*])*/;
             })).map(function(vec){
                 return Matrix([vec]);
             }); // row vector
         }
-        return self._rspace.slice();
+        return self._rs.slice();
     }
     ,colspace: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pivots;
         // columnspace
-        if ( null == self._cspace )
+        if ( null == self._cs )
         {
             pivots = self.ref(true);
             // produce orthogonal basis via gramschmidt
-            self._cspace = gramschmidt(pivots[1].map(function(p){
+            self._cs = gramschmidt(pivots[1].map(function(p){
                 return /*Matrix(*/self.col(p[1])/*)*/;
             })).map(function(vec){
                 return Matrix(vec);
             }); // column vector
         }
-        return self._cspace.slice();
+        return self._cs.slice();
     }
     ,nullspace: function( left_else_right ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
-            columns = self.nc, reduced, pivots, free_vars, pl, tmp;
+            columns = self.nc, rref, pivots, free_vars, pl, tmp, LCM;
 
         if ( left_else_right )
         {
             // left nullspace
-            if ( null == self._lnull )
+            if ( null == self._ln )
             {
                 // get right nullspace of transpose matrix and return transposed vectors
-                self._lnull = self.t().nullspace().map(function(vec){return vec.t();});
+                self._ln = self.t().nullspace().map(function(vec){return vec.t();});
             }
-            return self._lnull.slice();
+            return self._ln.slice();
         }
         else
         {
-            // right nullspace
-            if ( null == self._rnull )
+            // right nullspace (default)
+            if ( null == self._rn )
             {
-                tmp = self.rref(true); reduced = tmp[0]; pivots = tmp[1];
-                free_vars = complement(columns, pivots.map(function(p){return p[1];}));
-                console.log(reduced.toString());
-                console.log(pivots);
-                console.log(free_vars);
+                tmp = self.rref(true); rref = tmp[0]; pivots = tmp[1];
                 pl = pivots.length;
-                self._rnull = free_vars.map(function(free_var){
+                free_vars = complement(columns, pivots.map(function(p){return p[1];}));
+                // exact integer rref, find LCM of pivots
+                LCM = pl ? lcm(pivots.reduce(function(factors, pivot, i){
+                    factors.push(rref.val[i][pivot[1]]);
+                    return factors;
+                }, [])) : I;
+                self._rn = free_vars.map(function(free_var){
                     /*
                     If A = (a_{ij}) \in Mat(m x n, F) is a matrix in reduced row echelon form with r nonzero rows and pivots in the columns numbered j_1 < ... < j_r, then the kernel ker(A) is generated by the n-r elements w_k = e_k - \sum\limits_{1 \le i \le r, j_i \le k} a_{ik}/a_{ii}e_{j_i} for k \in {1, .. , n} \ {j_1, .., j_r}, where e_1, .., e_n are the standard generators of F^n.
                     */
-                    // for each free variable, we will set it to 1 and all others
+                    // for each free variable, we will set it to 1(LCM) and all others
                     // to 0.  Then, we will use back substitution to solve the system
-                    var p, i, vec = array(columns, function(j){return j===free_var ? I : O;}), denom = Obj(), fact = 0;
+                    var p, g, i, vec = array(columns, function(j){return j===free_var ? LCM : O;});
                     for (p=0; p<pl; p++)
                     {
                         i = pivots[p][1];
                         if ( i <= free_var )
                         {
-                            if ( Arithmetic.lt(I, reduced.val[p][p]) )
-                            {
-                                fact = 1;
-                                denom[i] = reduced.val[p][p];
-                            }
-                            vec[i] = Arithmetic.sub(vec[i], reduced.val[p][free_var]);
+                            // use exact (fraction-free) integer algorithm, which normalises rref NOT with 1 but with LCM of pivots
+                            // https://math.stackexchange.com/a/1521354/139391
+                            vec[i] = Arithmetic.sub(vec[i], Arithmetic.mul(Arithmetic.div(LCM, rref.val[p][i]), rref.val[p][free_var]));
                         }
                     }
-                    if ( fact )
-                    {
-                        fact = lcm(KEYS(denom).map(function(pos){return denom[pos];}));
-                        for(i=0; i<columns; i++)
-                        {
-                            vec[i] = Arithmetic.mul(fact, vec[i]);
-                            if ( denom[i] ) vec[i] = Arithmetic.div(vec[i], denom[i]);
-                        }
-                    }
+                    if ( !Arithmetic.equ(O, g=gcd(vec)) )
+                        // remove common factors, simplify
+                        for(i=0; i<columns; i++) vec[i] = Arithmetic.div(vec[i], g);
+
                     return Matrix(vec); // column vector
                 });
             }
-            return self._rnull.slice();
+            return self._rn.slice();
         }
     }
     ,slice: function( r1, c1, r2, c2 ) {
@@ -7147,14 +7342,14 @@ Iterator = Abacus.Iterator = Class({
     ,fusion: function( item, subitem ) {
         var self = this, $ = self.$, t;
         if ( !$.sub ) return item;
-        if ( null == item || null == subitem ) return item || subitem || null;
         if ( -1 === $.subcascade ){ t = item; item = subitem; subitem = t; }
-        return $.submethod(item, subitem);
+        if ( null == item || null == subitem ) return item || subitem || null;
+        return $.submethod.call(self, item, subitem);
     }
     ,order: function( ) {
         return this;
     }
-    ,rewind: function( dir ) {
+    ,rewind: function( dir, non_recursive ) {
         var self = this, $ = self.$, i, l, item;
         dir = -1===dir ? -1 : 1;
         if ( is_array($.seq) )
@@ -7167,11 +7362,23 @@ Iterator = Abacus.Iterator = Class({
             }while((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length));
             self.__item = item;
             self._item = self.output(self.__item);
+            if ( $.sub && (true !== non_recursive) )
+            {
+                $.sub.rewind(dir);
+                self.__subitem = $.sub.next(dir);
+                self._subitem = self.fusion(self._item, self.__subitem);
+            }
         }
         else if ( is_callable($.generator) )
         {
             self.__item = $.generator.call(self, null, dir, $.state, true/*initial item*/);
             self._item = self.output(self.__item);
+            if ( $.sub && (true !== non_recursive) )
+            {
+                $.sub.rewind(dir);
+                self.__subitem = $.sub.next(dir);
+                self._subitem = self.fusion(self._item, self.__subitem);
+            }
         }
         return self;
     }
@@ -7201,15 +7408,21 @@ Iterator = Abacus.Iterator = Class({
         {
             do{
                 curr = self.__item;
-                next = self._item;
+                next = $.sub ? self._subitem : self._item;
                 item = null;
                 while((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length))
                 {
                     item = $.seq[$.seqindex].hasNext(dir) ? $.seq[$.seqindex].next(dir) : null;
                     if ( null == item ) $.seqindex += dir;
                 }
+                if ( (null == item) && (0>$.seqindex || $.seqindex>=$.seq.length) && $.sub && $.sub.hasNext(dir) )
+                {
+                    self.rewind(dir, true); item = self.__item;
+                    self.__subitem = $.sub.next(dir);
+                }
                 self.__item = item;
                 self._item = self.output(self.__item);
+                self._subitem = $.sub && (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
             }while($.filter && (null!=next) && !$.filter.apply(next, self));
             return next;
         }
@@ -7217,10 +7430,16 @@ Iterator = Abacus.Iterator = Class({
         {
             do{
                 curr = self.__item;
-                next = self._item;
+                next = $.sub ? self._subitem : self._item;
                 // generator should return null as result if finished
                 self.__item = $.generator.call(self, curr, dir, $.state, false/*next item*/);
+                if ( (null == self.__item) && $.sub && $.sub.hasNext(dir) )
+                {
+                    self.rewind(dir, true);
+                    self.__subitem = $.sub.next(dir);
+                }
                 self._item = self.output(self.__item);
+                self._subitem = $.sub && (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
             }while($.filter && (null!=next) && !$.filter.apply(next, self));
             return next;
         }
@@ -7513,10 +7732,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             }
             return NotImplemented();
         }
-        ,fusion: function( method, item, subitem, DIM, BASE, POS, DIR ) {
-            if ( is_callable(method) ) return method(item, subitem, DIM, BASE, POS, DIR);
-            if ( -1 === DIR ) { var t = item; item = subitem; subitem = t; }
-            if ( null == item || null == subitem ) return item || subitem || null;
+        ,connect: function( method, item, subitem, DIM, BASE, POS ) {
+            //if ( is_callable(method) ) return method(item, subitem, DIM, BASE, POS);
             if ( "multiply" === method )
             {
                 // O(n1 * n2)
@@ -7687,99 +7904,166 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         return self;
     }
 
-    ,fuse: function( method, combIter, pos, dir ) {
+    ,fuse: function( method, combIter, dir ) {
         var self = this, $ = self.$;
         if ( (1 === arguments.length) && (false === method) )
         {
             // un-fuse
-            if ( $.sub )
-            {
-                $.sub = null;
-                $.submethod = null;
-                $.subpos = null;
-                $.subcascade = null;
-                $.subcount = null;
-                $.subdimension = null;
-                $.subposition = null;
-                self.rewind();
-            }
+            $.subpos = null;
+            $.subdimension = null;
+            $.subposition = null;
         }
-        else if ( combIter instanceof CombinatorialIterator )
+        return Iterator[PROTO].fuse.call(self, method, combIter, dir);
+    }
+
+    ,multiplyWith: function( combIter, dir ) {
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
         {
-            pos = pos || null; dir = -1===dir?-1:1;
-            if ( is_callable(method) )
-            {
-                $.subdimension = null;
-            }
-            else
-            {
-                method = String(method||"project").toLowerCase();
-                if ( ("multiply" === method))
-                    $.subdimension = $.dimension*combIter.dimension();
-                else if ( ("juxtapose" === method))
-                    $.subdimension = 1 + (combIter.$.subdimension || 1);
-                else if ( ("add" === method) || ("connect" === method) || ("concat" === method) || ("complete" === method) || ("interleave" === method) || ("join" === method) || ("combine" === method) || ("intersperse" === method) )
-                    $.subdimension = $.dimension+combIter.dimension();
-                else
-                    $.subdimension = $.dimension;
-            }
-            $.sub = combIter; $.submethod = method;
-            $.subpos = pos; $.subcascade = dir;
-            $.subcount = Abacus.Arithmetic.mul($.count, combIter.total());
-            self.rewind();
+            $.subpos = null;
+            $.subdimension = $.dimension*combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("multiply", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
         }
         return self;
     }
 
-    ,multiplyWith: function( combIter, dir ) {
-        return this.fuse("multiply", combIter, null, dir);
-    }
-
     ,addWith: function( combIter, dir ) {
-        return this.fuse("add", combIter, null, dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            $.subpos = null;
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("add", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,connectWith: function( combIter, dir ) {
-        return this.fuse("connect", combIter, null, dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            $.subpos = null;
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("connect", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,concatWith: function( combIter, dir ) {
-        return this.fuse("concat", combIter, null, dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            $.subpos = null;
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("concat", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,juxtaposeWith: function( combIter, dir ) {
-        return this.fuse("juxtapose", combIter, null, dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            $.subpos = null;
+            $.subdimension = 1 + (combIter.$.subdimension || 1);
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("juxtapose", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,completeWith: function( combIter, pos, dir ) {
-        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-        return this.fuse("complete", combIter, pos||this.position(), dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = pos||self.position();
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("complete", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,interleaveWith: function( combIter, pos, dir ) {
-        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-        return this.fuse("interleave", combIter, pos||this.position(), dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = pos||self.position();
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("interleave", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,joinWith: function( combIter, pos, dir ) {
-        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-        return this.fuse("join", combIter, pos||this.position(), dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = pos||self.position();
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("join", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,combineWith: function( combIter, pos, dir ) {
-        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-        return this.fuse("combine", combIter, pos||this.position(), dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = pos||self.position();
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("combine", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,intersperseWith: function( combIter, pos, dir ) {
-        if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+        var self = this, $ = self.$;
         // used especially for Tensors, to generate recursively
-        pos = pos || (1===this.dimension() ? [this.base()-1] : array(this.dimension(), 0, 1));
-        return this.fuse("intersperse", combIter, pos, dir);
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = pos || (1===self.dimension() ? [self.base()-1] : array(self.dimension(), 0, 1));
+            $.subdimension = $.dimension+combIter.dimension();
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("intersperse", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,projectOn: function( combIter, dir ) {
-        return this.fuse("project", combIter, null, dir);
+        var self = this, $ = self.$;
+        if ( combIter instanceof CombinatorialIterator )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = null;
+            $.subdimension = $.dimension;
+            self.fuse(function(item, subitem, DIM, BASE, POS){
+                return CombinatorialIterator.connect("project", item, subitem, DIM, BASE, POS);
+            }, combIter, dir);
+        }
+        return self;
     }
 
     ,base: function( non_recursive ) {
@@ -7809,6 +8093,14 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         },new Array(item.length),item) : (is_string(output) ? operate(function(s,ii,i){
             s += 0<=ii && ii<output.length ? output.charAt(ii) : String(ii); return s;
         },"",item) : ("sequence"===type ? item : item.slice())))));
+    }
+
+    ,fusion: function( item, subitem ) {
+        var self = this, $ = self.$, t;
+        if ( !$.sub ) return item;
+        if ( -1 === $.subcascade ){ t = item; item = subitem; subitem = t; }
+        if ( null == item || null == subitem ) return item || subitem || null;
+        return $.submethod.call(self, item, subitem, self.dimension(), self.base(), $.subpos);
     }
 
     ,_reset: function( dir ) {
@@ -7947,7 +8239,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             self._prev = self._prev && (null != self.__subitem);
             self._next = self._next && (null != self.__subitem);
             self._subindex = Arithmetic.add(Arithmetic.mul(self.__subindex,$.count), self._index);
-            self._subitem = klass.fusion($.submethod, self._item, self.__subitem, self.dimension(), self.base(), $.subpos, $.subcascade);
+            self._subitem = self.fusion(self._item, self.__subitem);
         }
         return self;
     }
@@ -7996,7 +8288,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 self._prev = self._prev && (null != self.__subitem);
                 self._next = self._next && (null != self.__subitem);
                 self._subindex = Arithmetic.add(Arithmetic.mul(self.__subindex,tot), self._index);
-                self._subitem = klass.fusion($.submethod, self._item, self.__subitem, self.dimension(), self.base(), $.subpos, $.subcascade);
+                self._subitem = self.fusion(self._item, self.__subitem);
             }
         }
         return self;
@@ -8089,7 +8381,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     klass.rand(n, $)
                 );
                 $.order = o;
-                if ( $.sub ) item = klass.fusion($.submethod, item, subitem, self.dimension(), self.base(), $.subpos, $.subcascade);
+                if ( $.sub ) item = self.fusion(item, subitem);
                 return item;
             }
             else
@@ -8102,7 +8394,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 ? klass.initial(n, $, -1)
                 : klass.unrank(indx, n, $)));
                 $.order = o;
-                if ( $.sub ) item = klass.fusion($.submethod, item, subitem, self.dimension(), self.base(), $.subpos, $.subcascade);
+                if ( $.sub ) item = self.fusion(item, subitem);
                 return item;
             }
         }
@@ -8157,7 +8449,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             item = klass.rand(self.n, $);
             $.order = o;
             item = self.output(item);
-            output = $.sub && !non_recursive ? klass.fusion($.submethod, item, $.sub.random(), self.dimension(), self.base(), $.subpos, $.subcascade) : item;
+            output = $.sub && !non_recursive ? self.fusion(item, $.sub.random()) : item;
         }while($.filter && (null!=output) && !$.filter.apply(output, self)); // if custom filter reject if invalid, try next
         return output;
     }
@@ -8300,7 +8592,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             {
                 has_next = has_next && (null != self.__subitem);
                 self._subindex = has_next ? Arithmetic.add(Arithmetic.mul(self.__subindex,tot), self._index) : null;
-                self._subitem = has_next ? klass.fusion($.submethod, self._item, self.__subitem, self.dimension(), self.base(), $.subpos, $.subcascade) : null;
+                self._subitem = has_next ? self.fusion(self._item, self.__subitem) : null;
                 if ( 0 > dir ) self._prev = has_next;
                 else self._next = has_next;
             }
@@ -8455,7 +8747,7 @@ Progression = Abacus.Progression = Class(Iterator, {
         return Iterator[PROTO].dispose.call(self);
     }
 
-    ,rewind: function( dir ) {
+    ,rewind: function( dir, non_recursive ) {
         dir = -1===dir ? -1 : 1;
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( 0 > dir )
@@ -8480,13 +8772,19 @@ Progression = Abacus.Progression = Class(Iterator, {
             self.__item = self._min;
             self._item = self.output(self.__item);
         }
+        if ( $.sub && (true !== non_recursive) )
+        {
+            $.sub.rewind(dir);
+            self.__subitem = $.sub.next(dir);
+            self._subitem = (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
+        }
         return self;
     }
 
     ,hasNext: function( dir ) {
         dir = -1===dir ? -1 : 1;
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.INF === self._max ? (0 < dir) : (null != self.__item);
+        return Arithmetic.INF === self._max ? (0 < dir) : ($.sub ? (null != self._subitem) : (null != self.__item));
     }
 
     ,next: function( dir ) {
@@ -8494,7 +8792,7 @@ Progression = Abacus.Progression = Class(Iterator, {
         var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic, current, prev;
 
         do{
-            prev = self.__item; current = self._item;
+            prev = self.__item; current = $.sub ? self._subitem : self._item;
 
             if ( null != prev )
             {
@@ -8540,6 +8838,12 @@ Progression = Abacus.Progression = Class(Iterator, {
                     self.__item = null;
                 }
                 self._item = null==self.__item ? null : self.output(self.__item);
+            }
+            if ( (null == self.__item) && $.sub && $.sub.hasNext(dir) )
+            {
+                self.rewind(dir, true);
+                self.__subitem = $.sub.next(dir);
+                self._subitem = null != self._item && null != self.__subitem ? self.fusion(self._item, self.__subitem) : null;
             }
         }while($.filter && (null!=current) && !$.filter.apply(current, self));
 
@@ -9024,7 +9328,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,fusion: CombinatorialIterator.fusion
         ,gray: function(item, n) {
             return gray(new Array(item.length), item, n);
         }
@@ -9538,7 +9841,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,fusion: CombinatorialIterator.fusion
         ,permute: permute
         ,shuffle: function( a, type ) {
             if ( "cyclic" === type  )
@@ -10194,7 +10496,6 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,fusion: CombinatorialIterator.fusion
         ,complement: function( alpha, n, ordered ) {
             return true === ordered ? shuffle(complement(n, alpha, true)) : complement(n, alpha);
         }
@@ -10607,7 +10908,6 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,fusion: CombinatorialIterator.fusion
         ,binary: function( item, n, dir ) {
             return -1 === dir ? binary2subset(item, n) : subset2binary(item, n);
         }
@@ -11006,7 +11306,6 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
-        ,fusion: CombinatorialIterator.fusion
         ,conjugate: function( item, type ) {
             return conjugatepartition("composition"===type, item);
         }
