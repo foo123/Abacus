@@ -74,6 +74,30 @@ o=Abacus.Math.congruence([4,6], 2, 10, false)
 x = 0, y = 2
 2 2
 ---
+4x + 5y = 7
+o=Abacus.Math.diophantines([[4,5]], [7])
+x = -7+5*i_1, y = 7-4*i_1
+[ 7 ] [ 7 ]
+[ 7 ] [ 7 ]
+---
+4x + 5y = 7, 0x + 0y = 0
+o=Abacus.Math.diophantines([[4,5],[0,0]], [7,0])
+x = -7+5*i_1, y = 7-4*i_1
+[ 7, 0 ] [ 7, 0 ]
+[ 7, 0 ] [ 7, 0 ]
+---
+4x + 5y = 7, 8x + 10y = 14
+o=Abacus.Math.diophantines([[4,5],[8,10]], [7,14])
+x = -7+5*i_1, y = 7-4*i_1
+[ 7, 14 ] [ 7, 14 ]
+[ 7, 14 ] [ 7, 14 ]
+---
+5x + 6y + 8z = 1, 6x - 11y + 7z = 9
+o=Abacus.Math.diophantines([[5,6,8],[6,-11,7]], [1,9])
+x = -5+10*i_1, y = -1+i_1, z = 4-7*i_1
+[ 1, 9 ] [ 1, 9 ]
+[ 1, 9 ] [ 1, 9 ]
+---
 Solve a1^2x1^2 + a2^2x2^2 + ..  = 0
 x^2 + y^2 + z^2 = 0
 o=Abacus.Math.pythagorean([1,1,1])

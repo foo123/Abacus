@@ -224,9 +224,9 @@ o.toString()
  7 14  0
 o.rowspace()
 Vector 0:
-1 2 0
+3 6 1
 Vector 1:
-0 0 1
+-1 -2 15
 <0,1> = 0
 o.colspace()
 Vector 0:

@@ -27,6 +27,20 @@ function check_solution( sol, coeff, vars, modulo )
     }
     return res;
 }
+function check_solution_system( sol, coeff, vars )
+{
+    if ( null == sol ) return 'No Integer solution';
+    
+    vars = vars || {};
+    var out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
+    for(i=0; i<m; i++)
+    {
+        res[i] = 0;
+        for(j=0; j<k; j++)
+            res[i] += coeff[i][j] * sol[j].valueOf(vars);
+    }
+    return res;
+}
 function check_solution2( sol, coeff, vars )
 {
     if ( null == sol ) return 'No Integer solution';
@@ -146,6 +160,38 @@ echo('o=Abacus.Math.congruence([4,6], 2, 10, false)');
 o=Abacus.Math.congruence([4,6], 2, 10, false);
 echo(print_solution(o, ['x','y']));
 echo(check_solution(o, [4,6], null, 10), 2);
+echo('---');
+
+echo('4x + 5y = 7'); // x = -7+5*i_1, y = 7-4*i_1
+echo('o=Abacus.Math.diophantines([[4,5]], [7])');
+o=Abacus.Math.diophantines([[4,5]], [7]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[4,5]]), [7]);
+echo(check_solution_system(o, [[4,5]], {"i_1":random(-100,100)}), [7]);
+echo('---');
+
+echo('4x + 5y = 7, 0x + 0y = 0'); // x = -7+5*i_1, y = 7-4*i_1
+echo('o=Abacus.Math.diophantines([[4,5],[0,0]], [7,0])');
+o=Abacus.Math.diophantines([[4,5],[0,0]], [7,0]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[4,5],[0,0]]), [7,0]);
+echo(check_solution_system(o, [[4,5],[0,0]], {"i_1":random(-100,100)}), [7,0]);
+echo('---');
+
+echo('4x + 5y = 7, 8x + 10y = 14'); // x = -7+5*i_1, y = 7-4*i_1
+echo('o=Abacus.Math.diophantines([[4,5],[8,10]], [7,14])');
+o=Abacus.Math.diophantines([[4,5],[8,10]], [7,14]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[4,5],[8,10]]), [7,14]);
+echo(check_solution_system(o, [[4,5],[8,10]], {"i_1":random(-100,100)}), [7,14]);
+echo('---');
+
+echo('5x + 6y + 8z = 1, 6x - 11y + 7z = 9'); // x = 5+10*i_1, y = i_1, z = -3-7*i_1
+echo('o=Abacus.Math.diophantines([[5,6,8],[6,-11,7]], [1,9])');
+o=Abacus.Math.diophantines([[5,6,8],[6,-11,7]], [1,9]);
+echo(print_solution(o, ['x','y','z']));
+echo(check_solution_system(o, [[5,6,8],[6,-11,7]]), [1,9]);
+echo(check_solution_system(o, [[5,6,8],[6,-11,7]], {"i_1":random(-100,100)}), [1,9]);
 echo('---');
 
 echo('Solve a1^2x1^2 + a2^2x2^2 + ..  = 0');

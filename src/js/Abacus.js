@@ -2849,21 +2849,61 @@ function solvediophs( a, b, with_param )
     // https://arxiv.org/ftp/math/papers/0010/0010134.pdf
     // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num, O = Arithmetic.O, I = Arithmetic.I,
-        m, k, x, ith, i, e, lhs, rhs, symbol = is_string(with_param) && with_param.length ? with_param : 'i';
+        m, k, solutions = null, symbol = is_string(with_param) && with_param.length ? with_param : 'i',
+        tmp, ref, pivots, rank, Rt, Tt, i, j, t, p;
 
     if ( !(a instanceof Matrix) ) a = Matrix(a);
     m = a.nr; if ( !m ) return null;
     k = a.nc; if ( !k ) return null;
-    var ref = a.t().concat(Matrix.I(k)).ref(null, [k, m]),
-        T = ref.slice(0,m,-1,-1), R = ref.slice(0,0,k-1,m-1);
+    if ( b instanceof Matrix ) b = b.array();
+    // concat with zeroes
+    if ( m > b.length ) b = b.concat(array(m-b.length, function(i){return O;}));
+    // A*X = B <=> iref(A.t|I) = R|T <=> iif R.t*P = B has int solutions P => X = T.t*P
+    tmp = a.t().concat(Matrix.I(k)).ref(true, [k, m]);
+    ref = tmp[0]; pivots = tmp[1]; rank = pivots.length;
+    Tt = ref.slice(0,m,-1,-1).t(); Rt = ref.slice(0,0,k-1,m-1).t();
+    p = new Array(k);
 
-    console.log(ref.toString());
-    console.log(R.toString());
-    console.log(T.toString());
+    // R.t*P can be easily solved by substitution
+    for(i=0; i<k; i++)
+    {
+        if ( i >= rank )
+        {
+            p[i] = Expr(Term(symbol+'_'+(i-rank+1), I)); // free variable
+        }
+        else
+        {
+            t = O;
+            for(j=0; j<i; j++)
+                t = Arithmetic.add(t, Arithmetic.mul(Rt.val[i][j], p[j].c()));
+            p[i] = Arithmetic.sub(b[i], t);
+            if ( Arithmetic.equ(O, Rt.val[i][i]) )
+            {
+                if ( Arithmetic.equ(O, p[i]) ) p[i] = Expr(Term(symbol+'_'+(i+1), I)); // free variable
+                else return null; // no integer solution
+            }
+            else if ( Arithmetic.equ(O, Arithmetic.mod(p[i], Rt.val[i][i])) )
+            {
+                p[i] = Expr(Arithmetic.div(p[i], Rt.val[i][i]));
+            }
+            else
+            {
+                // no integer solution
+                return null;
+            }
+        }
+    }
+    // X = T.t*P
+    solutions = array(k, function(i){
+        return Expr(array(k, function(j){
+            return p[j].mul(Tt.val[i][j]);
+        }));
+    });
 
     /*
     // solve by successive substitution
     // solve 1st equation
+    var x, ith, i, e, lhs, rhs;
     lhs = a.row(0); rhs = b[0];
     x = solvedioph(lhs, rhs, symbol);
     if ( null == x ) return null; // no solution
@@ -2897,8 +2937,13 @@ function solvediophs( a, b, with_param )
         });
         console.log('Eq '+(i+1)+': '+x.map(function(xe,ii){return 'x_'+(ii+1)+' = '+xe.toString();}).join(', '));
     }
+    solutions = x;
     */
-    return x;
+
+    return null==solutions ? null : (false===with_param ? solutions.map(function(x){
+        // return particular solution (as number), not general (as expression)
+        return x.c();
+    }) : solutions);
 }
 function solvecongr( a, b, m, with_param )
 {
@@ -4823,14 +4868,14 @@ Abacus.Math = {
 }
 ,diophantines: function( a, b, with_param ) {
     var N = Abacus.Arithmetic.num;
-    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    if ( !is_array(a[0]) && !is_args(a[0]) )
-        return Abacus.Math.diophantine(a, is_array(b)||is_args(b)?b[0]:b, with_param);
-    a = (is_args(a)?slice.call(a):a).map(function(ai){
+    if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
+    if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
+    if ( !(a instanceof Matrix) && !a.length ) return null;
+    a = a instanceof Matrix ? a : (is_args(a)?slice.call(a):a).map(function(ai){
         return (is_args(ai)?slice.call(ai):ai).map(N);
     });
-    if ( !is_array(b) && !is_args(b) ) b = array(a.length, function(){return b||0;});
-    b = (is_args(b)?slice.call(b):b).map(N);
+    if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a.length, function(){return b||0;});
+    b = b instanceof Matrix ? b : (is_args(b)?slice.call(b):b).map(N);
     return solvediophs(a, b, with_param);
 }
 ,congruence: function( a, b, m, with_param ) {
@@ -6027,6 +6072,8 @@ Matrix = Abacus.Matrix = Class({
         {
             self._t = Matrix(Matrix.T(self.val));
             self._t._t = self; // avoid recomputations we have it already
+            self._t._tr = self._tr; // same for transpose
+            self._t._det = self._det; // same for transpose
         }
         return self._t;
     }
@@ -6443,13 +6490,13 @@ Matrix = Abacus.Matrix = Class({
     }
     ,ref: function( with_pivots, odim ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-            rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, min, a, z, m;
+            rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, im, min, a, z, m;
         // integer row echelon form (ref)
         if ( null == self._ref )
         {
-            dim = columns; //stdMath.min(rows, columns);
+            dim = columns;
             // original dimensions, eg when having augmented matrix
-            if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
+            if ( is_array(odim) ) dim = stdMath.min(dim, odim[1]);
             m = self.clone(true);
             pivots = new Array(dim);
             lead = 0; det = I;
@@ -6481,19 +6528,15 @@ Matrix = Abacus.Matrix = Class({
                 if ( -1 === lead ) break; // nothing to do
 
                 i0 = i;
+                imin = -1; min = null; z = 0;
+                // find row with min abs leading value non-zero for current column lead
+                for(i=i0; i<rows; i++)
+                {
+                    a = Arithmetic.abs(m[i][lead]);
+                    if ( Arithmetic.equ(O, a) ) z++;
+                    else if ( (null == min) || Arithmetic.lt(a, min) ) { min = a; imin = i; }
+                }
                 do{
-                    imin = -1; min = null; z = 0;
-                    // find row with min abs leading value non-zero for current column lead
-                    for(i=i0; i<rows; i++)
-                    {
-                        a = Arithmetic.abs(m[i][lead]);
-                        if ( Arithmetic.equ(O, a) ) z++;
-                        else if ( (null == min) || Arithmetic.lt(a, min) )
-                        {
-                            min = a;
-                            imin = i;
-                        }
-                    }
                     if ( -1 === imin ) break; // all zero, nothing else to do
                     if ( rows-i0 === z+1 )
                     {
@@ -6508,29 +6551,36 @@ Matrix = Abacus.Matrix = Class({
                         {
                             Matrix.ADDR(m, r, r, O, J, lead); // make it positive
                             // determinant is multiplied by same constant for row multiplication, here simply changes sign
-                            det = Arithmetic.neg(det);
+                            det = Arithmetic.mul(J, det);
                         }
                         i = imin; i0 = r;
-                        while ( -1!==(p0=find_dupl(i)) ){ i0 -= pl-p0; i = i0; }
+                        while ( (0<=i) && (-1!==(p0=find_dupl(i))) ){ i0 -= pl-p0; i = i0; }
                         pivots[pl++] = [i, lead]; // row/column of pivot
                         // update determinant
-                        det = Arithmetic.mul(det, r<dim ? m[r][r/*lead*/] : O);
+                        det = r<dim ? Arithmetic.mul(det, m[r][r/*lead*/]) : O;
                         break;
                     }
                     else
                     {
+                        z = 0; im = imin;
                         for(i=i0; i<rows; i++)
                         {
-                            if ( i === imin ) continue;
+                            if ( i === im ) continue;
                             // subtract min row from other rows
-                            Matrix.ADDR(m, i, imin, Arithmetic.mul(J, Arithmetic.div(m[i][lead], m[imin][lead])), I, lead);
+                            Matrix.ADDR(m, i, im, Arithmetic.mul(J, Arithmetic.div(m[i][lead], m[imin][lead])), I, lead);
                             // determinant does not change for this operation
+
+                            // find again row with min abs value for this column as well for next round
+                            a = Arithmetic.abs(m[i][lead]);
+                            if ( Arithmetic.equ(O, a) ) z++;
+                            else if ( Arithmetic.lt(a, min) ) { min = a; imin = i; }
                         }
                     }
                 }while(true);
 
                 lead++;
             }
+            if ( !pl ) det = O;
 
             m = new Matrix(m);
             // truncate if needed
@@ -6545,34 +6595,36 @@ Matrix = Abacus.Matrix = Class({
             rows = self.nr, columns = self.nc, dim, pivots, det, pl,
             lead, r, i, j, a, g, ref;
         // integer reduced row echelon form (rref)
-        // adapted from http://people.sc.fsu.edu/~jburkardt%20/py_src/row_echelon_integer/row_echelon_integer.html
         if ( null == self._rref )
         {
-            //dim = columns; //stdMath.min(rows, columns);
-            // original dimensions, eg when having augmented matrix
-            //if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],*/ odim[1]);
-
-            // build rref incremental from ref
+            // build rref incrementaly from ref
             ref = self.ref(true, odim);
             a = ref[0].clone();
             pivots = ref[1]; det = ref[2];
             pl = pivots.length;
             for(r=0; r<pl; r++)
             {
+                lead = pivots[r][1];
                 for (i=0; i<r; i++)
                 {
-                    //if ( i == r ) continue;
-                    lead = pivots[r][1];
+                    if ( Arithmetic.equ(O, a.val[i][lead]) ) continue;
+
                     Matrix.ADDR(a.val, i, r, Arithmetic.mul(J, a.val[i][lead]), a.val[r][lead]);
-                    if ( Arithmetic.lt(I, g=gcd(a.val[i])) )
-                        for (j=0; j<columns; j++)
-                            a.val[i][j] = Arithmetic.div(a.val[i][j], g);
+                    // are following 2 lines redundant since we are already in REF??
+                    if ( Arithmetic.gt(O, a.val[i][pivots[i][1]]) ) // 1 make leading entry positive again
+                        Matrix.ADDR(a.val, i, i, O, J, pivots[i][1]);
+                    if ( Arithmetic.lt(I, g=gcd(a.val[i])) ) // 2 remove any common factor, simplify
+                        for (j=0; j<columns; j++) a.val[i][j] = Arithmetic.div(a.val[i][j], g);
                 }
             }
             self._rref = [a, pivots, det];
 
             /*
             // compute rref directly
+            // adapted from http://people.sc.fsu.edu/~jburkardt%20/py_src/row_echelon_integer/row_echelon_integer.html
+            dim = columns; //stdMath.min(rows, columns);
+            // original dimensions, eg when having augmented matrix
+            if ( is_array(odim) ) dim = stdMath.min(dim, /*odim[0],* / odim[1]);
             a = self.clone(true);
             pivots = new Array(dim);
             lead = 0;
@@ -6631,8 +6683,8 @@ Matrix = Abacus.Matrix = Class({
         return with_pivots ? self._rref.slice() : self._rref[0];
     }
     ,rank: function( ) {
-        var ref = this.ref(true);
-        return ref[1].length;
+        var pivots = this.ref(true);
+        return pivots[1].length;
     }
     ,tr: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, n, i;
@@ -6641,8 +6693,7 @@ Matrix = Abacus.Matrix = Class({
         {
             n = stdMath.min(self.nr, self.nc);
             self._tr = Arithmetic.O;
-            for(i=0; i<n; i++)
-                self._tr = Arithmetic.add(self._tr, self.val[i][i]);
+            for(i=0; i<n; i++) self._tr = Arithmetic.add(self._tr, self.val[i][i]);
         }
         return self._tr;
     }
@@ -6703,7 +6754,7 @@ Matrix = Abacus.Matrix = Class({
             if ( null == self._ln )
             {
                 // get right nullspace of transpose matrix and return transposed vectors
-                self._ln = self.t().nullspace().map(function(vec){return vec.t();});
+                self._ln = self.t().nullspace().map(function(v){return v.t();});
             }
             return self._ln.slice();
         }
@@ -6716,10 +6767,7 @@ Matrix = Abacus.Matrix = Class({
                 pl = pivots.length;
                 free_vars = complement(columns, pivots.map(function(p){return p[1];}));
                 // exact integer rref, find LCM of pivots
-                LCM = pl ? lcm(pivots.reduce(function(factors, pivot, i){
-                    factors.push(rref.val[i][pivot[1]]);
-                    return factors;
-                }, [])) : I;
+                LCM = pl ? lcm(pivots.map(function(p, i){return rref.val[i][p[1]];})) : I;
                 self._rn = free_vars.map(function(free_var){
                     /*
                     If A = (a_{ij}) \in Mat(m x n, F) is a matrix in reduced row echelon form with r nonzero rows and pivots in the columns numbered j_1 < ... < j_r, then the kernel ker(A) is generated by the n-r elements w_k = e_k - \sum\limits_{1 \le i \le r, j_i \le k} a_{ik}/a_{ii}e_{j_i} for k \in {1, .. , n} \ {j_1, .., j_r}, where e_1, .., e_n are the standard generators of F^n.
