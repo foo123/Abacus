@@ -6,7 +6,7 @@ A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascri
 (python/java implementations in progress)
 
 
-**version 0.9.8** *in progress* (~ 116kB minified, ~ 35kB zipped)
+**version 0.9.8** *in progress* (~ 141kB minified, ~ 35kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -39,7 +39,7 @@ A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascri
 * [DateX](https://github.com/foo123/DateX) eXtended &amp; localised Date parsing, diffing, formatting and validation for Node.js / Browser / XPCOM Javascript, PHP, Python
 * [RT](https://github.com/foo123/RT) client-side real-time communication for Node/XPCOM/JS with support for Poll / BOSH / WebSockets
 * [Asynchronous](https://github.com/foo123/asynchronous.js) a simple manager for async, linearised, parallelised, interleaved and sequential tasks for JavaScript
-* [Simulacra](https://github.com/foo123/Simulacra) a simulation, algebraic, probability and combinatorics PHP package for scientific computations
+* [Simulacra](https://github.com/foo123/Simulacra) a simulation, algebraic, probability and combinatorics PHP package for scientific computations (DEPRECATED)
 
 
 ### Contents

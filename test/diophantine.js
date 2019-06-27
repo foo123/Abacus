@@ -27,7 +27,7 @@ function check_solution( sol, coeff, vars, modulo )
     }
     return res;
 }
-function check_solution_system( sol, coeff, vars )
+function check_solution_system( sol, coeff, vars, modulo )
 {
     if ( null == sol ) return 'No Integer solution';
     
@@ -38,6 +38,14 @@ function check_solution_system( sol, coeff, vars )
         res[i] = 0;
         for(j=0; j<k; j++)
             res[i] += coeff[i][j] * sol[j].valueOf(vars);
+    }
+    if ( null != modulo )
+    {
+        for(i=0; i<m; i++)
+        {
+            res[i] = res[i] % modulo[i];
+            if ( 0 > res[i] ) res[i] += modulo[i];
+        }
     }
     return res;
 }
@@ -192,6 +200,30 @@ o=Abacus.Math.diophantines([[5,6,8],[6,-11,7]], [1,9]);
 echo(print_solution(o, ['x','y','z']));
 echo(check_solution_system(o, [[5,6,8],[6,-11,7]]), [1,9]);
 echo(check_solution_system(o, [[5,6,8],[6,-11,7]], {"i_1":random(-100,100)}), [1,9]);
+echo('---');
+
+echo('3x = 3 mod 10');
+echo('o=Abacus.Math.congruences([[3]], [3], [10])');
+o=Abacus.Math.congruences([[3]], [3], [10]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[3]], null, [10]), [3]);
+echo(check_solution_system(o, [[3]], {"i_1":random(-100,100)}, [10]), [3]);
+echo('---');
+
+echo('4x + 6y = 2 mod 10');
+echo('o=Abacus.Math.congruences([[4,6]], [2], [10])');
+o=Abacus.Math.congruences([[4,6]], [2], [10]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[4,6]], null, [10]), [2]);
+echo(check_solution_system(o, [[4,6]], {"i_1":random(-100,100),"i_2":random(-100,100)}, [10]), [2]);
+echo('---');
+
+echo('4x + 6y = 2 mod 10, 2x + 3y = 5 mod 7');
+echo('o=Abacus.Math.congruences([[4,6],[2,3]], [2,5], [10,7])');
+o=Abacus.Math.congruences([[4,6],[2,3]], [2,5], [10,7]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[4,6],[2,3]], null, [10,7]), [2,5]);
+echo(check_solution_system(o, [[4,6],[2,3]], {"i_1":random(-100,100),"i_2":random(-100,100)}, [10,7]), [2,5]);
 echo('---');
 
 echo('Solve a1^2x1^2 + a2^2x2^2 + ..  = 0');

@@ -2627,9 +2627,7 @@ function solvedioph2( a, b, param )
     // solve general linear diophantine equation in 2 variables
     // a1 x_1 + a2 x_2 = b
     // https://en.wikipedia.org/wiki/Diophantine_equation
-    var Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
-        d, x0, xp;
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, d, x0, xp;
 
     // assume all coefficients are already non-zero, does not handle this case, handled in general solution below
     d = gcd(a);
@@ -2656,13 +2654,13 @@ function solvedioph2( a, b, param )
         xp = [Arithmetic.mul(b, xp[1]), Arithmetic.mul(b, xp[2])];
     }
     // fix sign to be always positive for 1st variable
-    if ( Arithmetic.gt(O, a[1]) ) { a[0] = Arithmetic.mul(J, a[0]); a[1] = Arithmetic.mul(J, a[1]); }
-    x0 = [a[1], Arithmetic.mul(J, a[0])];
+    if ( Arithmetic.gt(O, a[1]) ) { a[0] = Arithmetic.neg(a[0]); a[1] = Arithmetic.neg(a[1]); }
+    x0 = [a[1], Arithmetic.neg(a[0])];
 
     return [
     // general solution = any particular solution of non-homogeneous + general solution of homogeneous
-    Expr([xp[0], Term(param, x0[0])]),
-    Expr([xp[1], Term(param, x0[1])])
+    Expr(xp[0], Term(param, x0[0])),
+    Expr(xp[1], Term(param, x0[1]))
     ];
 }
 function solvedioph( a, b, with_param )
@@ -2810,8 +2808,8 @@ function solvedioph( a, b, with_param )
                 if ( '1' !== p )
                 {
                     // re-express partial solution in terms of original symbol
-                    sol2[0] = Expr([Term(p, sol2[0].c()), sol2[0].terms[pnew]]);
-                    sol2[1] = Expr([Term(p, sol2[1].c()), sol2[1].terms[pnew]]);
+                    sol2[0] = Expr(Term(p, sol2[0].c()), sol2[0].terms[pnew]);
+                    sol2[1] = Expr(Term(p, sol2[1].c()), sol2[1].terms[pnew]);
                 }
 
                 tot_x.push(sol2[0]); tot_y.push(sol2[1]);
@@ -2969,6 +2967,23 @@ function solvecongr( a, b, m, with_param )
         }
         return x;
     });
+
+}
+function solvecongrs( a, b, m, with_param )
+{
+    // solve linear congruence using the associated linear diophantine equation
+    var Arithmetic = Abacus.Arithmetic, solution;
+    if ( !(a instanceof Matrix) ) a = Matrix(a);
+    if ( !a.nr || !a.nc ) return null;
+    if ( !is_array(m) && !is_args(m) && !(m instanceof Matrix) )
+    {
+        m = Arithmetic.num(m);
+        m = array(a.nr, function(i){return m;});
+    }
+    if ( is_array(m) || is_args(m) ) m = Matrix(m);
+    solution = solvediophs(a.concat(m), b, with_param);
+    // skip last variable
+    return null==solution ? null : solution.slice(0,-1);
 
 }
 function sign( x )
@@ -4874,7 +4889,7 @@ Abacus.Math = {
     a = a instanceof Matrix ? a : (is_args(a)?slice.call(a):a).map(function(ai){
         return (is_args(ai)?slice.call(ai):ai).map(N);
     });
-    if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a.length, function(){return b||0;});
+    if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
     b = b instanceof Matrix ? b : (is_args(b)?slice.call(b):b).map(N);
     return solvediophs(a, b, with_param);
 }
@@ -4883,6 +4898,20 @@ Abacus.Math = {
     if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
     a = (is_args(a)?slice.call(a):a).map(N); b = N(b||0); m = N(m||0);
     return solvecongr(a, b, m, with_param);
+}
+,congruences: function( a, b, m, with_param ) {
+    var N = Abacus.Arithmetic.num;
+    if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
+    if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
+    if ( !(a instanceof Matrix) && !a.length ) return null;
+    a = a instanceof Matrix ? a : (is_args(a)?slice.call(a):a).map(function(ai){
+        return (is_args(ai)?slice.call(ai):ai).map(N);
+    });
+    if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
+    b = b instanceof Matrix ? b : (is_args(b)?slice.call(b):b).map(N);
+    if ( !(m instanceof Matrix) && !is_array(m) && !is_args(m) ) m = array(a instanceof Matrix ? a.nr : a.length, function(){return m||0;});
+    m = m instanceof Matrix ? m : (is_args(m)?slice.call(m):m).map(N);
+    return solvecongrs(a, b, m, with_param);
 }
 ,pythagorean: function( a, with_param ) {
     var N = Abacus.Arithmetic.num;
@@ -7414,7 +7443,7 @@ Iterator = Abacus.Iterator = Class({
             {
                 $.sub.rewind(dir);
                 self.__subitem = $.sub.next(dir);
-                self._subitem = self.fusion(self._item, self.__subitem);
+                self._subitem = (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
             }
         }
         else if ( is_callable($.generator) )
@@ -7425,7 +7454,7 @@ Iterator = Abacus.Iterator = Class({
             {
                 $.sub.rewind(dir);
                 self.__subitem = $.sub.next(dir);
-                self._subitem = self.fusion(self._item, self.__subitem);
+                self._subitem = (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
             }
         }
         return self;
@@ -7447,7 +7476,8 @@ Iterator = Abacus.Iterator = Class({
         return self;
     }
     ,hasNext: function( dir ) {
-        return null != this.__item;
+        var self = this, $ = self.$;
+        return $.sub ? (null != self._subitem) : (null != self.__item);
     }
     ,next: function( dir ) {
         var self = this, $ = self.$, curr, next, item;
@@ -7581,7 +7611,19 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         Iterator.call(self, name, $);
 
         self.init().order($.order);
-        if ( sub && (sub.iter instanceof CombinatorialIterator) ) self.fuse(sub.method, sub.iter, sub.pos, sub.cascade);
+        if ( sub && (sub.iter instanceof CombinatorialIterator) )
+        {
+            sub.method = sub.method || 'project';
+            if ( is_callable(sub.method) )
+            {
+                self.fuse(sub.method, sub.iter, /*sub.pos,*/ sub.cascade);
+            }
+            else if ( is_string(sub.method) && -1 !== ['multiply','add','concat','connect','join','combine','complete','interleave','juxtapose','intersperse','project'].indexOf(sub.method) )
+            {
+                var submethod = 'project'===sub.method ? 'projectOn' : (sub.method+'With');
+                self[submethod](sub.iter, sub.pos, sub.cascade);
+            }
+        }
         if ( $.filter ) self.filterBy($.filter);
     }
 
@@ -7952,79 +7994,81 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         return self;
     }
 
-    ,fuse: function( method, combIter, dir ) {
-        var self = this, $ = self.$;
+    ,fuse: function( method, combIter, pos, dir ) {
+        var self = this, $super = Iterator[PROTO].fuse, $ = self.$;
         if ( (1 === arguments.length) && (false === method) )
         {
             // un-fuse
             $.subpos = null;
             $.subdimension = null;
             $.subposition = null;
+            $super.call(self, false);
         }
-        return Iterator[PROTO].fuse.call(self, method, combIter, dir);
+        else if ( (combIter instanceof CombinatorialIterator) && is_callable(method) )
+        {
+            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
+            $.subpos = pos || self.position();
+            $super.call(self, method, combIter, dir);
+        }
+        return self;
     }
 
-    ,multiplyWith: function( combIter, dir ) {
+    ,multiplyWith: function( combIter, pos, dir ) {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            $.subpos = null;
             $.subdimension = $.dimension*combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("multiply", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
 
-    ,addWith: function( combIter, dir ) {
+    ,addWith: function( combIter, pos, dir ) {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            $.subpos = null;
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("add", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
 
-    ,connectWith: function( combIter, dir ) {
+    ,connectWith: function( combIter, pos, dir ) {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            $.subpos = null;
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("connect", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
 
-    ,concatWith: function( combIter, dir ) {
+    ,concatWith: function( combIter, pos, dir ) {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            $.subpos = null;
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("concat", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
 
-    ,juxtaposeWith: function( combIter, dir ) {
+    ,juxtaposeWith: function( combIter, pos, dir ) {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            $.subpos = null;
             $.subdimension = 1 + (combIter.$.subdimension || 1);
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("juxtapose", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
@@ -8033,12 +8077,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-            $.subpos = pos||self.position();
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("complete", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
@@ -8047,12 +8089,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-            $.subpos = pos||self.position();
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("interleave", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
@@ -8061,12 +8101,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-            $.subpos = pos||self.position();
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("join", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
@@ -8075,12 +8113,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-            $.subpos = pos||self.position();
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("combine", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
@@ -8091,25 +8127,23 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if ( combIter instanceof CombinatorialIterator )
         {
             if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-            $.subpos = pos || (1===self.dimension() ? [self.base()-1] : array(self.dimension(), 0, 1));
+            pos = pos || (1===self.dimension() ? [self.base()-1] : array(self.dimension(), 0, 1));
             $.subdimension = $.dimension+combIter.dimension();
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("intersperse", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
 
-    ,projectOn: function( combIter, dir ) {
+    ,projectOn: function( combIter, pos, dir ) {
         var self = this, $ = self.$;
         if ( combIter instanceof CombinatorialIterator )
         {
-            if ( -1 === pos || 1 === pos ){ dir = pos; pos = null; }
-            $.subpos = null;
             $.subdimension = $.dimension;
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("project", item, subitem, DIM, BASE, POS);
-            }, combIter, dir);
+            }, combIter, pos, dir);
         }
         return self;
     }
@@ -8797,7 +8831,7 @@ Progression = Abacus.Progression = Class(Iterator, {
 
     ,rewind: function( dir, non_recursive ) {
         dir = -1===dir ? -1 : 1;
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic;
         if ( 0 > dir )
         {
             if ( Arithmetic.INF === self._max )
@@ -8831,8 +8865,8 @@ Progression = Abacus.Progression = Class(Iterator, {
 
     ,hasNext: function( dir ) {
         dir = -1===dir ? -1 : 1;
-        var self = this, Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.INF === self._max ? (0 < dir) : ($.sub ? (null != self._subitem) : (null != self.__item));
+        var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.INF === self._max ? ((0 < dir) && ($.sub ? (null != self.__subitem) : true)) : ($.sub ? (null != self._subitem) : (null != self.__item));
     }
 
     ,next: function( dir ) {
