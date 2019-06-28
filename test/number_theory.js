@@ -178,6 +178,12 @@ echo(o=Abacus.Math.lcm(2, 0, 0), 0);
 echo('o=Abacus.Math.lcm(2, 0, 0, 3)');
 echo(o=Abacus.Math.lcm(2, 0, 0, 3), 0);
 
+echo('o=Abacus.Math.lcm(2, 2, 2, 2)');
+echo(o=Abacus.Math.lcm(2, 2, 2, 2), 2);
+
+echo('o=Abacus.Math.lcm(2, 2, 3, 3)');
+echo(o=Abacus.Math.lcm(2, 2, 3, 3), 6);
+
 echo('o=Abacus.Math.lcm(4, 6)');
 echo(o=Abacus.Math.lcm(4, 6), 12);
 

@@ -258,6 +258,24 @@ function psum/*partial_sum*/( b, a, c1, c0, a0, a1, b0, b1 )
         s+=ai; b[bi] = c0+c1*s; bi+=bk; return b;
     }, b, a, a0, a1);
 }
+function unique( a, a0, a1 )
+{
+    if ( null == a0 ) a0 = 0;
+    if ( null == a1 ) a1 = a.length-1;
+
+    var n = a1-a0+1, dict, key, uniq, ul;
+    if ( 1 >= n ) return 1 === n ? [a[a0]] : [];
+    dict = Obj(); uniq = new Array(n); ul = 0;
+    while(a0 <= a1)
+    {
+        key = String(a[a0]);
+        if ( !dict[key] ) { uniq[ul++] = a[a0]; dict[key] = 1; }
+        a0++;
+    }
+    // truncate if needed
+    if ( uniq.length > ul ) uniq.length = ul;
+    return uniq;
+}
 function intersection( comm, a, b, dir, a0, a1, b0, b1 )
 {
     dir = -1 === dir ? -1 : 1;
@@ -2134,16 +2152,22 @@ function gcd( /* args */ )
     }
     return a;
 }
+function lcm2( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, aa = Arithmetic.abs(a), bb = Arithmetic.abs(b);
+    if ( Arithmetic.equ(aa, bb) ) return sign(a) === sign(b) ? aa : Arithmetic.neg(aa);
+    return Arithmetic.mul(Arithmetic.div(a, gcd(a, b)), b);
+}
 function lcm( /* args */ )
 {
     // least common multiple
     // https://en.wikipedia.org/wiki/Least_common_multiple
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = gcd(args);
-    return Arithmetic.equ(O, g) ? O : operate(function(a, b){
-        if ( g ) { b = Arithmetic.div(b, g); g = null; }
-        return Arithmetic.mul(a, b);
-    }, Arithmetic.I, args);
+        i, l = args.length, LCM;
+    if ( 1 >= l ) return 1===l ? args[0] : O;
+    LCM = lcm2(args[0], args[1]);
+    for(i=2; i<l; i++) LCM = lcm2(LCM, args[i]);
+    return LCM;
 }
 function xgcd( /* args */ )
 {
@@ -2972,7 +2996,7 @@ function solvecongr( a, b, m, with_param )
 function solvecongrs( a, b, m, with_param )
 {
     // solve linear congruence using the associated linear diophantine equation
-    var Arithmetic = Abacus.Arithmetic, solution;
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, solution, M;
     if ( !(a instanceof Matrix) ) a = Matrix(a);
     if ( !a.nr || !a.nc ) return null;
     if ( !is_array(m) && !is_args(m) && !(m instanceof Matrix) )
@@ -2983,7 +3007,24 @@ function solvecongrs( a, b, m, with_param )
     if ( is_array(m) || is_args(m) ) m = Matrix(m);
     solution = solvediophs(a.concat(m), b, with_param);
     // skip last variable
-    return null==solution ? null : solution.slice(0,-1);
+    M = lcm(m.col(0));
+    return null==solution ? null : array(solution.length-1, function(i){
+        // make positive constant terms modulo LCM(m)
+        var x = solution[i];
+        if ( false === with_param )
+        {
+            // a particular solution (as number)
+            if ( Arithmetic.gt(O, x) )
+                x = Arithmetic.add(x, M);
+        }
+        else
+        {
+            // general solution (as expression)
+            if ( Arithmetic.gt(O, x.c()) )
+                x = x.add(M);
+        }
+        return x;
+    });
 
 }
 function sign( x )
@@ -4927,6 +4968,7 @@ Abacus.Util = {
 
  array: array
 ,operate: operate
+,unique: unique
 ,intersection: intersection
 ,difference: difference
 ,multi_difference: multi_difference

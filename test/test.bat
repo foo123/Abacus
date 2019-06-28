@@ -5,6 +5,7 @@ call node numbers.js > numbers.txt
 call node number_theory.js > number_theory.txt
 call node progressions.js > progressions.txt
 call node polynomials.js > polynomials.txt
+call node matrices.js > matrices.txt
 call node primes.js > primes.txt
 call node diophantine.js > diophantine.txt
 call node tensors.js > tensors.txt

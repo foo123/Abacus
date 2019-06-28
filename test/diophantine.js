@@ -145,31 +145,7 @@ echo(check_solution(o, [4,0,6,3,0]), 2);
 echo(check_solution(o, [4,0,6,3,0], {"i_1":random(-100,100),"i_2":random(-100,100),"i_3":random(-100,100),"i_4":random(-100,100)}), 2);
 echo('---');
 
-echo('Solve a1x1 + a2x2 + ..  = b mod m');
-echo('3x = 3 mod 10');
-echo('o=Abacus.Math.congruence([3], 3, 10)');
-o=Abacus.Math.congruence([3], 3, 10);
-echo(print_solution(o, ['x']));
-echo(check_solution(o, [3], null, 10), 3);
-echo(check_solution(o, [3], {"i_1":random(-100,100)}, 10), 3);
-echo('o=Abacus.Math.congruence([3], 3, 10, false)');
-o=Abacus.Math.congruence([3], 3, 10, false);
-echo(print_solution(o, ['x']));
-echo(check_solution(o, [3], null, 10), 3);
-echo('---');
-
-echo('4x + 6y = 2 mod 10');
-echo('o=Abacus.Math.congruence([4,6], 2, 10)');
-o=Abacus.Math.congruence([4,6], 2, 10);
-echo(print_solution(o, ['x','y']));
-echo(check_solution(o, [4,6], null, 10), 2);
-echo(check_solution(o, [4,6], {"i_1":random(-100,100),"i_2":random(-100,100)}, 10), 2);
-echo('o=Abacus.Math.congruence([4,6], 2, 10, false)');
-o=Abacus.Math.congruence([4,6], 2, 10, false);
-echo(print_solution(o, ['x','y']));
-echo(check_solution(o, [4,6], null, 10), 2);
-echo('---');
-
+echo('Solve system AX = C');
 echo('4x + 5y = 7'); // x = -7+5*i_1, y = 7-4*i_1
 echo('o=Abacus.Math.diophantines([[4,5]], [7])');
 o=Abacus.Math.diophantines([[4,5]], [7]);
@@ -202,6 +178,32 @@ echo(check_solution_system(o, [[5,6,8],[6,-11,7]]), [1,9]);
 echo(check_solution_system(o, [[5,6,8],[6,-11,7]], {"i_1":random(-100,100)}), [1,9]);
 echo('---');
 
+echo('Solve a1x1 + a2x2 + ..  = b mod m');
+echo('3x = 3 mod 10');
+echo('o=Abacus.Math.congruence([3], 3, 10)');
+o=Abacus.Math.congruence([3], 3, 10);
+echo(print_solution(o, ['x']));
+echo(check_solution(o, [3], null, 10), 3);
+echo(check_solution(o, [3], {"i_1":random(-100,100)}, 10), 3);
+echo('o=Abacus.Math.congruence([3], 3, 10, false)');
+o=Abacus.Math.congruence([3], 3, 10, false);
+echo(print_solution(o, ['x']));
+echo(check_solution(o, [3], null, 10), 3);
+echo('---');
+
+echo('4x + 6y = 2 mod 10');
+echo('o=Abacus.Math.congruence([4,6], 2, 10)');
+o=Abacus.Math.congruence([4,6], 2, 10);
+echo(print_solution(o, ['x','y']));
+echo(check_solution(o, [4,6], null, 10), 2);
+echo(check_solution(o, [4,6], {"i_1":random(-100,100),"i_2":random(-100,100)}, 10), 2);
+echo('o=Abacus.Math.congruence([4,6], 2, 10, false)');
+o=Abacus.Math.congruence([4,6], 2, 10, false);
+echo(print_solution(o, ['x','y']));
+echo(check_solution(o, [4,6], null, 10), 2);
+echo('---');
+
+echo('Solve system AX = B mod M');
 echo('3x = 3 mod 10');
 echo('o=Abacus.Math.congruences([[3]], [3], [10])');
 o=Abacus.Math.congruences([[3]], [3], [10]);
@@ -224,6 +226,14 @@ o=Abacus.Math.congruences([[4,6],[2,3]], [2,5], [10,7]);
 echo(print_solution(o, ['x','y']));
 echo(check_solution_system(o, [[4,6],[2,3]], null, [10,7]), [2,5]);
 echo(check_solution_system(o, [[4,6],[2,3]], {"i_1":random(-100,100),"i_2":random(-100,100)}, [10,7]), [2,5]);
+echo('---');
+
+echo('x = 3 mod 4, x = 5 mod 6');
+echo('o=Abacus.Math.congruences([[1],[1]], [3,5], [4,6])');
+o=Abacus.Math.congruences([[1],[1]], [3,5], [4,6]);
+echo(print_solution(o, ['x','y']));
+echo(check_solution_system(o, [[1],[1]], null, [4,6]), [3,5]);
+echo(check_solution_system(o, [[1],[1]], {"i_1":random(-100,100)}, [4,6]), [3,5]);
 echo('---');
 
 echo('Solve a1^2x1^2 + a2^2x2^2 + ..  = 0');

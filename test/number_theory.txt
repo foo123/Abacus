@@ -139,6 +139,10 @@ o=Abacus.Math.lcm(2, 0, 0)
 0 0
 o=Abacus.Math.lcm(2, 0, 0, 3)
 0 0
+o=Abacus.Math.lcm(2, 2, 2, 2)
+2 2
+o=Abacus.Math.lcm(2, 2, 3, 3)
+6 6
 o=Abacus.Math.lcm(4, 6)
 12 12
 o=Abacus.Math.lcm(21, 6)
@@ -146,7 +150,7 @@ o=Abacus.Math.lcm(21, 6)
 o=Abacus.Math.lcm(48, 180)
 720 720
 o=Abacus.Math.lcm(74, 32, 16, 153)
-5796864
+181152
 ---
 Extended GCD of multiple numbers
 o=Abacus.Math.xgcd(1)
