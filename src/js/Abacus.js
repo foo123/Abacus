@@ -2164,7 +2164,7 @@ function lcm( /* args */ )
     // https://en.wikipedia.org/wiki/Least_common_multiple
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         i, l = args.length, LCM;
-    if ( 1 >= l ) return 1===l ? args[0] : O;
+    if ( 1 >= l ) return 1===l ? args[0] : Abacus.Arithmetic.O;
     LCM = lcm2(args[0], args[1]);
     for(i=2; i<l; i++) LCM = lcm2(LCM, args[i]);
     return LCM;
@@ -2283,16 +2283,21 @@ function polygcd( /* args */ )
     //if ( 0 < a.deg() ) a = a.div(gcd(a.coeff));
     return a;
 }
+function polylcm2( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = polygcd(a, b);
+    return g.equ(O) ? g : a.div(g).mul(b);
+}
 function polylcm( /* args */ )
 {
-    // least common multiple for univariate polynomials
+    // least common multiple
     // https://en.wikipedia.org/wiki/Least_common_multiple
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = polygcd(args);
-    return g.equ(O) ? O : operate(function(a, b){
-        if ( g ) { b = b.div(g); g = null; }
-        return a.mul(b);
-    }, new Polynomial([Arithmetic.I]), args);
+        i, l = args.length, LCM;
+    if ( 1 >= l ) return 1===l ? args[0] : Polynomial.C(Abacus.Arithmetic.O);
+    LCM = polylcm2(args[0], args[1]);
+    for(i=2; i<l; i++) LCM = polylcm2(LCM, args[i]);
+    return LCM;
 }
 function polyxgcd( /* args */ )
 {
@@ -4736,7 +4741,16 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
 ,I: 1
 ,II: 2
 ,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}} // a representation of Infinity
+,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}} // a representation of -Infinity
 
+,nums: function( a ) {
+    if ( is_array(a) || is_args(a) )
+    {
+        for(var i=0,l=a.length; i<l; i++) a[i] = this.nums(a[i]); // recursive
+        return a;
+    }
+    return this.num(a);
+}
 ,num: function( a ) {
     return is_number(a) ? stdMath.floor(a) : parseInt(a||0,10);
 }
@@ -4851,11 +4865,11 @@ Abacus.Math = {
 }
 ,gcd: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return gcd(array(args.length, function(i){return Arithmetic.num(args[i]);}));
+    return gcd(Arithmetic.nums(args));
 }
 ,xgcd: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return xgcd(array(args.length, function(i){return Arithmetic.num(args[i]);}));
+    return xgcd(Arithmetic.nums(args));
 }
 ,polygcd: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
@@ -4867,7 +4881,7 @@ Abacus.Math = {
 }
 ,lcm: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return lcm(array(args.length, function(i){return Arithmetic.num(args[i]);}));
+    return lcm(Arithmetic.nums(args));
 }
 ,polylcm: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
@@ -4917,48 +4931,41 @@ Abacus.Math = {
 }
 
 ,diophantine: function( a, b, with_param ) {
-    var N = Abacus.Arithmetic.num;
+    var Arithmetic = Abacus.Arithmetic;
     if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    a = (is_args(a)?slice.call(a):a).map(N); b = N(b||0);
-    return solvedioph(a, b, with_param);
+    return solvedioph(Arithmetic.nums(a), Arithmetic.num(b||0), with_param);
 }
 ,diophantines: function( a, b, with_param ) {
-    var N = Abacus.Arithmetic.num;
+    var Arithmetic = Abacus.Arithmetic;
     if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
     if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
     if ( !(a instanceof Matrix) && !a.length ) return null;
-    a = a instanceof Matrix ? a : (is_args(a)?slice.call(a):a).map(function(ai){
-        return (is_args(ai)?slice.call(ai):ai).map(N);
-    });
+    a = a instanceof Matrix ? a : Arithmetic.nums(a);
     if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
-    b = b instanceof Matrix ? b : (is_args(b)?slice.call(b):b).map(N);
+    b = b instanceof Matrix ? b : Arithmetic.nums(b);
     return solvediophs(a, b, with_param);
 }
 ,congruence: function( a, b, m, with_param ) {
-    var N = Abacus.Arithmetic.num;
+    var Arithmetic = Abacus.Arithmetic;
     if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    a = (is_args(a)?slice.call(a):a).map(N); b = N(b||0); m = N(m||0);
-    return solvecongr(a, b, m, with_param);
+    return solvecongr(Arithmetic.nums(a), Arithmetic.num(b||0), Arithmetic.num(m||0), with_param);
 }
 ,congruences: function( a, b, m, with_param ) {
-    var N = Abacus.Arithmetic.num;
+    var Arithmetic = Abacus.Arithmetic;
     if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
     if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
     if ( !(a instanceof Matrix) && !a.length ) return null;
-    a = a instanceof Matrix ? a : (is_args(a)?slice.call(a):a).map(function(ai){
-        return (is_args(ai)?slice.call(ai):ai).map(N);
-    });
+    a = a instanceof Matrix ? a : Arithmetic.nums(a);
     if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
-    b = b instanceof Matrix ? b : (is_args(b)?slice.call(b):b).map(N);
+    b = b instanceof Matrix ? b : Arithmetic.nums(b);
     if ( !(m instanceof Matrix) && !is_array(m) && !is_args(m) ) m = array(a instanceof Matrix ? a.nr : a.length, function(){return m||0;});
-    m = m instanceof Matrix ? m : (is_args(m)?slice.call(m):m).map(N);
+    m = m instanceof Matrix ? m : Arithmetic.nums(m);
     return solvecongrs(a, b, m, with_param);
 }
 ,pythagorean: function( a, with_param ) {
-    var N = Abacus.Arithmetic.num;
+    var Arithmetic = Abacus.Arithmetic;
     if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    a = (is_args(a)?slice.call(a):a).map(N);
-    return solvepythag(a, with_param)
+    return solvepythag(Arithmetic.nums(a), with_param)
 }
 
 };
