@@ -9,6 +9,7 @@ The solutions, to popular problems, below exhibit the combinatorial and number t
 * [N-Queens Problem](#n-queens)
 * [Magic Squares](#magic-squares)
 * [Primes](#primes)
+* [Permutations with Constraints](#permutations-with-constraints)
 * [Diophantine Equations](#diophantine-equations)
 * [Knapsack Problem](#knapsack)
 * [TSP Problem](#tsp)
@@ -440,6 +441,83 @@ For the first 25 even numbers greater than 2 we get:
 ```
 
 We saw how we can generate prime numbers up to a given point or in arbitrary ranges, test if a given number is prime, verify Goldbach's Conjecture in a given range and also generate prime numbers which have additional special properties, for example are their own mirror image, with `Abacus` in a couple of lines of code.
+
+
+### Permutations with Constraints
+
+see associated file: `examples/permutations_constraints.js`
+
+`Abacus` can generate efficiently many combinatorial objects. However it can do something even better, it can generate combinatorial objects matching user-defined (symbolic/algebraic) *constraints* / *patterns* / *templates*.
+
+In fact generating constrained combinatorial objects is faster and more efficient than generating original combinatorial object since the constraints limit the original combinatorial space as long as the algorithm is smart enough to take advantage of them so it can generated directly the reduced combinatorial space instead of rejecting objects not matching pattern from original combinatorial space.
+
+`Abacus` has this capability and supports a very **general symbolic / algebraic** system of generic constraints. Constraints supported are of 3 generic types:
+
+* Include a range of numbers for this position (eg. include numbers from 1 to 4: *"{1..4}"*, include numbers 1,2,5: *"{1,2,5}"*)
+* Exclude a range of numbers from this position (eg. exclude numbers from 1 to 4: *"!{1..4}"*, exclude numbers 1,2,5: *"!{1,2,5}"*)
+* An expression (usually depending on other positions) (example this position is value in position 0 plus 2: *"[0]+2"*)
+
+Using these generic constraints many interesting templates and patterns can be constructed. In fact the more constraints used the less the original combinatorial space becomes thus is generated faster.
+
+Constraints are specified, for example, via an object having as key the position needed and as value the constraint this position should satisfy. Additionaly an ordering should be applied which defines whether the elements are ordered in some generic way (eg ascending or descending or should be unique). This defines a partial combinatorial tensor which can then be augmented with a reduced combinatorial object to produce the required constrained combinatorial object. The methods work for all combinatorial objects if filtering is also applied to eliminate any outliers (few, but sometimes they cannot be eliminated from the start), but works best for objects which simply need unique elements like permutations. In this case constraints and fusion methods are enough and no extra filtering is needed. Thus even more efficient.
+
+For example, let us generate all 6-permutations which have "0..4" in 0th position and 1st position is "[0]+1" and 2nd position is "[1]+1". That is permutations which start with:
+
+* 0,1,2,..
+* 1,2,3,..
+* 2,3,4,..
+* 3,4,5,..
+
+We define a utility function to setup an constrained permutation combinatorial object:
+
+```javascript
+function constrained_permutations(N, constraints)
+{
+    var T = Abacus.Tensor(N,{type:"partial",data:constraints,ordering:"<>"});
+    if ( T.dimension() < N ) T.completeWith(Abacus.Permutation(N-T.dimension()));
+    return T;
+}
+```
+
+Now it is easy to generate our desired combinatorial object, we simply define our constraints per position:
+
+```javascript
+solutions = constrained_permutations(6, {0:"{0..4}",1:"[0]+1",2:"[1]+1"}).get();
+echo(''+solutions.length+' solutions');
+echo(solutions.map(String).join("\n"));
+```
+
+Running above we get:
+
+```text
+24 solutions
+0,1,2,3,4,5
+1,2,3,0,4,5
+2,3,4,0,1,5
+3,4,5,0,1,2
+0,1,2,3,5,4
+1,2,3,0,5,4
+2,3,4,0,5,1
+3,4,5,0,2,1
+0,1,2,4,3,5
+1,2,3,4,0,5
+2,3,4,1,0,5
+3,4,5,1,0,2
+0,1,2,4,5,3
+1,2,3,4,5,0
+2,3,4,1,5,0
+3,4,5,1,2,0
+0,1,2,5,3,4
+1,2,3,5,0,4
+2,3,4,5,0,1
+3,4,5,2,0,1
+0,1,2,5,4,3
+1,2,3,5,4,0
+2,3,4,5,1,0
+3,4,5,2,1,0
+```
+
+We saw how we can generate efficiently constrained combinatorial objects satisfying user-defined patterns / templates with a couple of lines of code using `Abacus` library.
 
 
 ### Diophantine Equations
