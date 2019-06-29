@@ -447,9 +447,83 @@ We saw how we can generate prime numbers up to a given point or in arbitrary ran
 
 see associated file: `examples/permutations_constraints.js`
 
+**Exhaustive Search**
+
+As with all approaches, using exhaustive search (which is a very general solution method, but not necessarily efficient) we can tackle the problem of generating combinatorial objects (in this case permutations) which satisfy certain constraints.
+Let us do that first. We want to generate all 6-perumtations which start with:
+
+* 0,1,2,..
+* 1,2,3,..
+* 2,3,4,..
+* 3,4,5,..
+
+First we setup our exhaustive search method:
+
+```javascript
+function exhaustive_search(N, constraints)
+{
+    return Abacus.Permutation(N).filterBy(function(p){
+        for(var pos in constraints)
+            if ( !constraints[pos](p) )
+                return false;
+        return true;
+    });
+}
+```
+
+Then we define our constraints:
+
+```javascript
+solutions = exhaustive_search(6, {
+    0:function(p){return 0<=p[0]&&p[0]<=4;},
+    1:function(p){return p[0]+1===p[1];},
+    2:function(p){return p[1]+1===p[2];}
+}).get();
+
+echo(''+solutions.length+' solutions (exhaustive search)');
+echo(solutions.map(String).join("\n"));
+```
+
+Where we have defined our constraints per position as functions that take the current permutation `p` as argument and return `true` or `false` on whether they pass criteria for this position. We could define a single function to handle all 3 constraints but we'll leave as is in order to be easier to use next approach below.
+
+Running above we get:
+
+```text
+24 solutions (exhaustive search)
+0,1,2,3,4,5
+0,1,2,3,5,4
+0,1,2,4,3,5
+0,1,2,4,5,3
+0,1,2,5,3,4
+0,1,2,5,4,3
+1,2,3,0,4,5
+1,2,3,0,5,4
+1,2,3,4,0,5
+1,2,3,4,5,0
+1,2,3,5,0,4
+1,2,3,5,4,0
+2,3,4,0,1,5
+2,3,4,0,5,1
+2,3,4,1,0,5
+2,3,4,1,5,0
+2,3,4,5,0,1
+2,3,4,5,1,0
+3,4,5,0,1,2
+3,4,5,0,2,1
+3,4,5,1,0,2
+3,4,5,1,2,0
+3,4,5,2,0,1
+3,4,5,2,1,0
+```
+
+**Direct Generation**
+
+Exhaustive search is inefficient since it has to generate whole original combinatorial space and **then** reject any outliers. But constraints limit the original space, sometimes a lot, and we should exploit that fact, as far as possible, from the start.
+
+
 `Abacus` can generate efficiently many combinatorial objects. However it can do something even better, it can generate combinatorial objects matching user-defined (symbolic/algebraic) *constraints* / *patterns* / *templates*.
 
-In fact generating constrained combinatorial objects is faster and more efficient than generating original combinatorial object since the constraints limit the original combinatorial space as long as the algorithm is smart enough to take advantage of them so it can generated directly the reduced combinatorial space instead of rejecting objects not matching pattern from original combinatorial space.
+In fact generating constrained combinatorial objects is faster and more efficient than generating original combinatorial object since the constraints limit the original combinatorial space as long as the algorithm is smart enough to take advantage of them so it can generate directly the reduced combinatorial space instead of rejecting objects not matching pattern from original combinatorial space (like exhaustive search does).
 
 `Abacus` has this capability and supports a very **general symbolic / algebraic** system of generic constraints. Constraints supported are of 3 generic types:
 
@@ -457,21 +531,21 @@ In fact generating constrained combinatorial objects is faster and more efficien
 * Exclude a range of numbers from this position (eg. exclude numbers from 1 to 4: *"!{1..4}"*, exclude numbers 1,2,5: *"!{1,2,5}"*)
 * An expression (usually depending on other positions) (example this position is value in position 0 plus 2: *"[0]+2"*)
 
-Using these generic constraints many interesting templates and patterns can be constructed. In fact the more constraints used the less the original combinatorial space becomes thus is generated faster.
+Using these generic constraints many interesting templates and patterns can be constructed. In fact the more constraints used the less the original combinatorial space becomes, thus is generated faster.
 
 Constraints are specified, for example, via an object having as key the position needed and as value the constraint this position should satisfy. Additionaly an ordering should be applied which defines whether the elements are ordered in some generic way (eg ascending or descending or should be unique). This defines a partial combinatorial tensor which can then be augmented with a reduced combinatorial object to produce the required constrained combinatorial object. The methods work for all combinatorial objects if filtering is also applied to eliminate any outliers (few, but sometimes they cannot be eliminated from the start), but works best for objects which simply need unique elements like permutations. In this case constraints and fusion methods are enough and no extra filtering is needed. Thus even more efficient.
 
-For example, let us generate all 6-permutations which have "0..4" in 0th position and 1st position is "[0]+1" and 2nd position is "[1]+1". That is permutations which start with:
+For example, let us generate again all 6-permutations which have "0..4" in 0th position and 1st position is "[0]+1" and 2nd position is "[1]+1". That is permutations which start with:
 
 * 0,1,2,..
 * 1,2,3,..
 * 2,3,4,..
 * 3,4,5,..
 
-We define a utility function to setup an constrained permutation combinatorial object:
+We define a utility function to setup a constrained permutation combinatorial object:
 
 ```javascript
-function constrained_permutations(N, constraints)
+function direct_generation(N, constraints)
 {
     var T = Abacus.Tensor(N,{type:"partial",data:constraints,ordering:"<>"});
     if ( T.dimension() < N ) T.completeWith(Abacus.Permutation(N-T.dimension()));
@@ -482,15 +556,16 @@ function constrained_permutations(N, constraints)
 Now it is easy to generate our desired combinatorial object, we simply define our constraints per position:
 
 ```javascript
-solutions = constrained_permutations(6, {0:"{0..4}",1:"[0]+1",2:"[1]+1"}).get();
-echo(''+solutions.length+' solutions');
+solutions = direct_generation(6, {0:"{0..4}",1:"[0]+1",2:"[1]+1"}).get();
+
+echo(''+solutions.length+' solutions (combinatorial tensor)');
 echo(solutions.map(String).join("\n"));
 ```
 
 Running above we get:
 
 ```text
-24 solutions
+24 solutions (combinatorial tensor)
 0,1,2,3,4,5
 1,2,3,0,4,5
 2,3,4,0,1,5
@@ -516,6 +591,8 @@ Running above we get:
 2,3,4,5,1,0
 3,4,5,2,1,0
 ```
+
+One drawback of this approach (unlike exhaustive search) is that we lose the original lexicographic (or other) ordering during the generation of the object. However for most cases this is not a problem.
 
 We saw how we can generate efficiently constrained combinatorial objects satisfying user-defined patterns / templates with a couple of lines of code using `Abacus` library.
 
