@@ -7,7 +7,7 @@ o.toString()
 0
 o.valueOf()
 0
-o.deriv()
+o.d()
 0
 o.dispose()
 ---
@@ -16,8 +16,12 @@ o.toString()
 x^50+2*x^2
 o.mul(-1)
 -x^50-2*x^2
-o.deriv()
+o.d()
 50*x^49+4*x
+o.d(2)
+2450*x^48+4 true
+o.d(4)
+5527200*x^46 true
 o.toExpr()
 2*x^2+x^50
 Abacus.Polynomial.fromExpr(o.toExpr())
@@ -57,7 +61,7 @@ o.div(Abacus.Polynomial([2]))
 (2*x+1)/(2)=(2)*(x)+(1)=2*x+1 true
 o.div(Abacus.Polynomial([1,1]))
 (2*x+1)/(x+1)=(x+1)*(2)+(-1)=2*x+1 true
-o.deriv()
+o.d()
 2
 o.toExpr()
 1+2*x
@@ -70,7 +74,7 @@ o.toString()
 x^3-2*x^2-4
 o.div(Abacus.Polynomial([-3,1]))
 (x^3-2*x^2-4)/(x-3)=(x-3)*(x^2+x+3)+(5)=x^3-2*x^2-4 true
-o.deriv()
+o.d()
 3*x^2-4*x
 o.toExpr()
 -4-2*x^2+x^3

@@ -1,0 +1,44 @@
+Abacus.Expressions (VERSION = 0.9.8)
+---
+Symbolic Expressions
+---
+o=Abacus.Expr()
+o.toString()
+0
+o.valueOf()
+0
+o.d("x")
+0
+o.dispose()
+---
+o=Abacus.Expr(1, Abacus.Term("x", 2))
+o.toString()
+1+2*x
+o.valueOf({"x":1})
+3
+o.d("x")
+2
+o.d("x",2)
+0 true
+o2=Abacus.Expr(Abacus.Term("y^2", 3))
+3*y^2
+o.add(o2)
+1+2*x+3*y^2
+o.add(o2).d("x")
+2
+o.add(o2).d("y")
+6*y
+o.add(o2).d("y",2)
+6
+o2=Abacus.Expr(Abacus.Term("y^2", 3))
+3*y^2
+o.mul(o2)
+6*x*y^2+3*y^2
+o.mul(o2).d("x")
+6*y^2
+o.mul(o2).d("y")
+12*x*y+6*y
+o.mul(o2).d("y",2)
+6+12*x true
+o.dispose()
+---

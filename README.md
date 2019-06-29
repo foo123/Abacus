@@ -131,6 +131,7 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Solving General Linear Diophantine Equations, Michael Fox](https://www.jstor.org/stable/3620787?seq=1#page_scan_tab_contents)
 * [Integer Algorithms to solve Diophantine Linear Equations and Systems, Florentin Smarandache](https://arxiv.org/ftp/math/papers/0010/0010134.pdf)
 * [Solving Systems of Linear Diophantine Equations: An Algebraic Approach, Eric Domenjoud](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.52.9120&rep=rep1&type=pdf)
+* [A multivariable Chinese remainder theorem, Oliver Knill](http://www.math.harvard.edu/~knill/preprints/linear.pdf)
 * [Solving a System of Linear Diophantine Equations with Lower and Upper Bounds on the Variables, K. Aardal, C.A.J. Hurkens, A.K. Lenstra](https://www.jstor.org/stable/3690477?seq=1#page_scan_tab_contents)
 * [Recurrence Relations for the number of solutions of a class of Diophantine Equations, M. I. Krivoruchenko](https://arxiv.org/pdf/1311.4185.pdf)
 * [Integer Programming with a Fixed Number of Variables, H.W. Lenstra](https://people.csail.mit.edu/rrw/presentations/Lenstra81.pdf)
