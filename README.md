@@ -130,6 +130,7 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Finding the General Solution of a Linear Diophantine Equation, Morito, Salkin](https://www.fq.math.ca/Scanned/17-4/morito.pdf)
 * [Solving General Linear Diophantine Equations, Michael Fox](https://www.jstor.org/stable/3620787?seq=1#page_scan_tab_contents)
 * [Integer Algorithms to solve Diophantine Linear Equations and Systems, Florentin Smarandache](https://arxiv.org/ftp/math/papers/0010/0010134.pdf)
+* [Linear Diophantine Equations, William J. Gilbert, Anu Pathria](https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf)
 * [Solving Systems of Linear Diophantine Equations: An Algebraic Approach, Eric Domenjoud](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.52.9120&rep=rep1&type=pdf)
 * [A multivariable Chinese remainder theorem, Oliver Knill](http://www.math.harvard.edu/~knill/preprints/linear.pdf)
 * [Solving a System of Linear Diophantine Equations with Lower and Upper Bounds on the Variables, K. Aardal, C.A.J. Hurkens, A.K. Lenstra](https://www.jstor.org/stable/3690477?seq=1#page_scan_tab_contents)
@@ -140,6 +141,7 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
 * [Solving Linear Diophantine Matrix Equations Using the Smith Normal Form, Raymond N. Greenwell, Stanley Kertzner](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.169.4280&rep=rep1&type=pdf)
 * [A Simplified Fraction-Free Integer Gauss Elimination Algorithm, Peter R. Turner](https://www.researchgate.net/publication/235134418_A_Simplified_Fraction-Free_Integer_Gauss_Elimination_Algorithm)
+* [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
 
 

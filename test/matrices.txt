@@ -43,8 +43,8 @@ o=Abacus.Matrix([[1,2],[3,4]]).kron(Abacus.Matrix([[1,1],[2,2]]))
 ---
 o=Abacus.Matrix([91, 21]).concat(Abacus.Matrix.I(2))
 o.toString()
-|91  1  0|
-|21  0  1|
+|91 1 0|
+|21 0 1|
 o.ref(false, [2, 1])
 |7  1 -4|
 |0 -3 13|
@@ -60,13 +60,13 @@ o.ref(false, [2, 1]).slice(0, 1).t().mul(Abacus.Matrix([7, 0]))
 ---
 o=Abacus.Matrix([[5, 6], [6, -11], [8, 7]]).concat(Abacus.Matrix.I(3))
 o.toString()
-|5   6   1   0   0|
-|6 -11   0   1   0|
-|8   7   0   0   1|
+|5   6 1 0 0|
+|6 -11 0 1 0|
+|8   7 0 0 1|
 o.ref(false, [3, 2])
-|1 -17  -1   1   0|
-|0  13  -2  -1   2|
-|0   0  10   1  -7|
+|1 -17 -1  1  0|
+|0  13 -2 -1  2|
+|0   0 10  1 -7|
 o.ref(false, [3, 2]).slice(0, 2)
 |-1  1  0|
 |-2 -1  2|
@@ -86,8 +86,8 @@ o.toString()
 |21|
 o.snf()
 Left:
-|13  4|
-| 3  1|
+|13 4|
+| 3 1|
 Diagonal:
 |7|
 |0|
@@ -96,6 +96,19 @@ Right:
 Reconstructed:
 |91|
 |21|
+o.lu()
+P:
+|1 0|
+|0 1|
+L:
+|91 0|
+|21 1|
+D:
+|91  0|
+| 0 91|
+U:
+|91|
+| 0|
 ---
 o=Abacus.Matrix([[5, 6], [6, -11], [8, 7]])
 o.toString()
@@ -104,9 +117,9 @@ o.toString()
 |8   7|
 o.snf()
 Left:
-| 96  -7   2|
-| 97  -7   2|
-|151 -11   3|
+| 96  -7 2|
+| 97  -7 2|
+|151 -11 3|
 Diagonal:
 |1  0|
 |0 13|
@@ -118,6 +131,23 @@ Reconstructed:
 |5   6|
 |6 -11|
 |8   7|
+o.lu()
+P:
+|1 0 0|
+|0 1 0|
+|0 0 1|
+L:
+|5   0 0|
+|6 -91 0|
+|8 -13 1|
+D:
+|5    0   0|
+|0 -455   0|
+|0    0 -91|
+U:
+|5   6|
+|0 -91|
+|0   0|
 ---
 o=Abacus.Matrix(3, 3)
 o.toString()
@@ -189,9 +219,9 @@ o.nullspace(true)
 ---
 o=Abacus.Matrix([[ 1,  3, 0],[-2, -6, 0],[ 3,  9, 6]])
 o.toString()
-| 1  3  0|
-|-2 -6  0|
-| 3  9  6|
+| 1  3 0|
+|-2 -6 0|
+| 3  9 6|
 o.rowspace()
 Vector 0:
 |1 3 0|
@@ -219,14 +249,14 @@ Vector 0(true):
 ---
 o=Abacus.Matrix([[5, 10, 7], [3, 6, 1], [7, 14, 0]])
 o.toString()
-|5 10  7|
-|3  6  1|
-|7 14  0|
+|5 10 7|
+|3  6 1|
+|7 14 0|
 o.rowspace()
 Vector 0:
-|3 6 1|
+|1 2 0|
 Vector 1:
-|-1 -2 15|
+|0 0 1|
 <0,1> = 0
 o.colspace()
 Vector 0:
@@ -245,18 +275,18 @@ Vector 0(true):
 | 0|
 o.nullspace(true)
 Vector 0(true): 
-|7 -49  16|
+|7 -49 16|
 ---
 o=Abacus.Matrix([[5, 3, 7], [10, 6, 14], [8, 3, 1]])
 o.toString()
-| 5  3  7|
-|10  6 14|
-| 8  3  1|
+| 5 3  7|
+|10 6 14|
+| 8 3  1|
 o.rowspace()
 Vector 0:
 |8 3 1|
 Vector 1:
-|-13   9  77|
+|-13 9 77|
 <0,1> = 0
 o.colspace()
 Vector 0:
@@ -275,7 +305,7 @@ Vector 0(true):
 |  3|
 o.nullspace(true)
 Vector 0(true): 
-|-2  1  0|
+|-2 1 0|
 ---
 o=Abacus.Matrix([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
 o.toString()
@@ -302,8 +332,8 @@ Vector 1(true):
 <0,1> = 1
 o.nullspace(true)
 Vector 0(true): 
-|-2  1  0|
+|-2 1 0|
 Vector 1(true): 
-|-3  0  1|
+|-3 0 1|
 <0,1> = 6
 ---

@@ -2941,7 +2941,7 @@ function solvediophs( a, b, with_param, with_free_vars )
     if ( !(a instanceof Matrix) ) a = Matrix(a);
     m = a.nr; if ( !m ) return null;
     k = a.nc; if ( !k ) return null;
-    if ( b instanceof Matrix ) b = b.array();
+    if ( b instanceof Matrix ) b = b.col(0);
     // concat with zeroes
     if ( m > b.length ) b = b.concat(array(m-b.length, function(i){return O;}));
     // A*X = B <=> iref(A.t|I) = R|T <=> iif R.t*P = B has int solutions P => X = T.t*P
@@ -5999,9 +5999,9 @@ Polynomial = Abacus.Polynomial = Class({
 // Abacus.Matrix, represents a (2-dimensional) matrix with integer coefficients
 Matrix = Abacus.Matrix = Class({
 
-    constructor: function Matrix( r, c ) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( !(self instanceof Matrix) ) return new Matrix(r, c);
+    constructor: function Matrix( r, c, values ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, k, v, i, j;
+        if ( !(self instanceof Matrix) ) return new Matrix(r, c, values);
 
         if ( is_array(r) || is_args(r) )
         {
@@ -6033,6 +6033,18 @@ Matrix = Abacus.Matrix = Class({
                     return Arithmetic.O;
                 });
             });
+            if ( is_obj(values) )
+            {
+                for(k in values)
+                {
+                    if ( !HAS.call(values,k) ) continue;
+                    v = values[k];
+                    k = k.split(',').map(function(n){return parseInt(trim(n), 10);});
+                    i = k[0]; j = k[1];
+                    if ( 0<=i && i<self.val.length && 0<=j && j<self.val[0].length )
+                        self.val[i][j] = v;
+                }
+            }
         }
         self.nr = self.val.length;
         self.nc = self.nr ? self.val[0].length : 0;
@@ -6163,6 +6175,7 @@ Matrix = Abacus.Matrix = Class({
     ,_n: null
     ,_t: null
     ,_snf: null
+    ,_lu: null
     ,_ref: null
     ,_rref: null
     ,_rn: null
@@ -6178,6 +6191,7 @@ Matrix = Abacus.Matrix = Class({
         self._n = null;
         self._t = null;
         self._snf = null;
+        self._lu = null;
         self._ref = null;
         self._rref = null;
         self._rn = null;
@@ -6196,27 +6210,31 @@ Matrix = Abacus.Matrix = Class({
         var m = this.val.map(function(vi){return vi.slice();});
         return raw ? m : Matrix(m);
     }
+    ,map: function( f, raw ) {
+        var self = this, m;
+        m = self.val.map(function(vi, i){
+            return vi.map(function(vij, j){
+                return f(vij, [i, j], self);
+            });
+        });
+        return raw ? m : Matrix(m);
+    }
+    ,array: function( column_order ) {
+        var self = this;
+        // return matrix as 1-D array of stacking row after row or column after column (if column_order)
+        return column_order ? array(self.nr*self.nc, function(k){
+            return self.val[k % self.nr][~~(k / self.nr)];
+        }) : array(self.nr*self.nc, function(k){
+            return self.val[~~(k / self.nc)][k % self.nc];
+        });
+    }
     ,row: function( r ) {
         var self = this;
-        return 0<=r && r<self.nr ? array(self.nc, function(j){return self.val[r][j];}) : null;
+        return 0<=r && r<self.nr ? self.val[r].slice() : null;
     }
     ,col: function( c ) {
         var self = this;
         return 0<=c && c<self.nc ? array(self.nr, function(i){return self.val[i][c];}) : null;
-    }
-    ,array: function( ) {
-        var self = this;
-        // return matrix as 1-D array of stacking row after row
-        return array(self.nr*self.nc, function(k){
-            return self.val[~~(k / self.nc)][k % self.nc];
-        });
-    }
-    ,map: function( map ) {
-        return this.val.map(function(vi, i){
-            return vi.map(function(vij, j){
-                return map(vij, [i, j]);
-            });
-        });
     }
     ,diag: function( k ) {
         // k = 0 chooses center diagonal, k>0 chooses diagonal to the right, k<0 diagonal to the left
@@ -6238,6 +6256,7 @@ Matrix = Abacus.Matrix = Class({
                 self._n = null;
                 self._t = null;
                 self._snf = null;
+                self._lu = null;
                 self._ref = null;
                 self._rref = null;
                 self._rn = null;
@@ -6297,11 +6316,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( null == self._n )
         {
-            self._n = Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.neg(vij);
-                });
-            }));
+            self._n = self.map(function(vij){return Arithmetic.neg(vij);});
             self._n._n = self;
         }
         return self._n;
@@ -6312,11 +6327,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
         {
-            return Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.add(vij, a);
-                });
-            }));
+            return self.map(function(vij){return Arithmetic.add(vij, a);});
         }
         else if ( a instanceof Matrix )
         {
@@ -6337,11 +6348,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
         {
-            return Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.sub(vij, a);
-                });
-            }));
+            return self.map(function(vij){return Arithmetic.sub(vij, a);});
         }
         else if ( a instanceof Matrix )
         {
@@ -6362,11 +6369,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, n;
         if ( Arithmetic.isNumber(a) )
         {
-            return Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.mul(vij, a);
-                });
-            }));
+            return self.map(function(vij){return Arithmetic.mul(vij, a);});
         }
         else if ( a instanceof Matrix )
         {
@@ -6387,7 +6390,7 @@ Matrix = Abacus.Matrix = Class({
         // pointwise multiplication
         if ( Arithmetic.isNumber(a) )
         {
-            return self.mul(a);
+            return self.map(function(vij){return Arithmetic.mul(vij, a);});
         }
         else if ( a instanceof Matrix )
         {
@@ -6408,7 +6411,7 @@ Matrix = Abacus.Matrix = Class({
         // kronecker product
         if ( Arithmetic.isNumber(a) )
         {
-            return self.mul(a);
+            return self.map(function(vij){return Arithmetic.mul(vij, a);});
         }
         else if ( a instanceof Matrix )
         {
@@ -6429,11 +6432,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
         {
-            return Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.div(vij, a);
-                });
-            }));
+            return self.map(function(vij){return Arithmetic.div(vij, a);});
         }
         return self;
     }
@@ -6441,11 +6440,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
         {
-            return Matrix(self.val.map(function(vi){
-                return vi.map(function(vij){
-                    return Arithmetic.mod(vij, a);
-                });
-            }));
+            return self.map(function(vij){return Arithmetic.mod(vij, a);});
         }
         return self;
     }
@@ -6704,10 +6699,86 @@ Matrix = Abacus.Matrix = Class({
         }
         return self._snf.slice();
     }
+    ,lu: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+            n = self.nr, m = self.nc, dim, P, L, U, DD, oldpivot, k, i, j, kpivot, NotFound, Ukk, Uik, defficient;
+        // completely fraction-free LU factorisation
+        // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
+        if ( null == self._lu )
+        {
+            /*
+            Completely Fraction free LU factoring(CFFLU)
+            Input: A nxm matrix A, with m >= n.
+            Output: Four matrices P, L, D, U, where:
+                P is a nxn permutation matrix,
+                L is a nxn lower triangular matrix,
+                D is a nxn diagonal matrix,
+                U is a nxm upper triangular matrix
+                and P*A = L*inv(D)*U
+            */
+            defficient = false;
+            //dim = stdMath.min(n, m);
+            U = self.clone();
+            L = Matrix.I(n);
+            DD = array(n, function(){return O;});
+            P = Matrix.I(n);
+            oldpivot = I;
+            for(k=0; k<n-1; k++)
+            {
+                if ( Arithmetic.equ(O, U.val[k][k]) )
+                {
+                    kpivot = k+1;
+                    NotFound = true;
+                    while(kpivot<n && NotFound)
+                    {
+                        if ( !Arithmetic.equ(O, U.val[kpivot][k]) )
+                            NotFound = false;
+                        else
+                            kpivot++;
+                    }
+                    if ( n <= kpivot )
+                    {
+                        // matrix is rank-defficient
+                        defficient = true;
+                        break;
+                    }
+                    else
+                    {
+                        Matrix.SWAPR(U.val, k, kpivot);
+                        Matrix.SWAPR(P.val, k, kpivot);
+                    }
+                }
+                Ukk = U.val[k][k];
+                L.val[k][k] = Ukk;
+                DD[k] = Arithmetic.mul(oldpivot, Ukk);
+                for(i=k+1; i<n; i++)
+                {
+                    Uik = U.val[i][k];
+                    L.val[i][k] = Uik;
+                    for(j=k+1; j<m; j++)
+                    {
+                        U.val[i][j] = Arithmetic.div(Arithmetic.sub(Arithmetic.mul(Ukk, U.val[i][j]), Arithmetic.mul(U.val[k][j], Uik)), oldpivot);
+                    }
+                    U.val[i][k] = O;
+                }
+                oldpivot = U.val[k][k];
+            }
+            if ( !defficient )
+            {
+                DD[n-1] = oldpivot;
+                self._lu = [P, L, Matrix.D(n, n, DD), U];
+            }
+            else
+            {
+                self._lu = [];
+            }
+        }
+        return self._lu.slice();
+    }
     ,ref: function( with_pivots, odim ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, im, min, a, z, m;
-        // integer row echelon form (ref)
+        // integer row echelon form (ref) (also known as Hermite normal form), integer row reduction using fraction-free gaussian elimination
         if ( null == self._ref )
         {
             dim = columns;
@@ -6783,7 +6854,7 @@ Matrix = Abacus.Matrix = Class({
                         {
                             if ( i === im ) continue;
                             // subtract min row from other rows
-                            Matrix.ADDR(m, i, im, Arithmetic.neg(Arithmetic.div(m[i][lead], m[imin][lead])), I, lead);
+                            Matrix.ADDR(m, i, im, Arithmetic.neg(Arithmetic.div(m[i][lead], m[im][lead])), I, lead);
                             // determinant does not change for this operation
 
                             // find again row with min abs value for this column as well for next round
@@ -6810,7 +6881,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             rows = self.nr, columns = self.nc, dim, pivots, det, pl,
             lead, r, i, j, a, g, ref;
-        // integer reduced row echelon form (rref)
+        // integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from row echelon form (gauss elimination)
         if ( null == self._rref )
         {
             // build rref incrementaly from ref
@@ -7073,22 +7144,20 @@ Matrix = Abacus.Matrix = Class({
         return 0<=r && r<self.nr && 0<=c && c<self.nc ? self.val[r][c] : Abacus.Arithmetic.O;
     }
     ,toString: function( ) {
-        var self = this, max, max0 = 0, bar = '|';
+        var self = this, max, bar = '|';
         if ( null == self._str )
         {
-            // compute length of greatest num in matrix so to pad other nums same to aling properly
-            // trim any unneeded spaces from 1st column
-            max = self.val.reduce(function(max, vi){
+            // compute length of greatest num in matrix (per column) so to pad other nums (in same column) same to aling properly
+            max = self.val.reduce(function(max, vi, i){
                 return vi.reduce(function(max, vij, j){
                     var sij = String(vij);
-                    if ( sij.length > max ) max = sij.length;
-                    if ( 0 === j && sij.length > max0 ) max0 = sij.length;
+                    if ( sij.length > max[j] ) max[j] = sij.length;
                     return max;
                 }, max);
-            }, 0);
-            self._str = self.val.map(function(vi){
+            }, array(self.nc, function(){return 0;}));
+            self._str = self.val.map(function(vi, i){
                 return bar + vi.map(function(vij, j){
-                    return pad(String(vij), 0===j ? max0 : max);
+                    return pad(String(vij), max[j]);
                 }).join(' ') + bar;
             }).join("\n");
         }
