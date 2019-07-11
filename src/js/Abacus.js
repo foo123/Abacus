@@ -3106,8 +3106,8 @@ function solvecongrs( a, b, m, with_param )
             // general solution (as expression)
             for(t in x.terms)
             {
-                if ( !HAS.call(x.terms, t) || '1' === t ) continue;
-                if ( Arithmetic.equ(M, Arithmetic.abs(x.terms[t].c())) )
+                if ( !HAS.call(x.terms, t) || ('1' === t) ) continue;
+                if ( Arithmetic.equ(O, Arithmetic.mod(M, x.terms[t].c())) )
                 {
                     add_M = false;
                     break;
@@ -6176,6 +6176,7 @@ Matrix = Abacus.Matrix = Class({
     ,_t: null
     ,_snf: null
     ,_lu: null
+    ,_qr: null
     ,_ref: null
     ,_rref: null
     ,_rn: null
@@ -6192,6 +6193,7 @@ Matrix = Abacus.Matrix = Class({
         self._t = null;
         self._snf = null;
         self._lu = null;
+        self._qr = null;
         self._ref = null;
         self._rref = null;
         self._rn = null;
@@ -6252,11 +6254,14 @@ Matrix = Abacus.Matrix = Class({
             if ( self.val[r][c] !== v )
             {
                 // force update of associated cached entries
+                if ( self._n ) self._n._n = null;
+                if ( self._t ) self._t._t = null;
                 self._str = null;
                 self._n = null;
                 self._t = null;
                 self._snf = null;
                 self._lu = null;
+                self._qr = null;
                 self._ref = null;
                 self._rref = null;
                 self._rn = null;
@@ -6775,10 +6780,36 @@ Matrix = Abacus.Matrix = Class({
         }
         return self._lu.slice();
     }
+    ,qr: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, n = self.nr, m = self.nc, lu;
+        // fraction-free QR factorisation
+        // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
+        if ( null == self._qr )
+        {
+            /*
+            Fraction free QR factoring(FFQR) based on completely fraction-free LU factoring (CFFLU)
+            Input: A nxm matrix A.
+            Output: Three matrices: Q, D, R where:
+                Q is a nxm left orthogonal matrix,
+                D is a mxm diagonal matrix,
+                R is a mxm upper triangular matrix
+                and A = Q*inv(D)*R
+
+                use CFFLU([A.t*A | A.t]) and extract appropriate factors
+            */
+            lu = self.t().mul(self).concat(self.t()).lu();
+            if ( !lu.length )
+                self._qr = [];
+            else
+                self._qr = [lu[3].slice(0, m, -1, -1).t()/*Q*/, lu[2]/*D*/, lu[1].t()/*R*/];
+        }
+        return self._qr.slice();
+    }
     ,ref: function( with_pivots, odim ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, im, min, a, z, m;
-        // integer row echelon form (ref) (also known as Hermite normal form), integer row reduction using fraction-free gaussian elimination
+        // integer row echelon form (ref) (also known as Hermite normal form), using integer row reduction or fraction-free gaussian elimination
+        // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
         if ( null == self._ref )
         {
             dim = columns;
