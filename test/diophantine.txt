@@ -4,11 +4,13 @@ Solve a1x1 + a2x2 + a3x3 + .. = c
 4x = 7
 o=Abacus.Math.diophantine([4], 7)
 No Integer solution
+No Integer solution
 No Integer solution 7
 No Integer solution 7
 ---
 4x = 8
 o=Abacus.Math.diophantine([4], 8)
+x = 2
 x = 2
 8 8
 8 8
@@ -16,12 +18,14 @@ x = 2
 4x + 0y = 8
 o=Abacus.Math.diophantine([4,0], 8)
 x = 2, y = i_1
+x = 2, y = i_{1}
 8 8
 8 8
 ---
 4x + 5y = 7
 o=Abacus.Math.diophantine([4,5], 7)
 x = -7+5*i_1, y = 7-4*i_1
+x = -7+5i_{1}, y = 7-4i_{1}
 7 7
 7 7
 o=Abacus.Math.diophantine([4,5], 7, false)
@@ -31,18 +35,21 @@ x = -7, y = 7
 0x + 0z + 0y + 0w = 0
 o=Abacus.Math.diophantine([0,0,0,0], 0)
 x = i_1, z = i_2, y = i_3, w = i_4
+x = i_{1}, z = i_{2}, y = i_{3}, w = i_{4}
 0 0
 0 0
 ---
 4x + 0z + 5y + 0w = 7
 o=Abacus.Math.diophantine([4,0,5,0], 7)
 x = -7+5*i_1, z = i_2, y = 7-4*i_1, w = i_3
+x = -7+5i_{1}, z = i_{2}, y = 7-4i_{1}, w = i_{3}
 7 7
 7 7
 ---
 4x + 6y + 3z = 2
 o=Abacus.Math.diophantine([4,6,3], 2)
 x = 2+3*i_1, y = i_1+i_2, z = -2-6*i_1-2*i_2
+x = 2+3i_{1}, y = i_{1}+i_{2}, z = -2-6i_{1}-2i_{2}
 2 2
 2 2
 o=Abacus.Math.diophantine([4,6,3], 2, false)
@@ -52,6 +59,7 @@ x = 2, y = 0, z = -2
 4x + 0w + 6y + 3z + 0g = 2
 o=Abacus.Math.diophantine([4,0,6,3,0], 2)
 x = 2+3*i_1, w = i_3, y = i_1+i_2, z = -2-6*i_1-2*i_2, g = i_4
+x = 2+3i_{1}, w = i_{3}, y = i_{1}+i_{2}, z = -2-6i_{1}-2i_{2}, g = i_{4}
 2 2
 2 2
 ---
@@ -59,24 +67,28 @@ Solve system AX = C
 4x + 5y = 7
 o=Abacus.Math.diophantines([[4,5]], [7])
 x = -7+5*i_1, y = 7-4*i_1
+x = -7+5i_{1}, y = 7-4i_{1}
 [ 7 ] [ 7 ]
 [ 7 ] [ 7 ]
 ---
 4x + 5y = 7, 0x + 0y = 0
 o=Abacus.Math.diophantines([[4,5],[0,0]], [7,0])
 x = -7+5*i_1, y = 7-4*i_1
+x = -7+5i_{1}, y = 7-4i_{1}
 [ 7, 0 ] [ 7, 0 ]
 [ 7, 0 ] [ 7, 0 ]
 ---
 4x + 5y = 7, 8x + 10y = 14
 o=Abacus.Math.diophantines([[4,5],[8,10]], [7,14])
 x = -7+5*i_1, y = 7-4*i_1
+x = -7+5i_{1}, y = 7-4i_{1}
 [ 7, 14 ] [ 7, 14 ]
 [ 7, 14 ] [ 7, 14 ]
 ---
 5x + 6y + 8z = 1, 6x - 11y + 7z = 9
 o=Abacus.Math.diophantines([[5,6,8],[6,-11,7]], [1,9])
 x = -5+10*i_1, y = -1+i_1, z = 4-7*i_1
+x = -5+10i_{1}, y = -1+i_{1}, z = 4-7i_{1}
 [ 1, 9 ] [ 1, 9 ]
 [ 1, 9 ] [ 1, 9 ]
 ---
@@ -84,6 +96,7 @@ Solve a1x1 + a2x2 + ..  = b mod m
 3x = 3 mod 10
 o=Abacus.Math.congruence([3], 3, 10)
 x = 1+10*i_1
+x = 1+10i_{1}
 3 3
 3 3
 o=Abacus.Math.congruence([3], 3, 10, false)
@@ -93,6 +106,7 @@ x = 1
 4x + 6y = 2 mod 10
 o=Abacus.Math.congruence([4,6], 2, 10)
 x = i_1, y = 2+i_1+5*i_2
+x = i_{1}, y = 2+i_{1}+5i_{2}
 2 2
 2 2
 o=Abacus.Math.congruence([4,6], 2, 10, false)
@@ -103,24 +117,28 @@ Solve system AX = B mod M
 3x = 3 mod 10
 o=Abacus.Math.congruences([[3]], [3], [10])
 x = 1+10*i_1
+x = 1+10i_{1}
 [ 3 ] [ 3 ]
 [ 3 ] [ 3 ]
 ---
 4x + 6y = 2 mod 10
 o=Abacus.Math.congruences([[4,6]], [2], [10])
 x = 9+3*i_1-i_2, y = 1-2*i_1-i_2
+x = 9+3i_{1}-i_{2}, y = 1-2i_{1}-i_{2}
 [ 2 ] [ 2 ]
 [ 2 ] [ 2 ]
 ---
 4x + 6y = 2 mod 10, 2x + 3y = 5 mod 7
 o=Abacus.Math.congruences([[4,6],[2,3]], [2,5], [10,7])
 x = 67+3*i_1+70*i_2, y = 69-2*i_1
+x = 67+3i_{1}+70i_{2}, y = 69-2i_{1}
 [ 2, 5 ] [ 2, 5 ]
 [ 2, 5 ] [ 2, 5 ]
 ---
 x = 3 mod 4, x = 5 mod 6
 o=Abacus.Math.congruences([[1],[1]], [3,5], [4,6])
 x = 11+12*i_1
+x = 11+12i_{1}
 [ 3, 5 ] [ 3, 5 ]
 [ 3, 5 ] [ 3, 5 ]
 ---
@@ -128,31 +146,37 @@ Solve a1^2x1^2 + a2^2x2^2 + ..  = 0
 x^2 + y^2 + z^2 = 0
 o=Abacus.Math.pythagorean([1,1,1])
 x = 0, y = 0, z = 0
+x = 0, y = 0, z = 0
 0 0
 0 0
 2x^2 + 3y^2 - z^2 = 0
 o=Abacus.Math.pythagorean([2,3,-1])
+x = 0, y = 0, z = 0
 x = 0, y = 0, z = 0
 0 0
 0 0
 9x^2 - 4y^2 = 0
 o=Abacus.Math.pythagorean([9,-4])
 x = 2*i_1, y = 3*i_1
+x = 2i_{1}, y = 3i_{1}
 0 0
 0 0
 x^2 + y^2 - z^2 = 0 /* pythagorean triples */
 o=Abacus.Math.pythagorean([1,1,-1])
 x = i_1^2-i_2^2, y = 2*i_1*i_2, z = i_1^2+i_2^2
+x = i_{1}^{2}-i_{2}^{2}, y = 2i_{1}i_{2}, z = i_{1}^{2}+i_{2}^{2}
 0 0
 0 0
 a^2 + b^2 + c^2 - d^2 = 0
 o=Abacus.Math.pythagorean([1,1,1,-1])
 a = i_1^2+i_2^2-i_3^2, b = 2*i_1*i_3, c = 2*i_2*i_3, d = i_1^2+i_2^2+i_3^2
+a = i_{1}^{2}+i_{2}^{2}-i_{3}^{2}, b = 2i_{1}i_{3}, c = 2i_{2}i_{3}, d = i_{1}^{2}+i_{2}^{2}+i_{3}^{2}
 0 0
 0 0
 9x^2 - 4y^2 + 16z^2 + 25w^2 + g^2 = 0
 o=Abacus.Math.pythagorean([9,-4,16,25,1])
 x = 10*i_1^2+10*i_2^2+10*i_3^2-10*i_4^2, y = 15*i_1^2+15*i_2^2+15*i_3^2+15*i_4^2, z = 15*i_1*i_4, w = 12*i_2*i_4, g = 60*i_3*i_4
+x = 10i_{1}^{2}+10i_{2}^{2}+10i_{3}^{2}-10i_{4}^{2}, y = 15i_{1}^{2}+15i_{2}^{2}+15i_{3}^{2}+15i_{4}^{2}, z = 15i_{1}i_{4}, w = 12i_{2}i_{4}, g = 60i_{3}i_{4}
 0 0
 0 0
 ---

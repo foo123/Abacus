@@ -7,6 +7,8 @@ o.toString()
 |0 0 0|
 |0 0 0|
 |0 0 0|
+o.toTex()
+\begin{bmatrix}0 & 0 & 0 \\ 0 & 0 & 0 \\ 0 & 0 & 0\end{bmatrix}
 o.dispose()
 ---
 o=Abacus.Matrix.I(3)
@@ -14,6 +16,8 @@ o.toString()
 |1 0 0|
 |0 1 0|
 |0 0 1|
+o.toTex()
+\begin{bmatrix}1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1\end{bmatrix}
 o.slice(0, 0, 1, 1)
 |1 0|
 |0 1|
@@ -40,6 +44,8 @@ o=Abacus.Matrix([[1,2],[3,4]]).kron(Abacus.Matrix([[1,1],[2,2]]))
 |2 2 4 4|
 |3 3 4 4|
 |6 6 8 8|
+o.toTex()
+\begin{bmatrix}1 & 1 & 2 & 2 \\ 2 & 2 & 4 & 4 \\ 3 & 3 & 4 & 4 \\ 6 & 6 & 8 & 8\end{bmatrix}
 ---
 o=Abacus.Matrix([91, 21]).concat(Abacus.Matrix.I(2))
 o.toString()

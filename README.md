@@ -1,12 +1,12 @@
 # Abacus
 
-A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascript, Python, Java
+A **Combinatorics** and **Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
 (python/java implementations in progress)
 
 
-**version 0.9.8** *in progress* (~ 141kB minified, ~ 35kB zipped)
+**version 0.9.8** (~ 161kB minified, ~ 35kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -57,6 +57,7 @@ A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascri
 
 **Supports:** (see: `test/test.bat`)
 
+**Combinatorics**
 * `Tensor` (`test/tensors.js`)
 * `Tuple` (`test/tuples.js`)
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
@@ -76,18 +77,24 @@ A Combinatorics and Number Theory library for Node.js / Browser / XPCOM Javascri
 * `RestrictedComposition` (`test/restricted_compositions.js`) **exactly K #parts**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
-* Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
-* Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
-* `Polynomial` (`test/polynomials.js`) **univariate with integer coefficients**
-* `Matrix` (`test/matrices.js`) **with integer coefficients**
-* `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
-* `PrimeSieve`, Primality Tests (`test/primes.js`)
-* `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
+
 * **algebraic composition** (of **fixed** dimensions at present) and **sequences** of combinatorial objects to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`, see `test/permutations_of_combinations.js` and `test/permutations_of_permutations.js`, `k-Derangements` = `(n,k) Combinations` **combined With** `(n-k) Derangements`, see `test/k-derangements.js` or `all subsets` = `(n,0)Combinations + (n,1)Combinations + .. + (n,n-1)Combinations + (n,n)Combinations`, see `test/combination_subsets.js`)
 * custom (user-supplied callable) and/or built-in **filters** which can select and generate any custom and complex combinatorial object from filtering other combinatorial objects as efficiently as possible (e.g see `test/filtered.js`, `test/filtered_partitions.js`). Also **algebraic / boolean composition of filters** (i.e `.NOT()`, `.AND()`, `.OR()` and so on..). **Note** that filtering should be **used with caution and only if no other method is currently possible** to generate the desired combinatorial object as **filtering is equivalent to exhaustive search** over the space of the original combinatorial object and as such can be an inefficient way to generate a combinatorial object (e.g see `test/filtered.js`). **Note2** with filtering applied some methods like `.total()`, `.hasNext()` still return data of the original object **not** the filtered object since that would require to pre-generate all the data and filter them afterwards instead of doing it one-by-one on each generation and would be impractical and unachievable for very large combinatorial objects, so be careful when using, for example, `.total()` with fitering applied
 * **multiple (combined) iterator orderings &amp; traversals**: `lex`, `colex`, `random`, `reversed`, `reflected`, `minimal` (not implemented yet). For example: `"revlex"` (equivalent to `"lex,reversed"`), `"refcolex"`  (equivalent to `"colex,reflected"`), and so on..
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..) (and with filtering applied, if set). **Note** `rank`/`unrank` methods have to be implemented for this feature to work
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
+
+**Number Theory / Algebraic Number Theory**
+* Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
+* Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
+* `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
+* `Complex` (`test/complex.js`) **with Rational arbitrary precision parts**
+* `Polynomial` (`test/polynomials.js`) **univariate with integer coefficients**
+* `Matrix` (`test/matrices.js`) **with integer coefficients**
+* `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
+* `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
+* `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
+
 * `big-integer arithmetic`, `PRNG`s and other `math` utilities can be **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators (eg examples and tests use the excellent [BigInteger.js](https://github.com/peterolson/BigInteger.js))
 
 

@@ -5,6 +5,8 @@ Polynomials and Polynomial operations
 o=Abacus.Polynomial()
 o.toString()
 0
+o.toTex()
+0
 o.valueOf()
 0
 o.d()
@@ -14,6 +16,8 @@ o.dispose()
 o=Abacus.Polynomial({"50":1,"2":2})
 o.toString()
 x^50+2*x^2
+o.toTex()
+x^{50}+2x^{2}
 o.mul(-1)
 -x^50-2*x^2
 o.d()
@@ -24,6 +28,7 @@ o.d(4)
 5527200*x^46 true
 o.toExpr()
 2*x^2+x^50
+2x^{2}+x^{50}
 Abacus.Polynomial.fromExpr(o.toExpr())
 x^50+2*x^2
 o.dispose()
@@ -31,6 +36,8 @@ o.dispose()
 o=Abacus.Polynomial([1,2])
 o.toString()
 2*x+1
+o.toTex()
+2x+1
 o.valueOf(3)
 7
 o.neg()

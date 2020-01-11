@@ -96,7 +96,7 @@ o=Abacus.Math.isqrtp(44402, 100049)
 ---
 Moebius Function
 o=Abacus.Math.moebius(1)
-1
+-1
 o=Abacus.Math.moebius(2)
 1
 o=Abacus.Math.moebius(6)

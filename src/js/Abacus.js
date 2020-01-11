@@ -27,7 +27,8 @@ var  Abacus = {VERSION: "0.9.8"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,trim = String.prototype.trim ? function( s ){ return s.trim(); } : function( s ){ return s.replace(trim_re, ''); }
     ,pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/
     ,in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/
-
+    ,dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?$/, tex_frac_pattern = /^\\frac\{(-?\d+)\}\{(-?\d+)\}$/
+    
     ,Obj = function( ){ return Object.create(null); }
     ,Extend = Object.create, KEYS = Object.keys
     ,Merge = function Merge(/* args */) {
@@ -43,7 +44,7 @@ var  Abacus = {VERSION: "0.9.8"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     }
     ,Class = function Class(s, c) {
         if ( 1 === arguments.length ) { c = s; s = Object; }
-        var ctor = c[CLASS];
+        var ctor = c[CLASS] || function(){};
         if ( HAS.call(c,'__static__') ) { ctor = Merge(ctor, c.__static__); delete c.__static__; }
         ctor[PROTO] = Merge(Extend(s[PROTO]), c);
         return ctor;
@@ -59,7 +60,7 @@ var  Abacus = {VERSION: "0.9.8"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,Iterator, CombinatorialIterator, DefaultArithmetic
-    ,Filter, Node, /*Cache,*/ HashSieve, Term, Expr, Polynomial, Matrix
+    ,Filter, Node, /*Cache,*/ HashSieve, INUMBER, INumber, Integer, Rational, Complex, Term, Expr, Polynomial, Matrix
     ,Tensor, Permutation, Combination, Subset, Partition
     ,LatinSquare, MagicSquare, Progression, PrimeSieve, Diophantine
 ;
@@ -1754,6 +1755,8 @@ function is_prime( n )
     }
     else
     {
+        // fast deterministic test, TODO
+        //return apr_cl_test( n );
         // strong probabilistic test for very large numbers ie > 1000 digits
         return baillie_psw_test(n, 7);
     }
@@ -2161,9 +2164,205 @@ function factorize( n )
     }
     else
     {
-        // self-initialising quadratic sieve for (very) large numbers
+        // self-initialising quadratic sieve for (very) large numbers TODO
         return siqs_fac(n);
     }
+}
+
+/*function frac2str( )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    return String(this[0])+(Arithmetic.equ(Arithmetic.I, this[1]) ? '' : ('/'+String(this[1])));
+}*/
+function dec2frac( dec, simplify )
+{
+    // compute fraction (num/denom) for given decimal number (can include repeating decimals through special notation)
+    // eg -123.23[456] , last 456 digits are repeating infinitely
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
+        i, n, d, m, g, k, ten, fraction, N = Arithmetic.num,
+        is_neg = false, is_zero, non_repeating = null, repeating = null;
+        
+    dec = trim(String(dec)); // convert to string if not already
+    m = dec.match(dec_pattern);
+    if ( !m ) return null; // not valid decimal
+    
+    if ( m[1] ) is_neg = true; // negative number, keep track
+    
+    i = N(m[2]); // integer part
+    
+    fraction = [O, I];
+    //fraction.toString = frac2str;
+    
+    if ( !m[3] || (!m[4] && !m[5]) )
+    {
+        fraction[0] = is_neg ? Arithmetic.neg(i) : i;
+        return fraction; // just integer, no decimal part
+    }
+    
+    if ( m[4] )
+    {
+        non_repeating = m[4];
+    }
+    if ( m[5] )
+    {
+        repeating = m[5].slice(1,-1); // remove surrounding brackets
+        is_zero = true;
+        for(k=repeating.length-1; k>=0; k--)
+        {
+            if ( repeating.charAt(k) !== '0' )
+            {
+                is_zero = false;
+                break;
+            }
+        }
+        if ( is_zero ) repeating = null; // repeating zeroes are trivial
+    }
+    
+    ten = N(10);
+    if ( !repeating )
+    {
+        // no repeating decimals
+        // remove unnecessary trailing zeroes
+        while( non_repeating && (non_repeating.slice(-1)==='0') ) non_repeating = non_repeating.slice(0, -1);
+        if ( !non_repeating || !non_repeating.length )
+        {
+            d = I;
+            n = i; // only integer part
+        }
+        else
+        {
+            d = Arithmetic.pow(ten, non_repeating.length);
+            n = Arithmetic.add(Arithmetic.mul(d, i), N(non_repeating));
+        }
+    }
+    else
+    {
+        // with repeating decimals
+        if ( non_repeating )
+        {
+            // remove common repeating digits from non_repeating digits, in case they are included
+            while( (non_repeating.length>=repeating.length) && (non_repeating.slice(-repeating.length)===repeating) )
+                non_repeating = non_repeating.slice(0, -repeating.length);
+            if ( !non_repeating.length ) non_repeating = null;
+        }
+        d = Arithmetic.sub(Arithmetic.pow(ten, (non_repeating ? non_repeating.length : 0)+repeating.length), non_repeating ? Arithmetic.pow(ten, non_repeating.length) : I);
+        n = Arithmetic.add(Arithmetic.mul(d, i), Arithmetic.sub(N((non_repeating ? non_repeating : '')+repeating), non_repeating ? N(non_repeating) : O));
+    }
+    
+    if ( false !== simplify )
+    {
+        // remove common factors, simplify
+        g = gcd(n, d);
+        n = Arithmetic.div(n, g);
+        d = Arithmetic.div(d, g);
+    }
+    fraction[0] = is_neg ? Arithmetic.neg(n) : n;
+    fraction[1] = d;
+    return fraction;
+}
+function default_eq( a, b )
+{
+    // default equality between a and b
+    return a===b;
+}
+function floyd_cycle_detection( f, x0, eq )
+{
+    // https://en.wikipedia.org/wiki/Cycle_detection
+    // floyd tortoise-hare algorithm for cycle detection
+    var tortoise, hare, mu, lam;
+    eq = eq || default_eq;
+    tortoise = f(x0); hare = f(tortoise);
+    while ( !eq(tortoise, hare) )
+    {
+        tortoise = f(tortoise);
+        hare = f(f(hare));
+    }
+    mu = 0;
+    tortoise = x0;
+    while ( !eq(tortoise, hare) )
+    {
+        tortoise = f(tortoise);
+        hare = f(hare);
+        mu++;
+    }
+    lam = 1;
+    hare = f(tortoise);
+    while ( !eq(tortoise, hare) )
+    {
+        hare = f(hare);
+        lam++;
+    }
+    return [lam/*period*/, mu/*first_repeat*/];
+}
+function frac2dec( n, d )
+{
+    // fraction to decimal, with optional repeating digits
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        q, r, t, decimal, period, i, c, ten,
+        dot, whole, repeating, non_repeating, is_neg = false, is_zero;
+        
+    if ( Arithmetic.equ(O, d) ) return null; // not valid fraction
+    
+    is_neg = (Arithmetic.lt(O, n) && Arithmetic.gt(O, d)) || (Arithmetic.lt(O, d) && Arithmetic.gt(O, n)); // keep track if negative number
+    
+    n = Arithmetic.abs(n); d = Arithmetic.abs(d);
+    q = Arithmetic.div(n, d); r = Arithmetic.mod(n, d);
+    
+    whole = (is_neg ? '-' : '') + String(q); decimal = [];
+    
+    ten = Arithmetic.num(10);
+    period = floyd_cycle_detection(
+        function( r ) {
+            return Arithmetic.mod(Arithmetic.mul(ten, r), d);
+        },
+        r,
+        function( a, b ) {
+            return Arithmetic.equ(a, b);
+        }
+    );
+    
+    for (i=0,c=period[0]+period[1]; i<c; i++)
+    {
+        // long division up to repeating digits
+        t = Arithmetic.mul(ten, r);
+        q = Arithmetic.div(t, d);
+        r = Arithmetic.mod(t, d);
+        decimal.push(String(q));
+    }
+    
+    repeating = decimal.slice(period[1]).join('');
+    if ( repeating.length )
+    {
+        is_zero = true;
+        for(i=repeating.length-1; i>=0; i--)
+        {
+            if ( repeating.charAt(i) !== '0' )
+            {
+                is_zero = false;
+                break;
+            }
+        }
+        if ( is_zero ) repeating = ''; // repeating zeroes are trivial
+        else repeating = '['+repeating+']';
+    }
+    
+    non_repeating = decimal.slice(0, period[1]).join('');
+    if ( non_repeating.length )
+    {
+        is_zero = true;
+        for(i=non_repeating.length-1; i>=0; i--)
+        {
+            if ( non_repeating.charAt(i) !== '0' )
+            {
+                is_zero = false;
+                break;
+            }
+        }
+        if ( is_zero && !repeating.length ) non_repeating = ''; // zeroes are trivial
+    }
+    
+    dot = non_repeating.length || repeating.length ? '.' : '';
+    return whole + dot + non_repeating + repeating;
 }
 function gcd( /* args */ )
 {
@@ -2219,10 +2418,15 @@ function lcm( /* args */ )
     // least common multiple
     // https://en.wikipedia.org/wiki/Least_common_multiple
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        i, l = args.length, LCM;
-    if ( 1 >= l ) return 1===l ? args[0] : Abacus.Arithmetic.O;
+        i, l = args.length, LCM, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
+    if ( 1 >= l ) return 1===l ? args[0] : O;
+    if ( Arithmetic.equ(O, args[0]) || Arithmetic.equ(O, args[1]) ) return O;
     LCM = lcm2(args[0], args[1]);
-    for(i=2; i<l; i++) LCM = lcm2(LCM, args[i]);
+    for(i=2; i<l; i++)
+    {
+        if ( Arithmetic.equ(O, args[i]) ) return O;
+        LCM = lcm2(LCM, args[i]);
+    }
     return LCM;
 }
 function xgcd( /* args */ )
@@ -2352,10 +2556,15 @@ function polylcm( /* args */ )
     // least common multiple
     // https://en.wikipedia.org/wiki/Least_common_multiple
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        i, l = args.length, LCM;
-    if ( 1 >= l ) return 1===l ? args[0] : Polynomial.C(Abacus.Arithmetic.O);
+        i, l = args.length, LCM, O = Abacus.Arithmetic.O;
+    if ( 1 >= l ) return 1===l ? args[0] : Polynomial.C(O);
+    if ( args[0].equ(O) || args[1].equ(O) ) return Polynomial.C(O);
     LCM = polylcm2(args[0], args[1]);
-    for(i=2; i<l; i++) LCM = polylcm2(LCM, args[i]);
+    for(i=2; i<l; i++)
+    {
+        if ( args[i].equ(O) ) return Polynomial.C(O);
+        LCM = polylcm2(LCM, args[i]);
+    }
     return LCM;
 }
 function polyxgcd( /* args */ )
@@ -2960,9 +3169,7 @@ function solvediophs( a, b, with_param, with_free_vars )
         }
         else
         {
-            t = O;
-            for(j=0; j<i; j++)
-                t = Arithmetic.add(t, Arithmetic.mul(Rt.val[i][j], p[j].c()));
+            for(t=O,j=0; j<i; j++) t = Arithmetic.add(t, Arithmetic.mul(Rt.val[i][j], p[j].c()));
             p[i] = Arithmetic.sub(b[i], t);
             if ( Arithmetic.equ(O, Rt.val[i][i]) )
             {
@@ -3179,7 +3386,7 @@ function solvepythag( a, with_param )
     L = [
         Expr([ith, Term(param[k-2]+'^2', Arithmetic.mul(J, two))])
     ].concat(array(k-2, function(i){
-        return Expr(Term([param[i],param[k-2]], two));
+        return Expr(Term(param[i]+'*'+param[k-2], two));
     }));
     solutions = L.slice(0, index).concat(ith).concat(L.slice(index));
 
@@ -3234,7 +3441,7 @@ function exp( n, k )
     }
     return fproduct.mem[key];
 }
-fproduct.mem = {};*/
+fproduct.mem = Obj();*/
 function factorial( n, m )
 {
     var Arithmetic = Abacus.Arithmetic,
@@ -4830,8 +5037,8 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
 ,O: 0
 ,I: 1
 ,II: 2
-,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}} // a representation of Infinity
-,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}} // a representation of -Infinity
+,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}, toTex: function(){return "\\infty";}} // a representation of Infinity
+,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}, toTex: function(){return "-\\infty";}} // a representation of -Infinity
 
 ,nums: function( a ) {
     var Arithmetic = this;
@@ -4892,6 +5099,9 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
     isDefault: function( ){return (0 === this.O) && (this.add === addn);}
     ,neg: function( a ){return Abacus.Arithmetic.mul(Abacus.Arithmetic.J, a);}
+    ,abs: function( a ){return Abacus.Arithmetic.gt(Abacus.Arithmetic.O, a) ? Abacus.Arithmetic.neg(a) : a;}
+    ,min: function( a, b ){return Abacus.Arithmetic.lt(a, b) ? a : b;}
+    ,max: function( a, b ){return Abacus.Arithmetic.gt(a, b) ? a : b;}
 });
 
 // math / num theory utilities
@@ -5086,6 +5296,7 @@ Abacus.Util = {
 ,pick: pick
 ,pluck: pluck
 ,is_mirror_image: is_mirror_image
+,cycle_detection: floyd_cycle_detection
 
 };
 
@@ -5183,15 +5394,853 @@ Node = Abacus.Node = function Node(value, left, right, top) {
     };
 };*/
 
+function to_tex( s )
+{
+    var p = String(s).split('_');
+    return p[0] + (p.length > 1 ? ('_{'+p[1]+'}') : '');
+}
+function Tex( s )
+{
+    return "function" === typeof s.toTex ? s.toTex() : String(s);
+}
+
+// Abacus.INumber, represents a generic (numeric/symbolic) number interface
+INUMBER = {
+    equ: function( a ) {
+        return (a instanceof INumber) ? a.equ(this) : (this === a);
+    }
+    ,neg: function( ) {
+        return -this;
+    }
+    ,inv: NotImplemented
+
+    ,add: function( a ) {
+        return (a instanceof INumber) ? a.add(this) : (this + a);
+    }
+    ,sub: function( a ) {
+        return (a instanceof INumber) ? a.neg().add(this) : (this - a);
+    }
+    ,mul: function( a ) {
+        return (a instanceof INumber) ? a.mul(this) : (this * a);
+    }
+    ,div: function( a ) {
+        if ( a instanceof Complex ) return Complex(this).div(a);
+        else if ( a instanceof Rational ) return Rational(this).div(a);
+        //else if ( a instanceof Integer ) return Integer(this).div(a);
+        return (a instanceof INumber) ? null : stdMath.floor(this / a);
+    }
+    ,mod: function( a ) {
+        //if ( a instanceof Integer ) return Integer(this).mod(a);
+        return (a instanceof INumber) ? null : (this % a);
+    }
+    ,divmod: function( a ) {
+        return [this.div(a), this.mod(a)];
+    }
+    ,pow: function( n ) {
+        return stdMath.pow(this, +n);
+    }
+};
+INumber = Abacus.INumber = Class(Merge({
+    constructor:function( ) {
+    }
+    ,dispose: function( ) {
+        return this;
+    }
+    ,clone: function( ) {
+        return 0 + this;
+    }
+    ,valueOf: function( ) {
+        return 0;
+    }
+    ,toString: function( ) {
+        return '';
+    }
+    ,toTex: function( ) {
+        return this.toString();
+    }
+}, INUMBER));
+// extend native Number prototype with helper arithmetic methods for unifying all numeric interfaces inside Abacus
+/*Merge(Number[PROTO], INUMBER, {
+    gt: function( a ) {
+        return this > a;
+    }
+    ,gte: function( a ) {
+        return this >= a;
+    }
+    ,lt: function( a ) {
+        return this < a;
+    }
+    ,lte: function( a ) {
+        return this <= a;
+    }
+    ,toTex: function( ) {
+        return this.toString();
+    }
+});*/
+
+// Abacus.Integer, represents a possibly BigInteger (if overriden as such) else a usual js number/integer
+// NOT USED YET
+/*Integer = Abacus.Integer = Class(INumber, {
+    
+    constructor:function Integer( /*x* / ) {
+        var self = this, x = arguments.length ? arguments[0] : Integer.O;
+        if ( !(self instanceof Integer) ) return new Integer(x);
+        self.num = x instanceof Integer ? x.num : Integer.num(x);
+    }
+    
+    ,__static__: {
+        J: -1
+        ,O: 0
+        ,I: 1
+        ,II: 2
+        
+        ,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}, toTex: function(){return "\\infty";}} // a representation of Infinity
+        ,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}, toTex: function(){return "-\\infty";}} // a representation of -Infinity
+        
+        ,isNumber: function( x ) {
+            return is_number(x) || (x instanceof Integer);
+        }
+
+        ,num: function( a ) {
+            return is_number(a) ? stdMath.floor(a) : parseInt(a||0,10);
+        }
+        ,val: function( a ) {
+            return stdMath.floor(a.valueOf());
+        }
+        ,nums: function nums( a ) {
+            if ( is_array(a) || is_args(a) )
+            {
+                for(var i=0,l=a.length; i<l; i++) a[i] = nums(a[i]); // recursive
+                return a;
+            }
+            return Integer.num(a);
+        }
+        ,digits: function( a, base ){
+            var s = a.toString(+(base||10)); /* default base 10 * /
+            if ( '-' === s.charAt(0) ) s = s.slice(1); // dont include the sign in digits
+            return s;
+        }
+    }
+    
+    ,num: null
+    
+    ,dispose: function( ) {
+        var self = this;
+        self.num = null;
+        return self;
+    }
+    ,clone: function( ) {
+        return new Integer(this);
+    }
+    
+    ,equ: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return self.num === a.num;
+        if ( is_number(a) )
+            return self.num === a;
+        if ( a instanceof INumber )
+            return a.equ(self.num);
+        if ( is_string(a) )
+            return a === self.toString();
+        
+        return false;
+    }
+    ,gt: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return self.num > a.num;
+        if ( is_number(a) )
+            return self.num > a;
+        
+        return false;
+    }
+    ,gte: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return self.num >= a.num;
+        if ( is_number(a) )
+            return self.num >= a;
+        
+        return false;
+    }
+    ,lt: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return self.num < a.num;
+        if ( is_number(a) )
+            return self.num < a;
+        
+        return false;
+    }
+    ,lte: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return self.num <= a.num;
+        if ( is_number(a) )
+            return self.num <= a;
+        
+        return false;
+    }
+    ,neg: function( ) {
+        return Integer(-this.num);
+    }
+    ,inv: NotImplemented
+
+    ,add: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return Integer(self.num+a.num);
+        if ( is_number(a) )
+            return Integer(self.num+a);
+        if ( a instanceof INumber )
+            return a.add(self.num);
+        
+        return self;
+    }
+    ,sub: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return Integer(self.num-a.num);
+        if ( is_number(a) )
+            return Integer(self.num-a);
+        if ( a instanceof INumber )
+            return a.sub(self.num);
+        
+        return self;
+    }
+    ,mul: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return Integer(self.num*a.num);
+        if ( is_number(a) )
+            return Integer(self.num*a);
+        if ( a instanceof INumber )
+            return a.mul(self.num);
+        
+        return self;
+    }
+    ,div: function( a ) {
+        var self = this;
+        if ( a instanceof Complex )
+            return Complex(self.num).div(a);
+        if ( a instanceof Rational )
+            return Rational(self.num).div(a);
+        if ( a instanceof Integer )
+            return Integer(stdMath.floor(self.num / a.num));
+        if ( is_number(a) )
+            return Integer(stdMath.floor(self.num / a));
+        if ( a instanceof INumber )
+            return null;
+        
+        return self;
+    }
+    ,mod: function( a ) {
+        var self = this;
+        if ( a instanceof Integer )
+            return Integer(self.num % a.num);
+        if ( is_number(a) )
+            return Integer(self.num % a);
+        if ( a instanceof INumber )
+            return null;
+        
+        return self;
+    }
+    ,divmod: function( a ) {
+        var self = this;
+        return [self.div(a), self.mod(a)];
+    }
+    ,pow: function( n ) {
+        return Integer(stdMath.pow(this.num, +n));
+    }
+    ,valueOf: function( ) {
+        return this.num.valueOf();
+    }
+    ,toString: function( ) {
+        return String(this.num);
+    }
+    ,toTex: function( ) {
+        return this.toString();
+    }
+});*/
+
+// Abacus.Rational, represents a rational number (can support bigInt numerator/denumerator if plugged in, else default numbers)
+Rational = Abacus.Rational = Class(INumber, {
+
+    constructor: function Rational( /*num, den*/ ) {
+        var self = this, args = arguments, num, den, simplify = Rational.autoSimplify,
+            Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I;
+        
+        if ( args.length && (is_array(args[0]) || is_args(args[0])) ) args = args[0];
+        
+        if ( 1 < args.length )
+        {
+            num = args[0]; den = args[1];
+        }
+        else if ( 1 === args.length )
+        {
+            num = args[0]; den = I;
+        }
+        else
+        {
+            num = O; den = I;
+        }
+        
+        if ( !(self instanceof Rational) ) return new Rational(num, den);
+        
+        if ( num instanceof Rational )
+        {
+            den = num.den;
+            num = num.num;
+            simplify = false; // already simplified if set
+        }
+        
+        /*if ( !(num instanceof O[CLASS]) )*/ num = Arithmetic.num(num);
+        /*if ( !(den instanceof O[CLASS]) )*/ den = Arithmetic.num(den);
+        
+        if ( Arithmetic.equ(O, den) ) throw new Error('Zero denominator in Abacus.Rational!');
+        
+        self.num = Arithmetic.abs(num); self.den = Arithmetic.abs(den);
+        
+        if ( Arithmetic.equ(O, self.num) ) self.den = I; // normalise zero representation
+        
+        if ( (Arithmetic.lt(O, num) && Arithmetic.gt(O, den)) || (Arithmetic.lt(O, den) && Arithmetic.gt(O, num)) )
+            self.num = Arithmetic.neg(self.num); // make numerator carry the sign only
+        
+        if ( simplify ) self.simpl(); // simplify to smallest equivalent representation
+    }
+    
+    ,__static__: {
+        autoSimplify: true
+        
+        ,ZERO: function( ){ return Rational(Abacus.Arithmetic.O); }
+        ,ONE: function( ){ return Rational(Abacus.Arithmetic.I); }
+        
+        ,fromIntRem: function( i, r, m ) {
+            var Arithmetic = Abacus.Arithmetic;
+            i = Arithmetic.num(i); r = Arithmetic.num(r); m = Arithmetic.num(m);
+            return Rational(Arithmetic.add(r, Arithmetic.mul(i, m)), m);
+        }
+        ,fromDec: function( d ) {
+            var f = dec2frac(d, !Rational.autoSimplify);
+            return f ? Rational(f) : null;
+        }
+        ,fromString: function( s ) {
+            var Arithmetic = Abacus.Arithmetic, num_denom;
+            s = trim(s ? String(s) : '');
+            if ( !s.length ) return Rational();
+            num_denom = String(s).split('/');
+            return Rational(Arithmetic.num(num_denom[0]), 1<num_denom.length?Arithmetic.num(num_denom[1]):Arithmetic.I);
+        }
+        ,fromTex: function( s ) {
+            var Arithmetic = Abacus.Arithmetic, m = trim(String(s)).match(tex_frac_pattern);
+            return m ? Rational(Arithmetic.num(m[1]), Arithmetic.num(m[2])) : null;
+        }
+    }
+    
+    ,num: null
+    ,den: null
+    ,_str: null
+    ,_tex: null
+    ,_dec: null
+    ,_int: null
+    ,_rem: null
+    
+    ,dispose: function( ) {
+        var self = this;
+        self.num = null;
+        self.den = null;
+        self._str = null;
+        self._tex = null;
+        self._dec = null;
+        self._int = null;
+        self._rem = null;
+        return self;
+    }
+    
+    ,clone: function( ) {
+        return new Rational(this);
+    }
+    ,isInt: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.equ(Arithmetic.I, self.den);
+    }
+
+    ,equ: function( a, strict ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Complex) || (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.equ(self);
+        else if ( a instanceof Rational )
+            return true===strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, a.den)) : Arithmetic.equ(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return true===strict ? (Arithmetic.equ(self.num, a) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(self.den, a));
+        else if ( is_string(a) )
+            return (a === self.toString()) || (a === self.toTex()) || (a === self.toDec());
+        
+        return false;
+    }
+    ,gt: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Rational )
+            return Arithmetic.gt(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Arithmetic.gt(self.num, Arithmetic.mul(self.den, a));
+        
+        
+        return false;
+    }
+    ,gte: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Rational )
+            return Arithmetic.gte(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Arithmetic.gte(self.num, Arithmetic.mul(self.den, a));
+        
+        return false;
+    }
+    ,lt: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Rational )
+            return Arithmetic.lt(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Arithmetic.lt(self.num, Arithmetic.mul(self.den, a));
+        
+        return false;
+    }
+    ,lte: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Rational )
+            return Arithmetic.lte(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Arithmetic.lte(self.num, Arithmetic.mul(self.den, a));
+        
+        return false;
+    }
+    ,neg: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Rational(Arithmetic.neg(self.num), self.den);
+    }
+    ,inv: function( ) {
+        var self = this;
+        return Rational(self.den, self.num);
+    }
+    ,rev: function( ) {
+        return this.inv();
+    }
+    ,abs: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Rational(Arithmetic.abs(self.num), Arithmetic.abs(self.den));
+    }
+
+    ,add: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.add(self);
+        if ( a instanceof Complex )
+        {
+            if ( !a.isReal() ) return a.add(self);
+            a = a.real;
+        }
+        if ( a instanceof Rational )
+            return Arithmetic.equ(self.den, a.den) ? Rational(Arithmetic.add(self.num, a.num), self.den) : Rational(Arithmetic.add(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den)), Arithmetic.mul(self.den, a.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.add(self.num, a), self.den) : Rational(Arithmetic.add(self.num, Arithmetic.mul(self.den, a)), self.den);
+        
+        return self;
+    }
+    ,sub: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.neg().add(self);
+        if ( a instanceof Complex )
+        {
+            if ( !a.isReal() ) return Complex(self).sub(a);
+            a = a.real;
+        }
+        if ( a instanceof Rational )
+            return Arithmetic.equ(self.den, a.den) ? Rational(Arithmetic.sub(self.num, a.num), self.den) : Rational(Arithmetic.sub(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den)), Arithmetic.mul(self.den, a.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.sub(self.num, a), self.den) : Rational(Arithmetic.sub(self.num, Arithmetic.mul(self.den, a)), self.den);
+        
+        return self;
+    }
+    ,mul: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.mul(self);
+        if ( a instanceof Complex )
+        {
+            if ( !a.isReal() ) return a.mul(self);
+            a = a.real;
+        }
+        if ( a instanceof Rational )
+            return Rational(Arithmetic.mul(self.num, a.num), Arithmetic.mul(self.den, a.den));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Rational(Arithmetic.mul(self.num, a), self.den);
+        
+        return self;
+    }
+    ,div: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return null;
+        if ( a instanceof Complex )
+        {
+            if ( !a.isReal() ) return Complex(self).div(a);
+            a = a.real;
+        }
+        if ( a instanceof Rational )
+            return Rational(Arithmetic.mul(self.num, a.den), Arithmetic.mul(self.den, a.num));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return Rational(self.num, Arithmetic.mul(self.den, a));
+        
+        return self;
+    }
+    ,mod: NotImplemented
+    ,divmod: NotImplemented
+    
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, num, denom;
+        if ( Arithmetic.isNumber(n) )
+        {
+            num = self.num; denom = self.den;
+            if ( Arithmetic.gt(O, n) )
+            {
+                if ( Arithmetic.equ(O, num) ) throw new Error('Zero denominator from negative power in Abacus.Rational!');
+                num = self.den; denom = self.num;
+                n = Arithmetic.neg(n);
+            }
+            if ( Arithmetic.equ(O, num) ) return Rational(O, I);
+            if ( Arithmetic.equ(O, n) ) return Rational(I, I);
+            if ( Arithmetic.equ(I, n) ) return Rational(num, denom);
+            return Rational(Arithmetic.pow(num, n), Arithmetic.pow(denom, n));
+        }
+        return self;
+    }
+    ,simpl: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, g;
+        if ( Arithmetic.equ(Arithmetic.O, self.num) )
+        {
+            self.den = I;
+        }
+        else
+        {
+            g = gcd(self.num, self.den);
+            if ( !Arithmetic.equ(I, g) )
+            {
+                self.num = Arithmetic.div(self.num, g);
+                self.den = Arithmetic.div(self.den, g);
+                self._str = null;
+                self._tex = null;
+            }
+        }
+        return self;
+    }
+    ,tuple: function( ) {
+        return [this.num, this.den];
+    }
+    ,integer: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._int )
+            self._int = Arithmetic.div(self.num, self.den); // return integer part
+        return self._int;
+    }
+    ,remainder: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._rem )
+            self._rem = Arithmetic.mod(self.num, self.den); // return remainder part
+        return self._rem;
+    }
+    ,toDec: function( ) {
+        var self = this;
+        if ( null == self._dec )
+            self._dec = frac2dec(self.num, self.den); // return **exact** decimal expansion (with optional repeating digits)
+        return self._dec;
+    }
+    ,valueOf: function( ) {
+        return this.integer().valueOf();
+    }
+    ,toString: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._str )
+            self._str = String(self.num) + (Arithmetic.equ(Arithmetic.I, self.den) ? '' : ('/'+String(self.den)));
+        return self._str;
+    }
+    ,toTex: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._tex )
+            self._tex = Arithmetic.equ(Arithmetic.I, self.den) ? Tex(self.num) : ('\\frac{'+Tex(self.num)+'}{'+Tex(self.den)+'}');
+        return self._tex;
+    }
+});
+
+// Abacus.Complex represents a complex number with Rational parts
+Complex = Abacus.Complex = Class(INumber, {
+
+    constructor: function Complex( /*real, imag*/ ) {
+        var self = this, args = arguments, real, imag,
+        Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
+        
+        if ( args.length && (is_array(args[0]) || is_args(args[0])) ) args = args[0];
+        
+        if ( 1 < args.length )
+        {
+            real = args[0]; imag = args[1];
+        }
+        else if ( 1 === args.length )
+        {
+            real = args[0]; imag = Rational(O);
+        }
+        else
+        {
+            real = Rational(O); imag = Rational(O);
+        }
+        
+        if ( real instanceof Complex )
+        {
+            imag = real.imag.clone();
+            real = real.real.clone();
+        }
+        
+        if ( !(self instanceof Complex) ) return new Complex(real, imag);
+        
+        self.real = real instanceof Rational ? real : Rational(real);
+        self.imag = imag instanceof Rational ? imag : Rational(imag);
+    }
+    
+    ,__static__: {
+        ZERO: function( ){ return Complex(Abacus.Arithmetic.O); }
+        ,ONE: function( ){ return Complex(Abacus.Arithmetic.I); }
+        ,IMAG: function( ){ return Complex(Abacus.Arithmetic.O, Abacus.Arithmetic.I); }
+    }
+    
+    ,real: null
+    ,imag: null
+    ,_str: null
+    ,_tex: null
+    ,_dec: null
+    ,_norm: null
+    
+    ,dispose: function( ) {
+        var self = this;
+        self._str = null;
+        self._tex = null;
+        self._dec = null;
+        self._norm = null;
+        self.real = null;
+        self.imag = null;
+        return self;
+    }
+    
+    ,clone: function( ) {
+        return new Complex(this);
+    }
+    ,isReal: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return self.imag.equ(Arithmetic.O);
+    }
+    ,isImag: function( ) {
+        var self = this, O = Abacus.Arithmetic.O;
+        return self.real.equ(O) && !self.imag.equ(O);
+    }
+
+    ,equ: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.equ(self);
+        else if ( a instanceof Complex )
+            return self.real.equ(a.real) && self.imag.equ(a.imag);
+        else if ( (a instanceof Rational) || Arithmetic.isNumber(a) )
+            return self.real.equ(a) && self.imag.equ(Arithmetic.O);
+        else if ( is_string(a) )
+            return (a === self.toString()) || (a === self.toTex()) || (a === self.toDec());
+        
+        return false;
+    }
+    ,neg: function( ) {
+        var self = this;
+        return Complex(self.real.neg(), self.imag.neg());
+    }
+    ,conj: function( ) {
+        var self = this;
+        return Complex(self.real.clone(), self.imag.neg());
+    }
+    ,rev: function( ) {
+        var self = this;
+        return Complex(self.imag.clone(), self.real.clone());
+    }
+    ,inv: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, m;
+        if ( self.equ(Arithmetic.O) ) throw new Error('Division by zero in inverse in Abacus.Complex!');
+        m = self.norm();
+        return Complex(self.real.div(m), self.imag.div(m).neg());
+    }
+    ,norm: function( ) {
+        var self = this, real, imag;
+        if ( null == self._norm )
+        {
+            real = self.real; imag = self.imag;
+            self._norm = real.mul(real).add(imag.mul(imag));
+        }
+        return self._norm;
+    }
+
+    ,add: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.add(self);
+        else if ( a instanceof Complex )
+            return Complex(self.real.add(a.real), self.imag.add(a.imag));
+        else if ( (a instanceof Rational) || Arithmetic.isNumber(a) )
+            return Complex(self.real.add(a), self.imag.clone());
+        
+        return self;
+    }
+    ,sub: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return a.neg().add(self);
+        else if ( a instanceof Complex )
+            return Complex(self.real.sub(a.real), self.imag.sub(a.imag));
+        else if ( (a instanceof Rational) || Arithmetic.isNumber(a) )
+            return Complex(self.real.sub(a), self.imag.clone());
+        
+        return self;
+    }
+    ,mul: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, k1, k2, k3, x1, x2, y1, y2;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+        {
+            return a.mul(self);
+        }
+        else if ( a instanceof Complex )
+        {
+            // fast complex multiplication
+            x1 = self.real; x2 = a.real; y1 = self.imag; y2 = a.imag;
+            k1 = x1.mul(x2.add(y2)); k2 = y2.mul(x1.add(y1)); k3 = x2.mul(y1.sub(x1));
+            return Complex(k1.sub(k2), k1.add(k3));
+        }
+        else if ( (a instanceof Rational) || Arithmetic.isNumber(a) )
+        {
+            return Complex(self.real.mul(a), self.imag.mul(a));
+        }
+        
+        return self;
+    }
+    ,div: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, m, k1, k2, k3, x1, x2, y1, y2;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return null;
+        if ( a instanceof Complex )
+        {
+            if ( a.equ(O) )
+                throw new Error('Division by zero in Abacus.Complex!');
+            
+            // fast complex multiplication for inverse
+            m = a.norm(); x1 = self.real; x2 = a.real.div(m); y1 = self.imag; y2 = a.imag.div(m).neg();
+            k1 = x1.mul(x2.add(y2)); k2 = y2.mul(x1.add(y1)); k3 = x2.mul(y1.sub(x1));
+            return Complex(k1.sub(k2), k1.add(k3));
+        }
+        else if ( (a instanceof Rational) || Arithmetic.isNumber(a) )
+        {
+            if ( ((a instanceof Rational) && a.equ(O)) || (Arithmetic.isNumber(a) && Arithmetic.equ(O, a)) )
+                throw new Error('Division by zero in Abacus.Complex!');
+            
+            return Complex(self.real.div(a), self.imag.div(a));
+        }
+        
+        return self;
+    }
+    ,mod: NotImplemented
+    ,divmod: NotImplemented
+    
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, pow, e;
+        if ( Arithmetic.isNumber(n) )
+        {
+            if ( (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
+            if ( self.equ(O) )
+            {
+                if ( Arithmetic.gt(O, n) ) throw new Error('Zero denominator in negative power in Abacus.Complex!');
+                return Complex();
+            }
+            if ( Arithmetic.equ(O, n) ) return Complex(I);
+            if ( Arithmetic.equ(I, n) ) return self.clone();
+            if ( Arithmetic.gt(O, n) )
+            {
+                self = self.inv();
+                n = Arithmetic.neg(n);
+            }
+            n = Arithmetic.val(n);
+            e = self; pow = Complex(I);
+            while( 0 !== n )
+            {
+                // exponentiation by squaring
+                if ( n & 1 ) pow = pow.mul(e);
+                n >>= 1;
+                e = e.mul(e);
+            }
+            return pow;
+        }
+        return self;
+    }
+    ,simpl: function( ) {
+        var self = this;
+        // simplify
+        self.real.simpl();
+        self.imag.simpl();
+        self._str = null;
+        self._tex = null;
+        return self;
+    }
+    ,tuple: function( ) {
+        return [this.real, this.imag];
+    }
+    ,valueOf: function( ) {
+        return this.real.valueOf();
+    }
+    ,toString: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr;
+        if ( null == self._str )
+        {
+            zr = self.real.equ(O);
+            self._str = (zr ? '' : self.real.toString()) + (self.imag.equ(O) ? '' : ((self.imag.gt(O) ? (zr ? '' : '+') : '') + (self.imag.equ(Arithmetic.I) ? '' : (self.imag.equ(Arithmetic.J) ? '-' : (self.imag.toString()+'*'))) + 'i'));
+            if ( !self._str.length ) self._str = '0';
+        }
+        return self._str;
+    }
+    ,toTex: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr, ia;
+        if ( null == self._tex )
+        {
+            zr = self.real.equ(O); ia = self.imag.abs();
+            self._tex = (zr ? '' : self.real.toTex()) + (self.imag.equ(O) ? '' : ((self.imag.lt(O) ? '-' : (zr ? '' : '+')) + (ia.equ(Arithmetic.I) ? '' : ia.toTex())+'i'));
+            if ( !self._tex.length ) self._tex = '0';
+        }
+        return self._tex;
+    }
+    ,toDec: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr;
+        if ( null == self._dec )
+        {
+            zr = self.real.equ(O);
+            self._dec = (zr ? '' : self.real.toDec()) + (self.imag.equ(O) ? '' : ((self.imag.gt(O) ? (zr ? '' : '+') : '') + (self.imag.equ(Arithmetic.I) ? '' : (self.imag.equ(Arithmetic.J) ? '-' : (self.imag.toDec()))) + 'i'));
+            if ( !self._dec.length ) self._dec = '0';
+        }
+        return self._dec;
+    }
+});
+
 // Abacus.Term, represents multiplicative terms in (linear) algebraic expressions, including terms with mixed factors of (powers of) symbolic variables
-Term = Abacus.Term = Class({
+Term = Abacus.Term = Class(INumber, {
 
     constructor: function Term( s, c ) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, Arithmetic = Abacus.Arithmetic, f;
         if ( !(self instanceof Term) ) return new Term(s, c);
 
-        self.factors = Obj();
-        self.factors['1'] = null == c ? Arithmetic.I : c; // default
+        f = null == c ? Arithmetic.I : c; // default
+        /*if ( !(f instanceof Arithmetic.O[CLASS]) )*/ f = Arithmetic.num(f);
+        self.factors = Obj(); self.factors['1'] = f;
         if ( !Arithmetic.equ(Arithmetic.O, self.factors['1']) ) Term.Merge(s, self);
         Term.Symbol(self);
     }
@@ -5200,10 +6249,10 @@ Term = Abacus.Term = Class({
         Merge: function( factors, T, remove ) {
             var Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, I = Arithmetic.I,
-                keys, i, l;
+                keys, i, l, parts;
 
-            function merge_factor( f, e ) {
-                var i = f.indexOf('^'); // eg x^2
+            function merge_factor( f, e, with_pow ) {
+                var i = false !== with_pow ? f.indexOf('^') : -1; // eg x^2
                 e = e || O;
                 if ( -1 !== i )
                 {
@@ -5239,30 +6288,39 @@ Term = Abacus.Term = Class({
             }
             else if ( is_string(factors) )
             {
-                merge_factor(factors, I);
+                parts = factors.split('*'); // can be multiple factors eg i_1^2*i_2, split different factors on '*' op
+                for(i=0,l=parts.length; i<l; i++)
+                    merge_factor(parts[i], I);
             }
             else if ( is_obj(factors) )
             {
                 for(keys=KEYS(factors),i=0,l=keys.length; i<l; i++)
-                    merge_factor(keys[i], Arithmetic.num(factors[keys[i]]));
+                    merge_factor(keys[i], Arithmetic.num(factors[keys[i]]), false);
             }
             return T;
         }
         ,Symbol: function( T ) {
-            var Arithmetic = Abacus.Arithmetic, I = Arithmetic.I;
+            var Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, S;
             T._symb = null;
-            T.symbol = T.symbols().reduce(function(s, f){
+            S = T.symbols().reduce(function(s, f){
                 var e = T.factors[f];
-                return s + ('1' === f ? '' : ((s.length ? '*' : '') + (Arithmetic.equ(I, e) ? f : (f+'^'+String(e)))));
-            }, '');
+                return [
+                s[0] + ('1' === f ? '' : ((s[0].length ? '*' : '') + (Arithmetic.equ(I, e) ? f : (f+'^'+String(e))))),
+                s[1] + ('1' === f ? '' : ((Arithmetic.equ(I, e) ? to_tex(f) : (to_tex(f)+'^'+'{'+Tex(e)+'}'))))
+                ];
+            }, ['','']);
+            T.symbol = S[0]; T.symbolTex = S[1];
             if ( !T.symbol.length ) T.symbol = '1'; // default constant term
+            if ( !T.symbolTex.length ) T.symbolTex = '1'; // default constant term
             return T;
         }
     }
 
     ,factors: null
     ,symbol: null
+    ,symbolTex: null
     ,_str: null
+    ,_tex: null
     ,_n: null
     ,_symb: null
 
@@ -5270,7 +6328,9 @@ Term = Abacus.Term = Class({
         var self = this;
         self.factors = null;
         self.symbol = null;
+        self.symbolTex = null;
         self._str = null;
+        self._tex = null;
         self._n = null;
         self._symb = null;
         return self;
@@ -5293,12 +6353,14 @@ Term = Abacus.Term = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
         if ( Arithmetic.isNumber(a) )
             return Arithmetic.equ(O, a) ? Arithmetic.equ(O, self.factors['1']) : (('1' === self.symbol) && Arithmetic.equ(self.factors['1'], a));
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+            return a.equ(O) ? Arithmetic.equ(O, self.factors['1']) : (('1' === self.symbol) && a.equ(self.factors['1']));
         else if ( a instanceof Term )
             return (a.equ(O) && self.equ(O)) || ((self.symbol === a.symbol) && Arithmetic.equ(self.factors['1'], a.factors['1']));
         else if ( (a instanceof Expr) || (a instanceof Polynomial) )
             return a.equ(self);
         else if ( is_string(a) )
-            return a === self.toString();
+            return (a === self.toString()) || (a === self.toTex());
         return false;
     }
     ,neg: function( ) {
@@ -5316,6 +6378,8 @@ Term = Abacus.Term = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
             return Term(self.factors, Arithmetic.add(self.factors['1'], a));
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+            return Term(self.factors, Arithmetic.add(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         else if ( a instanceof Term )
             return self.symbol===a.symbol ? Term(self.factors, Arithmetic.add(self.factors['1'], a.factors['1'])) : Expr([self, a]);
         else if ( a instanceof Expr )
@@ -5328,6 +6392,8 @@ Term = Abacus.Term = Class({
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(a) )
             return Term(self.factors, Arithmetic.sub(self.factors['1'], a));
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+            return Term(self.factors, Arithmetic.sub(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         else if ( a instanceof Term )
             return self.symbol===a.symbol ? Term(self.factors, Arithmetic.sub(self.factors['1'], a.factors['1'])) : Expr([self, a.neg()]);
         else if ( a instanceof Expr )
@@ -5341,6 +6407,10 @@ Term = Abacus.Term = Class({
         if ( Arithmetic.isNumber(a) )
         {
             return Term(self.factors, Arithmetic.mul(self.factors['1'], a));
+        }
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+        {
+            return Term(self.factors, Arithmetic.mul(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         }
         else if ( a instanceof Term )
         {
@@ -5361,6 +6431,10 @@ Term = Abacus.Term = Class({
         {
             return Term(self.factors, Arithmetic.div(self.factors['1'], a));
         }
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+        {
+            return Term(self.factors, Arithmetic.div(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
+        }
         else if ( a instanceof Term )
         {
             T = Term(self.factors, Arithmetic.div(self.factors['1'], a.factors['1']));
@@ -5370,6 +6444,19 @@ Term = Abacus.Term = Class({
         }
         return self;
     }
+    ,mod: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, T;
+        if ( Arithmetic.isNumber(a) )
+        {
+            return Term(self.factors, Arithmetic.mod(self.factors['1'], a));
+        }
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+        {
+            return Term(self.factors, Arithmetic.mod(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
+        }
+        return self;
+    }
+    ,divmod: NotImplemented
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, factors, f;
         if ( Arithmetic.isNumber(n) )
@@ -5436,9 +6523,17 @@ Term = Abacus.Term = Class({
         }
         return self._str;
     }
+    ,toTex: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._tex )
+        {
+            self._tex = ('1'===self.symbol) ? Tex(self.factors['1']) : ((Arithmetic.equ(Arithmetic.J, self.factors['1']) ? '-' : (Arithmetic.equ(Arithmetic.I, self.factors['1']) ? '' : (Tex(self.factors['1'])))) + self.symbolTex);
+        }
+        return self._tex;
+    }
 });
 // Abacus.Expr, represents (symbolic) (linear) algebraic expressions of sums of (multiplicative) terms
-Expr = Abacus.Expr = Class({
+Expr = Abacus.Expr = Class(INumber, {
 
     constructor: function Expr( /* args */ ) {
         var self = this, i, l,
@@ -5465,6 +6560,17 @@ Expr = Abacus.Expr = Class({
                     E.terms['1'] = Term(1, x);
                 }
             }
+            else if ( (x instanceof Rational) || (x instanceof Complex) )
+            {
+                if ( E.terms['1'] )
+                {
+                    E.terms['1'] = E.terms['1'].add(x);
+                }
+                else
+                {
+                    E.terms['1'] = Term(1, x instanceof Complex ? x.real.integer() : x.integer());
+                }
+            }
             else if ( x instanceof Term )
             {
                 if ( E.terms[x.symbol] )
@@ -5489,6 +6595,7 @@ Expr = Abacus.Expr = Class({
 
     ,terms: null
     ,_str: null
+    ,_tex: null
     ,_n: null
     ,_symb: null
 
@@ -5496,6 +6603,7 @@ Expr = Abacus.Expr = Class({
         var self = this;
         self.terms = null;
         self._str = null;
+        self._tex = null;
         self._n = null;
         self._symb = null;
         return self;
@@ -5523,6 +6631,10 @@ Expr = Abacus.Expr = Class({
         {
             return (1 === self.symbols().length) && self.terms['1'].equ(a);
         }
+        else if ( (a instanceof Rational) || (a instanceof Complex) )
+        {
+            return (1 === self.symbols().length) && a.equ(self.terms['1']);
+        }
         else if ( a instanceof Term )
         {
             return '1' === a.symbol ? ((1 === self.symbols().length) && self.terms['1'].equ(a)) : (HAS.call(self.terms, a.symbol) && (2 === self.symbols().length) && self.terms['1'].equ(O) && self.terms[a.symbol].equ(a));
@@ -5539,7 +6651,7 @@ Expr = Abacus.Expr = Class({
         }
         else if ( is_string(a) )
         {
-            return a === self.toString();
+            return (a === self.toString()) || (a === self.toTex());
         }
         return false;
     }
@@ -5556,20 +6668,20 @@ Expr = Abacus.Expr = Class({
 
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.isNumber(x) || (x instanceof Term) || (x instanceof Expr) || (x instanceof Polynomial) ? Expr([self, x]) : self;
+        return Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Term) || (x instanceof Expr) || (x instanceof Polynomial) ? Expr([self, x]) : self;
     }
     ,sub: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( Arithmetic.isNumber(x) ) return self.add(Arithmetic.neg(x));
-        else if ( (x instanceof Term) || (x instanceof Expr) || (x instanceof Polynomial) ) return self.add(x.neg());
+        else if ( (x instanceof Rational) || (x instanceof Complex) || (x instanceof Term) || (x instanceof Expr) || (x instanceof Polynomial) ) return self.add(x.neg());
         return self;
     }
     ,mul: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             symbols, symbols2;
-        if ( Arithmetic.isNumber(x) || (x instanceof Term) )
+        if ( Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Term) )
         {
-            if ( self.equ(O) || ((x instanceof Term) && x.equ(O)) || (Arithmetic.isNumber(x) && Arithmetic.equ(O, x)) ) return Expr();
+            if ( self.equ(O) || (((x instanceof Rational) || (x instanceof Complex) || (x instanceof Term)) && x.equ(O)) || (Arithmetic.isNumber(x) && Arithmetic.equ(O, x)) ) return Expr();
             symbols = self.symbols();
             return Expr(array(symbols.length, function(i){
                 return self.terms[symbols[i]].mul(x);
@@ -5589,7 +6701,7 @@ Expr = Abacus.Expr = Class({
     }
     ,div: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, symbols;
-        if ( Arithmetic.isNumber(x) || (x instanceof Term) )
+        if ( Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Term) )
         {
             symbols = self.symbols();
             return Expr(array(symbols.length, function(i){
@@ -5598,11 +6710,26 @@ Expr = Abacus.Expr = Class({
         }
         return self;
     }
+    ,mod: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, symbols;
+        if ( x instanceof Complex ) x = x.real.integer();
+        else if ( x instanceof Rational ) x = x.integer();
+        
+        if ( Arithmetic.isNumber(x) )
+        {
+            symbols = self.symbols();
+            return Expr(array(symbols.length, function(i){
+                return self.terms[symbols[i]].mod(x);
+            }));
+        }
+        return self;
+    }
+    ,divmod: NotImplemented
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, pow, e;
         if ( Arithmetic.isNumber(n) )
         {
-            if ( Arithmetic.gt(O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
+            if ( Arithmetic.gt(O, n) || ((is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT))) ) return null;
             if ( self.equ(O) ) return Expr();
             if ( Arithmetic.equ(O, n) ) return Expr([Term(1, I)]);
             if ( Arithmetic.equ(I, n) ) return Expr(self.args());
@@ -5650,9 +6777,25 @@ Expr = Abacus.Expr = Class({
         }
         return self._str;
     }
+    ,toTex: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            keys, i, l, out = '', prev = false;
+        if ( null == self._tex )
+        {
+            keys = self.symbols(); l = keys.length;
+            for(i=0; i<l; i++)
+            {
+                if ( self.terms[keys[i]].equ(O) ) continue;
+                out += (prev && Arithmetic.lt(O, self.terms[keys[i]].factors['1']) ? '+' : '') + self.terms[keys[i]].toTex();
+                prev = true;
+            }
+            self._tex = out.length ? out : '0';
+        }
+        return self._tex;
+    }
 });
 // Abacus.Polynomial, represents a (univariate) polynomial
-Polynomial = Abacus.Polynomial = Class({
+Polynomial = Abacus.Polynomial = Class(INumber, {
 
     constructor: function Polynomial( coeff, symbol ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
@@ -5693,6 +6836,11 @@ Polynomial = Abacus.Polynomial = Class({
                     // O(1)
                     P.coeff[0] = Arithmetic.sub(P.coeff[0], x);
                 }
+                else if ( (x instanceof Rational) || (x instanceof Complex) )
+                {
+                    // O(1)
+                    P.coeff[0] = Arithmetic.sub(P.coeff[0], x instanceof Complex ? x.real.integer() : x.integer());
+                }
                 else if ( x instanceof Polynomial )
                 {
                     // O(max(n1,n2))
@@ -5706,6 +6854,11 @@ Polynomial = Abacus.Polynomial = Class({
                 // O(1)
                 P.coeff[0] = Arithmetic.add(P.coeff[0], x);
             }
+            else if ( (x instanceof Rational) || (x instanceof Complex) )
+            {
+                // O(1)
+                P.coeff[0] = Arithmetic.add(P.coeff[0], x instanceof Complex ? x.real.integer() : x.integer());
+            }
             else if ( x instanceof Polynomial )
             {
                 P.coeff = summation(P.coeff, x.coeff, Arithmetic);
@@ -5716,6 +6869,10 @@ Polynomial = Abacus.Polynomial = Class({
 
         ,Mul: function( x, P ) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i;
+            
+            if ( x instanceof Complex ) x = x.real.integer();
+            else if ( x instanceof Rational ) x = x.integer();
+            
             if ( Arithmetic.isNumber(x) )
             {
                 // O(n)
@@ -5766,6 +6923,7 @@ Polynomial = Abacus.Polynomial = Class({
     ,coeff: null
     ,symbol: null
     ,_str: null
+    ,_tex: null
     ,_n: null
     ,_expr: null
 
@@ -5774,6 +6932,7 @@ Polynomial = Abacus.Polynomial = Class({
         self.coeff = null;
         self.symbol = null;
         self._str = null;
+        self._tex = null;
         self._n = null;
         //if ( self._expr ) self._expr.dispose();
         self._expr = null;
@@ -5805,6 +6964,10 @@ Polynomial = Abacus.Polynomial = Class({
         {
             return (1===c.length) && Arithmetic.equ(c[0], p);
         }
+        else if ( (p instanceof Rational) || (p instanceof Complex) )
+        {
+            return (1===c.length) && p.equ(c[0]);
+        }
         else if ( p instanceof Polynomial )
         {
             cp = p.coeff;
@@ -5829,7 +6992,7 @@ Polynomial = Abacus.Polynomial = Class({
         }
         else if ( is_string(p) )
         {
-            return p === self.toString();
+            return (p === self.toString()) || (p === self.toTex());
         }
         return false;
     }
@@ -5846,20 +7009,24 @@ Polynomial = Abacus.Polynomial = Class({
 
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
+        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
     }
     ,sub: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().sub(x) : (Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol), true) : self);
+        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().sub(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol), true) : self);
     }
     ,mul: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().mul(x) : (Arithmetic.isNumber(x) || (x instanceof Polynomial) ? Polynomial.Mul(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
+        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().mul(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Mul(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
     }
     ,div: function( x, q_and_r ) {
         var self = this, Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I,
             q, r, r0, d, diff, diff0;
+        
+        if ( x instanceof Complex ) x = x.real.integer();
+        else if ( x instanceof Rational ) x = x.integer();
+        
         if ( Arithmetic.isNumber(x) )
         {
             q = Polynomial(Arithmetic.equ(I, x) ? self.coeff.slice() : array(self.coeff.length, function(i){
@@ -5895,9 +7062,14 @@ Polynomial = Abacus.Polynomial = Class({
         }
         return self;
     }
+    ,mod: function( x ) {
+        var qr = this.div(x, true);
+        return qr[1];
+    }
+    ,divmod: NotImplemented
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
-        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
+        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
         n = Arithmetic.val(n);
         if ( 0 === n )
         {
@@ -5979,6 +7151,22 @@ Polynomial = Abacus.Polynomial = Class({
         }
         return self._str;
     }
+    ,toTex: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            c, x, i, out = '', prev = false;
+        if ( null == self._tex )
+        {
+            c = self.coeff; x = to_tex(self.symbol);
+            for(i=c.length-1; i>=0; i--)
+            {
+                if ( Arithmetic.equ(O, c[i]) ) continue;
+                out += (prev && Arithmetic.lt(O, c[i]) ? '+' : '') + (0===i ? Tex(c[i]) : (Arithmetic.equ(Arithmetic.I, c[i]) ? '' : (Arithmetic.equ(Arithmetic.J, c[i]) ? '-' : (Tex(c[i]))))) + (0!==i ? (x+(1!==i?('^{'+Tex(i)+'}'):'')) : '');
+                prev = true;
+            }
+            self._tex = out.length ? out : '0';
+        }
+        return self._tex;
+    }
     ,toExpr: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             c, x, i, terms;
@@ -5997,7 +7185,7 @@ Polynomial = Abacus.Polynomial = Class({
     }
 });
 // Abacus.Matrix, represents a (2-dimensional) matrix with integer coefficients
-Matrix = Abacus.Matrix = Class({
+Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix( r, c, values ) {
         var self = this, Arithmetic = Abacus.Arithmetic, k, v, i, j;
@@ -6037,7 +7225,7 @@ Matrix = Abacus.Matrix = Class({
             {
                 for(k in values)
                 {
-                    if ( !HAS.call(values,k) ) continue;
+                    if ( !HAS.call(values, k) || (-1 === k.indexOf(',')) ) continue;
                     v = values[k];
                     k = k.split(',').map(function(n){return parseInt(trim(n), 10);});
                     i = k[0]; j = k[1];
@@ -6172,6 +7360,7 @@ Matrix = Abacus.Matrix = Class({
     ,nc: 0
     ,val: null
     ,_str: null
+    ,_tex: null
     ,_n: null
     ,_t: null
     ,_snf: null
@@ -6189,6 +7378,7 @@ Matrix = Abacus.Matrix = Class({
     ,dispose: function( ) {
         var self = this;
         self._str = null;
+        self._tex = null;
         self._n = null;
         self._t = null;
         self._snf = null;
@@ -6251,12 +7441,21 @@ Matrix = Abacus.Matrix = Class({
         if ( !(0<=r && r<rows && 0<=c && c<columns) ) return null==v ? null : self;
         if ( null != v )
         {
-            if ( self.val[r][c] !== v )
+            if ( !Arithmetic.equ(self.val[r][c], v) )
             {
                 // force update of associated cached entries
-                if ( self._n ) self._n._n = null;
-                if ( self._t ) self._t._t = null;
+                if ( self._n && (self === self._n._n) )
+                {
+                    self._n._n = null;
+                }
+                if ( self._t && (self === self._t._t) )
+                {
+                    self._t._t = null;
+                    self._t._tr = null;
+                    self._t._det = null;
+                }
                 self._str = null;
+                self._tex = null;
                 self._n = null;
                 self._t = null;
                 self._snf = null;
@@ -6279,6 +7478,10 @@ Matrix = Abacus.Matrix = Class({
 
     ,equ: function( a, eq_all ) {
         var self = this, Arithmetic = Abacus.Arithmetic, i, j, r = self.nr, c = self.nc;
+        
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             if ( eq_all )
@@ -6330,6 +7533,10 @@ Matrix = Abacus.Matrix = Class({
 
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.add(vij, a);});
@@ -6351,6 +7558,10 @@ Matrix = Abacus.Matrix = Class({
     }
     ,sub: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.sub(vij, a);});
@@ -6372,6 +7583,10 @@ Matrix = Abacus.Matrix = Class({
     }
     ,mul: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, n;
+        
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.mul(vij, a);});
@@ -6393,6 +7608,9 @@ Matrix = Abacus.Matrix = Class({
     ,dot: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         // pointwise multiplication
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.mul(vij, a);});
@@ -6414,6 +7632,9 @@ Matrix = Abacus.Matrix = Class({
     ,kron: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r1, c1, r2, c2, r, c;
         // kronecker product
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.mul(vij, a);});
@@ -6435,6 +7656,9 @@ Matrix = Abacus.Matrix = Class({
     }
     ,div: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.div(vij, a);});
@@ -6443,15 +7667,19 @@ Matrix = Abacus.Matrix = Class({
     }
     ,mod: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return self.map(function(vij){return Arithmetic.mod(vij, a);});
         }
         return self;
     }
+    ,divmod: NotImplemented
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
-        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || Arithmetic.gt(n, MAX_DEFAULT) ) return null;
+        if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
         n = Arithmetic.val(n);
         if ( 0 === n )
         {
@@ -6480,6 +7708,7 @@ Matrix = Abacus.Matrix = Class({
     }
     /*,ge2: function( ) {
         // reduced form of gaussian elimination
+        // https://en.wikipedia.org/wiki/Gaussian_elimination
         // https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
         var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, two = Arithmetic.II,
             n = self.nr, m = self.nc, M = self.clone(true), i, j, k, l, row, marks, num, sol_rows;
@@ -6519,6 +7748,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, j, k, p, t,
             n = stdMath.min(self.nr, self.nc), a = self.clone(true);
         // fraction-free gaussian elimination with exact integer arithmetic
+        // https://en.wikipedia.org/wiki/Gaussian_elimination
         // O(n^3)
         if ( is_array(b) )
         {
@@ -6574,33 +7804,84 @@ Matrix = Abacus.Matrix = Class({
         }
         return b ? [Matrix(a), b] : Matrix(a);
     }*/
-    ,fwdsub: function( b ) {
+    ,fwdsub: function( b, D ) {
         // self is assumed lower triangular
-        var self = this, Arithmetic = Abacus.Arithmetic, i, j, t, L = self.val,
-            n = stdMath.min(self.nr, self.nc, b.length), x = new Array(n);
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, j, t, L = self.val, n, x, xi, Lii;
+        if ( b instanceof Matrix ) b = b.col(0);
+        if ( D instanceof Matrix ) D = D.diag();
+        n = stdMath.min(self.nr, self.nc, b.length);
+        x = new Array(n);
         // fraction-free forward substitution
         for(i=0; i<n; i++)
         {
-            t = Arithmetic.O;
-            for(j=0; j<i; j++)
-                t = Arithmetic.add(t, Arithmetic.mul(L[i][j], x[j]));
-            x[i] = Arithmetic.sub(Arithmetic.mul(L[i][i], b[i]), t);
-            //x[i] = Arithmetic.div(x[i], L[i][i]);
+            for(t=O,j=0; j<i; j++) t = Arithmetic.add(t, Arithmetic.mul(L[i][j], x[j]));
+            xi = Arithmetic.sub(b[i], t); Lii = L[i][i];
+            if ( Arithmetic.equ(O, Lii) )
+            {
+                if ( !Arithmetic.equ(O, xi) )
+                    return null; // no solution
+            }
+            else
+            {
+                if ( D )
+                    xi = Arithmetic.mul(xi, Arithmetic.div(D[i], Lii));
+                else if ( Arithmetic.equ(O, Arithmetic.mod(xi, Lii)) )
+                    xi = Arithmetic.div(xi, Lii);
+                else
+                    return null; // no solution
+            }
+            x[i] = xi;
         }
         return x;
     }
-    ,backsub: function( b ) {
+    ,backsub: function( b, D ) {
         // self is assumed upper triangular
-        var self = this, Arithmetic = Abacus.Arithmetic, i, j, t, U = self.val,
-            n = stdMath.min(self.nr, self.nc, b.length), x = new Array(n);
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, j, t, U = self.val, n, x, xi, Uii;
+        if ( b instanceof Matrix ) b = b.col(0);
+        if ( D instanceof Matrix ) D = D.diag();
+        n = stdMath.min(self.nr, self.nc, b.length);
+        x = new Array(n);
         // fraction-free back substitution
         for(i=n-1; i>=0; i--)
         {
-            t = Arithmetic.O;
-            for(j=n-1; j>i; j--)
-                t = Arithmetic.sub(t, Arithmetic.mul(U[i][j], x[j]));
-            x[i] = Arithmetic.sub(Arithmetic.mul(U[i][i], b[i]), t);
-            //x[i] = Arithmetic.div(x[i], U[i][i]);
+            for(t=O,j=n-1; j>i; j--) t = Arithmetic.add(t, Arithmetic.mul(U[i][j], x[j]));
+            xi = Arithmetic.sub(b[i], t); Uii = U[i][i];
+            if ( Arithmetic.equ(O, Uii) )
+            {
+                if ( !Arithmetic.equ(O, xi) )
+                    return null; // no solution
+            }
+            else
+            {
+                if ( D )
+                    xi = Arithmetic.mul(xi, Arithmetic.div(D[i], Uii));
+                else if ( Arithmetic.equ(O, Arithmetic.mod(xi, Uii)) )
+                    xi = Arithmetic.div(xi, Uii);
+                else
+                    return null; // no solution
+            }
+            x[i] = xi;
+        }
+        return x;
+    }
+    ,backsuby: function( y ) {
+        // self is assumed upper triangular
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, j, t, U = self.val, n, x, xi, Uii;
+        if ( y instanceof Matrix ) y = y.col(0);
+        n = stdMath.min(self.nr, self.nc, y.length);
+        x = new Array(n);
+        // fraction-free back substitution (alternative version)
+        // y is solution of lower triangular system L*inv(D)*y = P*b
+        // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
+        for(i=n-1; i>=0; i--)
+        {
+            for(t=O,j=n-1; j>i; j--) t = Arithmetic.add(t, Arithmetic.mul(U[i][j], x[j]));
+            xi = Arithmetic.sub(Arithmetic.mul(U[n-1][n-1], y[i]), t); Uii = U[i][i];
+            if ( Arithmetic.equ(O, Uii) || !Arithmetic.equ(O, Arithmetic.mod(xi, Uii)) )
+                return null; // no solution
+            else
+                xi = Arithmetic.div(xi, Uii);
+            x[i] = xi;
         }
         return x;
     }
@@ -6609,6 +7890,7 @@ Matrix = Abacus.Matrix = Class({
             rows = self.nr, columns = self.nc, dim, m, left, right, last_j,
             i, j, upd, ii, jj, non_zero, i1, i0, g, coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
         // smith normal form
+        // https://en.wikipedia.org/wiki/Smith_normal_form
         // adapted from Smith Normal Form with sympy (https://gist.github.com/qnighy/ec08799484080343a2da297657ccba65)
         if ( null == self._snf )
         {
@@ -6708,6 +7990,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             n = self.nr, m = self.nc, dim, P, L, U, DD, oldpivot, k, i, j, kpivot, NotFound, Ukk, Uik, defficient;
         // completely fraction-free LU factorisation
+        // https://en.wikipedia.org/wiki/LU_decomposition#LDU_decomposition
         // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
         if ( null == self._lu )
         {
@@ -6783,6 +8066,7 @@ Matrix = Abacus.Matrix = Class({
     ,qr: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, n = self.nr, m = self.nc, lu;
         // fraction-free QR factorisation
+        // https://en.wikipedia.org/wiki/QR_decomposition
         // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
         if ( null == self._qr )
         {
@@ -6809,6 +8093,9 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, im, min, a, z, m;
         // integer row echelon form (ref) (also known as Hermite normal form), using integer row reduction or fraction-free gaussian elimination
+        // https://en.wikipedia.org/wiki/Row_echelon_form
+        // https://en.wikipedia.org/wiki/Gaussian_elimination
+        // https://en.wikipedia.org/wiki/Hermite_normal_form
         // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
         if ( null == self._ref )
         {
@@ -6913,6 +8200,7 @@ Matrix = Abacus.Matrix = Class({
             rows = self.nr, columns = self.nc, dim, pivots, det, pl,
             lead, r, i, j, a, g, ref;
         // integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from row echelon form (gauss elimination)
+        // https://en.wikipedia.org/wiki/Row_echelon_form
         if ( null == self._rref )
         {
             // build rref incrementaly from ref
@@ -7001,12 +8289,14 @@ Matrix = Abacus.Matrix = Class({
         return with_pivots ? self._rref.slice() : self._rref[0];
     }
     ,rank: function( ) {
+        // https://en.wikipedia.org/wiki/Rank_(linear_algebra)
         var pivots = this.ref(true);
         return pivots[1].length;
     }
     ,tr: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, n, i;
         // trace
+        // https://en.wikipedia.org/wiki/Trace_(linear_algebra)
         if ( null == self._tr )
         {
             n = stdMath.min(self.nr, self.nc);
@@ -7018,6 +8308,7 @@ Matrix = Abacus.Matrix = Class({
     ,det: function( ) {
         var self = this, ref;
         // determinant
+        // https://en.wikipedia.org/wiki/Determinant
         if ( null == self._det )
         {
             if ( self.nr !== self.nc )
@@ -7034,7 +8325,8 @@ Matrix = Abacus.Matrix = Class({
     }
     ,rowspace: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pivots;
-        // rowspace
+        // row space
+        // https://en.wikipedia.org/wiki/Row_and_column_spaces
         if ( null == self._rs )
         {
             pivots = self.ref(true);
@@ -7049,7 +8341,8 @@ Matrix = Abacus.Matrix = Class({
     }
     ,colspace: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pivots;
-        // columnspace
+        // column space
+        // https://en.wikipedia.org/wiki/Row_and_column_spaces
         if ( null == self._cs )
         {
             pivots = self.ref(true);
@@ -7066,6 +8359,7 @@ Matrix = Abacus.Matrix = Class({
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
             columns = self.nc, rref, pivots, free_vars, pl, tmp, LCM;
 
+        // https://en.wikipedia.org/wiki/Kernel_(linear_algebra)
         if ( left_else_right )
         {
             // left nullspace
@@ -7193,6 +8487,18 @@ Matrix = Abacus.Matrix = Class({
             }).join("\n");
         }
         return self._str;
+    }
+    ,toTex: function( ) {
+        var self = this;
+        if ( null == self._tex )
+        {
+            self._tex = '\\begin{bmatrix}' + self.val.map(function(vi, i){
+                return vi.map(function(vij, j){
+                    return Tex(vij);
+                }).join(' & ');
+            }).join(' \\\\ ') + '\\end{bmatrix}';
+        }
+        return self._tex;
     }
 });
 

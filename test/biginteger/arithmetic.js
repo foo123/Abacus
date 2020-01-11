@@ -10,7 +10,7 @@ function use_biginteger_arithmetic( Abacus )
     Arithmetic.I = bigInt.one;
     Arithmetic.II = bigInt(2);
     
-    Arithmetic.num = function( a ){ return bigInt( a ); };
+    Arithmetic.num = function( a ){ return bigInt.isInstance( a ) ? a : bigInt( a ); };
     
     Arithmetic.equ = function( a, b ){ return a.eq( b ); };
     Arithmetic.gte = function( a, b ){ return a.geq( b ); };
