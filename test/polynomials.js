@@ -1,5 +1,8 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+
+use_biginteger_arithmetic( Abacus );
 
 
 function check_div( n, d, q, r )
@@ -94,15 +97,15 @@ echo('o.pow(3)');
 echo(o.pow(3).toString());
 echo('o.div(2)');
 d=2;
-qr=o.div(d, true);
+qr=o.divmod(d);
 check_div( o, d, qr[0], qr[1] );
 echo('o.div(Abacus.Polynomial([2]))');
 d=Abacus.Polynomial([2]);
-qr=o.div(d, true);
+qr=o.divmod(d);
 check_div( o, d, qr[0], qr[1] );
 echo('o.div(Abacus.Polynomial([1,1]))');
 d=Abacus.Polynomial([1,1]);
-qr=o.div(d, true);
+qr=o.divmod(d);
 check_div( o, d, qr[0], qr[1] );
 echo('o.d()');
 echo(o.d().toString());
@@ -120,7 +123,7 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.div(Abacus.Polynomial([-3,1]))');
 d=Abacus.Polynomial([-3,1]);
-qr=o.div(d, true);
+qr=o.divmod(d);
 check_div( o, d, qr[0], qr[1] );
 echo('o.d()');
 echo(o.d().toString());
@@ -134,6 +137,9 @@ echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');
 echo('---');
+echo('Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
+echo(Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])).toString());
+
 echo('Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))');
 echo(Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1])).toString());
 
@@ -155,6 +161,11 @@ echo('---');
 
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
 echo('---');
+echo('Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
+args=[Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])];
+o=Abacus.Math.polyxgcd(args);
+check_xgcd(args, o);
+
 echo('Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))');
 args=[Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1])];
 o=Abacus.Math.polyxgcd(args);

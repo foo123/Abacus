@@ -89,8 +89,8 @@ A **Combinatorics** and **Number Theory** library for Node.js / Browser / XPCOM 
 * Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
 * `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
 * `Complex` (`test/complex.js`) **with Rational arbitrary precision parts**
-* `Polynomial` (`test/polynomials.js`) **univariate with integer coefficients**
-* `Matrix` (`test/matrices.js`) **with integer coefficients**
+* `Polynomial` (`test/polynomials.js`) **univariate with Rational coefficients**
+* `Matrix` (`test/matrices.js`) **with Integer coefficients**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)

@@ -1,5 +1,8 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+
+use_biginteger_arithmetic( Abacus );
 
 
 var o, o2;
