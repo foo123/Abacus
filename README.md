@@ -608,6 +608,7 @@ o.dispose()
 * support efficient integer factorization algorithms **[DONE PARTIALY]**
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * implement `LLL` algorithm (TODO)
+* implement (univariate) polynomial factorisation (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)

@@ -86,10 +86,12 @@ echo(o=Abacus.Math.divisors(100));
 
 echo('o=Abacus.Math.divisors(1000, true).get()');
 echo('o2=Abacus.Math.divisors(10000, true).get()');
+echo('o3=Abacus.Math.divisors(10000000, true).get()');
 o=Abacus.Math.divisors(1000, true);
 o2=Abacus.Math.divisors(10000, true);
 echo(o.get());
 echo(o2.get());
+echo(Abacus.Math.divisors(10000000, true).get());
 echo('---');
 
 echo('Square Root modulo Prime');

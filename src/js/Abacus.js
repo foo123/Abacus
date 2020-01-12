@@ -79,6 +79,15 @@ function to_fixed_binary_string_32( b )
     var bs = b.toString( 2 ), n = 32-bs.length;
     return n > 0 ? new Array(n+1).join('0') + bs : bs;
 }
+function to_tex( s )
+{
+    var p = String(s).split('_');
+    return p[0] + (p.length > 1 ? ('_{'+p[1]+'}') : '');
+}
+function Tex( s )
+{
+    return "function" === typeof s.toTex ? s.toTex() : String(s);
+}
 
 // https://github.com/foo123/FnList.js
 function operate( F, F0, x, i0, i1, ik, strict )
@@ -1775,14 +1784,14 @@ function next_prime( n, dir )
         else if ( Arithmetic.equ(n, 3) ) return two; // first prime
 
         for(x=Arithmetic.sub(n, Arithmetic.equ(O, Arithmetic.mod(n, two)) ? I : two);;x=Arithmetic.sub(x,two))
-            if ( is_prime(x) ) return x;
+            if ( is_probable_prime(x) && is_prime(x) ) return x;
     }
     else
     {
         // next prime
         if ( Arithmetic.lt(n, two) ) return two; // first prime
         for(x=Arithmetic.add(n, Arithmetic.equ(O, Arithmetic.mod(n, two)) ? I : two);;x=Arithmetic.add(x,two))
-            if ( is_prime(x) ) return x;
+            if ( is_probable_prime(x) && is_prime(x) ) return x;
     }
 }
 function pollard_rho( n, s, a, retries, max_steps, F )
@@ -2538,12 +2547,13 @@ function polygcd( /* args */ )
         while ( !b.equ(O) /*0 < b.deg()*/)
         {
             a0 = a; b0 = b;
-            qr = a.div(b, true); a = b; b = qr[1];
+            qr = a.divmod(b); a = b; b = qr[1];
             if ( a.equ(b0) && b.equ(a0) ) break; // will not change anymore
         }
     }
     // simplify and monic, NO we work with integer coefficients ONLY
     //if ( 0 < a.deg() ) a = a.div(gcd(a.coeff));
+    if ( Arithmetic.gt(O, a.lead()) ) a = a.neg();
     return a;
 }
 function polylcm2( a, b )
@@ -2609,36 +2619,44 @@ function polyxgcd( /* args */ )
 
         // gcd with zero factor, take into account
         if ( a.equ(O) )
+        {
+            if ( Arithmetic.gt(O, b.lead()) ) {b = b.neg(); asign = Arithmetic.neg(asign); bsign = Arithmetic.neg(bsign);}
             return array(xgcd.length+1,function(i){
                 return 0===i ? b : (1===i ? Polynomial.C(asign, a.symbol) : xgcd[i-1].mul(bsign));
             });
+        }
         else if ( b.equ(O) )
+        {
+            if ( Arithmetic.gt(O, a.lead()) ) {a = a.neg(); asign = Arithmetic.neg(asign); bsign = Arithmetic.neg(bsign);}
             return array(xgcd.length+1,function(i){
                 return 0===i ? a : (1===i ? Polynomial.C(asign, a.symbol) : xgcd[i-1].mul(bsign));
             });
+        }
 
         for(;;)
         {
             a0 = a; b0 = b;
 
-            qr = a.div(b, true);
+            qr = a.divmod(b);
             a = qr[1];
             a1 = a1.sub(qr[0].mul(a2))
             b1 = b1.sub(qr[0].mul(b2));
             if ( a.equ(O) /*0 === a.deg()*/ )
             {
+                if ( Arithmetic.gt(O, b.lead()) ) {b = b.neg(); asign = Arithmetic.neg(asign); bsign = Arithmetic.neg(bsign);}
                 a2 = a2.mul(asign); b2 = b2.mul(bsign);
                 return array(xgcd.length+1,function(i){
                     return 0===i ? b : (1===i ? a2 : xgcd[i-1].mul(b2));
                 });
             }
 
-            qr = b.div(a, true);
+            qr = b.divmod(a);
             b = qr[1];
             a2 = a2.sub(qr[0].mul(a1));
             b2 = b2.sub(qr[0].mul(b1));
             if( b.equ(O) /*0 === b.deg()*/ )
             {
+                if ( Arithmetic.gt(O, a.lead()) ) {a = a.neg(); asign = Arithmetic.neg(asign); bsign = Arithmetic.neg(bsign);}
                 a1 = a1.mul(asign); b1 = b1.mul(bsign);
                 return array(xgcd.length+1, function(i){
                     return 0===i ? a : (1===i ? a1 : xgcd[i-1].mul(b1));
@@ -2648,6 +2666,7 @@ function polyxgcd( /* args */ )
             if ( a.equ(a0) && b.equ(b0) )
             {
                 // will not change anymore
+                if ( Arithmetic.gt(O, a.lead()) ) {a = a.neg(); asign = Arithmetic.neg(asign); bsign = Arithmetic.neg(bsign);}
                 a1 = a1.mul(asign); b1 = b1.mul(bsign);
                 return array(xgcd.length+1, function(i){
                     return 0===i ? a : (1===i ? a1 : xgcd[i-1].mul(b1));
@@ -2660,49 +2679,67 @@ function divisors( n, as_generator )
 {
     // time+space O(sqrt(n)) to find all distinct divisors of n (including 1 and n itself)
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
-        list = null, D2 = null, D1 = null, L1 = 0, L2 = 0, node, sqrn, i, n_i, next;
+        list = null, D2 = null, D1 = null, L1 = 0, L2 = 0, node, sqrn, i, n_i, next, factors;
     //n = Arithmetic.num(n);
     n = Arithmetic.abs(n);
-    sqrn = isqrt(n);
-    if ( as_generator )
+    if ( true===as_generator )
     {
-        i = I; next = null;
-        // return iterator/generator
-        return Iterator(function(k, dir, state, first){
-            // note will NOT return divisors sorted in order
-            if ( 0 > dir ) return null; // only forward
-            if ( first )
-            {
-                i = I;
-                if ( !Arithmetic.equ(I, n) ) next = n;
-                return I;
-            }
-            if ( next )
-            {
-                k = next;
-                next = null;
-                return k;
-            }
-            i = Arithmetic.add(i, I);
-            while(Arithmetic.lte(i,sqrn))
-            {
-                if ( Arithmetic.equ(O, Arithmetic.mod(n, i)) )
+        if ( Arithmetic.gte(n, 1000000) )
+        {
+            // for very large numbers,
+            // compute divisors through prime factorisation
+            // using a tensor combinatorial iterator/generator
+            factors = factorize(n);
+            return Tensor(factors.map(function(factor){
+                return Arithmetic.val(factor[1])+1;
+            })).mapTo(function(selection){
+                return selection.reduce(function(divisor, e, i){
+                    return 0 === e ? divisor : Arithmetic.mul(divisor, Arithmetic.pow(factors[i][0], e));
+                }, I);
+            });
+        }
+        else
+        {
+            sqrn = isqrt(n);
+            i = I; next = null;
+            // return iterator/generator
+            return Iterator(function(k, dir, state, first){
+                // note will NOT return divisors sorted in order
+                if ( 0 > dir ) return null; // only forward
+                if ( first )
                 {
-                    n_i = Arithmetic.div(n, i);
-                    if ( !Arithmetic.equ(n_i, i) )
-                    {
-                        // two distinct divisors
-                        next = n_i;
-                    }
-                    return i;
+                    i = I;
+                    if ( !Arithmetic.equ(I, n) ) next = n;
+                    return I;
+                }
+                if ( next )
+                {
+                    k = next;
+                    next = null;
+                    return k;
                 }
                 i = Arithmetic.add(i, I);
-            }
-            return null;
-        });
+                while(Arithmetic.lte(i,sqrn))
+                {
+                    if ( Arithmetic.equ(O, Arithmetic.mod(n, i)) )
+                    {
+                        n_i = Arithmetic.div(n, i);
+                        if ( !Arithmetic.equ(n_i, i) )
+                        {
+                            // two distinct divisors
+                            next = n_i;
+                        }
+                        return i;
+                    }
+                    i = Arithmetic.add(i, I);
+                }
+                return null;
+            });
+        }
     }
     else
     {
+        sqrn = isqrt(n);
         for (i=I; Arithmetic.lte(i,sqrn); i=Arithmetic.add(i,I))
         {
             if ( Arithmetic.equ(O, Arithmetic.mod(n, i)) )
@@ -3240,7 +3277,7 @@ function solvediophs( a, b, with_param, with_free_vars )
         return x.c();
     }) : solutions);
 
-    return null==solutions ? null : (with_free_vars ? [solutions, free_vars] : solutions);
+    return null==solutions ? null : (true===with_free_vars ? [solutions, free_vars] : solutions);
 }
 function solvecongr( a, b, m, with_param )
 {
@@ -5197,7 +5234,7 @@ Abacus.Math = {
 }
 ,divisors: function( n, as_generator ) {
     var Arithmetic = Abacus.Arithmetic;
-    return divisors(Arithmetic.num(n), as_generator);
+    return divisors(Arithmetic.num(n), true===as_generator);
 }
 ,legendre: function( a, p ) {
     var Arithmetic = Abacus.Arithmetic;
@@ -5228,7 +5265,7 @@ Abacus.Math = {
 }
 ,nextPrime: function( n, dir ) {
     var Arithmetic = Abacus.Arithmetic;
-    return next_prime(Arithmetic.num(n), dir);
+    return next_prime(Arithmetic.num(n), -1===dir?-1:1);
 }
 
 ,diophantine: function( a, b, with_param ) {
@@ -5236,7 +5273,7 @@ Abacus.Math = {
     if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
     return solvedioph(Arithmetic.nums(a), Arithmetic.num(b||0), with_param);
 }
-,diophantines: function( a, b, with_param ) {
+,diophantines: function( a, b, with_param, with_free_vars ) {
     var Arithmetic = Abacus.Arithmetic;
     if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
     if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
@@ -5244,7 +5281,7 @@ Abacus.Math = {
     a = a instanceof Matrix ? a : Arithmetic.nums(a);
     if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
     b = b instanceof Matrix ? b : Arithmetic.nums(b);
-    return solvediophs(a, b, with_param);
+    return solvediophs(a, b, with_param, true===with_free_vars);
 }
 ,congruence: function( a, b, m, with_param ) {
     var Arithmetic = Abacus.Arithmetic;
@@ -5393,16 +5430,6 @@ Node = Abacus.Node = function Node(value, left, right, top) {
         return self;
     };
 };*/
-
-function to_tex( s )
-{
-    var p = String(s).split('_');
-    return p[0] + (p.length > 1 ? ('_{'+p[1]+'}') : '');
-}
-function Tex( s )
-{
-    return "function" === typeof s.toTex ? s.toTex() : String(s);
-}
 
 // Abacus.INumber, represents a generic (numeric/symbolic) number interface
 INUMBER = {
@@ -6023,12 +6050,14 @@ Complex = Abacus.Complex = Class(INumber, {
     
     ,dispose: function( ) {
         var self = this;
+        if ( self.real ) self.real.dispose();
+        if ( self.imag ) self.imag.dispose();
+        self.real = null;
+        self.imag = null;
         self._str = null;
         self._tex = null;
         self._dec = null;
         self._norm = null;
-        self.real = null;
-        self.imag = null;
         return self;
     }
     
@@ -6376,10 +6405,11 @@ Term = Abacus.Term = Class(INumber, {
 
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
             return Term(self.factors, Arithmetic.add(self.factors['1'], a));
-        else if ( (a instanceof Rational) || (a instanceof Complex) )
-            return Term(self.factors, Arithmetic.add(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         else if ( a instanceof Term )
             return self.symbol===a.symbol ? Term(self.factors, Arithmetic.add(self.factors['1'], a.factors['1'])) : Expr([self, a]);
         else if ( a instanceof Expr )
@@ -6390,10 +6420,11 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,sub: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
             return Term(self.factors, Arithmetic.sub(self.factors['1'], a));
-        else if ( (a instanceof Rational) || (a instanceof Complex) )
-            return Term(self.factors, Arithmetic.sub(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         else if ( a instanceof Term )
             return self.symbol===a.symbol ? Term(self.factors, Arithmetic.sub(self.factors['1'], a.factors['1'])) : Expr([self, a.neg()]);
         else if ( a instanceof Expr )
@@ -6404,13 +6435,12 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,mul: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, T;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return Term(self.factors, Arithmetic.mul(self.factors['1'], a));
-        }
-        else if ( (a instanceof Rational) || (a instanceof Complex) )
-        {
-            return Term(self.factors, Arithmetic.mul(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         }
         else if ( a instanceof Term )
         {
@@ -6427,13 +6457,12 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,div: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, T;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return Term(self.factors, Arithmetic.div(self.factors['1'], a));
-        }
-        else if ( (a instanceof Rational) || (a instanceof Complex) )
-        {
-            return Term(self.factors, Arithmetic.div(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         }
         else if ( a instanceof Term )
         {
@@ -6446,13 +6475,12 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,mod: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, T;
+        if ( a instanceof Complex ) a = a.real.integer();
+        else if ( a instanceof Rational ) a = a.integer();
+        
         if ( Arithmetic.isNumber(a) )
         {
             return Term(self.factors, Arithmetic.mod(self.factors['1'], a));
-        }
-        else if ( (a instanceof Rational) || (a instanceof Complex) )
-        {
-            return Term(self.factors, Arithmetic.mod(self.factors['1'], a instanceof Complex ? a.real.integer() : a.integer()));
         }
         return self;
     }
@@ -6600,7 +6628,13 @@ Expr = Abacus.Expr = Class(INumber, {
     ,_symb: null
 
     ,dispose: function( ) {
-        var self = this;
+        var self = this, t;
+        if ( self.terms )
+        {
+            for(t in self.terms)
+                if ( HAS.call(self.terms, t) )
+                    self.terms[t].dispose();
+        }
         self.terms = null;
         self._str = null;
         self._tex = null;
@@ -7066,7 +7100,9 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var qr = this.div(x, true);
         return qr[1];
     }
-    ,divmod: NotImplemented
+    ,divmod: function( x ) {
+        return this.div(x, true);
+    }
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
         if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
@@ -7377,6 +7413,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
 
     ,dispose: function( ) {
         var self = this;
+        self.nr = null;
+        self.nc = null;
+        self.val = null;
         self._str = null;
         self._tex = null;
         self._n = null;
@@ -7392,15 +7431,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
         self._cs = null;
         self._tr = null;
         self._det = null;
-        self.nr = null;
-        self.nc = null;
-        self.val = null;
         return self;
     }
 
     ,clone: function( raw ) {
         var m = this.val.map(function(vi){return vi.slice();});
-        return raw ? m : Matrix(m);
+        return true===raw ? m : Matrix(m);
     }
     ,map: function( f, raw ) {
         var self = this, m;
@@ -7409,7 +7445,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 return f(vij, [i, j], self);
             });
         });
-        return raw ? m : Matrix(m);
+        return true===raw ? m : Matrix(m);
     }
     ,array: function( column_order ) {
         var self = this;
