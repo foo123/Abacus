@@ -6,7 +6,7 @@ A **Combinatorics** and **Number Theory** library for Node.js / Browser / XPCOM 
 (python/java implementations in progress)
 
 
-**version 0.9.8** (~ 161kB minified, ~ 35kB zipped)
+**version 0.9.8** (~ 163kB minified, ~ 35kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -607,8 +607,9 @@ o.dispose()
 * support efficient primality tests and prime sieves **[DONE PARTIALY]**
 * support efficient integer factorization algorithms **[DONE PARTIALY]**
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
+* support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE PARTIALY]**
 * implement `LLL` algorithm (TODO)
-* implement (univariate) polynomial factorisation (TODO)
+* implement (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE PARTIALY]**
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)

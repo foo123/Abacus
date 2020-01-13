@@ -1605,7 +1605,7 @@ function baillie_psw_test( n, extra_mr )
 
     // Check divisibility by a short list of small primes
     if ( Arithmetic.lt(n, primes[0]) ) return false;
-    for (i=0,l=stdMath.min(primes.length,50); i<l; i++)
+    for (i=0,l=stdMath.min(primes.length,100); i<l; i++)
     {
         p = primes[i];
         if ( Arithmetic.equ(n, p) ) return true;
@@ -1627,7 +1627,7 @@ function is_probable_prime( n )
 
     // Check divisibility by a short list of small primes
     if ( Arithmetic.lt(n, primes[0]) ) return false;
-    for (i=0,l=stdMath.min(primes.length,100); i<l; i++)
+    for (i=0,l=stdMath.min(primes.length,50); i<l; i++)
     {
         p = primes[i];
         if ( Arithmetic.equ(n, p) ) return true;
@@ -2157,12 +2157,12 @@ function factorize( n )
     var Arithmetic = Abacus.Arithmetic, ndigits, f;
     ndigits = Arithmetic.digits(n).length;
     // try to use fastest algorithm based on size of number (number of digits)
-    if ( ndigits <= 10 )
+    if ( ndigits <= 20 )
     {
         // trial division for small numbers
         return trial_div_fac(n);
     }
-    else if ( ndigits <= 1000 )
+    else //if ( ndigits <= 1000 )
     {
         // recursive (heuristic) factorization for medium-to-large numbers
         f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
@@ -2171,11 +2171,11 @@ function factorize( n )
         if ( null == f ) return [[n, Arithmetic.I]];
         else return merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
     }
-    else
+    /*else
     {
         // self-initialising quadratic sieve for (very) large numbers TODO
         return siqs_fac(n);
-    }
+    }*/
 }
 
 /*function frac2str( )
@@ -2568,11 +2568,11 @@ function polylcm( /* args */ )
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         i, l = args.length, LCM, O = Abacus.Arithmetic.O;
     if ( 1 >= l ) return 1===l ? args[0] : Polynomial.C(O);
-    if ( args[0].equ(O) || args[1].equ(O) ) return Polynomial.C(O);
+    if ( args[0].equ(O) || args[1].equ(O) ) return Polynomial.C(O, args[0].symbol);
     LCM = polylcm2(args[0], args[1]);
     for(i=2; i<l; i++)
     {
-        if ( args[i].equ(O) ) return Polynomial.C(O);
+        if ( args[i].equ(O) ) return Polynomial.C(O, args[0].symbol);
         LCM = polylcm2(LCM, args[i]);
     }
     return LCM;
@@ -2614,7 +2614,7 @@ function polyxgcd( /* args */ )
         // gcd(a, gcd(b, c, ..)) = ax + k (nb + mc + ..) = ax + b(kn) + c(km) + .. = ax + by +cz + ..
         // note2: any zero arguments are skipped and do not break xGCD computation
         // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
-        xgcd = polyxgcd(slice.call(args, 1));
+        xgcd = 2===k ? [args[1], Polynomial.C(I, a.symbol)] : polyxgcd(slice.call(args, 1));
         b = xgcd[0];
         //if ( b.lead().lt(O) ) {b = b.neg(); bsign = bsign.neg();}
 
@@ -3021,7 +3021,7 @@ function solvedioph( a, b, with_param )
 
     // filter out zero coefficients and mark positions of non-zero coeffs to restore later
     a = a.filter(function(ai, i){
-        var NZ = !Arithmetic.equ(ai, O);
+        var NZ = !Arithmetic.equ(O, ai);
         if ( NZ ) pos.push(i);
         return NZ;
     });
@@ -3031,7 +3031,7 @@ function solvedioph( a, b, with_param )
     {
         // degenerate case where all coefficients are 0, either infinite or no solutions depending on value of b
         index = 0;
-        solutions = Arithmetic.equ(b, O) ? array(ok, function(i){
+        solutions = Arithmetic.equ(O, b) ? array(ok, function(i){
             return Expr(Term(symbol+'_'+(++index)));
         }) /* infinite */ : null /* none */;
     }
@@ -3128,7 +3128,7 @@ function solvedioph( a, b, with_param )
             symbols = b.symbols();
             for(j=0,m=symbols.length; j<m; j++)
             {
-                n = b.terms[symbols[j]].c();
+                n = b.terms[symbols[j]].c()./*integer()*/num;
                 if ( '1' === symbols[j] )
                 {
                     // constant term
@@ -3175,7 +3175,7 @@ function solvedioph( a, b, with_param )
 
     return null==solutions ? null : (false===with_param ? solutions.map(function(x){
         // return particular solution (as number), not general (as expression)
-        return x.c();
+        return x.c()./*integer()*/num;
     }) : solutions);
 }
 function solvediophs( a, b, with_param, with_free_vars )
@@ -3212,7 +3212,7 @@ function solvediophs( a, b, with_param, with_free_vars )
         }
         else
         {
-            for(t=O,j=0; j<i; j++) t = Arithmetic.add(t, Arithmetic.mul(Rt.val[i][j], p[j].c()));
+            for(t=O,j=0; j<i; j++) t = Arithmetic.add(t, Arithmetic.mul(Rt.val[i][j], p[j].c().num));
             p[i] = Arithmetic.sub(b[i], t);
             if ( Arithmetic.equ(O, Rt.val[i][i]) )
             {
@@ -3280,7 +3280,7 @@ function solvediophs( a, b, with_param, with_free_vars )
 
     solutions = null==solutions ? null : (false===with_param ? solutions.map(function(x){
         // return particular solution (as number), not general (as expression)
-        return x.c();
+        return x.c().num;
     }) : solutions);
 
     return null==solutions ? null : (true===with_free_vars ? [solutions, free_vars] : solutions);
@@ -3304,7 +3304,7 @@ function solvecongr( a, b, m, with_param )
         else
         {
             // general solution (as expression)
-            if ( Arithmetic.gt(O, x.c()) )
+            if ( x.c().lt(O) )
                 x = x.add(m);
         }
         return x;
@@ -3357,7 +3357,7 @@ function solvecongrs( a, b, m, with_param )
             for(t in x.terms)
             {
                 if ( !HAS.call(x.terms, t) || ('1' === t) ) continue;
-                if ( Arithmetic.equ(O, Arithmetic.mod(M, x.terms[t].c())) )
+                if ( Arithmetic.equ(O, Arithmetic.mod(M, x.terms[t].c().num)) )
                 {
                     add_M = false;
                     break;
@@ -3365,7 +3365,7 @@ function solvecongrs( a, b, m, with_param )
             }
             if ( add_M )
                 x = x.add(Term(free_vars.symbol+'_'+(free_vars.length+1), M))
-            if ( Arithmetic.gt(O, x.c()) )
+            if ( x.c().lt(O) )
                 x = x.add(M);
         }
         return x;
@@ -3485,6 +3485,34 @@ function exp( n, k )
     return fproduct.mem[key];
 }
 fproduct.mem = Obj();*/
+function prime_factorial( n )
+{
+    // compute factorial by its prime factorization
+    // eg https://janmr.com/blog/2010/10/prime-factors-of-factorial-numbers/
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        fac = Arithmetic.I, e, p, pp, d, i, l, primes_up_to_n = PrimeSieve();
+    
+    // compute exponents for each prime of the prime factorisation of n!
+    p = primes_up_to_n.next();
+    while( null!=p && Arithmetic.lte(p, n) )
+    {
+        e = O; pp = p; d = Arithmetic.div(n, pp);
+        while( !Arithmetic.equ(O, d) )
+        {
+            e = Arithmetic.add(e, d);
+            pp = Arithmetic.mul(pp, p);
+            d = Arithmetic.div(n, pp);
+        }
+        if ( !Arithmetic.equ(O, e) )
+            fac = Arithmetic.mul(fac, Arithmetic.pow(p, e));
+        
+        // get next prime up to n
+        p = primes_up_to_n.next();
+    }
+    primes_up_to_n.dispose();
+    
+    return fac;
+}
 function factorial( n, m )
 {
     var Arithmetic = Abacus.Arithmetic,
@@ -3499,6 +3527,10 @@ function factorial( n, m )
         // https://en.wikipedia.org/wiki/Factorial
         // simple factorial = F(n) = n F(n-1) = n!
         if ( 12 >= n ) return 0 > n ? O : NUM(([1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600 /*MAX: 2147483647*/])[n]);
+        
+        // for very large factorials, use the prime factorisation of n!
+        if ( 500 <= n ) return prime_factorial(Nn);
+        
         key = String(n)/*+'!'*/;
         if ( null == factorial.mem1[key] )
         {
@@ -3507,7 +3539,6 @@ function factorial( n, m )
             // recursive and memoized
             // simple factorial = F(n) = n F(n-1) = n!
             res = mul(factorial(n-1),n);
-            // https://people.eecs.berkeley.edu/~fateman/papers/factorial.pdf
             //res = fproduct(n, 1);
             // memoize only up to MAXMEM results
             if ( Arithmetic.lt(Nn,MAXMEM) )
@@ -5793,6 +5824,7 @@ Rational = Abacus.Rational = Class(INumber, {
     ,_dec: null
     ,_int: null
     ,_rem: null
+    ,_simpl: false
     
     ,dispose: function( ) {
         var self = this;
@@ -5803,6 +5835,7 @@ Rational = Abacus.Rational = Class(INumber, {
         self._dec = null;
         self._int = null;
         self._rem = null;
+        self._simpl = null;
         return self;
     }
     
@@ -5944,7 +5977,19 @@ Rational = Abacus.Rational = Class(INumber, {
         
         return self;
     }
-    ,mod: NotImplemented
+    ,mod: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return null;
+        if ( a instanceof Complex ) a = a.real;
+        
+        if ( a instanceof Rational )
+            return self.sub(a.mul(self.div(a).integer()));
+        else if ( Arithmetic.isNumber(a) ) // assume integer
+            return self.sub(Arithmetic.mul(a, self.div(a).integer()));
+        
+        return self;
+    }
     ,divmod: NotImplemented
     
     ,pow: function( n ) {
@@ -5967,20 +6012,24 @@ Rational = Abacus.Rational = Class(INumber, {
     }
     ,simpl: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, g;
-        if ( Arithmetic.equ(Arithmetic.O, self.num) )
+        if ( !self._simpl )
         {
-            self.den = I;
-        }
-        else
-        {
-            g = gcd(self.num, self.den);
-            if ( !Arithmetic.equ(I, g) )
+            if ( Arithmetic.equ(Arithmetic.O, self.num) )
             {
-                self.num = Arithmetic.div(self.num, g);
-                self.den = Arithmetic.div(self.den, g);
-                self._str = null;
-                self._tex = null;
+                self.den = I;
             }
+            else
+            {
+                g = gcd(self.num, self.den);
+                if ( !Arithmetic.equ(I, g) )
+                {
+                    self.num = Arithmetic.div(self.num, g);
+                    self.den = Arithmetic.div(self.den, g);
+                    self._str = null;
+                    self._tex = null;
+                }
+            }
+            self._simpl = true;
         }
         return self;
     }
@@ -6071,8 +6120,8 @@ Complex = Abacus.Complex = Class(INumber, {
     
     ,dispose: function( ) {
         var self = this;
-        if ( self.real ) self.real.dispose();
-        if ( self.imag ) self.imag.dispose();
+        /*if ( self.real ) self.real.dispose();
+        if ( self.imag ) self.imag.dispose();*/
         self.real = null;
         self.imag = null;
         self._str = null;
@@ -6507,6 +6556,7 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,mod: NotImplemented
     ,divmod: NotImplemented
+    
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, factors, f;
         if ( Arithmetic.isNumber(n) )
@@ -6645,12 +6695,12 @@ Expr = Abacus.Expr = Class(INumber, {
 
     ,dispose: function( ) {
         var self = this, t;
-        if ( self.terms )
+        /*if ( self.terms )
         {
             for(t in self.terms)
                 if ( HAS.call(self.terms, t) )
                     self.terms[t].dispose();
-        }
+        }*/
         self.terms = null;
         self._str = null;
         self._tex = null;
@@ -6760,6 +6810,7 @@ Expr = Abacus.Expr = Class(INumber, {
     }
     ,mod: NotImplemented
     ,divmod: NotImplemented
+    
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, pow, e;
         if ( Arithmetic.isNumber(n) )
@@ -6861,9 +6912,9 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                     self.coeff[i] = new Rational(self.coeff[i]);
             
             self.symbol = String(symbol || 'x');
-        }
 
-        Polynomial.Degree(self);
+            Polynomial.Degree(self);
+        }
     }
 
     ,__static__: {
@@ -6983,6 +7034,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,_tex: null
     ,_n: null
     ,_expr: null
+    ,_prim: null
 
     ,dispose: function( ) {
         var self = this;
@@ -6998,6 +7050,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         self._n = null;
         //if ( self._expr ) self._expr.dispose();
         self._expr = null;
+        self._prim = null;
         return self;
     }
 
@@ -7011,6 +7064,38 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             if ( !coeff[i].isInt() ) return false;
         return true;
     }
+    ,roots: function( ) {
+        // find all rational roots, if any
+        // https://en.wikipedia.org/wiki/Rational_root_theorem
+        // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
+        var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            roots = [], primitive = this.primitive(),
+            c = primitive.coeff, i = 0, d0, dn, iter, comb, root;
+        while(i<c.length && c[i].equ(Arithmetic.O))
+        {
+            roots.push(Rational(O)); // zero root
+            i++;
+        }
+        if ( i+1<c.length )
+        {
+            // try all possible rational divisors of c_0(excluding trivial zero terms) and c_n
+            d0 = divisors(c[i].num);
+            dn = divisors(c[c.length-1].num);
+            iter = Tensor([d0.length, dn.length]);
+            while(iter.hasNext())
+            {
+                comb = iter.next();
+                // try positive root
+                root = Rational(d0[comb[0]], dn[comb[1]]);
+                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
+                // try negative root
+                root = Rational(Arithmetic.neg(d0[comb[0]]), dn[comb[1]]);
+                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
+            }
+            iter.dispose();
+        }
+        return roots;
+    }
     ,deg: function( ) {
         // polynomial degree
         return this.coeff.length-1;
@@ -7023,6 +7108,26 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,c: function( ) {
         // constant coefficient
         return this.coeff[0];
+    }
+    ,primitive: function( and_content ) {
+        // factorise into content and primitive part
+        // https://en.wikipedia.org/wiki/Factorization_of_polynomials#Primitive_part%E2%80%93content_factorization
+        var self = this, Arithmetic = Abacus.Arithmetic, coeff = self.coeff, coeffp, M, content;
+        if ( null == self._prim )
+        {
+            M = coeff.reduce(function(M, c){return Arithmetic.mul(M, c.den);}, Arithmetic.I);
+            coeffp = coeff.map(function(c){return c.mul(M).num;});
+            content = gcd(coeffp);
+            coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+            // make positive lead
+            if ( Arithmetic.gt(Arithmetic.O, coeffp[coeffp.length-1]) )
+            {
+                coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                content = Arithmetic.neg(content);
+            }
+            self._prim = [Polynomial(coeffp, self.symbol), Rational(content, M)];
+        }
+        return true===and_content ? self._prim.slice() : self._prim[0];
     }
     ,equ: function( p ) {
         var self = this, Arithmetic = Abacus.Arithmetic,
@@ -7214,7 +7319,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             {
                 ci = c[i];
                 if ( ci.equ(O) ) continue;
-                out += (prev && ci.gt(O) ? '+' : '') + (0===i ? ((ci.lt(O) ? '-' : '') + (ci.isInt() ? ci.abs().toString() : ('('+ci.abs().toString()+')'))) : (ci.equ(Arithmetic.I) ? '' : (ci.equ(Arithmetic.J) ? '-' : ((ci.lt(O) ? '-' : '') + (ci.isInt() ? ci.abs().toString() : ('('+ci.abs().toString()+')'))+'*')))) + (0!==i ? (x+(1!==i?('^{'+Tex(i)+'}'):'')) : '');
+                out += (prev && ci.gt(O) ? '+' : '') + (0===i ? ((ci.lt(O) ? '-' : '') + (ci.isInt() ? ci.abs().toString() : ('('+ci.abs().toString()+')'))) : (ci.equ(Arithmetic.I) ? '' : (ci.equ(Arithmetic.J) ? '-' : ((ci.lt(O) ? '-' : '') + (ci.isInt() ? ci.abs().toString() : ('('+ci.abs().toString()+')'))+'*')))) + (0!==i ? (x+(1!==i?('^'+String(i)):'')) : '');
                 prev = true;
             }
             self._str = out.length ? out : '0';
@@ -7555,7 +7660,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         
         if ( Arithmetic.isNumber(a) )
         {
-            if ( eq_all )
+            if ( true===eq_all )
             {
                 for(i=0; i<r; i++)
                     for(j=0; j<c; j++)

@@ -135,6 +135,31 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
+echo('Polynomial Rational Roots');
+echo('---');
+
+echo('Abacus.Polynomial([0,1]).roots()'); // one trivial root
+echo(Abacus.Polynomial([0,1]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial([0,0,3]).roots()'); // two trivial roots
+echo(Abacus.Polynomial([0,0,3]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial([1,1]).roots()'); // one root
+echo(Abacus.Polynomial([1,1]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial([-1,1,0,2]).roots()'); // no rational roots
+echo(Abacus.Polynomial([-1,1,0,2]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial(6,-7,0,1]).roots()'); // 1,2,-3
+echo(Abacus.Polynomial([6,-7,0,1]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial(6,-7,0,1]).shift(2).roots()'); // 0,0,1,2,-3
+echo(Abacus.Polynomial([6,-7,0,1]).shift(2).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial(-2,5,-5,3]).roots()'); // one root
+echo(Abacus.Polynomial([-2,5,-5,3]).roots().map(function(r){return r.toString();}).join(', '));
+echo('---');
+
 echo('Polynomial GCD, generalisation of GCD of numbers');
 echo('---');
 echo('Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
