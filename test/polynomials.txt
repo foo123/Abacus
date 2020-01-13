@@ -60,6 +60,14 @@ o.shift(1)
 2*x^2+x
 o.shift(-1)
 2
+o.compose(Abacus.Polynomial([1]))
+3
+o.compose(Abacus.Polynomial([0,1]))
+2*x+1
+o.compose(Abacus.Polynomial([1,1]))
+2*x+3
+Abacus.Polynomial([1,1,1]).compose(o)
+4*x^2+6*x+3
 o.pow(0)
 1
 o.pow(1)
@@ -81,6 +89,12 @@ o.toExpr()
 Abacus.Polynomial.fromExpr(o.toExpr())
 2*x+1
 o.dispose()
+---
+o=Abacus.Polynomial([6,12])
+o.toString()
+12*x+6
+o.toTex()
+12x+6
 ---
 o=Abacus.Polynomial([-4,0,-2,1])
 o.toString()
@@ -109,12 +123,16 @@ Abacus.Polynomial([1,1]).roots()
 -1
 Abacus.Polynomial([-1,1,0,2]).roots()
 
-Abacus.Polynomial(6,-7,0,1]).roots()
+Abacus.Polynomial([6,-7,0,1]).roots()
 1, 2, -3
-Abacus.Polynomial(6,-7,0,1]).shift(2).roots()
+Abacus.Polynomial([6,-7,0,1]).shift(2).roots()
 0, 0, 1, 2, -3
-Abacus.Polynomial(-2,5,-5,3]).roots()
+Abacus.Polynomial([-2,5,-5,3]).roots()
 2/3
+Abacus.Polynomial([1,1]).pow(2).roots()
+-1, -1
+Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots()
+0, 0, -1, -1
 ---
 Polynomial GCD, generalisation of GCD of numbers
 ---
@@ -137,6 +155,9 @@ Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polyn
 ---
 Polynomial Extended GCD, generalisation of xGCD of numbers
 ---
+Abacus.Math.polyxgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))
+(x^2+2)((4/9)) + (12*x+6)(-(1/27)*x+(1/54)) = 1 true
+(x^{2}+2)(\frac{4}{9}) + (12x+6)(-\frac{1}{27}x+\frac{1}{54}) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
 (2*x+1)(-4*x-1) + (4*x^2+3*x+1)(2) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))

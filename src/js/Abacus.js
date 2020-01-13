@@ -1730,12 +1730,12 @@ function is_prime( n )
     //n = Arithmetic.abs(/*N(*/n/*)*/);
     ndigits = Arithmetic.digits(n).length;
     // try to use fastest algorithm based on size of number (number of digits)
-    if ( ndigits <= 8 )
+    if ( ndigits <= 6 )
     {
         // deterministic test
         return wheel_trial_div_test(n);
     }
-    else if ( ndigits <= 1000 )
+    else if ( ndigits <= 20 )
     {
         // deterministic test
         /*
@@ -1746,11 +1746,11 @@ function is_prime( n )
         If n < 3474749660383 is a 2, 3, 5, 7, 11 and 13-SPRP, then n is prime [Jaeschke93].
         If n < 341550071728321 is a 2, 3, 5, 7, 11, 13 and 17-SPRP, then n is prime [Jaeschke93].
         */
-        /*if ( Arithmetic.lt(n, N(1373653)) )
+        if ( Arithmetic.lt(n, N(1373653)) )
             return miller_rabin_test(n, [two, N(3)]);
         else if ( Arithmetic.lt(n, N("25326001")) )
             return miller_rabin_test(n, [two, N(3), N(5)]);
-        else*/ if ( Arithmetic.lt(n, N("25000000000")) )
+        else if ( Arithmetic.lt(n, N("25000000000")) )
             return Arithmetic.equ(n, N("3215031751")) ? false : miller_rabin_test(n, [two, N(3), N(5), N(7)]);
         else if ( Arithmetic.lt(n, N("2152302898747")) )
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11)]);
@@ -2704,14 +2704,13 @@ function polyxgcd( /* args */ )
 }
 function divisors( n, as_generator )
 {
-    // time+space O(sqrt(n)) to find all distinct divisors of n (including 1 and n itself)
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         list = null, D2 = null, D1 = null, L1 = 0, L2 = 0, node, sqrn, i, n_i, next, factors;
     //n = Arithmetic.num(n);
     n = Arithmetic.abs(n);
     if ( true===as_generator )
     {
-        if ( Arithmetic.gte(n, 1000000) )
+        if ( Arithmetic.gte(n, 100000) )
         {
             // for very large numbers,
             // compute divisors through prime factorisation
@@ -2727,6 +2726,7 @@ function divisors( n, as_generator )
         }
         else
         {
+            // time+space O(sqrt(n)) to find all distinct divisors of n (including 1 and n itself)
             sqrn = isqrt(n);
             i = I; next = null;
             // return iterator/generator
@@ -2766,6 +2766,7 @@ function divisors( n, as_generator )
     }
     else
     {
+        // time+space O(sqrt(n)) to find all distinct divisors of n (including 1 and n itself)
         sqrn = isqrt(n);
         for (i=I; Arithmetic.lte(i,sqrn); i=Arithmetic.add(i,I))
         {
@@ -3549,8 +3550,8 @@ function factorial( n, m )
         // simple factorial = F(n) = n F(n-1) = n!
         if ( 12 >= n ) return 0 > n ? O : NUM(([1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600 /*MAX: 2147483647*/])[n]);
         
-        // for very large factorials, use the prime factorisation of n!
-        if ( 500 <= n ) return prime_factorial(Nn);
+        // for large factorials, use the prime factorisation of n!
+        if ( 600 <= n ) return prime_factorial(Nn);
         
         key = String(n)/*+'!'*/;
         if ( null == factorial.mem1[key] )
@@ -7101,11 +7102,11 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,primitive: function( and_content ) {
         // factorise into content and primitive part
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials#Primitive_part%E2%80%93content_factorization
-        var self = this, Arithmetic = Abacus.Arithmetic, coeff = self.coeff, coeffp, M, content;
+        var self = this, Arithmetic = Abacus.Arithmetic, coeff = self.coeff, coeffp, LCM, content;
         if ( null == self._prim )
         {
-            M = coeff.reduce(function(M, c){return Arithmetic.mul(M, c.den);}, Arithmetic.I);
-            coeffp = coeff.map(function(c){return c.mul(M).num;});
+            LCM = lcm(coeff.map(function(c){return c.den;}));
+            coeffp = coeff.map(function(c){return c.mul(LCM).integer();});
             content = gcd(coeffp);
             coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
             // make positive lead
@@ -7114,7 +7115,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
                 content = Arithmetic.neg(content);
             }
-            self._prim = [Polynomial(coeffp, self.symbol), Rational(content, M)];
+            self._prim = [Polynomial(coeffp, self.symbol), Rational(content, LCM)];
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
     }
@@ -7123,7 +7124,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         // https://en.wikipedia.org/wiki/Rational_root_theorem
         // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            roots = [], primitive,c, i, d0, dn, iter, comb, root;
+            roots = [], primitive,c, p, i, d0, dn, iter, comb, root, nroot, found;
         
         if ( 0 === self.deg() ) return roots; // no roots for constant polynomials
         
@@ -7137,17 +7138,37 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         if ( i+1<c.length )
         {
             // try all possible rational divisors of c_0(excluding trivial zero terms) and c_n
-            d0 = divisors(c[i].num); dn = divisors(c[c.length-1].num);
+            iter = divisors(c[i].num, true);
+            d0 = iter.get(); iter.dispose();
+            iter = divisors(c[c.length-1].num, true);
+            dn = iter.get(); iter.dispose();
+            
             iter = Tensor([d0.length, dn.length]);
             while(iter.hasNext())
             {
                 comb = iter.next();
-                // try positive root
+                // positive root
                 root = Rational(d0[comb[0]], dn[comb[1]]);
-                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
-                // try negative root
-                root = root.neg();
-                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
+                // negative root
+                nroot = Rational(Arithmetic.neg(d0[comb[0]]), dn[comb[1]]);
+                p = primitive; found = true;
+                while( found && (0<p.deg()) )
+                {
+                    found = false;
+                    // try positive root
+                    if ( p.valueOf(root).equ(O) )
+                    {
+                        roots.push(root);
+                        found = true;
+                    }
+                    // try negative root
+                    if ( p.valueOf(nroot).equ(O) )
+                    {
+                        roots.push(nroot);
+                        found = true;
+                    }
+                    if ( found ) p = p.d(); // get derivative to check if roots are multiple
+                }
             }
             iter.dispose();
         }
@@ -7294,6 +7315,29 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             }
             return pow;
         }
+    }
+    ,compose: function( x ) {
+        // functionaly compose one polynomial with another. ie result = P(Q(x))
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, px, c, i;
+        if ( x instanceof Matrix ) return null;
+        if ( x instanceof Term ) x = Expr(x);
+        if ( x instanceof Expr ) x = Polynomial.fromExpr(x, self.symbol);
+        if ( x instanceof Complex ) x = x.real;
+        if ( Arithmetic.isNumber(x) || (x instanceof Rational) )
+        {
+            return Polynomial([self.valueOf(x)], self.symbol);
+        }
+        else if ( x instanceof Polynomial )
+        {
+            // Composition through variation of Horner's algorithm for fast evaluation
+            if ( 0 === self.deg() ) return self.clone();
+            if ( 0 === x.deg() ) return Polynomial([self.valueOf(x.c())], x.symbol);
+            c = self.coeff; i = c.length-1;
+            px = Polynomial([c[i]], x.symbol);
+            while(i--) px = Polynomial([c[i]], x.symbol).add(px.mul(x));
+            return px;
+        }
+        return self;
     }
     ,shift: function( s ) {
         // shift <-> equivalent to multiplication/division by a monomial x^s

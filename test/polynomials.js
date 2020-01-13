@@ -10,15 +10,27 @@ function check_div( n, d, q, r )
     var nn = q.mul(d).add(r);
     console.log('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
 }
-function check_xgcd( args, gcd )
+function check_xgcd( args, gcd, tex )
 {
     var out = '', res = Abacus.Polynomial(0);
-    for(i=0; i<args.length; i++)
+    if ( tex )
     {
-        out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
-        res = res.add(args[i].mul(gcd[i+1]));
+        for(i=0; i<args.length; i++)
+        {
+            out += (out.length ? ' + ' : '') + '('+args[i].toTex()+')'+'('+gcd[i+1].toTex()+')';
+            res = res.add(args[i].mul(gcd[i+1]));
+        }
+        out += ' = '+gcd[0].toTex();
     }
-    out += ' = '+gcd[0].toString();
+    else
+    {
+        for(i=0; i<args.length; i++)
+        {
+            out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
+            res = res.add(args[i].mul(gcd[i+1]));
+        }
+        out += ' = '+gcd[0].toString();
+    }
     console.log(out, res.equ(gcd[0]));
 }
 var o, d, qr, args;
@@ -87,6 +99,14 @@ echo('o.shift(1)');
 echo(o.shift(1).toString());
 echo('o.shift(-1)');
 echo(o.shift(-1).toString());
+echo('o.compose(Abacus.Polynomial([1]))');
+echo(o.compose(Abacus.Polynomial([1])).toString());
+echo('o.compose(Abacus.Polynomial([0,1]))');
+echo(o.compose(Abacus.Polynomial([0,1])).toString());
+echo('o.compose(Abacus.Polynomial([1,1]))');
+echo(o.compose(Abacus.Polynomial([1,1])).toString());
+echo('Abacus.Polynomial([1,1,1]).compose(o)');
+echo(Abacus.Polynomial([1,1,1]).compose(o).toString());
 echo('o.pow(0)');
 echo(o.pow(0).toString());
 echo('o.pow(1)');
@@ -114,6 +134,15 @@ echo(o.toExpr().toString());
 echo('Abacus.Polynomial.fromExpr(o.toExpr())');
 echo(Abacus.Polynomial.fromExpr(o.toExpr()).toString());
 echo('o.dispose()');
+o.dispose();
+echo('---');
+
+echo('o=Abacus.Polynomial([6,12])');
+o=Abacus.Polynomial([6,12]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.toTex()');
+echo(o.toTex());
 o.dispose();
 echo('---');
 
@@ -156,14 +185,20 @@ echo(Abacus.Polynomial([1,1]).roots().map(function(r){return r.toString();}).joi
 echo('Abacus.Polynomial([-1,1,0,2]).roots()'); // no rational roots
 echo(Abacus.Polynomial([-1,1,0,2]).roots().map(function(r){return r.toString();}).join(', '));
 
-echo('Abacus.Polynomial(6,-7,0,1]).roots()'); // 1,2,-3
+echo('Abacus.Polynomial([6,-7,0,1]).roots()'); // 1,2,-3
 echo(Abacus.Polynomial([6,-7,0,1]).roots().map(function(r){return r.toString();}).join(', '));
 
-echo('Abacus.Polynomial(6,-7,0,1]).shift(2).roots()'); // 0,0,1,2,-3
+echo('Abacus.Polynomial([6,-7,0,1]).shift(2).roots()'); // 0,0,1,2,-3
 echo(Abacus.Polynomial([6,-7,0,1]).shift(2).roots().map(function(r){return r.toString();}).join(', '));
 
-echo('Abacus.Polynomial(-2,5,-5,3]).roots()'); // one root
+echo('Abacus.Polynomial([-2,5,-5,3]).roots()'); // one root
 echo(Abacus.Polynomial([-2,5,-5,3]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial([1,1]).pow(2).roots()'); // multiple root
+echo(Abacus.Polynomial([1,1]).pow(2).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots()'); // multiple roots
+echo(Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots().map(function(r){return r.toString();}).join(', '));
 echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');
@@ -195,6 +230,12 @@ echo('---');
 
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
 echo('---');
+echo('Abacus.Math.polyxgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))');
+args=[Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12])];
+o=Abacus.Math.polyxgcd(args);
+check_xgcd(args, o);
+check_xgcd(args, o, true);
+
 echo('Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
 args=[Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4])];
 o=Abacus.Math.polyxgcd(args);
