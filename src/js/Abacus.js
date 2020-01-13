@@ -2520,10 +2520,22 @@ function polygcd( /* args */ )
     // https://en.wikipedia.org/wiki/Polynomial_long_division
     // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        c = args.length, Arithmetic = Abacus.Arithmetic,
+        c = args.length, Arithmetic = Abacus.Arithmetic, are_const = true,
         O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, zeroes = 0, a, b, a0, b0, t, qr, i;
 
     if ( 0 === c ) return Polynomial.C(O);
+    
+    for(i=0; i<c; i++)
+    {
+        if ( 0<args[i].deg() || !args[i].isInt() )
+        {
+            are_const = false;
+            break;
+        }
+    }
+    // defer to integer gcd and transform back to polynomial
+    if ( are_const ) return Polynomial.C(gcd(slice.call(args).map(function(p){return p.c().num;})), args[0].symbol);
+    
     /*for(i=0; i<c; i++)
     {
         if ( args[i].lead().lt(O) ) args[i] = args[i].neg();
@@ -2553,7 +2565,7 @@ function polygcd( /* args */ )
     }
     // simplify, positive and monic
     if ( a.lead().lt(O) ) a = a.neg();
-    if ( a.lead().gt(I) ) a = a.div(a.lead());
+    if ( !a.lead().equ(I) ) a = a.div(a.lead());
     return a;
 }
 function polylcm2( a, b )
@@ -2583,13 +2595,24 @@ function polyxgcd( /* args */ )
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#B%C3%A9zout's_identity_and_extended_GCD_algorithm
     // should be a generalisation of number xgcd, meaning for constant polynomials should coincide with xgcd of respective numbers
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        k = args.length, Arithmetic = Abacus.Arithmetic,
+        k = args.length, i, Arithmetic = Abacus.Arithmetic, are_const = true,
         O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, asign = Rational(I), bsign = Rational(I),
         a, b, a0, b0, a1, b1, a2, b2, lead,
-        qr, xgcd;
+        qr, xgcdp;
 
     if ( 0 === k ) return;
 
+    for(i=0; i<k; i++)
+    {
+        if ( 0<args[i].deg() || !args[i].isInt() )
+        {
+            are_const = false;
+            break;
+        }
+    }
+    // defer to integer gcd and transform back to polynomial
+    if ( are_const ) return xgcd(slice.call(args).map(function(p){return p.c().num;})).map(function(g){return Polynomial.C(g, args[0].symbol);});
+    
     a = args[0];
 
     a1 = Polynomial.C(I, a.symbol);
@@ -2600,7 +2623,7 @@ function polyxgcd( /* args */ )
     if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg();}
     if ( 1 === k )
     {
-        if ( /*0<a.deg() &&*/ a.lead().gt(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead);}
+        if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead);}
         return [a, Polynomial.C(asign, a.symbol)];
     }
     else //if ( 2 <= k )
@@ -2614,25 +2637,23 @@ function polyxgcd( /* args */ )
         // gcd(a, gcd(b, c, ..)) = ax + k (nb + mc + ..) = ax + b(kn) + c(km) + .. = ax + by +cz + ..
         // note2: any zero arguments are skipped and do not break xGCD computation
         // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
-        xgcd = 2===k ? [args[1], Polynomial.C(I, a.symbol)] : polyxgcd(slice.call(args, 1));
-        b = xgcd[0];
-        //if ( b.lead().lt(O) ) {b = b.neg(); bsign = bsign.neg();}
+        xgcdp = 2===k ? [args[1], Polynomial.C(I, a.symbol)] : polyxgcd(slice.call(args, 1));
+        b = xgcdp[0];
+        if ( b.lead().lt(O) ) {b = b.neg(); bsign = bsign.neg();}
 
         // gcd with zero factor, take into account
         if ( a.equ(O) )
         {
-            if ( b.lead().lt(O) ) {b = b.neg(); asign = asign.neg(); bsign = bsign.neg();}
-            if ( /*0<b.deg() &&*/ b.lead().gt(I) ) {lead = b.lead(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
-            return array(xgcd.length+1,function(i){
-                return 0===i ? b : (1===i ? Polynomial.C(asign, a.symbol) : xgcd[i-1].mul(bsign));
+            if ( !b.lead().equ(I) ) {lead = b.lead(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+            return array(xgcdp.length+1,function(i){
+                return 0===i ? b : (1===i ? Polynomial.C(asign, a.symbol) : xgcdp[i-1].mul(bsign));
             });
         }
         else if ( b.equ(O) )
         {
-            if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
-            if ( /*0<a.deg() &&*/ a.lead().gt(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
-            return array(xgcd.length+1,function(i){
-                return 0===i ? a : (1===i ? Polynomial.C(asign, a.symbol) : xgcd[i-1].mul(bsign));
+            if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+            return array(xgcdp.length+1,function(i){
+                return 0===i ? a : (1===i ? Polynomial.C(asign, a.symbol) : xgcdp[i-1].mul(bsign));
             });
         }
 
@@ -2647,10 +2668,10 @@ function polyxgcd( /* args */ )
             if ( a.equ(O) /*0 === a.deg()*/ )
             {
                 if ( b.lead().lt(O) ) {b = b.neg(); asign = asign.neg(); bsign = bsign.neg();}
-                if ( /*0<b.deg() &&*/ b.lead().gt(I) ) {lead = b.lead(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+                if ( !b.lead().equ(I) ) {lead = b.lead(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
                 a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                return array(xgcd.length+1,function(i){
-                    return 0===i ? b : (1===i ? a2 : xgcd[i-1].mul(b2));
+                return array(xgcdp.length+1,function(i){
+                    return 0===i ? b : (1===i ? a2 : xgcdp[i-1].mul(b2));
                 });
             }
 
@@ -2661,10 +2682,10 @@ function polyxgcd( /* args */ )
             if( b.equ(O) /*0 === b.deg()*/ )
             {
                 if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
-                if ( /*0<a.deg() &&*/ a.lead().gt(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+                if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
                 a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(xgcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : xgcd[i-1].mul(b1));
+                return array(xgcdp.length+1, function(i){
+                    return 0===i ? a : (1===i ? a1 : xgcdp[i-1].mul(b1));
                 });
             }
 
@@ -2672,10 +2693,10 @@ function polyxgcd( /* args */ )
             {
                 // will not change anymore
                 if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
-                if ( /*0<a.deg() &&*/ a.lead().gt(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+                if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
                 a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(xgcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : xgcd[i-1].mul(b1));
+                return array(xgcdp.length+1, function(i){
+                    return 0===i ? a : (1===i ? a1 : xgcdp[i-1].mul(b1));
                 });
             }
         }
@@ -7064,38 +7085,6 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             if ( !coeff[i].isInt() ) return false;
         return true;
     }
-    ,roots: function( ) {
-        // find all rational roots, if any
-        // https://en.wikipedia.org/wiki/Rational_root_theorem
-        // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
-        var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            roots = [], primitive = this.primitive(),
-            c = primitive.coeff, i = 0, d0, dn, iter, comb, root;
-        while(i<c.length && c[i].equ(Arithmetic.O))
-        {
-            roots.push(Rational(O)); // zero root
-            i++;
-        }
-        if ( i+1<c.length )
-        {
-            // try all possible rational divisors of c_0(excluding trivial zero terms) and c_n
-            d0 = divisors(c[i].num);
-            dn = divisors(c[c.length-1].num);
-            iter = Tensor([d0.length, dn.length]);
-            while(iter.hasNext())
-            {
-                comb = iter.next();
-                // try positive root
-                root = Rational(d0[comb[0]], dn[comb[1]]);
-                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
-                // try negative root
-                root = Rational(Arithmetic.neg(d0[comb[0]]), dn[comb[1]]);
-                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
-            }
-            iter.dispose();
-        }
-        return roots;
-    }
     ,deg: function( ) {
         // polynomial degree
         return this.coeff.length-1;
@@ -7128,6 +7117,41 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             self._prim = [Polynomial(coeffp, self.symbol), Rational(content, M)];
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
+    }
+    ,roots: function( ) {
+        // find all rational roots, if any
+        // https://en.wikipedia.org/wiki/Rational_root_theorem
+        // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            roots = [], primitive,c, i, d0, dn, iter, comb, root;
+        
+        if ( 0 === self.deg() ) return roots; // no roots for constant polynomials
+        
+        primitive = self.primitive();
+        c = primitive.coeff; i = 0;
+        while(i<c.length && c[i].equ(O))
+        {
+            roots.push(Rational(O)); // zero root
+            i++;
+        }
+        if ( i+1<c.length )
+        {
+            // try all possible rational divisors of c_0(excluding trivial zero terms) and c_n
+            d0 = divisors(c[i].num); dn = divisors(c[c.length-1].num);
+            iter = Tensor([d0.length, dn.length]);
+            while(iter.hasNext())
+            {
+                comb = iter.next();
+                // try positive root
+                root = Rational(d0[comb[0]], dn[comb[1]]);
+                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
+                // try negative root
+                root = root.neg();
+                if ( primitive.valueOf(root).equ(O) ) roots.push(root);
+            }
+            iter.dispose();
+        }
+        return roots;
     }
     ,equ: function( p ) {
         var self = this, Arithmetic = Abacus.Arithmetic,

@@ -138,6 +138,12 @@ echo('---');
 echo('Polynomial Rational Roots');
 echo('---');
 
+echo('Abacus.Polynomial([0]).roots()'); // no roots, here infinite roots actually, but for convience denote as no roots
+echo(Abacus.Polynomial([0]).roots().map(function(r){return r.toString();}).join(', '));
+
+echo('Abacus.Polynomial([1]).roots()'); // no roots
+echo(Abacus.Polynomial([1]).roots().map(function(r){return r.toString();}).join(', '));
+
 echo('Abacus.Polynomial([0,1]).roots()'); // one trivial root
 echo(Abacus.Polynomial([0,1]).roots().map(function(r){return r.toString();}).join(', '));
 
@@ -162,6 +168,9 @@ echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');
 echo('---');
+echo('Abacus.Math.polygcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
+echo(Abacus.Math.polygcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4])).toString());
+
 echo('Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
 echo(Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])).toString());
 
@@ -186,6 +195,11 @@ echo('---');
 
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
 echo('---');
+echo('Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
+args=[Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4])];
+o=Abacus.Math.polyxgcd(args);
+check_xgcd(args, o);
+
 echo('Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
 args=[Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])];
 o=Abacus.Math.polyxgcd(args);

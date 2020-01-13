@@ -97,6 +97,10 @@ o.dispose()
 ---
 Polynomial Rational Roots
 ---
+Abacus.Polynomial([0]).roots()
+
+Abacus.Polynomial([1]).roots()
+
 Abacus.Polynomial([0,1]).roots()
 0
 Abacus.Polynomial([0,0,3]).roots()
@@ -114,6 +118,8 @@ Abacus.Polynomial(-2,5,-5,3]).roots()
 ---
 Polynomial GCD, generalisation of GCD of numbers
 ---
+Abacus.Math.polygcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
+1
 Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))
 1
 Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))
@@ -121,9 +127,9 @@ x+1
 Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))
 x+1
 Abacus.Math.polygcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))
-1 Integer { value: 2n }
+2 Integer { value: 2n }
 Abacus.Math.polygcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))
-1 Integer { value: 3n }
+3 Integer { value: 3n }
 Abacus.Math.polygcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))
 1 Integer { value: 1n }
 Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))
@@ -131,6 +137,8 @@ Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polyn
 ---
 Polynomial Extended GCD, generalisation of xGCD of numbers
 ---
+Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
+(2*x+1)(-4*x-1) + (4*x^2+3*x+1)(2) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))
 (5*x^4+x^3+x^2+x+1)(-(58/193)*x+(137/579)) + (3*x^2+x+2)((290/579)*x^3-(89/193)*x^2-(92/579)*x+(221/579)) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))
@@ -138,25 +146,25 @@ Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))
 Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))
 (x^2+7*x+6)(0) + (x^2-5*x-6)(0) + (x+1)(1) = x+1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))
-(6)(0) + (4)((1/4)) = 1 true
+(6)(1) + (4)(-1) = 2 true
 [ Integer { value: 2n },
   Integer { value: 1n },
   Integer { value: -1n } ]
 Abacus.Math.polyxgcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))
-(12)(0) + (6)(0) + (3)((1/3)) = 1 true
+(12)(0) + (6)(0) + (3)(1) = 3 true
 [ Integer { value: 3n },
   Integer { value: 0n },
   Integer { value: 0n },
   Integer { value: 1n } ]
 Abacus.Math.polyxgcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))
-(2)(0) + (0)(1) + (0)((1/3)) + (3)((1/3)) = 1 true
+(2)(-1) + (0)(1) + (0)(1) + (3)(1) = 1 true
 [ Integer { value: 1n },
   Integer { value: -1n },
   Integer { value: 1n },
   Integer { value: 1n },
   Integer { value: 1n } ]
 Abacus.Math.polyxgcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))
-(74)(0) + (32)(0) + (16)(0) + (153)((1/153)) = 1 true
+(74)(0) + (32)(0) + (16)(67) + (153)(-7) = 1 true
 [ Integer { value: 1n },
   Integer { value: 0n },
   Integer { value: 0n },
