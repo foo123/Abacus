@@ -1,4 +1,4 @@
-Abacus.Number Theory Functions (VERSION = 0.9.8)
+Abacus.Number Theory Functions (VERSION = 0.9.9)
 ---
 Modular Arithmetic
 o=Abacus.Math.addm(4, 2, 5)

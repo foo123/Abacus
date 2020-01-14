@@ -6,7 +6,7 @@ A **Combinatorics** and **Number Theory** library for Node.js / Browser / XPCOM 
 (python/java implementations in progress)
 
 
-**version 0.9.8** (~ 163kB minified, ~ 35kB zipped)
+**version 0.9.9** (~ 166kB minified, ~ 48kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 

@@ -33,6 +33,17 @@ function check_xgcd( args, gcd, tex )
     }
     console.log(out, res.equ(gcd[0]));
 }
+function check_factors(p, factors, constant)
+{
+    constant = constant || Abacus.Arithmetic.I;
+    var out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol), i;
+    for(i=0; i<factors.length; i++)
+    {
+        out += '('+factors[i].toString()+')';
+        res = res.mul(factors[i]);
+    }
+    console.log(out, res.mul(constant).equ(p));
+}
 var o, d, qr, args;
 
 echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
@@ -47,7 +58,7 @@ echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
 echo('o.valueOf()');
-echo(o.valueOf());
+echo(o.valueOf().toString());
 echo('o.d()');
 echo(o.d().toString());
 echo('o.dispose()');
@@ -84,7 +95,7 @@ echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
 echo('o.valueOf(3)');
-echo(o.valueOf(3));
+echo(o.valueOf(3).toString());
 echo('o.neg()');
 echo(o.neg().toString());
 echo('o.add(1)');
@@ -201,6 +212,40 @@ echo('Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots()');
 echo(Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots().map(function(r){return r.toString();}).join(', '));
 echo('---');
 
+echo('Polynomial Factorization');
+echo('---');
+
+echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1]))');
+o=Abacus.Polynomial([1]);
+d=Abacus.Math.polyfactorize(o);
+check_factors(o, d[0], d[1]);
+
+echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).pow(2))');
+o=Abacus.Polynomial([1,1]).pow(2);
+d=Abacus.Math.polyfactorize(o);
+check_factors(o, d[0], d[1]);
+
+echo('Abacus.Math.polyfactorize(Abacus.Polynomial([3,2]).pow(2))');
+o=Abacus.Polynomial([3,2]).pow(2);
+d=Abacus.Math.polyfactorize(o);
+check_factors(o, d[0], d[1]);
+
+echo('Abacus.Math.polyfactorize(Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2))');
+o=Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2);
+d=Abacus.Math.polyfactorize(o);
+check_factors(o, d[0], d[1]);
+
+echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1])))');
+o=Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1]));
+d=Abacus.Math.polyfactorize(o);
+check_factors(o, d[0], d[1]);
+
+echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1])))');
+o=Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1]));
+d=Abacus.Math.polyfactorize(o);
+check_factors(o, d[0], d[1]);
+echo('---');
+
 echo('Polynomial GCD, generalisation of GCD of numbers');
 echo('---');
 echo('Abacus.Math.polygcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
@@ -216,16 +261,16 @@ echo('Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]
 echo(Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1])).toString());
 
 echo('Abacus.Math.polygcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([6]),Abacus.Polynomial([4])).toString(), Abacus.Math.gcd(6,4));
+echo(Abacus.Math.polygcd(Abacus.Polynomial([6]),Abacus.Polynomial([4])).toString(), Abacus.Math.gcd(6,4).toString());
 
 echo('Abacus.Math.polygcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(12,6,3));
+echo(Abacus.Math.polygcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(12,6,3).toString());
 
 echo('Abacus.Math.polygcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(2,0,0,3));
+echo(Abacus.Math.polygcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(2,0,0,3).toString());
 
 echo('Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153])).toString(), Abacus.Math.gcd(74, 32, 16, 153));
+echo(Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153])).toString(), Abacus.Math.gcd(74, 32, 16, 153).toString());
 echo('---');
 
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
@@ -260,23 +305,23 @@ echo('Abacus.Math.polyxgcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))');
 args=[Abacus.Polynomial([6]),Abacus.Polynomial([4])];
 o=Abacus.Math.polyxgcd(args);
 check_xgcd(args, o);
-echo(Abacus.Math.xgcd(6,4)); // should coincide with this
+echo(Abacus.Math.xgcd(6,4).map(function(x){return x.toString();})); // should coincide with this
 
 echo('Abacus.Math.polyxgcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))');
 args=[Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3])];
 o=Abacus.Math.polyxgcd(args);
 check_xgcd(args, o);
-echo(Abacus.Math.xgcd(12,6,3)); // should coincide with this
+echo(Abacus.Math.xgcd(12,6,3).map(function(x){return x.toString();})); // should coincide with this
 
 echo('Abacus.Math.polyxgcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))');
 args=[Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3])];
 o=Abacus.Math.polyxgcd(args);
 check_xgcd(args, o);
-echo(Abacus.Math.xgcd(2,0,0,3)); // should coincide with this
+echo(Abacus.Math.xgcd(2,0,0,3).map(function(x){return x.toString();})); // should coincide with this
 
 echo('Abacus.Math.polyxgcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))');
 args=[Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153])];
 o=Abacus.Math.polyxgcd(args);
 check_xgcd(args, o);
-echo(Abacus.Math.xgcd(74,32,16,153)); // should coincide with this
+echo(Abacus.Math.xgcd(74,32,16,153).map(function(x){return x.toString();})); // should coincide with this
 echo('---');

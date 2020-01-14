@@ -1,4 +1,4 @@
-Abacus.Primes (VERSION = 0.9.8)
+Abacus.Primes (VERSION = 0.9.9)
 ---
 Division Wheels
 Abacus.Util.wheel(2)

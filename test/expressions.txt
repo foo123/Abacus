@@ -1,4 +1,4 @@
-Abacus.Expressions (VERSION = 0.9.8)
+Abacus.Expressions (VERSION = 0.9.9)
 ---
 Symbolic Expressions
 ---
@@ -8,10 +8,7 @@ o.toString()
 o.toTex()
 0
 o.valueOf()
-Rational {
-  num: Integer { value: 0n },
-  den: Integer { value: 1n },
-  _simpl: true }
+0
 o.d("x")
 0
 o.dispose()
@@ -22,10 +19,7 @@ o.toString()
 o.toTex()
 1+2x
 o.valueOf({"x":1})
-Rational {
-  num: Integer { value: 3n },
-  den: Integer { value: 1n },
-  _simpl: true }
+3
 o.d("x")
 2
 o.d("x",2)
