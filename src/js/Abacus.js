@@ -828,6 +828,37 @@ function binarysearch( v, a, dir, a0, a1, Arithmetic )
     }
     return -1;
 }
+function bisect( list, item, dir, lo, hi, lt )
+{
+    // binary search O(logn) for point of insertion (either left or right depending on dir)
+    // adapted from python's c source code, module bisect
+    // https://github.com/python/cpython/blob/master/Modules/_bisectmodule.c
+    lt = lt || function(a, b){return a<b};
+    if ( null == lo ) lo = 0;
+    if ( null == hi ) hi = list.length;
+    dir = -1 === dir ? -1 : 1; // left, else right bisection
+    var mid, litem;
+    if ( 0 > lo ) return -1;
+    if ( -1===dir )
+    {
+        while( lo < hi )
+        {
+            mid = ((lo+hi)>>>1); litem = list[mid];
+            if ( lt(litem, item) ) lo = mid+1;
+            else hi = mid;
+        }
+    }
+    else
+    {
+        while( lo < hi )
+        {
+            mid = ((lo+hi)>>>1); litem = list[mid];
+            if ( lt(item, litem) ) hi = mid;
+            else lo = mid+1;
+        }
+    }
+    return lo;
+}
 function bitreverse( b, nbits )
 {
     b = +b;
@@ -1236,8 +1267,8 @@ function small_primes( )
     var N = Abacus.Arithmetic.num;
     if ( !small_primes.list )
     {
-        // a list of the first primes up to a limit (first 1000 primes)
-        small_primes.list = [N(2),N(3),N(5),N(7),N(11),N(13),N(17),N(19),N(23),N(29),N(31),N(37),N(41),N(43),N(47),N(53),N(59),N(61),N(67),N(71),N(73),N(79),N(83),N(89),N(97),N(101),N(103),N(107),N(109),N(113),N(127),N(131),N(137),N(139),N(149),N(151),N(157),N(163),N(167),N(173),N(179),N(181),N(191),N(193),N(197),N(199),N(211),N(223),N(227),N(229),N(233),N(239),N(241),N(251),N(257),N(263),N(269),N(271),N(277),N(281),N(283),N(293),N(307),N(311),N(313),N(317),N(331),N(337),N(347),N(349),N(353),N(359),N(367),N(373),N(379),N(383),N(389),N(397),N(401),N(409),N(419),N(421),N(431),N(433),N(439),N(443),N(449),N(457),N(461),N(463),N(467),N(479),N(487),N(491),N(499),N(503),N(509),N(521),N(523),N(541),N(547),N(557),N(563),N(569),N(571),N(577),N(587),N(593),N(599),N(601),N(607),N(613),N(617),N(619),N(631),N(641),N(643),N(647),N(653),N(659),N(661),N(673),N(677),N(683),N(691),N(701),N(709),N(719),N(727),N(733),N(739),N(743),N(751),N(757),N(761),N(769),N(773),N(787),N(797),N(809),N(811),N(821),N(823),N(827),N(829),N(839),N(853),N(857),N(859),N(863),N(877),N(881),N(883),N(887),N(907),N(911),N(919),N(929),N(937),N(941),N(947),N(953),N(967),N(971),N(977),N(983),N(991),N(997),N(1009),N(1013),N(1019),N(1021),N(1031),N(1033),N(1039),N(1049),N(1051),N(1061),N(1063),N(1069),N(1087),N(1091),N(1093),N(1097),N(1103),N(1109),N(1117),N(1123),N(1129),N(1151),N(1153),N(1163),N(1171),N(1181),N(1187),N(1193),N(1201),N(1213),N(1217),N(1223),N(1229),N(1231),N(1237),N(1249),N(1259),N(1277),N(1279),N(1283),N(1289),N(1291),N(1297),N(1301),N(1303),N(1307),N(1319),N(1321),N(1327),N(1361),N(1367),N(1373),N(1381),N(1399),N(1409),N(1423),N(1427),N(1429),N(1433),N(1439),N(1447),N(1451),N(1453),N(1459),N(1471),N(1481),N(1483),N(1487),N(1489),N(1493),N(1499),N(1511),N(1523),N(1531),N(1543),N(1549),N(1553),N(1559),N(1567),N(1571),N(1579),N(1583),N(1597),N(1601),N(1607),N(1609),N(1613),N(1619),N(1621),N(1627),N(1637),N(1657),N(1663),N(1667),N(1669),N(1693),N(1697),N(1699),N(1709),N(1721),N(1723),N(1733),N(1741),N(1747),N(1753),N(1759),N(1777),N(1783),N(1787),N(1789),N(1801),N(1811),N(1823),N(1831),N(1847),N(1861),N(1867),N(1871),N(1873),N(1877),N(1879),N(1889),N(1901),N(1907),N(1913),N(1931),N(1933),N(1949),N(1951),N(1973),N(1979),N(1987),N(1993),N(1997),N(1999),N(2003),N(2011),N(2017),N(2027),N(2029),N(2039),N(2053),N(2063),N(2069),N(2081),N(2083),N(2087),N(2089),N(2099),N(2111),N(2113),N(2129),N(2131),N(2137),N(2141),N(2143),N(2153),N(2161),N(2179),N(2203),N(2207),N(2213),N(2221),N(2237),N(2239),N(2243),N(2251),N(2267),N(2269),N(2273),N(2281),N(2287),N(2293),N(2297),N(2309),N(2311),N(2333),N(2339),N(2341),N(2347),N(2351),N(2357),N(2371),N(2377),N(2381),N(2383),N(2389),N(2393),N(2399),N(2411),N(2417),N(2423),N(2437),N(2441),N(2447),N(2459),N(2467),N(2473),N(2477),N(2503),N(2521),N(2531),N(2539),N(2543),N(2549),N(2551),N(2557),N(2579),N(2591),N(2593),N(2609),N(2617),N(2621),N(2633),N(2647),N(2657),N(2659),N(2663),N(2671),N(2677),N(2683),N(2687),N(2689),N(2693),N(2699),N(2707),N(2711),N(2713),N(2719),N(2729),N(2731),N(2741),N(2749),N(2753),N(2767),N(2777),N(2789),N(2791),N(2797),N(2801),N(2803),N(2819),N(2833),N(2837),N(2843),N(2851),N(2857),N(2861),N(2879),N(2887),N(2897),N(2903),N(2909),N(2917),N(2927),N(2939),N(2953),N(2957),N(2963),N(2969),N(2971),N(2999),N(3001),N(3011),N(3019),N(3023),N(3037),N(3041),N(3049),N(3061),N(3067),N(3079),N(3083),N(3089),N(3109),N(3119),N(3121),N(3137),N(3163),N(3167),N(3169),N(3181),N(3187),N(3191),N(3203),N(3209),N(3217),N(3221),N(3229),N(3251),N(3253),N(3257),N(3259),N(3271),N(3299),N(3301),N(3307),N(3313),N(3319),N(3323),N(3329),N(3331),N(3343),N(3347),N(3359),N(3361),N(3371),N(3373),N(3389),N(3391),N(3407),N(3413),N(3433),N(3449),N(3457),N(3461),N(3463),N(3467),N(3469),N(3491),N(3499),N(3511),N(3517),N(3527),N(3529),N(3533),N(3539),N(3541),N(3547),N(3557),N(3559),N(3571),N(3581),N(3583),N(3593),N(3607),N(3613),N(3617),N(3623),N(3631),N(3637),N(3643),N(3659),N(3671),N(3673),N(3677),N(3691),N(3697),N(3701),N(3709),N(3719),N(3727),N(3733),N(3739),N(3761),N(3767),N(3769),N(3779),N(3793),N(3797),N(3803),N(3821),N(3823),N(3833),N(3847),N(3851),N(3853),N(3863),N(3877),N(3881),N(3889),N(3907),N(3911),N(3917),N(3919),N(3923),N(3929),N(3931),N(3943),N(3947),N(3967),N(3989),N(4001),N(4003),N(4007),N(4013),N(4019),N(4021),N(4027),N(4049),N(4051),N(4057),N(4073),N(4079),N(4091),N(4093),N(4099),N(4111),N(4127),N(4129),N(4133),N(4139),N(4153),N(4157),N(4159),N(4177),N(4201),N(4211),N(4217),N(4219),N(4229),N(4231),N(4241),N(4243),N(4253),N(4259),N(4261),N(4271),N(4273),N(4283),N(4289),N(4297),N(4327),N(4337),N(4339),N(4349),N(4357),N(4363),N(4373),N(4391),N(4397),N(4409),N(4421),N(4423),N(4441),N(4447),N(4451),N(4457),N(4463),N(4481),N(4483),N(4493),N(4507),N(4513),N(4517),N(4519),N(4523),N(4547),N(4549),N(4561),N(4567),N(4583),N(4591),N(4597),N(4603),N(4621),N(4637),N(4639),N(4643),N(4649),N(4651),N(4657),N(4663),N(4673),N(4679),N(4691),N(4703),N(4721),N(4723),N(4729),N(4733),N(4751),N(4759),N(4783),N(4787),N(4789),N(4793),N(4799),N(4801),N(4813),N(4817),N(4831),N(4861),N(4871),N(4877),N(4889),N(4903),N(4909),N(4919),N(4931),N(4933),N(4937),N(4943),N(4951),N(4957),N(4967),N(4969),N(4973),N(4987),N(4993),N(4999),N(5003),N(5009),N(5011),N(5021),N(5023),N(5039),N(5051),N(5059),N(5077),N(5081),N(5087),N(5099),N(5101),N(5107),N(5113),N(5119),N(5147),N(5153),N(5167),N(5171),N(5179),N(5189),N(5197),N(5209),N(5227),N(5231),N(5233),N(5237),N(5261),N(5273),N(5279),N(5281),N(5297),N(5303),N(5309),N(5323),N(5333),N(5347),N(5351),N(5381),N(5387),N(5393),N(5399),N(5407),N(5413),N(5417),N(5419),N(5431),N(5437),N(5441),N(5443),N(5449),N(5471),N(5477),N(5479),N(5483),N(5501),N(5503),N(5507),N(5519),N(5521),N(5527),N(5531),N(5557),N(5563),N(5569),N(5573),N(5581),N(5591),N(5623),N(5639),N(5641),N(5647),N(5651),N(5653),N(5657),N(5659),N(5669),N(5683),N(5689),N(5693),N(5701),N(5711),N(5717),N(5737),N(5741),N(5743),N(5749),N(5779),N(5783),N(5791),N(5801),N(5807),N(5813),N(5821),N(5827),N(5839),N(5843),N(5849),N(5851),N(5857),N(5861),N(5867),N(5869),N(5879),N(5881),N(5897),N(5903),N(5923),N(5927),N(5939),N(5953),N(5981),N(5987),N(6007),N(6011),N(6029),N(6037),N(6043),N(6047),N(6053),N(6067),N(6073),N(6079),N(6089),N(6091),N(6101),N(6113),N(6121),N(6131),N(6133),N(6143),N(6151),N(6163),N(6173),N(6197),N(6199),N(6203),N(6211),N(6217),N(6221),N(6229),N(6247),N(6257),N(6263),N(6269),N(6271),N(6277),N(6287),N(6299),N(6301),N(6311),N(6317),N(6323),N(6329),N(6337),N(6343),N(6353),N(6359),N(6361),N(6367),N(6373),N(6379),N(6389),N(6397),N(6421),N(6427),N(6449),N(6451),N(6469),N(6473),N(6481),N(6491),N(6521),N(6529),N(6547),N(6551),N(6553),N(6563),N(6569),N(6571),N(6577),N(6581),N(6599),N(6607),N(6619),N(6637),N(6653),N(6659),N(6661),N(6673),N(6679),N(6689),N(6691),N(6701),N(6703),N(6709),N(6719),N(6733),N(6737),N(6761),N(6763),N(6779),N(6781),N(6791),N(6793),N(6803),N(6823),N(6827),N(6829),N(6833),N(6841),N(6857),N(6863),N(6869),N(6871),N(6883),N(6899),N(6907),N(6911),N(6917),N(6947),N(6949),N(6959),N(6961),N(6967),N(6971),N(6977),N(6983),N(6991),N(6997),N(7001),N(7013),N(7019),N(7027),N(7039),N(7043),N(7057),N(7069),N(7079),N(7103),N(7109),N(7121),N(7127),N(7129),N(7151),N(7159),N(7177),N(7187),N(7193),N(7207),N(7211),N(7213),N(7219),N(7229),N(7237),N(7243),N(7247),N(7253),N(7283),N(7297),N(7307),N(7309),N(7321),N(7331),N(7333),N(7349),N(7351),N(7369),N(7393),N(7411),N(7417),N(7433),N(7451),N(7457),N(7459),N(7477),N(7481),N(7487),N(7489),N(7499),N(7507),N(7517),N(7523),N(7529),N(7537),N(7541),N(7547),N(7549),N(7559),N(7561),N(7573),N(7577),N(7583),N(7589),N(7591),N(7603),N(7607),N(7621),N(7639),N(7643),N(7649),N(7669),N(7673),N(7681),N(7687),N(7691),N(7699),N(7703),N(7717),N(7723),N(7727),N(7741),N(7753),N(7757),N(7759),N(7789),N(7793),N(7817),N(7823),N(7829),N(7841),N(7853),N(7867),N(7873),N(7877),N(7879),N(7883),N(7901),N(7907),N(7919)];
+        // a list of the first primes up to a limit (first 2000 primes)
+        small_primes.list = [N(2),N(3),N(5),N(7),N(11),N(13),N(17),N(19),N(23),N(29),N(31),N(37),N(41),N(43),N(47),N(53),N(59),N(61),N(67),N(71),N(73),N(79),N(83),N(89),N(97),N(101),N(103),N(107),N(109),N(113),N(127),N(131),N(137),N(139),N(149),N(151),N(157),N(163),N(167),N(173),N(179),N(181),N(191),N(193),N(197),N(199),N(211),N(223),N(227),N(229),N(233),N(239),N(241),N(251),N(257),N(263),N(269),N(271),N(277),N(281),N(283),N(293),N(307),N(311),N(313),N(317),N(331),N(337),N(347),N(349),N(353),N(359),N(367),N(373),N(379),N(383),N(389),N(397),N(401),N(409),N(419),N(421),N(431),N(433),N(439),N(443),N(449),N(457),N(461),N(463),N(467),N(479),N(487),N(491),N(499),N(503),N(509),N(521),N(523),N(541),N(547),N(557),N(563),N(569),N(571),N(577),N(587),N(593),N(599),N(601),N(607),N(613),N(617),N(619),N(631),N(641),N(643),N(647),N(653),N(659),N(661),N(673),N(677),N(683),N(691),N(701),N(709),N(719),N(727),N(733),N(739),N(743),N(751),N(757),N(761),N(769),N(773),N(787),N(797),N(809),N(811),N(821),N(823),N(827),N(829),N(839),N(853),N(857),N(859),N(863),N(877),N(881),N(883),N(887),N(907),N(911),N(919),N(929),N(937),N(941),N(947),N(953),N(967),N(971),N(977),N(983),N(991),N(997),N(1009),N(1013),N(1019),N(1021),N(1031),N(1033),N(1039),N(1049),N(1051),N(1061),N(1063),N(1069),N(1087),N(1091),N(1093),N(1097),N(1103),N(1109),N(1117),N(1123),N(1129),N(1151),N(1153),N(1163),N(1171),N(1181),N(1187),N(1193),N(1201),N(1213),N(1217),N(1223),N(1229),N(1231),N(1237),N(1249),N(1259),N(1277),N(1279),N(1283),N(1289),N(1291),N(1297),N(1301),N(1303),N(1307),N(1319),N(1321),N(1327),N(1361),N(1367),N(1373),N(1381),N(1399),N(1409),N(1423),N(1427),N(1429),N(1433),N(1439),N(1447),N(1451),N(1453),N(1459),N(1471),N(1481),N(1483),N(1487),N(1489),N(1493),N(1499),N(1511),N(1523),N(1531),N(1543),N(1549),N(1553),N(1559),N(1567),N(1571),N(1579),N(1583),N(1597),N(1601),N(1607),N(1609),N(1613),N(1619),N(1621),N(1627),N(1637),N(1657),N(1663),N(1667),N(1669),N(1693),N(1697),N(1699),N(1709),N(1721),N(1723),N(1733),N(1741),N(1747),N(1753),N(1759),N(1777),N(1783),N(1787),N(1789),N(1801),N(1811),N(1823),N(1831),N(1847),N(1861),N(1867),N(1871),N(1873),N(1877),N(1879),N(1889),N(1901),N(1907),N(1913),N(1931),N(1933),N(1949),N(1951),N(1973),N(1979),N(1987),N(1993),N(1997),N(1999),N(2003),N(2011),N(2017),N(2027),N(2029),N(2039),N(2053),N(2063),N(2069),N(2081),N(2083),N(2087),N(2089),N(2099),N(2111),N(2113),N(2129),N(2131),N(2137),N(2141),N(2143),N(2153),N(2161),N(2179),N(2203),N(2207),N(2213),N(2221),N(2237),N(2239),N(2243),N(2251),N(2267),N(2269),N(2273),N(2281),N(2287),N(2293),N(2297),N(2309),N(2311),N(2333),N(2339),N(2341),N(2347),N(2351),N(2357),N(2371),N(2377),N(2381),N(2383),N(2389),N(2393),N(2399),N(2411),N(2417),N(2423),N(2437),N(2441),N(2447),N(2459),N(2467),N(2473),N(2477),N(2503),N(2521),N(2531),N(2539),N(2543),N(2549),N(2551),N(2557),N(2579),N(2591),N(2593),N(2609),N(2617),N(2621),N(2633),N(2647),N(2657),N(2659),N(2663),N(2671),N(2677),N(2683),N(2687),N(2689),N(2693),N(2699),N(2707),N(2711),N(2713),N(2719),N(2729),N(2731),N(2741),N(2749),N(2753),N(2767),N(2777),N(2789),N(2791),N(2797),N(2801),N(2803),N(2819),N(2833),N(2837),N(2843),N(2851),N(2857),N(2861),N(2879),N(2887),N(2897),N(2903),N(2909),N(2917),N(2927),N(2939),N(2953),N(2957),N(2963),N(2969),N(2971),N(2999),N(3001),N(3011),N(3019),N(3023),N(3037),N(3041),N(3049),N(3061),N(3067),N(3079),N(3083),N(3089),N(3109),N(3119),N(3121),N(3137),N(3163),N(3167),N(3169),N(3181),N(3187),N(3191),N(3203),N(3209),N(3217),N(3221),N(3229),N(3251),N(3253),N(3257),N(3259),N(3271),N(3299),N(3301),N(3307),N(3313),N(3319),N(3323),N(3329),N(3331),N(3343),N(3347),N(3359),N(3361),N(3371),N(3373),N(3389),N(3391),N(3407),N(3413),N(3433),N(3449),N(3457),N(3461),N(3463),N(3467),N(3469),N(3491),N(3499),N(3511),N(3517),N(3527),N(3529),N(3533),N(3539),N(3541),N(3547),N(3557),N(3559),N(3571),N(3581),N(3583),N(3593),N(3607),N(3613),N(3617),N(3623),N(3631),N(3637),N(3643),N(3659),N(3671),N(3673),N(3677),N(3691),N(3697),N(3701),N(3709),N(3719),N(3727),N(3733),N(3739),N(3761),N(3767),N(3769),N(3779),N(3793),N(3797),N(3803),N(3821),N(3823),N(3833),N(3847),N(3851),N(3853),N(3863),N(3877),N(3881),N(3889),N(3907),N(3911),N(3917),N(3919),N(3923),N(3929),N(3931),N(3943),N(3947),N(3967),N(3989),N(4001),N(4003),N(4007),N(4013),N(4019),N(4021),N(4027),N(4049),N(4051),N(4057),N(4073),N(4079),N(4091),N(4093),N(4099),N(4111),N(4127),N(4129),N(4133),N(4139),N(4153),N(4157),N(4159),N(4177),N(4201),N(4211),N(4217),N(4219),N(4229),N(4231),N(4241),N(4243),N(4253),N(4259),N(4261),N(4271),N(4273),N(4283),N(4289),N(4297),N(4327),N(4337),N(4339),N(4349),N(4357),N(4363),N(4373),N(4391),N(4397),N(4409),N(4421),N(4423),N(4441),N(4447),N(4451),N(4457),N(4463),N(4481),N(4483),N(4493),N(4507),N(4513),N(4517),N(4519),N(4523),N(4547),N(4549),N(4561),N(4567),N(4583),N(4591),N(4597),N(4603),N(4621),N(4637),N(4639),N(4643),N(4649),N(4651),N(4657),N(4663),N(4673),N(4679),N(4691),N(4703),N(4721),N(4723),N(4729),N(4733),N(4751),N(4759),N(4783),N(4787),N(4789),N(4793),N(4799),N(4801),N(4813),N(4817),N(4831),N(4861),N(4871),N(4877),N(4889),N(4903),N(4909),N(4919),N(4931),N(4933),N(4937),N(4943),N(4951),N(4957),N(4967),N(4969),N(4973),N(4987),N(4993),N(4999),N(5003),N(5009),N(5011),N(5021),N(5023),N(5039),N(5051),N(5059),N(5077),N(5081),N(5087),N(5099),N(5101),N(5107),N(5113),N(5119),N(5147),N(5153),N(5167),N(5171),N(5179),N(5189),N(5197),N(5209),N(5227),N(5231),N(5233),N(5237),N(5261),N(5273),N(5279),N(5281),N(5297),N(5303),N(5309),N(5323),N(5333),N(5347),N(5351),N(5381),N(5387),N(5393),N(5399),N(5407),N(5413),N(5417),N(5419),N(5431),N(5437),N(5441),N(5443),N(5449),N(5471),N(5477),N(5479),N(5483),N(5501),N(5503),N(5507),N(5519),N(5521),N(5527),N(5531),N(5557),N(5563),N(5569),N(5573),N(5581),N(5591),N(5623),N(5639),N(5641),N(5647),N(5651),N(5653),N(5657),N(5659),N(5669),N(5683),N(5689),N(5693),N(5701),N(5711),N(5717),N(5737),N(5741),N(5743),N(5749),N(5779),N(5783),N(5791),N(5801),N(5807),N(5813),N(5821),N(5827),N(5839),N(5843),N(5849),N(5851),N(5857),N(5861),N(5867),N(5869),N(5879),N(5881),N(5897),N(5903),N(5923),N(5927),N(5939),N(5953),N(5981),N(5987),N(6007),N(6011),N(6029),N(6037),N(6043),N(6047),N(6053),N(6067),N(6073),N(6079),N(6089),N(6091),N(6101),N(6113),N(6121),N(6131),N(6133),N(6143),N(6151),N(6163),N(6173),N(6197),N(6199),N(6203),N(6211),N(6217),N(6221),N(6229),N(6247),N(6257),N(6263),N(6269),N(6271),N(6277),N(6287),N(6299),N(6301),N(6311),N(6317),N(6323),N(6329),N(6337),N(6343),N(6353),N(6359),N(6361),N(6367),N(6373),N(6379),N(6389),N(6397),N(6421),N(6427),N(6449),N(6451),N(6469),N(6473),N(6481),N(6491),N(6521),N(6529),N(6547),N(6551),N(6553),N(6563),N(6569),N(6571),N(6577),N(6581),N(6599),N(6607),N(6619),N(6637),N(6653),N(6659),N(6661),N(6673),N(6679),N(6689),N(6691),N(6701),N(6703),N(6709),N(6719),N(6733),N(6737),N(6761),N(6763),N(6779),N(6781),N(6791),N(6793),N(6803),N(6823),N(6827),N(6829),N(6833),N(6841),N(6857),N(6863),N(6869),N(6871),N(6883),N(6899),N(6907),N(6911),N(6917),N(6947),N(6949),N(6959),N(6961),N(6967),N(6971),N(6977),N(6983),N(6991),N(6997),N(7001),N(7013),N(7019),N(7027),N(7039),N(7043),N(7057),N(7069),N(7079),N(7103),N(7109),N(7121),N(7127),N(7129),N(7151),N(7159),N(7177),N(7187),N(7193),N(7207),N(7211),N(7213),N(7219),N(7229),N(7237),N(7243),N(7247),N(7253),N(7283),N(7297),N(7307),N(7309),N(7321),N(7331),N(7333),N(7349),N(7351),N(7369),N(7393),N(7411),N(7417),N(7433),N(7451),N(7457),N(7459),N(7477),N(7481),N(7487),N(7489),N(7499),N(7507),N(7517),N(7523),N(7529),N(7537),N(7541),N(7547),N(7549),N(7559),N(7561),N(7573),N(7577),N(7583),N(7589),N(7591),N(7603),N(7607),N(7621),N(7639),N(7643),N(7649),N(7669),N(7673),N(7681),N(7687),N(7691),N(7699),N(7703),N(7717),N(7723),N(7727),N(7741),N(7753),N(7757),N(7759),N(7789),N(7793),N(7817),N(7823),N(7829),N(7841),N(7853),N(7867),N(7873),N(7877),N(7879),N(7883),N(7901),N(7907),N(7919),N(7927),N(7933),N(7937),N(7949),N(7951),N(7963),N(7993),N(8009),N(8011),N(8017),N(8039),N(8053),N(8059),N(8069),N(8081),N(8087),N(8089),N(8093),N(8101),N(8111),N(8117),N(8123),N(8147),N(8161),N(8167),N(8171),N(8179),N(8191),N(8209),N(8219),N(8221),N(8231),N(8233),N(8237),N(8243),N(8263),N(8269),N(8273),N(8287),N(8291),N(8293),N(8297),N(8311),N(8317),N(8329),N(8353),N(8363),N(8369),N(8377),N(8387),N(8389),N(8419),N(8423),N(8429),N(8431),N(8443),N(8447),N(8461),N(8467),N(8501),N(8513),N(8521),N(8527),N(8537),N(8539),N(8543),N(8563),N(8573),N(8581),N(8597),N(8599),N(8609),N(8623),N(8627),N(8629),N(8641),N(8647),N(8663),N(8669),N(8677),N(8681),N(8689),N(8693),N(8699),N(8707),N(8713),N(8719),N(8731),N(8737),N(8741),N(8747),N(8753),N(8761),N(8779),N(8783),N(8803),N(8807),N(8819),N(8821),N(8831),N(8837),N(8839),N(8849),N(8861),N(8863),N(8867),N(8887),N(8893),N(8923),N(8929),N(8933),N(8941),N(8951),N(8963),N(8969),N(8971),N(8999),N(9001),N(9007),N(9011),N(9013),N(9029),N(9041),N(9043),N(9049),N(9059),N(9067),N(9091),N(9103),N(9109),N(9127),N(9133),N(9137),N(9151),N(9157),N(9161),N(9173),N(9181),N(9187),N(9199),N(9203),N(9209),N(9221),N(9227),N(9239),N(9241),N(9257),N(9277),N(9281),N(9283),N(9293),N(9311),N(9319),N(9323),N(9337),N(9341),N(9343),N(9349),N(9371),N(9377),N(9391),N(9397),N(9403),N(9413),N(9419),N(9421),N(9431),N(9433),N(9437),N(9439),N(9461),N(9463),N(9467),N(9473),N(9479),N(9491),N(9497),N(9511),N(9521),N(9533),N(9539),N(9547),N(9551),N(9587),N(9601),N(9613),N(9619),N(9623),N(9629),N(9631),N(9643),N(9649),N(9661),N(9677),N(9679),N(9689),N(9697),N(9719),N(9721),N(9733),N(9739),N(9743),N(9749),N(9767),N(9769),N(9781),N(9787),N(9791),N(9803),N(9811),N(9817),N(9829),N(9833),N(9839),N(9851),N(9857),N(9859),N(9871),N(9883),N(9887),N(9901),N(9907),N(9923),N(9929),N(9931),N(9941),N(9949),N(9967),N(9973),N(10007),N(10009),N(10037),N(10039),N(10061),N(10067),N(10069),N(10079),N(10091),N(10093),N(10099),N(10103),N(10111),N(10133),N(10139),N(10141),N(10151),N(10159),N(10163),N(10169),N(10177),N(10181),N(10193),N(10211),N(10223),N(10243),N(10247),N(10253),N(10259),N(10267),N(10271),N(10273),N(10289),N(10301),N(10303),N(10313),N(10321),N(10331),N(10333),N(10337),N(10343),N(10357),N(10369),N(10391),N(10399),N(10427),N(10429),N(10433),N(10453),N(10457),N(10459),N(10463),N(10477),N(10487),N(10499),N(10501),N(10513),N(10529),N(10531),N(10559),N(10567),N(10589),N(10597),N(10601),N(10607),N(10613),N(10627),N(10631),N(10639),N(10651),N(10657),N(10663),N(10667),N(10687),N(10691),N(10709),N(10711),N(10723),N(10729),N(10733),N(10739),N(10753),N(10771),N(10781),N(10789),N(10799),N(10831),N(10837),N(10847),N(10853),N(10859),N(10861),N(10867),N(10883),N(10889),N(10891),N(10903),N(10909),N(10937),N(10939),N(10949),N(10957),N(10973),N(10979),N(10987),N(10993),N(11003),N(11027),N(11047),N(11057),N(11059),N(11069),N(11071),N(11083),N(11087),N(11093),N(11113),N(11117),N(11119),N(11131),N(11149),N(11159),N(11161),N(11171),N(11173),N(11177),N(11197),N(11213),N(11239),N(11243),N(11251),N(11257),N(11261),N(11273),N(11279),N(11287),N(11299),N(11311),N(11317),N(11321),N(11329),N(11351),N(11353),N(11369),N(11383),N(11393),N(11399),N(11411),N(11423),N(11437),N(11443),N(11447),N(11467),N(11471),N(11483),N(11489),N(11491),N(11497),N(11503),N(11519),N(11527),N(11549),N(11551),N(11579),N(11587),N(11593),N(11597),N(11617),N(11621),N(11633),N(11657),N(11677),N(11681),N(11689),N(11699),N(11701),N(11717),N(11719),N(11731),N(11743),N(11777),N(11779),N(11783),N(11789),N(11801),N(11807),N(11813),N(11821),N(11827),N(11831),N(11833),N(11839),N(11863),N(11867),N(11887),N(11897),N(11903),N(11909),N(11923),N(11927),N(11933),N(11939),N(11941),N(11953),N(11959),N(11969),N(11971),N(11981),N(11987),N(12007),N(12011),N(12037),N(12041),N(12043),N(12049),N(12071),N(12073),N(12097),N(12101),N(12107),N(12109),N(12113),N(12119),N(12143),N(12149),N(12157),N(12161),N(12163),N(12197),N(12203),N(12211),N(12227),N(12239),N(12241),N(12251),N(12253),N(12263),N(12269),N(12277),N(12281),N(12289),N(12301),N(12323),N(12329),N(12343),N(12347),N(12373),N(12377),N(12379),N(12391),N(12401),N(12409),N(12413),N(12421),N(12433),N(12437),N(12451),N(12457),N(12473),N(12479),N(12487),N(12491),N(12497),N(12503),N(12511),N(12517),N(12527),N(12539),N(12541),N(12547),N(12553),N(12569),N(12577),N(12583),N(12589),N(12601),N(12611),N(12613),N(12619),N(12637),N(12641),N(12647),N(12653),N(12659),N(12671),N(12689),N(12697),N(12703),N(12713),N(12721),N(12739),N(12743),N(12757),N(12763),N(12781),N(12791),N(12799),N(12809),N(12821),N(12823),N(12829),N(12841),N(12853),N(12889),N(12893),N(12899),N(12907),N(12911),N(12917),N(12919),N(12923),N(12941),N(12953),N(12959),N(12967),N(12973),N(12979),N(12983),N(13001),N(13003),N(13007),N(13009),N(13033),N(13037),N(13043),N(13049),N(13063),N(13093),N(13099),N(13103),N(13109),N(13121),N(13127),N(13147),N(13151),N(13159),N(13163),N(13171),N(13177),N(13183),N(13187),N(13217),N(13219),N(13229),N(13241),N(13249),N(13259),N(13267),N(13291),N(13297),N(13309),N(13313),N(13327),N(13331),N(13337),N(13339),N(13367),N(13381),N(13397),N(13399),N(13411),N(13417),N(13421),N(13441),N(13451),N(13457),N(13463),N(13469),N(13477),N(13487),N(13499),N(13513),N(13523),N(13537),N(13553),N(13567),N(13577),N(13591),N(13597),N(13613),N(13619),N(13627),N(13633),N(13649),N(13669),N(13679),N(13681),N(13687),N(13691),N(13693),N(13697),N(13709),N(13711),N(13721),N(13723),N(13729),N(13751),N(13757),N(13759),N(13763),N(13781),N(13789),N(13799),N(13807),N(13829),N(13831),N(13841),N(13859),N(13873),N(13877),N(13879),N(13883),N(13901),N(13903),N(13907),N(13913),N(13921),N(13931),N(13933),N(13963),N(13967),N(13997),N(13999),N(14009),N(14011),N(14029),N(14033),N(14051),N(14057),N(14071),N(14081),N(14083),N(14087),N(14107),N(14143),N(14149),N(14153),N(14159),N(14173),N(14177),N(14197),N(14207),N(14221),N(14243),N(14249),N(14251),N(14281),N(14293),N(14303),N(14321),N(14323),N(14327),N(14341),N(14347),N(14369),N(14387),N(14389),N(14401),N(14407),N(14411),N(14419),N(14423),N(14431),N(14437),N(14447),N(14449),N(14461),N(14479),N(14489),N(14503),N(14519),N(14533),N(14537),N(14543),N(14549),N(14551),N(14557),N(14561),N(14563),N(14591),N(14593),N(14621),N(14627),N(14629),N(14633),N(14639),N(14653),N(14657),N(14669),N(14683),N(14699),N(14713),N(14717),N(14723),N(14731),N(14737),N(14741),N(14747),N(14753),N(14759),N(14767),N(14771),N(14779),N(14783),N(14797),N(14813),N(14821),N(14827),N(14831),N(14843),N(14851),N(14867),N(14869),N(14879),N(14887),N(14891),N(14897),N(14923),N(14929),N(14939),N(14947),N(14951),N(14957),N(14969),N(14983),N(15013),N(15017),N(15031),N(15053),N(15061),N(15073),N(15077),N(15083),N(15091),N(15101),N(15107),N(15121),N(15131),N(15137),N(15139),N(15149),N(15161),N(15173),N(15187),N(15193),N(15199),N(15217),N(15227),N(15233),N(15241),N(15259),N(15263),N(15269),N(15271),N(15277),N(15287),N(15289),N(15299),N(15307),N(15313),N(15319),N(15329),N(15331),N(15349),N(15359),N(15361),N(15373),N(15377),N(15383),N(15391),N(15401),N(15413),N(15427),N(15439),N(15443),N(15451),N(15461),N(15467),N(15473),N(15493),N(15497),N(15511),N(15527),N(15541),N(15551),N(15559),N(15569),N(15581),N(15583),N(15601),N(15607),N(15619),N(15629),N(15641),N(15643),N(15647),N(15649),N(15661),N(15667),N(15671),N(15679),N(15683),N(15727),N(15731),N(15733),N(15737),N(15739),N(15749),N(15761),N(15767),N(15773),N(15787),N(15791),N(15797),N(15803),N(15809),N(15817),N(15823),N(15859),N(15877),N(15881),N(15887),N(15889),N(15901),N(15907),N(15913),N(15919),N(15923),N(15937),N(15959),N(15971),N(15973),N(15991),N(16001),N(16007),N(16033),N(16057),N(16061),N(16063),N(16067),N(16069),N(16073),N(16087),N(16091),N(16097),N(16103),N(16111),N(16127),N(16139),N(16141),N(16183),N(16187),N(16189),N(16193),N(16217),N(16223),N(16229),N(16231),N(16249),N(16253),N(16267),N(16273),N(16301),N(16319),N(16333),N(16339),N(16349),N(16361),N(16363),N(16369),N(16381),N(16411),N(16417),N(16421),N(16427),N(16433),N(16447),N(16451),N(16453),N(16477),N(16481),N(16487),N(16493),N(16519),N(16529),N(16547),N(16553),N(16561),N(16567),N(16573),N(16603),N(16607),N(16619),N(16631),N(16633),N(16649),N(16651),N(16657),N(16661),N(16673),N(16691),N(16693),N(16699),N(16703),N(16729),N(16741),N(16747),N(16759),N(16763),N(16787),N(16811),N(16823),N(16829),N(16831),N(16843),N(16871),N(16879),N(16883),N(16889),N(16901),N(16903),N(16921),N(16927),N(16931),N(16937),N(16943),N(16963),N(16979),N(16981),N(16987),N(16993),N(17011),N(17021),N(17027),N(17029),N(17033),N(17041),N(17047),N(17053),N(17077),N(17093),N(17099),N(17107),N(17117),N(17123),N(17137),N(17159),N(17167),N(17183),N(17189),N(17191),N(17203),N(17207),N(17209),N(17231),N(17239),N(17257),N(17291),N(17293),N(17299),N(17317),N(17321),N(17327),N(17333),N(17341),N(17351),N(17359),N(17377),N(17383),N(17387),N(17389)];
     }
     return small_primes.list;
 }
@@ -3544,7 +3575,7 @@ function exp( n, k )
     return fproduct.mem[key];
 }
 fproduct.mem = Obj();*/
-function prime_factorial( n )
+/*function prime_factorial( n )
 {
     // compute factorial by its prime factorization
     // eg https://janmr.com/blog/2010/10/prime-factors-of-factorial-numbers/
@@ -3571,6 +3602,58 @@ function prime_factorial( n )
     primes_up_to_n.dispose();
     
     return fac;
+}*/
+function split_product( list, start, end )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if (start > end) return Arithmetic.I;
+    if (start === end) return list[start];
+    var middle = ((start + end) >>> 1);
+    return Arithmetic.mul(split_product(list, start, middle), split_product(list, middle+1, end));
+}
+function dsc_factorial( n )
+{
+    // divide-swing-conquer fast factorial computation
+    // https://oeis.org/A000142/a000142.pdf
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        I = Arithmetic.I, two = Arithmetic.II, three = Arithmetic.num(3),
+        swing, odd_factorial, bits, primes, sieve;
+    
+    swing = function swing( m, primes ) {
+        var s, d, e, g, factors, prime, p, q, i;
+        if ( Arithmetic.lt(m, 4) ) return ([I,I,I,three])[Arithmetic.val(m)];
+        s = bisect(primes, Arithmetic.add(I, isqrt(m)), -1, null, null, Arithmetic.lt);
+        d = bisect(primes, Arithmetic.add(I, Arithmetic.div(m, three)), -1, null, null, Arithmetic.lt);
+        e = bisect(primes, Arithmetic.add(I, Arithmetic.div(m, two)), -1, null, null, Arithmetic.lt);
+        g = bisect(primes, Arithmetic.add(I, m), -1, null, null, Arithmetic.lt);
+        factors = primes.slice(e, g).concat(primes.slice(s, d).filter(function(p){return Arithmetic.equ(I, Arithmetic.mod(Arithmetic.div(m, p), two));}));
+        for (i=1; i<s; i++)
+        {
+            prime = primes[i]; // prime in primes[1:s]
+            p = I; q = m;
+            while (true)
+            {
+                q = Arithmetic.div(q, prime);
+                if ( Arithmetic.equ(O, q) ) break;
+                if ( !Arithmetic.equ(O, Arithmetic.mod(q, two)) ) p = Arithmetic.mul(p, prime);
+            }
+            if ( Arithmetic.gt(p, I) ) factors.push(p);
+        }
+        return split_product(factors, 0, factors.length-1);
+    };
+    
+    odd_factorial = function odd_factorial( n, primes ) {
+        if ( Arithmetic.lt(n, two) ) return I;
+        var f = odd_factorial(Arithmetic.div(n, two), primes);
+        return Arithmetic.mul(Arithmetic.mul(f, f), swing(n, primes));
+    };
+    
+    if ( Arithmetic.lt(n, two) ) return I;
+    bits = Arithmetic.sub(n, Arithmetic.digits(n, 2).split('').reduce(function(s, d){return Arithmetic.add(s, '1'===d?I:O);}, O));
+    sieve = PrimeSieve();
+    primes = sieve.get(function(p){return Arithmetic.lte(p, n);});
+    sieve.dispose();
+    return Arithmetic.mul(odd_factorial(n, primes), pow2(bits));
 }
 function factorial( n, m )
 {
@@ -3587,8 +3670,8 @@ function factorial( n, m )
         // simple factorial = F(n) = n F(n-1) = n!
         if ( 12 >= n ) return 0 > n ? O : NUM(([1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600 /*MAX: 2147483647*/])[n]);
         
-        // for large factorials, use the prime factorisation of n!
-        if ( 600 <= n ) return prime_factorial(Nn);
+        // for large factorials, use the swinging factorial or the prime factorisation of n!
+        if ( 600 <= n ) return dsc_factorial(Nn); //prime_factorial(Nn);
         
         key = String(n)/*+'!'*/;
         if ( null == factorial.mem1[key] )
@@ -5167,7 +5250,7 @@ Abacus.Class = Class;
 
 // options
 Abacus.Options = {
-    MAXMEM: 1000000,
+    MAXMEM: 100000,
     RANDOM: "index"
 };
 
@@ -5322,11 +5405,11 @@ Abacus.Math = {
 }
 ,polygcd: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return polygcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([Arithmetic.num(args[i])]) : args[i];}));
+    return polygcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([args[i]]) : args[i];}));
 }
 ,polyxgcd: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return polyxgcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([Arithmetic.num(args[i])]) : args[i];}));
+    return polyxgcd(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([args[i]]) : args[i];}));
 }
 ,lcm: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
@@ -5334,10 +5417,10 @@ Abacus.Math = {
 }
 ,polylcm: function( /* args */ ) {
     var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return polylcm(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([Arithmetic.num(args[i])]) : args[i];}));
+    return polylcm(array(args.length, function(i){return !(args[i] instanceof Polynomial) ? new Polynomial([args[i]]) : args[i];}));
 }
 ,polyfactorize: function( p ) {
-    return polyfactorize( p instanceof Polynomial ? p : Polynomial([p]));
+    return polyfactorize(p instanceof Polynomial ? p : Polynomial([p]));
 }
 ,dotp: function( a, b ) {
     var Arithmetic = Abacus.Arithmetic;
@@ -5433,6 +5516,7 @@ Abacus.Util = {
 ,multi_difference: multi_difference
 ,union: merge
 ,search: binarysearch
+,bisect: bisect
 ,complementation: complementation
 ,reflection: reflection
 ,reversion: reversion
@@ -5628,6 +5712,110 @@ function inumber_equ( a, b )
     }
     return false;
 }
+function inumber_gt( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if ( is_number(a) )
+    {
+        if ( is_number(b) ) return a>b;
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.lt(b, a);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.lt(a);
+        return false;
+    }
+    else if ( a instanceof Arithmetic.O[CLASS] )
+    {
+        if ( is_number(b) ) return Arithmetic.gt(a, b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.gt(a, b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.lt(a);
+        return false;
+    }
+    else if ( (a instanceof Rational) || (a instanceof Complex) )
+    {
+        if ( is_number(b) ) return a.gt(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return a.gt(b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return a.gt(b);
+        return false;
+    }
+    return false;
+}
+function inumber_gte( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if ( is_number(a) )
+    {
+        if ( is_number(b) ) return a>=b;
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.lte(b, a);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.lte(a);
+        return false;
+    }
+    else if ( a instanceof Arithmetic.O[CLASS] )
+    {
+        if ( is_number(b) ) return Arithmetic.gte(a, b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.gte(a, b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.lte(a);
+        return false;
+    }
+    else if ( (a instanceof Rational) || (a instanceof Complex) )
+    {
+        if ( is_number(b) ) return a.gte(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return a.gte(b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return a.gte(b);
+        return false;
+    }
+    return false;
+}
+function inumber_lt( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if ( is_number(a) )
+    {
+        if ( is_number(b) ) return a<b;
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.gt(b, a);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.gt(a);
+        return false;
+    }
+    else if ( a instanceof Arithmetic.O[CLASS] )
+    {
+        if ( is_number(b) ) return Arithmetic.lt(a, b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.lt(a, b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.gt(a);
+        return false;
+    }
+    else if ( (a instanceof Rational) || (a instanceof Complex) )
+    {
+        if ( is_number(b) ) return a.lt(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return a.lt(b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return a.lt(b);
+        return false;
+    }
+    return false;
+}
+function inumber_lte( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if ( is_number(a) )
+    {
+        if ( is_number(b) ) return a<=b;
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.gte(b, a);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.gte(a);
+        return false;
+    }
+    else if ( a instanceof Arithmetic.O[CLASS] )
+    {
+        if ( is_number(b) ) return Arithmetic.lte(a, b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.lte(a, b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return b.gte(a);
+        return false;
+    }
+    else if ( (a instanceof Rational) || (a instanceof Complex) )
+    {
+        if ( is_number(b) ) return a.lte(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return a.lte(b);
+        else if ( (b instanceof Rational) || (b instanceof Complex) ) return a.lte(b);
+        return false;
+    }
+    return false;
+}
 function inumber_neg( a )
 {
     var Arithmetic = Abacus.Arithmetic;
@@ -5701,40 +5889,103 @@ function inumber_mul( a, b )
     }
     return a;
 }
-function inumber_div( a, b )
+function inumber_div( a, b, integer )
 {
     var Arithmetic = Abacus.Arithmetic;
+    integer = true===integer;
     if ( is_number(a) )
     {
-        if ( is_number(b) ) return stdMath.floor(a/b);
+        if ( is_number(b) ) return integer ? stdMath.floor(a/b) : a/b;
         else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.div(Arithmetic.num(a), b);
-        else if ( b instanceof Rational ) return Rational(a).div(b);
-        else if ( b instanceof Complex ) return Complex(a).div(b);
+        else if ( b instanceof Rational ) return integer ? Rational(Rational(a).div(b).integer()) : Rational(a).div(b);
+        else if ( b instanceof Complex ) return integer ? Complex(a).div(b).integer() : Complex(a).div(b);
         return a;
     }
     else if ( a instanceof Arithmetic.O[CLASS] )
     {
         if ( is_number(b) ) return Arithmetic.div(a, b);
         else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.div(a, b);
-        else if ( b instanceof Rational ) return Rational(a).div(b);
-        else if ( b instanceof Complex ) return Complex(a).div(b);
+        else if ( b instanceof Rational ) return integer ? Rational(Rational(a).div(b).integer()) : Rational(a).div(b);
+        else if ( b instanceof Complex ) return integer ? Complex(a).div(b).integer() : Complex(a).div(b);
         return a;
     }
     else if ( a instanceof Rational )
     {
-        if ( is_number(b) ) return a.div(b);
-        else if ( b instanceof Arithmetic.O[CLASS] ) return a.div(ab);
-        else if ( b instanceof Rational ) return a.div(b);
-        else if ( b instanceof Complex ) return Complex(a).div(b);
+        if ( is_number(b) ) return integer ? Rational(a.div(b).integer()) : a.div(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return integer ? Rational(a.div(b).integer()) : a.div(ab);
+        else if ( b instanceof Rational ) return integer ? Rational(a.div(b).integer()) : a.div(b);
+        else if ( b instanceof Complex ) return integer ? Complex(a).div(b).integer() : Complex(a).div(b);
         return a;
     }
     else if ( a instanceof Complex )
     {
-        if ( is_number(b) ) return a.div(b);
-        else if ( b instanceof Arithmetic.O[CLASS] ) return a.div(b);
-        else if ( b instanceof Rational ) return a.div(b);
-        else if ( b instanceof Complex ) return a.div(b);
+        if ( is_number(b) ) return integer ? a.div(b).integer() : a.div(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return integer ? a.div(b).integer() : a.div(b);
+        else if ( b instanceof Rational ) return integer ? a.div(b).integer() : a.div(b);
+        else if ( b instanceof Complex ) return integer ? a.div(b).integer() : a.div(b);
         return a;
+    }
+    return a;
+}
+function inumber_mod( a, b )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if ( is_number(a) )
+    {
+        if ( is_number(b) ) return a% b;
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.mod(Arithmetic.num(a), b);
+        else if ( b instanceof Rational ) return Rational(a).mod(b);
+        else if ( b instanceof Complex ) return Complex(a).mod(b);
+        return a;
+    }
+    else if ( a instanceof Arithmetic.O[CLASS] )
+    {
+        if ( is_number(b) ) return Arithmetic.mod(a, b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return Arithmetic.mod(a, b);
+        else if ( b instanceof Rational ) return Rational(a).mod(b);
+        else if ( b instanceof Complex ) return Complex(a).mod(b);
+        return a;
+    }
+    else if ( a instanceof Rational )
+    {
+        if ( is_number(b) ) return a.mod(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return a.mod(ab);
+        else if ( b instanceof Rational ) return a.mod(b);
+        else if ( b instanceof Complex ) return Complex(a).mod(b);
+        return a;
+    }
+    else if ( a instanceof Complex )
+    {
+        if ( is_number(b) ) return a.mod(b);
+        else if ( b instanceof Arithmetic.O[CLASS] ) return a.mod(b);
+        else if ( b instanceof Rational ) return a.mod(b);
+        else if ( b instanceof Complex ) return a.mod(b);
+        return a;
+    }
+    return a;
+}
+function inumber_divmod( a, b )
+{
+    return [inumber_div(a, b, true), inumber_mod(a, b)];
+}
+function inumber_pow( a, n )
+{
+    var Arithmetic = Abacus.Arithmetic;
+    if ( is_number(a) )
+    {
+        return stdMath.pow(a, n);
+    }
+    else if ( a instanceof Arithmetic.O[CLASS] )
+    {
+        return Arithmetic.pow(a, n);
+    }
+    else if ( a instanceof Rational )
+    {
+        return a.pow(n);
+    }
+    else if ( a instanceof Complex )
+    {
+        return a.pow(n);
     }
     return a;
 }
@@ -5980,8 +6231,8 @@ Rational = Abacus.Rational = Class(INumber, {
             self._simpl = true;
         }
         
-        /*if ( !(num instanceof O[CLASS]) )*/ num = Arithmetic.num(num);
-        /*if ( !(den instanceof O[CLASS]) )*/ den = Arithmetic.num(den);
+        num = Arithmetic.num(num);
+        den = Arithmetic.num(den);
         
         if ( Arithmetic.equ(O, den) ) throw new Error('Zero denominator in Abacus.Rational!');
         
@@ -5997,9 +6248,6 @@ Rational = Abacus.Rational = Class(INumber, {
     
     ,__static__: {
         autoSimplify: true
-        
-        ,ZERO: function( ){ return Rational(Abacus.Arithmetic.O); }
-        ,ONE: function( ){ return Rational(Abacus.Arithmetic.I); }
         
         ,fromIntRem: function( i, r, m ) {
             var Arithmetic = Abacus.Arithmetic;
@@ -6199,7 +6447,9 @@ Rational = Abacus.Rational = Class(INumber, {
         
         return self;
     }
-    ,divmod: NotImplemented
+    ,divmod: function( a ) {
+        return [Rational(this.div(a).integer()), this.mod(a)];
+    }
     
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, num, denom;
@@ -6229,21 +6479,21 @@ Rational = Abacus.Rational = Class(INumber, {
             }
             else
             {
-                g = gcd(self.num, self.den);
-                if ( !Arithmetic.equ(I, g) )
+                if ( !Arithmetic.equ(I, self.num) && !Arithmetic.equ(I, self.den) )
                 {
-                    self.num = Arithmetic.div(self.num, g);
-                    self.den = Arithmetic.div(self.den, g);
-                    self._str = null;
-                    self._tex = null;
+                    g = gcd(self.num, self.den);
+                    if ( !Arithmetic.equ(I, g) )
+                    {
+                        self.num = Arithmetic.div(self.num, g);
+                        self.den = Arithmetic.div(self.den, g);
+                        self._str = null;
+                        self._tex = null;
+                    }
                 }
             }
             self._simpl = true;
         }
         return self;
-    }
-    ,tuple: function( ) {
-        return [this.num, this.den];
     }
     ,integer: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -6257,6 +6507,9 @@ Rational = Abacus.Rational = Class(INumber, {
             self._rem = Arithmetic.mod(self.num, self.den); // return remainder part
         return self._rem;
     }
+    ,tuple: function( ) {
+        return [this.num, this.den];
+    }
     ,toDec: function( ) {
         var self = this;
         if ( null == self._dec )
@@ -6264,7 +6517,8 @@ Rational = Abacus.Rational = Class(INumber, {
         return self._dec;
     }
     ,valueOf: function( ) {
-        return this.num.valueOf()/this.den.valueOf();
+        var Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.val(this.num)/Arithmetic.val(this.den);
     }
     ,toString: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -6315,9 +6569,7 @@ Complex = Abacus.Complex = Class(INumber, {
     }
     
     ,__static__: {
-        ZERO: function( ){ return Complex(Abacus.Arithmetic.O); }
-        ,ONE: function( ){ return Complex(Abacus.Arithmetic.I); }
-        ,IMAG: function( ){ return Complex(Abacus.Arithmetic.O, Abacus.Arithmetic.I); }
+        Symbol: 'i'
     }
     
     ,real: null
@@ -6326,6 +6578,8 @@ Complex = Abacus.Complex = Class(INumber, {
     ,_tex: null
     ,_dec: null
     ,_norm: null
+    ,_int: null
+    ,_rem: null
     
     ,dispose: function( ) {
         var self = this;
@@ -6337,6 +6591,8 @@ Complex = Abacus.Complex = Class(INumber, {
         self._tex = null;
         self._dec = null;
         self._norm = null;
+        self._int = null;
+        self._rem = null;
         return self;
     }
     
@@ -6520,8 +6776,18 @@ Complex = Abacus.Complex = Class(INumber, {
         
         return self;
     }
-    ,mod: NotImplemented
-    ,divmod: NotImplemented
+    ,mod: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( (a instanceof Term) || (a instanceof Expr) || (a instanceof Polynomial) || (a instanceof Matrix) )
+            return null;
+        if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
+            return self.sub(self.div(a).integer().mul(a));
+        
+        return self;
+    }
+    ,divmod: function( a ) {
+        return [this.div(a).integer(), this.mod(a)];
+    }
     
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, pow, e;
@@ -6534,7 +6800,7 @@ Complex = Abacus.Complex = Class(INumber, {
                 return Complex();
             }
             if ( Arithmetic.equ(O, n) ) return Complex(I);
-            if ( Arithmetic.equ(I, n) ) return self.clone();
+            if ( Arithmetic.equ(I, n) ) return Complex(self);
             if ( Arithmetic.gt(O, n) )
             {
                 self = self.inv();
@@ -6562,6 +6828,18 @@ Complex = Abacus.Complex = Class(INumber, {
         self._tex = null;
         return self;
     }
+    ,integer: function( ) {
+        var self = this;
+        if ( null == self._int )
+            self._int = Complex(self.real.integer(), self.imag.integer()); // return integer part
+        return self._int;
+    }
+    ,remainder: function( ) {
+        var self = this;
+        if ( null == self._rem )
+            self._rem = Complex(self.real.remainder(), self.imag.remainder()); // return remainder part
+        return self._rem;
+    }
     ,tuple: function( ) {
         return [this.real, this.imag];
     }
@@ -6573,7 +6851,7 @@ Complex = Abacus.Complex = Class(INumber, {
         if ( null == self._str )
         {
             zr = self.real.equ(O);
-            self._str = (zr ? '' : self.real.toString()) + (self.imag.equ(O) ? '' : ((self.imag.gt(O) ? (zr ? '' : '+') : '') + (self.imag.equ(Arithmetic.I) ? '' : (self.imag.equ(Arithmetic.J) ? '-' : (self.imag.toString()+'*'))) + 'i'));
+            self._str = (zr ? '' : self.real.toString()) + (self.imag.equ(O) ? '' : ((self.imag.gt(O) ? (zr ? '' : '+') : '') + (self.imag.equ(Arithmetic.I) ? '' : (self.imag.equ(Arithmetic.J) ? '-' : (self.imag.toString()+'*'))) + Complex.Symbol));
             if ( !self._str.length ) self._str = '0';
         }
         return self._str;
@@ -6583,7 +6861,7 @@ Complex = Abacus.Complex = Class(INumber, {
         if ( null == self._tex )
         {
             zr = self.real.equ(O); ia = self.imag.abs();
-            self._tex = (zr ? '' : self.real.toTex()) + (self.imag.equ(O) ? '' : ((self.imag.lt(O) ? '-' : (zr ? '' : '+')) + (ia.equ(Arithmetic.I) ? '' : ia.toTex())+'i'));
+            self._tex = (zr ? '' : self.real.toTex()) + (self.imag.equ(O) ? '' : ((self.imag.lt(O) ? '-' : (zr ? '' : '+')) + (ia.equ(Arithmetic.I) ? '' : ia.toTex())+Complex.Symbol));
             if ( !self._tex.length ) self._tex = '0';
         }
         return self._tex;
@@ -6593,7 +6871,7 @@ Complex = Abacus.Complex = Class(INumber, {
         if ( null == self._dec )
         {
             zr = self.real.equ(O);
-            self._dec = (zr ? '' : self.real.toDec()) + (self.imag.equ(O) ? '' : ((self.imag.gt(O) ? (zr ? '' : '+') : '') + (self.imag.equ(Arithmetic.I) ? '' : (self.imag.equ(Arithmetic.J) ? '-' : (self.imag.toDec()))) + 'i'));
+            self._dec = (zr ? '' : self.real.toDec()) + (self.imag.equ(O) ? '' : ((self.imag.gt(O) ? (zr ? '' : '+') : '') + (self.imag.equ(Arithmetic.I) ? '' : (self.imag.equ(Arithmetic.J) ? '-' : (self.imag.toDec()))) + Complex.Symbol));
             if ( !self._dec.length ) self._dec = '0';
         }
         return self._dec;
@@ -6609,7 +6887,7 @@ Term = Abacus.Term = Class(INumber, {
         
         if ( s instanceof Term )
         {
-            c = s.factors['1'];
+            c = s.factors['1'].clone();
             self.symbol = s.symbol;
             self.symbolTex = s.symbolTex;
             s = s.factors;
@@ -6747,11 +7025,11 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,gt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( (a instanceof Expr) && HAS.call(a.terms, self.symbol) && (('1'===self.symbol && 1===a.symbols().length) || ('1'!==self.symbol && 2===a.symbols().length && a.c().equ(Arithmetic.O))) )
+        if ( a instanceof Expr )
         {
-            return self.factors['1'].gt(a.terms[self.symbol].c());
+            return a.lt(self);
         }
-        else if ( (a instanceof Term) && (a.symbol===self.symbol) )
+        else if ( (a instanceof Term) && ('1'===self.symbol) && ('1'===a.symbol) )
         {
             return self.factors['1'].gt(a.factors['1']);
         }
@@ -6763,11 +7041,11 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,gte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( (a instanceof Expr) && HAS.call(a.terms, self.symbol) && (('1'===self.symbol && 1===a.symbols().length) || ('1'!==self.symbol && 2===a.symbols().length && a.c().equ(Arithmetic.O))) )
+        if ( a instanceof Expr )
         {
-            return self.factors['1'].gte(a.terms[self.symbol].c());
+            return a.lte(self);
         }
-        else if ( (a instanceof Term) && (a.symbol===self.symbol) )
+        else if ( (a instanceof Term) && ('1'===self.symbol) && ('1'===a.symbol) )
         {
             return self.factors['1'].gte(a.factors['1']);
         }
@@ -6779,11 +7057,11 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,lt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( (a instanceof Expr) && HAS.call(a.terms, self.symbol) && (('1'===self.symbol && 1===a.symbols().length) || ('1'!==self.symbol && 2===a.symbols().length && a.c().equ(Arithmetic.O))) )
+        if ( a instanceof Expr )
         {
-            return self.factors['1'].lt(a.terms[self.symbol].c());
+            return a.gt(self);
         }
-        else if ( (a instanceof Term) && (a.symbol===self.symbol) )
+        else if ( (a instanceof Term) && ('1'===self.symbol) && ('1'===a.symbol) )
         {
             return self.factors['1'].lt(a.factors['1']);
         }
@@ -6795,11 +7073,11 @@ Term = Abacus.Term = Class(INumber, {
     }
     ,lte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( (a instanceof Expr) && HAS.call(a.terms, self.symbol) && (('1'===self.symbol && 1===a.symbols().length) || ('1'!==self.symbol && 2===a.symbols().length && a.c().equ(Arithmetic.O))) )
+        if ( a instanceof Expr )
         {
-            return self.factors['1'].lte(a.terms[self.symbol].c());
+            return a.gte(self);
         }
-        else if ( (a instanceof Term) && (a.symbol===self.symbol) )
+        else if ( (a instanceof Term) && ('1'===self.symbol) && ('1'===a.symbol) )
         {
             return self.factors['1'].lte(a.factors['1']);
         }
@@ -7087,15 +7365,11 @@ Expr = Abacus.Expr = Class(INumber, {
     }
     ,gt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
-        if ( a instanceof Expr )
+        if ( (a instanceof Expr) || (a instanceof Term) )
         {
             r = self.sub(a);
             if ( 1 === r.symbols().length ) return r.c().gt(Arithmetic.O);
             return NotImplemented();
-        }
-        if ( (a instanceof Term) && HAS.call(self.terms, a.symbol) && (('1'===a.symbol && 1===self.symbols().length) || ('1'!==a.symbol && 2===self.symbols().length && self.c().equ(Arithmetic.O))) )
-        {
-            return self.terms[a.symbol].c().gt(a.c());
         }
         else if ( ((a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a)) && (1===self.symbols().length) )
         {
@@ -7105,15 +7379,11 @@ Expr = Abacus.Expr = Class(INumber, {
     }
     ,gte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
-        if ( a instanceof Expr )
+        if ( (a instanceof Expr) || (a instanceof Term) )
         {
             r = self.sub(a);
             if ( 1 === r.symbols().length ) return r.c().gte(Arithmetic.O);
             return NotImplemented();
-        }
-        if ( (a instanceof Term) && HAS.call(self.terms, a.symbol) && (('1'===a.symbol && 1===self.symbols().length) || ('1'!==a.symbol && 2===self.symbols().length && self.c().equ(Arithmetic.O))) )
-        {
-            return self.terms[a.symbol].c().gte(a.c());
         }
         else if ( ((a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a)) && (1===self.symbols().length) )
         {
@@ -7123,15 +7393,11 @@ Expr = Abacus.Expr = Class(INumber, {
     }
     ,lt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
-        if ( a instanceof Expr )
+        if ( (a instanceof Expr) || (a instanceof Term) )
         {
             r = self.sub(a);
             if ( 1 === r.symbols().length ) return r.c().lt(Arithmetic.O);
             return NotImplemented();
-        }
-        if ( (a instanceof Term) && HAS.call(self.terms, a.symbol) && (('1'===a.symbol && 1===self.symbols().length) || ('1'!==a.symbol && 2===self.symbols().length && self.c().equ(Arithmetic.O))) )
-        {
-            return self.terms[a.symbol].c().lt(a.c());
         }
         else if ( ((a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a)) && (1===self.symbols().length) )
         {
@@ -7141,15 +7407,11 @@ Expr = Abacus.Expr = Class(INumber, {
     }
     ,lte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
-        if ( a instanceof Expr )
+        if ( (a instanceof Expr) || (a instanceof Term) )
         {
             r = self.sub(a);
             if ( 1 === r.symbols().length ) return r.c().lte(Arithmetic.O);
             return NotImplemented();
-        }
-        if ( (a instanceof Term) && HAS.call(self.terms, a.symbol) && (('1'===a.symbol && 1===self.symbols().length) || ('1'!==a.symbol && 2===self.symbols().length && self.c().equ(Arithmetic.O))) )
-        {
-            return self.terms[a.symbol].c().lte(a.c());
         }
         else if ( ((a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a)) && (1===self.symbols().length) )
         {
@@ -7501,7 +7763,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic, coeff = self.coeff, coeffp, LCM, content;
         if ( null == self._prim )
         {
-            LCM = lcm(coeff.map(function(c){return c.den;}));
+            LCM = coeff.reduce(function(LCM, c){return Arithmetic.mul(LCM, c.den);}, Arithmetic.I);  //lcm(coeff.map(function(c){return c.den;}));
             coeffp = coeff.map(function(c){return c.mul(LCM).integer();});
             content = gcd(coeffp);
             coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
@@ -7511,7 +7773,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
                 content = Arithmetic.neg(content);
             }
-            self._prim = [Polynomial(coeffp, self.symbol), Rational(content, LCM)];
+            self._prim = [Polynomial(coeffp, self.symbol), Rational(content, LCM).simpl()];
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
     }
@@ -7547,9 +7809,9 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                     {
                         comb = iter.next();
                         // positive root
-                        root = Rational(d0[comb[0]], dn[comb[1]]);
+                        root = Rational(d0[comb[0]], dn[comb[1]]).simpl();
                         // negative root
-                        nroot = Rational(Arithmetic.neg(d0[comb[0]]), dn[comb[1]]);
+                        nroot = Rational(Arithmetic.neg(d0[comb[0]]), dn[comb[1]]).simpl();
                         p = primitive; found = true;
                         while( found && (0<p.deg()) )
                         {
@@ -7641,15 +7903,15 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
 
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
+        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self)) : self);
     }
     ,sub: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().sub(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self.coeff.slice(), self.symbol), true) : self);
+        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().sub(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self), true) : self);
     }
     ,mul: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().mul(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Mul(x, Polynomial(self.coeff.slice(), self.symbol)) : self);
+        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().mul(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Mul(x, Polynomial(self)) : self);
     }
     ,div: function( x, q_and_r ) {
         var self = this, Arithmetic = Abacus.Arithmetic,

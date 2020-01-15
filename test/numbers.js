@@ -56,5 +56,5 @@ echo('Large factorization');
 echo('--------------------');
 factorize(o=Abacus.Math.factorial(30));
 factorize(Abacus.Math.factorial(50));
-factorize(Abacus.Math.factorial(500));
+factorize(Abacus.Math.factorial(1000));
 factorize(Abacus.Math.nextPrime(o));
