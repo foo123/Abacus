@@ -3,9 +3,6 @@
 A **Combinatorics** and **Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-(python/java implementations in progress)
-
-
 **version 0.9.9** (~ 166kB minified, ~ 48kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
@@ -141,8 +138,8 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Integer Programming with 2-Variable Equations and 1-Variable Inequalities, Bodirsky, Nordh, Von Oertzen](http://www.lix.polytechnique.fr/~bodirsky/publications/2var.pdf)
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
+* [Algorithms and Data Structures for Sparse Polynomial Arithmetic, M. Asadi, A. Brandt, R. H. C. Moir, M. M. Maza](https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
-* [Algorithms and Data Structures for Sparse Polynomial Arithmetic, M. Asadi, A. Brandt, R. H. C. Moir, M. M. Maza](https://res.mdpi.com/d_attachment/mathematics/mathematics-07-00441/article_deploy/mathematics-07-00441-v2.pdf)
 
 ### Example API
 
@@ -607,6 +604,7 @@ o.dispose()
 * support efficient primality tests and prime sieves **[DONE PARTIALY]**
 * support efficient integer factorization algorithms **[DONE PARTIALY]**
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
+* use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation **[DONE PARTIALY]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE PARTIALY]**
 * support multivariate polynomial, multivariate division/reduction, groebner basis computations (TODO)
 * implement `LLL` algorithm (TODO)

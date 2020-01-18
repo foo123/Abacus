@@ -32,7 +32,7 @@ o.inv().toDec()
 o.neg().toString()
 -5/9
 o.neg().toTex()
-\frac{-5}{9}
+-\frac{5}{9}
 o.neg().toDec()
 -0.[5]
 

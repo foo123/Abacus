@@ -39,8 +39,8 @@ function check_factors(p, factors, constant)
     var out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol), i;
     for(i=0; i<factors.length; i++)
     {
-        out += '('+factors[i].toString()+')';
-        res = res.mul(factors[i]);
+        out += '('+factors[i][0].toString()+')'+(1<factors[i][1]?('^'+String(factors[i][1])):'');
+        res = res.mul(factors[i][0].pow(factors[i][1]));
     }
     console.log(out, res.mul(constant).equ(p));
 }
@@ -85,6 +85,35 @@ echo(o.toExpr().toTex());
 echo('Abacus.Polynomial.fromExpr(o.toExpr())');
 echo(Abacus.Polynomial.fromExpr(o.toExpr()).toString());
 echo('o.dispose()');
+o.dispose();
+echo('---');
+
+echo('o=Abacus.Polynomial([2,0,1])');
+o=Abacus.Polynomial([2,0,1]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.toTex()');
+echo(o.toTex());
+echo('o.valueOf(3)');
+echo(o.valueOf(3).toString());
+echo('o.add(1)');
+echo(o.add(1).toString());
+echo('o.add(Abacus.Polynomial([1,1]))');
+echo(o.add(Abacus.Polynomial([1,1])).toString());
+echo('o.mul(2)');
+echo(o.mul(2).toString());
+echo('o.mul(Abacus.Polynomial([1,1]))');
+echo(o.mul(Abacus.Polynomial([1,1])).toString());
+echo('o.shift(1)');
+echo(o.shift(1).toString());
+echo('o.shift(-1)');
+echo(o.shift(-1).toString());
+echo('o.compose(Abacus.Polynomial([1]))');
+echo(o.compose(Abacus.Polynomial([1])).toString());
+echo('o.compose(Abacus.Polynomial([0,1]))');
+echo(o.compose(Abacus.Polynomial([0,1])).toString());
+echo('o.compose(Abacus.Polynomial([1,1]))');
+echo(o.compose(Abacus.Polynomial([1,1])).toString());
 o.dispose();
 echo('---');
 
@@ -179,37 +208,37 @@ echo('Polynomial Rational Roots');
 echo('---');
 
 echo('Abacus.Polynomial([0]).roots()'); // no roots, here infinite roots actually, but for convience denote as no roots
-echo(Abacus.Polynomial([0]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([0]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([1]).roots()'); // no roots
-echo(Abacus.Polynomial([1]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([0,1]).roots()'); // one trivial root
-echo(Abacus.Polynomial([0,1]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([0,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([0,0,3]).roots()'); // two trivial roots
-echo(Abacus.Polynomial([0,0,3]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([0,0,3]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([1,1]).roots()'); // one root
-echo(Abacus.Polynomial([1,1]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([1,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([-1,1,0,2]).roots()'); // no rational roots
-echo(Abacus.Polynomial([-1,1,0,2]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([-1,1,0,2]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([6,-7,0,1]).roots()'); // 1,2,-3
-echo(Abacus.Polynomial([6,-7,0,1]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([6,-7,0,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([6,-7,0,1]).shift(2).roots()'); // 0,0,1,2,-3
-echo(Abacus.Polynomial([6,-7,0,1]).shift(2).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([6,-7,0,1]).shift(2).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([-2,5,-5,3]).roots()'); // one root
-echo(Abacus.Polynomial([-2,5,-5,3]).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([-2,5,-5,3]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([1,1]).pow(2).roots()'); // multiple root
-echo(Abacus.Polynomial([1,1]).pow(2).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([1,1]).pow(2).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 
 echo('Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots()'); // multiple roots
-echo(Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots().map(function(r){return r.toString();}).join(', '));
+echo(Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 echo('---');
 
 echo('Polynomial Factorization');
