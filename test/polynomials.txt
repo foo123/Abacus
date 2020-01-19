@@ -33,6 +33,15 @@ Abacus.Polynomial.fromExpr(o.toExpr())
 x^50+2*x^2
 o.dispose()
 ---
+Abacus.Polynomial.fromString("1").toString()
+1
+Abacus.Polynomial.fromString("1 + x^2").toString()
+x^2+1
+Abacus.Polynomial.fromString("1 - x^2").toString()
+-x^2+1
+Abacus.Polynomial.fromString("1 - (2/3)*x^2+x").toString()
+-(2/3)*x^2+x+1
+---
 o=Abacus.Polynomial([2,0,1])
 o.toString()
 x^2+2

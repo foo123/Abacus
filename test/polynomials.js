@@ -88,6 +88,16 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
+echo('Abacus.Polynomial.fromString("1").toString()');
+echo(Abacus.Polynomial.fromString("1").toString());
+echo('Abacus.Polynomial.fromString("1 + x^2").toString()');
+echo(Abacus.Polynomial.fromString("1 + x^2").toString());
+echo('Abacus.Polynomial.fromString("1 - x^2").toString()');
+echo(Abacus.Polynomial.fromString("1 - x^2").toString());
+echo('Abacus.Polynomial.fromString("1 - (2/3)*x^2+x").toString()');
+echo(Abacus.Polynomial.fromString("1 - (2/3)*x^2+x").toString());
+
+echo('---');
 echo('o=Abacus.Polynomial([2,0,1])');
 o=Abacus.Polynomial([2,0,1]);
 echo('o.toString()');
