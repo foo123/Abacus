@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   A combinatorics and number theory library for Node.js / Browser / XPCOM Javascript, Python, Java
-*   @version: 0.9.9
+*   @version: 0.9.10
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -20,14 +20,14 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "0.9.9"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "0.9.10"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array.prototype.slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
     ,trim = String.prototype.trim ? function( s ){ return s.trim(); } : function( s ){ return s.replace(trim_re, ''); }
     ,pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/
     ,in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/
-    ,dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?$/, tex_frac_pattern = /^\\frac\{(-?\d+)\}\{(-?\d+)\}$/
+    ,dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?$/, tex_frac_pattern = /^(-)?\\frac\{(-?\d+)\}\{(-?\d+)\}$/
     
     ,Obj = function( ){ return Object.create(null); }
     ,Extend = Object.create, KEYS = Object.keys
@@ -6383,8 +6383,9 @@ Rational = Abacus.Rational = Class(INumber, {
             }
             m = s.match(tex_frac_pattern);
             if ( !m ) return null;
-            num = Arithmetic.num(m[1]);
-            den = Arithmetic.num(m[2]);
+            if ( '-' === m[1] ) sign = '-' === sign ? '+' : '-';
+            num = Arithmetic.num(m[2]);
+            den = Arithmetic.num(m[3]);
             if ( '-' === sign ) num = Arithmetic.neg(num);
             return Rational(num, den);
         }
@@ -7039,12 +7040,21 @@ Term = Abacus.Term = Class(INumber, {
                 keys, i, l, parts;
 
             function merge_factor( f, e, with_pow ) {
-                var i = false !== with_pow ? f.indexOf('^') : -1; // eg x^2
+                f = trim(f);
+                var i = false !== with_pow ? f.indexOf('^') : -1, exp; // eg x^2
                 e = e || O;
                 if ( -1 !== i )
                 {
-                    e = /*Arithmetic.add(e,*/Arithmetic.num(f.slice(i+1))/*)*/;
+                    exp = f.slice(i+1);
+                    if ( ('{' === exp.charAt(0)) && ('}' === exp.charAt(exp.length-1)) )
+                        exp = exp.slice(1, -1); // remove tex brackets if present
+                    e = /*Arithmetic.add(e,*/Arithmetic.num(exp)/*)*/;
                     f = f.slice(0, i);
+                }
+                i = f.indexOf('_');
+                if ( (-1 !== i) && ('{' === f.charAt(i+1)) && ('}' === f.charAt(f.length-1)) )
+                {
+                    f = f.slice(0, i+1)+f.slice(i+2, -1); // remove tex brackets if present
                 }
                 if ( ('1' === f) || !f.length ) return; // handled elsewhere
                 if ( -1 === remove )
@@ -7422,6 +7432,35 @@ Expr = Abacus.Expr = Class(INumber, {
                     Merge(x.terms[keys[i]], E);
             }
             return E;
+        }
+        ,fromString: function( s ) {
+            var Arithmetic = Abacus.Arithmetic, terms = [], m, sign, coeff, symbol, n, i,
+                term_re = /(\+|-)?\s*(\(?(?:(?:-?\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\/-?\d+)?))\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?(?:\s*\*\s*[a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?)*)?)?/g;
+            s = trim(String(s));
+            while( (m=term_re.exec(s)) )
+            {
+                // try to do best possible match of given string of expressionl terms
+                if ( !m[0].length ) break; // match at least sth
+                if ( !trim(m[0]).length ) continue; // matched only spaces, continue
+                
+                if ( m[3] )
+                {
+                    symbol = m[3];
+                    coeff = m[2] || '1';
+                }
+                else
+                {
+                    symbol = '1';
+                    coeff = m[2] || '0';
+                }
+                sign = m[1] || '';
+                // accept only real coefficients, not complex for now
+                console.log([symbol, coeff]);
+                n = /\\frac/.test(coeff) ? Rational.fromTex(sign+coeff) : Rational.fromString(sign+coeff);
+                if ( !n ) continue;
+                terms.push(Term(symbol, n));
+            }
+            return new Expr(terms);
         }
     }
 
@@ -7958,8 +7997,8 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             return new Polynomial(coeff, x);
         }
         ,fromString: function( s ) {
-            var Arithmetic = Abacus.Arithmetic, coeffs = {}, symbol = null, m, sign, coeff, exp, n,
-                term_re = /(\+|-)?\s*(\(?-?\d+(?:\/-?\d+)?\)?)?(?:\s*\*?\s*([a-zA-Z])(?:\^\{?(\d+)\}?)?)?/g;
+            var Arithmetic = Abacus.Arithmetic, coeffs = {}, symbol = null, m, sign, coeff, exp, n, i,
+                term_re = /(\+|-)?\s*(\(?(?:(?:-?\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\/-?\d+)?))\)?)?(?:\s*\*?\s*([a-zA-Z])(?:\^\{?(\d+)\}?)?)?/g;
             s = trim(String(s));
             while( (m=term_re.exec(s)) )
             {
@@ -7985,18 +8024,17 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                     exp = '0';
                     coeff = m[2] || '0';
                 }
-                while(exp.length && ('0'===exp.charAt(0))) exp = exp.slice(1);
-                if ( !exp.length ) exp = '0';
+                i = 0;
+                while(i<exp.length && ('0'===exp.charAt(i))) i++;
+                if ( 0<i ) exp = i<exp.length ? exp.slice(i) : '0';
                 sign = m[1] || '';
-                n = Rational.fromString(sign+coeff);
+                n = /\\frac/.test(coeff) ? Rational.fromTex(sign+coeff) : Rational.fromString(sign+coeff);
+                if ( !n ) continue;
                 coeffs[exp] = coeffs[exp] ? coeffs[exp].add(n) : n;
             }
-            KEYS(coeffs).reduce(function(del, exp){
-                if ( coeffs[exp].equ(Arithmetic.O) ) del.push(exp);
-                return del;
-            }, []).forEach(function(exp){
-                delete coeffs[exp];
-            });
+            operate(function(_, exp){
+                if ( coeffs[exp].equ(Arithmetic.O) ) delete coeffs[exp];
+            }, null, KEYS(coeffs));
             return new Polynomial(coeffs, symbol);
         }
     }

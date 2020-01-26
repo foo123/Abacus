@@ -26,6 +26,12 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
+echo('Abacus.Expr.fromString("1+2*x").toString()');
+echo(Abacus.Expr.fromString("1+2*x").toString());
+echo('Abacus.Expr.fromString("1/2+2*x_{1}*x_2^2").toString()');
+echo(Abacus.Expr.fromString("1/2+2*x_{1}*x_2^2").toString());
+echo('---');
+
 echo('o=Abacus.Expr(1, Abacus.Term("x", 2))');
 o=Abacus.Expr(1, Abacus.Term("x", 2));
 echo('o.toString()');

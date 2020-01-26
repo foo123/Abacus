@@ -3,7 +3,7 @@
 A **Combinatorics** and **Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 0.9.9** (~ 166kB minified, ~ 48kB zipped)
+**version 0.9.10** (~ 166kB minified, ~ 48kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -139,6 +139,7 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
 * [Algorithms and Data Structures for Sparse Polynomial Arithmetic, M. Asadi, A. Brandt, R. H. C. Moir, M. M. Maza](https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic)
+* [High Performance Sparse Multivariate Polynomials: Fundamental Data Structures and Algorithms, Alex Brandt (MSc Thesis)](https://pdfs.semanticscholar.org/0f93/5035aefc4afce591cd52c507cd7fa35eb061.pdf?_ga=2.149338422.1292196222.1579944113-1940599073.1579944113)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
 
 ### Example API
