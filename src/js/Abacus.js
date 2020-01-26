@@ -2565,28 +2565,28 @@ function polygcd( /* args */ )
         }
     }
     // defer to integer gcd and transform back to polynomial
-    if ( are_const ) return Polynomial(gcd(slice.call(args).map(function(p){return p.c().num;})), args[0].symbol);
+    if ( are_const ) return Polynomial(gcd(slice.call(args).map(function(p){return p.cc().num;})), args[0].symbol);
     
     /*for(i=0; i<c; i++)
     {
-        if ( args[i].lead().lt(O) ) args[i] = args[i].neg();
+        if ( args[i].lc().lt(O) ) args[i] = args[i].neg();
         if ( args[i].equ(O) ) zeroes++;
     }
     if ( zeroes === c ) return Polynomial([], args[0].symbol);*/
     i = 0;
     while(i<c && (a=args[i++]).equ(O)) ;
-    if ( a.lead().lt(O) ) a = a.neg();
+    if ( a.lc().lt(O) ) a = a.neg();
     while (i<c)
     {
         if ( a.equ(I) ) return Polynomial(I, a.symbol);
         while(i<c && (b=args[i++]).equ(O)) ;
-        if ( b.lead().lt(O) ) b = b.neg();
+        if ( b.lc().lt(O) ) b = b.neg();
         if ( b.equ(I) ) return Polynomial(I, a.symbol);
         else if ( b.equ(a) ) continue;
         else if ( b.equ(O) ) break;
         // swap them (a >= b)
         if ( (a.deg() < b.deg()) ||
-            ((a.deg() === b.deg()) && a.lead().lt(b.lead())) ) { t=b; b=a; a=t; }
+            ((a.deg() === b.deg()) && a.lc().lt(b.lc())) ) { t=b; b=a; a=t; }
         while ( !b.equ(O) /*0 < b.deg()*/)
         {
             a0 = a; b0 = b;
@@ -2595,8 +2595,8 @@ function polygcd( /* args */ )
         }
     }
     // simplify, positive and monic
-    if ( a.lead().lt(O) ) a = a.neg();
-    if ( !a.lead().equ(I) ) a = a.div(a.lead());
+    if ( a.lc().lt(O) ) a = a.neg();
+    if ( !a.lc().equ(I) ) a = a.div(a.lc());
     return a;
 }
 function polylcm2( a, b )
@@ -2642,7 +2642,7 @@ function polyxgcd( /* args */ )
         }
     }
     // defer to integer gcd and transform back to polynomial
-    if ( are_const ) return xgcd(slice.call(args).map(function(p){return p.c().num;})).map(function(g){return Polynomial(g, args[0].symbol);});
+    if ( are_const ) return xgcd(slice.call(args).map(function(p){return p.cc().num;})).map(function(g){return Polynomial(g, args[0].symbol);});
     
     a = args[0];
 
@@ -2651,10 +2651,10 @@ function polyxgcd( /* args */ )
     a2 = Polynomial(O, a.symbol);
     b2 = Polynomial(I, a.symbol);
 
-    if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg();}
+    if ( a.lc().lt(O) ) {a = a.neg(); asign = asign.neg();}
     if ( 1 === k )
     {
-        if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead);}
+        if ( !a.lc().equ(I) ) {lead = a.lc(); a = a.div(lead); asign = asign.div(lead);}
         return [a, Polynomial(asign, a.symbol)];
     }
     else //if ( 2 <= k )
@@ -2670,19 +2670,19 @@ function polyxgcd( /* args */ )
         // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
         xgcdp = 2===k ? [args[1], Polynomial(I, a.symbol)] : polyxgcd(slice.call(args, 1));
         b = xgcdp[0];
-        if ( b.lead().lt(O) ) {b = b.neg(); bsign = bsign.neg();}
+        if ( b.lc().lt(O) ) {b = b.neg(); bsign = bsign.neg();}
 
         // gcd with zero factor, take into account
         if ( a.equ(O) )
         {
-            if ( !b.lead().equ(I) ) {lead = b.lead(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+            if ( !b.lc().equ(I) ) {lead = b.lc(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
             return array(xgcdp.length+1,function(i){
                 return 0===i ? b : (1===i ? Polynomial(asign, a.symbol) : xgcdp[i-1].mul(bsign));
             });
         }
         else if ( b.equ(O) )
         {
-            if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+            if ( !a.lc().equ(I) ) {lead = a.lc(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
             return array(xgcdp.length+1,function(i){
                 return 0===i ? a : (1===i ? Polynomial(asign, a.symbol) : xgcdp[i-1].mul(bsign));
             });
@@ -2698,8 +2698,8 @@ function polyxgcd( /* args */ )
             b1 = b1.sub(qr[0].mul(b2));
             if ( a.equ(O) /*0 === a.deg()*/ )
             {
-                if ( b.lead().lt(O) ) {b = b.neg(); asign = asign.neg(); bsign = bsign.neg();}
-                if ( !b.lead().equ(I) ) {lead = b.lead(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+                if ( b.lc().lt(O) ) {b = b.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                if ( !b.lc().equ(I) ) {lead = b.lc(); b = b.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
                 a2 = a2.mul(asign); b2 = b2.mul(bsign);
                 return array(xgcdp.length+1,function(i){
                     return 0===i ? b : (1===i ? a2 : xgcdp[i-1].mul(b2));
@@ -2712,8 +2712,8 @@ function polyxgcd( /* args */ )
             b2 = b2.sub(qr[0].mul(b1));
             if( b.equ(O) /*0 === b.deg()*/ )
             {
-                if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
-                if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+                if ( a.lc().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                if ( !a.lc().equ(I) ) {lead = a.lc(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
                 a1 = a1.mul(asign); b1 = b1.mul(bsign);
                 return array(xgcdp.length+1, function(i){
                     return 0===i ? a : (1===i ? a1 : xgcdp[i-1].mul(b1));
@@ -2723,8 +2723,8 @@ function polyxgcd( /* args */ )
             if ( a.equ(a0) && b.equ(b0) )
             {
                 // will not change anymore
-                if ( a.lead().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
-                if ( !a.lead().equ(I) ) {lead = a.lead(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
+                if ( a.lc().lt(O) ) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                if ( !a.lc().equ(I) ) {lead = a.lc(); a = a.div(lead); asign = asign.div(lead); bsign = bsign.div(lead);}
                 a1 = a1.mul(asign); b1 = b1.mul(bsign);
                 return array(xgcdp.length+1, function(i){
                     return 0===i ? a : (1===i ? a1 : xgcdp[i-1].mul(b1));
@@ -2762,7 +2762,7 @@ function polyfactorize( p )
             remainder = remainder.mul(m);
         }
         if ( 0 < remainder.deg() ) factors.push([remainder, 1]);
-        else constant = constant.mul(remainder.c());
+        else constant = constant.mul(remainder.cc());
     }
     if ( !factors.length ) factors.push([Polynomial(Arithmetic.I, p.symbol), 1]);
     return [factors, constant];
@@ -7455,7 +7455,6 @@ Expr = Abacus.Expr = Class(INumber, {
                 }
                 sign = m[1] || '';
                 // accept only real coefficients, not complex for now
-                console.log([symbol, coeff]);
                 n = /\\frac/.test(coeff) ? Rational.fromTex(sign+coeff) : Rational.fromString(sign+coeff);
                 if ( !n ) continue;
                 terms.push(Term(symbol, n));
@@ -8084,15 +8083,23 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var coeff = this.coeff;
         return coeff.length ? coeff[0].e : 0;
     }
-    ,lead: function( ) {
+    ,lc: function( ) {
         // leading coefficient
         var coeff = this.coeff;
         return coeff.length ? coeff[0].c : Rational.ZERO();
     }
-    ,c: function( ) {
+    ,cc: function( ) {
         // constant coefficient
         var coeff = this.coeff;
         return coeff.length ? coeff[coeff.length-1].c : Rational.ZERO();
+    }
+    ,lead: function( ) {
+        // alias of lc()
+        return this.lc();
+    }
+    ,c: function( ) {
+        // alias of cc()
+        return this.cc();
     }
     ,primitive: function( and_content ) {
         // factorise into content and primitive part
@@ -8225,7 +8232,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.c().gt(a);
+            return 0 < self.deg() ? false : self.cc().gt(a);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8241,7 +8248,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.c().gte(a);
+            return 0 < self.deg() ? false : self.cc().gte(a);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8257,7 +8264,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.c().lt(a);
+            return 0 < self.deg() ? false : self.cc().lt(a);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8273,7 +8280,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.c().lte(a);
+            return 0 < self.deg() ? false : self.cc().lte(a);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8331,7 +8338,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             if ( 0 === x.deg() )
             {
                 // constant polynomial, simple numeric division
-                x = x.c();
+                x = x.cc();
                 q = x.equ(I) ? Polynomial(self) : Polynomial(array(self.coeff.length, function(i){
                     return Coeff(self.coeff[i].c.div(x), self.coeff[i].e);
                 }), self.symbol);
@@ -8348,7 +8355,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 {
                     diff0 = diff;
                     d = x.shift(diff);
-                    q[diff] = r.lead().div(d.lead());
+                    q[diff] = r.lc().div(d.lc());
                     r = Polynomial.Add(Polynomial.Mul(q[diff], d), r, true);
                     diff = r.deg()-x.deg();
                     if ( (diff === diff0) ) break; // remainder won't change anymore
@@ -8418,7 +8425,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             // also check http://andy.novocin.com/pro/polycomp_CASC2011.pdf
             if ( !self.coeff.length ) return Polynomial([], q.symbol);
             if ( 0 === self.deg() ) return Polynomial(self.coeff.slice(), q.symbol);
-            if ( 0 === q.deg() ) return Polynomial(self.valueOf(q.c()), q.symbol);
+            if ( 0 === q.deg() ) return Polynomial(self.valueOf(q.cc()), q.symbol);
             c = self.coeff;
             i = c[0].e; pq = Polynomial(c[0].c, q.symbol); j = 1;
             while(0<i)
