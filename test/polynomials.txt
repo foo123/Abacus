@@ -131,7 +131,7 @@ o=Abacus.Polynomial([-4,0,-2,1])
 o.toString()
 x^3-2*x^2-4
 o.div(Abacus.Polynomial([-3,1]))
-(x^3-2*x^2-4)/(x-3)=(x-3)*(x^2+x+3)+(5)=x^3-2*x^2-4 true
+(x^3-2*x^2-4)/(x-3)=(x-3)*(x^2+x+3)+(5)=x^3-2*x^2-9*x+5 false
 o.d()
 3*x^2-4*x
 o.toExpr()
@@ -202,8 +202,8 @@ Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polyn
 Polynomial Extended GCD, generalisation of xGCD of numbers
 ---
 Abacus.Math.polyxgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))
-(x^2+2)((4/9)) + (12*x+6)(-(1/27)*x+(1/54)) = 1 true
-(x^{2}+2)(\frac{4}{9}) + (12x+6)(-\frac{1}{27}x+\frac{1}{54}) = 1 true
+(x^2+2)((4/9)) + (12*x+6)(-(1/27)*x+(1/54)) = 1 false
+(x^{2}+2)(\frac{4}{9}) + (12x+6)(-\frac{1}{27}x+\frac{1}{54}) = 1 false
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
 (2*x+1)(-4*x-1) + (4*x^2+3*x+1)(2) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))

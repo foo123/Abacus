@@ -60,7 +60,8 @@ var  Abacus = {VERSION: "0.9.10"}, stdMath = Math, PROTO = 'prototype', CLASS = 
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,Iterator, CombinatorialIterator, DefaultArithmetic
-    ,Filter, Node, /*Cache,*/ HashSieve, INUMBER, INumber, Integer, Rational, Complex, Term, Expr, Coeff, Polynomial, Matrix
+    ,Filter, Node, /*Cache,*/ Heap, HashSieve, INUMBER, INumber
+    ,Integer, Rational, Complex, Term, Expr, Coeff, Polynomial, Matrix
     ,Tensor, Permutation, Combination, Subset, Partition
     ,LatinSquare, MagicSquare, Progression, PrimeSieve, Diophantine
 ;
@@ -4675,42 +4676,31 @@ function addition_sparse( a, b, do_subtraction, gt )
 }
 function multiplication_sparse( a, b )
 {
-    // O((n1^2)*n2)
+    // O(log(n1)*n1*n2)
     // assume a, b are arrays of **non-zero only** coeffs of Coeff class of coefficient and exponent already sorted in exponent decreasing order
     // merge terms by efficient merging and produce already sorted order c
     // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
-    var k, l, s, t, n1, n2, c, f, max, max_s, res;
+    var k, l, s, t, n1, n2, c, f, max, res, heap;
     if ( a.length > b.length ){ t=a; a=b; b=t;} // swap to achieve better performance
     n1 = a.length; n2 = b.length; c = new Array(n1*n2);
     if ( 0<n1 && 0<n2 )
     {
         k = 0;
         c[0] = Coeff(0, a[0].e+b[0].e);
+        heap = Heap(array(n1, function(i){
+            return [a[i].e+b[0].e, a[i].c.mul(b[0].c), i];
+        }), "max", function(a, b){
+            return a[0]<b[0] ? -1 : (a[0]>b[0] ? 1 : 0);
+        });
         f = array(n1, 0);
-        l = 0;
-        while( l<n1 )
+        while( max=heap.peek() )
         {
-            // the following maximum computation
-            // can be turned into a maxheap structure for example for somewhat better performance
-            max = a[l].e+b[f[l]].e; max_s = l;
-            for(s=l+1; s<n1; s++)
-            {
-                res = a[s].e+b[f[s]].e;
-                if ( res>max ) { max = res; max_s = s; }
-            }
-            
-            if ( c[k].e!==max )
-            {
-                if ( !c[k].c.equ(0))
-                {
-                    k++;
-                    c[k] = Coeff(0, -1);
-                }
-                c[k].e = max;
-            }
-            c[k].c = c[k].c.add(a[max_s].c.mul(b[f[max_s]].c));
-            f[max_s]++; if ( f[max_s] >= n2 ) l++;
+            if ( c[k].e!==max[0] && !c[k].c.equ(0) ) c[++k] = Coeff(0, max[0]);
+            heap.pop();
+            c[k].c = c[k].c.add(max[1]);
+            f[max[2]]++;
+            if ( f[max[2]] < n2 ) heap.push([a[max[2]].e+b[f[max[2]]].e, a[max[2]].c.mul(b[f[max[2]]].c), max[2]]);
         }
         if ( c.length > k+1 ) c.length = k+1; // truncate if needed
     }
@@ -5673,6 +5663,190 @@ Node = Abacus.Node = function Node(value, left, right, top) {
         return self;
     };
 };
+
+// min/max Heap / priority queue class, adapted from python's heapq.py
+Heap = Abacus.Heap = Class({
+    constructor: function Heap(h, type, cmp) {
+        var self = this;
+        if ( !(self instanceof Heap) ) return new Heap(h, type, cmp);
+        type = String(type||"min").toLowerCase().slice(0, 3);
+        self.type = "max" === type ? "max" : "min";
+        if ( !is_callable(cmp) ) cmp = Heap.CMP;
+        self.cmp = cmp;
+        h = h || [];
+        self._h = Heap.heapify(h, self.type, self.cmp);
+    }
+    
+    ,__static__: {
+         CMP: function( a, b ) {
+             return a<b ? -1 : (a>b ? 1 : 0);
+         }
+        
+        ,heapify: function( x, type, cmp ) {
+            // Transform list into a heap/maxheap, in-place, in O(len(x)) time.
+            var n = x.length, i;
+            // Transform bottom-up.  The largest index there's any point to looking at
+            // is the largest with a child index in-range, so must have 2*i + 1 < n,
+            // or i < (n-1)/2.  If n is even = 2*j, this is (2*j-1)/2 = j-1/2 so
+            // j-1 is the largest, which is n//2 - 1.  If n is odd = 2*j+1, this is
+            // (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
+            cmp = cmp || Heap.CMP;
+            if ( "max" === type )
+            {
+                for (i=(n>>>1)-1; i>=0; i--)
+                    Heap._siftup_max(x, i, cmp);
+            }
+            else
+            {
+                for (i=(n>>>1)-1; i>=0; i--)
+                    Heap._siftup(x, i, cmp);
+            }
+            return x;
+        }
+        
+        ,_siftdown: function( heap, startpos, pos, cmp ) {
+            var newitem = heap[pos], parentpos, parent;
+            // Follow the path to the root, moving parents down until finding a place
+            // newitem fits.
+            while (pos > startpos)
+            {
+                parentpos = (pos - 1) >>> 1;
+                parent = heap[parentpos];
+                if ( 0 > cmp(newitem, parent) )
+                {
+                    heap[pos] = parent;
+                    pos = parentpos;
+                    continue;
+                }
+                break;
+            }
+            heap[pos] = newitem;
+        }
+        ,_siftup: function( heap, pos, cmp ) {
+            var endpos = heap.length, startpos = pos, newitem = heap[pos], childpos, rightpos;
+            // Bubble up the smaller child until hitting a leaf.
+            childpos = 2*pos + 1;    // leftmost child position
+            while (childpos < endpos)
+            {
+                // Set childpos to index of smaller child.
+                rightpos = childpos + 1;
+                if ( rightpos<endpos && 0<=cmp(heap[childpos], heap[rightpos]) )
+                    childpos = rightpos;
+                // Move the smaller child up.
+                heap[pos] = heap[childpos];
+                pos = childpos;
+                childpos = 2*pos + 1;
+            }
+            // The leaf at pos is empty now.  Put newitem there, and bubble it up
+            // to its final resting place (by sifting its parents down).
+            heap[pos] = newitem;
+            Heap._siftdown(heap, startpos, pos, cmp);
+        }
+        ,_siftdown_max: function( heap, startpos, pos, cmp ) {
+            // Maxheap variant of _siftdown
+            var newitem = heap[pos], parentpos, parent;
+            // Follow the path to the root, moving parents down until finding a place
+            // newitem fits.
+            while ( pos > startpos )
+            {
+                parentpos = (pos - 1) >>> 1;
+                parent = heap[parentpos];
+                if ( 0>cmp(parent, newitem) )
+                {
+                    heap[pos] = parent;
+                    pos = parentpos;
+                    continue;
+                }
+                break;
+            }
+            heap[pos] = newitem;
+        }
+        ,_siftup_max: function( heap, pos, cmp ) {
+            // Maxheap variant of _siftup
+            var endpos = heap.length, startpos = pos, newitem = heap[pos], childpos, rightpos;
+            // Bubble up the larger child until hitting a leaf.
+            childpos = 2*pos + 1;    // leftmost child position
+            while ( childpos < endpos )
+            {
+                // Set childpos to index of larger child.
+                rightpos = childpos + 1;
+                if ( rightpos<endpos && 0<=cmp(heap[rightpos], heap[childpos]) )
+                    childpos = rightpos;
+                // Move the larger child up.
+                heap[pos] = heap[childpos];
+                pos = childpos;
+                childpos = 2*pos + 1;
+            }
+            // The leaf at pos is empty now.  Put newitem there, and bubble it up
+            // to its final resting place (by sifting its parents down).
+            heap[pos] = newitem;
+            Heap._siftdown_max(heap, startpos, pos, cmp);
+        }
+    }
+    
+    ,_h: null
+    ,type: "min"
+    ,cmp: null
+    
+    ,dispose: function( ) {
+        var self = this;
+        self._h = null;
+        self.cmp = null;
+        return self;
+    }
+    ,peek: function( ) {
+        var heap = this._h;
+        return heap.length ? heap[0] : null;
+    }
+    ,push: function( item ) {
+        // Push item onto heap, maintaining the heap invariant.
+        var self = this;
+        self._h.push(item);
+        if ( "max" === self.type )
+            Heap._siftdown_max(self._h, 0, self._h.length-1, self.cmp);
+        else
+            Heap._siftdown(self._h, 0, self._h.length-1, self.cmp);
+        return self;
+    }
+    ,pop: function( ) {
+        // Pop the smallest item off the heap, maintaining the heap invariant.
+        var self = this, lastelt, returnitem;
+        lastelt = self._h.pop();
+        if ( self._h.length )
+        {
+            returnitem = self._h[0];
+            self._h[0] = lastelt;
+            // Maxheap version of a heappop.
+            if ( "max" === self.type )
+                Heap._siftup_max(self._h, 0, self.cmp);
+            else
+                Heap._siftup(self._h, 0, self.cmp);
+            return returnitem;
+        }
+        return lastelt;
+    }
+    ,replace: function( item ) {
+        var self = this, returnitem;
+        /* Pop and return the current smallest value, and add the new item.
+
+        This is more efficient than heappop() followed by heappush(), and can be
+        more appropriate when using a fixed-size heap.  Note that the value
+        returned may be larger than item!  That constrains reasonable uses of
+        this routine unless written as part of a conditional replacement:
+
+            if item > heap[0]:
+                item = heapreplace(heap, item)
+        */
+        returnitem = self.peek();
+        self._h[0] = item;
+        // Maxheap version of a heappop followed by a heappush.
+        if ( "max" === self.type )
+            Heap._siftup_max(self._h, 0, self.cmp);
+        else
+            Heap._siftup(self._h, 0, self.cmp);
+        return returnitem;
+    }
+});
 
 /*Cache = Abacus.Cache = function Cache(MAX_ITEMS, MAX_TIME) {
     var self = this, storage, nitems;
