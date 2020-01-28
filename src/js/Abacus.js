@@ -3325,6 +3325,12 @@ function solvediophs( a, b, with_param, with_free_vars )
         }));
     });
     free_vars.symbol = symbol;
+    
+    // if over-determined system (m > k)
+    // check if additional rows are satisfied by solution as well
+    for(i=k; i<m; i++)
+        if ( !Expr(solutions.map(function(xj){return xj.mul(a.val[i][j]);})).equ(b[i]) )
+            return null; // no solution
 
     /*
     // solve by successive substitution
@@ -4640,6 +4646,7 @@ function addition_sparse( a, b, do_subtraction, gt )
     // merge terms by efficient merging and produce already sorted order c
     // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
+    // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
     gt = gt || function(a, b){return a>b;};
     var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res;
     while( i<n1 && j<n2 )
@@ -4681,7 +4688,8 @@ function multiplication_sparse( a, b )
     // merge terms by efficient merging and produce already sorted order c
     // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
-    var k, l, s, t, n1, n2, c, f, max, res, heap;
+    // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
+    var k, t, n1, n2, c, f, max, heap;
     if ( a.length > b.length ){ t=a; a=b; b=t;} // swap to achieve better performance
     n1 = a.length; n2 = b.length; c = new Array(n1*n2);
     if ( 0<n1 && 0<n2 )
@@ -4691,17 +4699,22 @@ function multiplication_sparse( a, b )
         heap = Heap(array(n1, function(i){
             return [a[i].e+b[0].e, a[i].c.mul(b[0].c), i];
         }), "max", function(a, b){
-            return a[0]<b[0] ? -1 : (a[0]>b[0] ? 1 : 0);
+            return a[0]-b[0];
         });
         f = array(n1, 0);
         while( max=heap.peek() )
         {
-            if ( c[k].e!==max[0] && !c[k].c.equ(0) ) c[++k] = Coeff(0, max[0]);
-            heap.pop();
+            if ( c[k].e!==max[0] )
+            {
+                if ( !c[k].c.equ(0) ) c[++k] = Coeff(0, -1);
+                c[k].e = max[0];
+            }
             c[k].c = c[k].c.add(max[1]);
             f[max[2]]++;
-            if ( f[max[2]] < n2 ) heap.push([a[max[2]].e+b[f[max[2]]].e, a[max[2]].c.mul(b[f[max[2]]].c), max[2]]);
+            if ( f[max[2]] < n2 ) heap.replace([a[max[2]].e+b[f[max[2]]].e, a[max[2]].c.mul(b[f[max[2]]].c), max[2]]);
+            else heap.pop();
         }
+        heap.dispose();
         if ( c.length > k+1 ) c.length = k+1; // truncate if needed
     }
     return c;
@@ -8495,7 +8508,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,div: function( x, q_and_r ) {
         var self = this, Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I,
-            q, r, d, diff, diff0;
+            q, r, d, diff, diff0, k, res, Q, a, na, b, nb, heap;
         
         if ( x instanceof Complex ) x = x.real;
         else if ( Arithmetic.isNumber(x) ) x = Rational(x);
@@ -8518,9 +8531,10 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 }), self.symbol);
                 return true===q_and_r ? [q, Polynomial([], self.symbol)] : q;
             }
+            
             // polynomial long division
             // TODO: make it faster
-            r = Polynomial(self);
+            /*r = Polynomial(self);
             diff = r.deg()-x.deg();
             if ( 0 <= diff )
             {
@@ -8539,7 +8553,56 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             {
                 q = [];
             }
+            q = Polynomial(q, self.symbol);*/
+            
+            // sparse polynomial long division
+            // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
+            a = self.coeff; na = a.length; b = x.coeff; nb = b.length;
+            heap = Heap([], "max", function(a,b){return a.coeff.e-b.coeff.e;});
+            q = []; r = []; k = 0;
+            while( (d=heap.peek()) || k<na )
+            {
+                if ( (null == d) || (k<na && d.coeff.e<a[k].e) )
+                {
+                    res = a[k].clone();
+                    k++;
+                }
+                else if ( k<na && d.coeff.e===a[k].e )
+                {
+                    res = Coeff(a[k].c.sub(d.coeff.c), d.coeff.e);
+                    if ( nb>d.n )
+                        heap.replace({coeff:Coeff(d.Q.c.mul(b[d.n].c), d.Q.e+b[d.n].e), n:d.n+1, Q:d.Q});
+                    else
+                        heap.pop();
+                    k++;
+                    
+                    if ( res.c.equ(O) ) continue; // zero coefficient, skip
+                }
+                else
+                {
+                    res = Coeff(d.coeff.c.neg(), d.coeff.e);
+                    if ( nb>d.n )
+                        heap.replace({coeff:Coeff(d.Q.c.mul(b[d.n].c), d.Q.e+b[d.n].e), n:d.n+1, Q:d.Q});
+                    else
+                        heap.pop();
+                }
+                
+                if ( b[0].e<=res.e ) // if b[0] divides res
+                {
+                    Q = Coeff(res.c.div(b[0].c), res.e-b[0].e);
+                    q = addition_sparse(q, [Q]);
+                    if ( nb>1 )
+                        heap.push({coeff:Coeff(Q.c.mul(b[1].c), Q.e+b[1].e), n:2, Q:Q});
+                }
+                else
+                {
+                    r = addition_sparse(r, [res]);
+                }
+            }
+            heap.dispose();
             q = Polynomial(q, self.symbol);
+            r = Polynomial(r, self.symbol);
+            
             // return both quotient and remainder if requested
             return true===q_and_r ? [q, r] : q;
         }

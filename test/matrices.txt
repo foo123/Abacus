@@ -1,4 +1,4 @@
-Abacus.Matrices (VERSION = 0.9.9)
+Abacus.Matrices (VERSION = 0.9.10)
 ---
 Matrices and Matrix operations
 ---

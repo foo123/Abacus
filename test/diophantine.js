@@ -196,6 +196,22 @@ echo(check_solution_system(o, [[5,6,8],[6,-11,7]]), [1,9]);
 echo(check_solution_system(o, [[5,6,8],[6,-11,7]], {"i_1":random(-100,100)}), [1,9]);
 echo('---');
 
+echo('x + y = 2, 2x + 3y = 5'); // x = 1, y = 1
+echo('o=Abacus.Math.diophantines([[1,1],[2,3]], [2,5])');
+o=Abacus.Math.diophantines([[1,1],[2,3]], [2,5]);
+echo(print_solution(o, ['x','y']));
+echo(print_tex(o, ['x','y']));
+echo(check_solution_system(o, [[1,1],[2,3]]), [2,5]);
+echo('---');
+
+echo('x + y = 2, 2x + 3y = 5, 2x + 4y = 7'); // no solution
+echo('o=Abacus.Math.diophantines([[1,1],[2,3],[2,4]], [2,5,7])');
+o=Abacus.Math.diophantines([[1,1],[2,3],[2,4]], [2,5,7]);
+echo(print_solution(o, ['x','y']));
+echo(print_tex(o, ['x','y']));
+echo(check_solution_system(o, [[1,1],[2,3],[2,4]]), [2,5,7]);
+echo('---');
+
 echo('Solve a1x1 + a2x2 + ..  = b mod m');
 echo('3x = 3 mod 10');
 echo('o=Abacus.Math.congruence([3], 3, 10)');

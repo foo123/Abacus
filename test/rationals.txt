@@ -1,4 +1,4 @@
-Abacus.Rationals (VERSION = 0.9.9)
+Abacus.Rationals (VERSION = 0.9.10)
 ---
 o=Abacus.Rational()
 o.toString()

@@ -1,4 +1,4 @@
-Abacus.Diophantine (VERSION = 0.9.9)
+Abacus.Diophantine (VERSION = 0.9.10)
 ---
 Solve a1x1 + a2x2 + a3x3 + .. = c
 4x = 7
@@ -91,6 +91,18 @@ x = -5+10*i_1, y = -1+i_1, z = 4-7*i_1
 x = -5+10i_{1}, y = -1+i_{1}, z = 4-7i_{1}
 [ 1, 9 ] [ 1, 9 ]
 [ 1, 9 ] [ 1, 9 ]
+---
+x + y = 2, 2x + 3y = 5
+o=Abacus.Math.diophantines([[1,1],[2,3]], [2,5])
+x = 1, y = 1
+x = 1, y = 1
+[ 2, 5 ] [ 2, 5 ]
+---
+x + y = 2, 2x + 3y = 5, 2x + 4y = 7
+o=Abacus.Math.diophantines([[1,1],[2,3],[2,4]], [2,5,7])
+No Integer solution
+No Integer solution
+No Integer solution [ 2, 5, 7 ]
 ---
 Solve a1x1 + a2x2 + ..  = b mod m
 3x = 3 mod 10
