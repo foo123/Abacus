@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 166kB minified, ~ 48kB zipped)
+**version 1.0.0** (~ 190kB minified, ~ 50kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
