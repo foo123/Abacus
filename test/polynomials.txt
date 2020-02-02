@@ -1,4 +1,4 @@
-Abacus.Polynomials (VERSION = 0.9.10)
+Abacus.Polynomials (VERSION = 1.0.0)
 ---
 Polynomials and Polynomial operations
 ---
@@ -13,11 +13,22 @@ o.d()
 0
 o.dispose()
 ---
+Abacus.Polynomial.fromValues([[1,0],[1,1]])
+null
+Abacus.Polynomial.fromValues([[1,1],[2,1],[3,1]]).toString()
+1
+Abacus.Polynomial.fromValues([[1,1],[2,4],[3,9]]).toString()
+x^2
+Abacus.Polynomial.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString()
+x^2
+Abacus.Polynomial.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString()
+x^3
+---
 o=Abacus.Polynomial({"50":1,"2":2})
 o.toString()
 x^50+2*x^2
 o.toTex()
-x^{50}+2x^{2}
+NaN+NaN
 o.mul(-1)
 -x^50-2*x^2
 o.d()
@@ -48,7 +59,7 @@ o=Abacus.Polynomial([2,0,1])
 o.toString()
 x^2+2
 o.toTex()
-x^{2}+2
+NaN+2
 o.valueOf(3)
 11
 o.add(1)
@@ -74,7 +85,7 @@ o=Abacus.Polynomial([1,2])
 o.toString()
 2*x+1
 o.toTex()
-2x+1
+NaN+1
 o.valueOf(3)
 7
 o.neg()
@@ -108,9 +119,9 @@ o.pow(2)
 o.pow(3)
 8*x^3+12*x^2+6*x+1
 o.div(2)
-(2*x+1)/(2)=(2)*(x+(1/2))+(0)=2*x+1 true
+(2*x+1)/(2)=(2)*(x+1/2)+(0)=2*x+1 true
 o.div(Abacus.Polynomial([2]))
-(2*x+1)/(2)=(2)*(x+(1/2))+(0)=2*x+1 true
+(2*x+1)/(2)=(2)*(x+1/2)+(0)=2*x+1 true
 o.div(Abacus.Polynomial([1,1]))
 (2*x+1)/(x+1)=(x+1)*(2)+(-1)=2*x+1 true
 o.d()
@@ -125,7 +136,7 @@ o=Abacus.Polynomial([6,12])
 o.toString()
 12*x+6
 o.toTex()
-12x+6
+NaN+6
 ---
 o=Abacus.Polynomial([-4,0,-2,1])
 o.toString()
@@ -174,7 +185,7 @@ x^2+2*x+1 = (1)(x+1)^2 true
 Abacus.Math.polyfactorize(Abacus.Polynomial([3,2]).pow(2))
 4*x^2+12*x+9 = (1)(2*x+3)^2 true
 Abacus.Math.polyfactorize(Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2))
-x^2+3*x+(9/4) = (1/4)(2*x+3)^2 true
+x^2+3*x+9/4 = (1/4)(2*x+3)^2 true
 Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1])))
 x^3+x^2 = (1)(x)^2(x+1) true
 Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1])))
@@ -202,14 +213,14 @@ Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polyn
 Polynomial Extended GCD, generalisation of xGCD of numbers
 ---
 Abacus.Math.polyxgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))
-(x^2+2)((4/9)) + (12*x+6)(-(1/27)*x+(1/54)) = 1 true
-(x^{2}+2)(\frac{4}{9}) + (12x+6)(-\frac{1}{27}x+\frac{1}{54}) = 1 true
+(x^2+2)(4/9) + (12*x+6)(-(1/27)*x+1/54) = 1 true
+(NaN+2)(NaN) + (NaN+6)(NaN+NaN) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
 (2*x+1)(-4*x-1) + (4*x^2+3*x+1)(2) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))
-(5*x^4+x^3+x^2+x+1)(-(58/193)*x+(137/579)) + (3*x^2+x+2)((290/579)*x^3-(89/193)*x^2-(92/579)*x+(221/579)) = 1 true
+(5*x^4+x^3+x^2+x+1)(-(58/193)*x+137/579) + (3*x^2+x+2)((290/579)*x^3-(89/193)*x^2-(92/579)*x+221/579) = 1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))
-(x^2+7*x+6)((1/12)) + (x^2-5*x-6)(-(1/12)) = x+1 true
+(x^2+7*x+6)(1/12) + (x^2-5*x-6)(-1/12) = x+1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))
 (x^2+7*x+6)(0) + (x^2-5*x-6)(0) + (x+1)(1) = x+1 true
 Abacus.Math.polyxgcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))

@@ -1,6 +1,6 @@
 Abacus.MultiPolynomials (VERSION = 1.0.0)
 ---
-Polynomials and Polynomial operations
+Multivariate Polynomials and Polynomial operations
 ---
 Abacus.MultiPolynomial().toString()
 0
@@ -10,3 +10,13 @@ Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString()
 4+x*y+2*x^2*y
 Abacus.MultiPolynomial.fromExpr(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr(), ["x", "y"]).toString()
 2*x^2*y+x*y+4
+Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).toString()
+-x^2*y+3*x*y+1
+Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+-x^2*y+3*x*y+x+2
+Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).mul(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+-x^3*y+2*x^2*y+3*x*y+x+1
+Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+-x*y+4*y
+Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString()
+-x^6*y^3+9*x^5*y^3-27*x^4*y^3+3*x^4*y^2+27*x^3*y^3-18*x^3*y^2+27*x^2*y^2-3*x^2*y+9*x*y+1

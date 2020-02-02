@@ -65,6 +65,22 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
+echo('Abacus.Polynomial.fromValues([[1,0],[1,1]])');
+echo(Abacus.Polynomial.fromValues([[1,0],[1,1]]));
+
+echo('Abacus.Polynomial.fromValues([[1,1],[2,1],[3,1]]).toString()');
+echo(Abacus.Polynomial.fromValues([[1,1],[2,1],[3,1]]).toString());
+
+echo('Abacus.Polynomial.fromValues([[1,1],[2,4],[3,9]]).toString()');
+echo(Abacus.Polynomial.fromValues([[1,1],[2,4],[3,9]]).toString());
+
+echo('Abacus.Polynomial.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString()');
+echo(Abacus.Polynomial.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString());
+
+echo('Abacus.Polynomial.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString()');
+echo(Abacus.Polynomial.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString());
+echo('---');
+
 echo('o=Abacus.Polynomial({"50":1,"2":2})');
 o=Abacus.Polynomial({"50":1,"2":2});
 echo('o.toString()');

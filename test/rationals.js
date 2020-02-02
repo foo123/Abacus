@@ -30,10 +30,10 @@ echo('o.toTex()');
 echo(o.toTex());
 echo('o.toDec()');
 echo(o.toDec());
-echo('Abacus.Rational.fromDec(o.toDec()).toString()');
-echo(Abacus.Rational.fromDec(o.toDec()).toString());
-echo('Abacus.Rational.fromTex(o.toTex()).toString()');
-echo(Abacus.Rational.fromTex(o.toTex()).toString());
+echo('Abacus.Rational.fromString(o.toDec()).toString()');
+echo(Abacus.Rational.fromString(o.toDec()).toString());
+echo('Abacus.Rational.fromString(o.toTex()).toString()');
+echo(Abacus.Rational.fromString(o.toTex()).toString());
 echo('Abacus.Rational(5, 9).toString()');
 echo(Abacus.Rational(5, 9).toString());
 echo('Abacus.Rational("5", 9).toString()');
@@ -53,8 +53,8 @@ echo(o.neg().toDec());
 
 echo();
 
-echo('o=Abacus.Rational.fromDec("0.[5]")');
-o=Abacus.Rational.fromDec("0.[5]");
+echo('o=Abacus.Rational.fromString("0.[5]")');
+o=Abacus.Rational.fromString("0.[5]");
 echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
@@ -99,8 +99,8 @@ echo(o.toDec());
 
 echo();
 
-echo('o=Abacus.Rational.fromDec("0.[5]").equ(Abacus.Rational.fromString("5/9"))');
-echo(Abacus.Rational.fromDec("0.[5]").equ(Abacus.Rational.fromString("5/9")));
+echo('o=Abacus.Rational.fromString("0.[5]").equ(Abacus.Rational.fromString("5/9"))');
+echo(Abacus.Rational.fromString("0.[5]").equ(Abacus.Rational.fromString("5/9")));
 
 // Decimals to Fractions
 echo('Decimals to Fractions (with optional repeating decimals)');

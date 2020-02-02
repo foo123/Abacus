@@ -86,7 +86,7 @@ A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browse
 * Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
 * `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
 * `Complex` (`test/complex.js`) **with Rational arbitrary precision parts**
-* `Polynomial` (`test/polynomials.js`) **univariate with Rational coefficients**
+* `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate/multivariate with Rational coefficients**
 * `Matrix` (`test/matrices.js`) **with Integer coefficients**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
@@ -608,7 +608,8 @@ o.dispose()
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE PARTIALY]**
-* support multivariate polynomial, multivariate division/reduction, groebner basis computations (TODO)
+* support multivariate polynomial, multivariate operations **[DONE PARTIALY]**
+* implement groebner basis computations (TODO)
 * implement `LLL` algorithm (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**

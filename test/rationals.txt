@@ -1,4 +1,4 @@
-Abacus.Rationals (VERSION = 0.9.10)
+Abacus.Rationals (VERSION = 1.0.0)
 ---
 o=Abacus.Rational()
 o.toString()
@@ -15,9 +15,9 @@ o.toTex()
 \frac{5}{9}
 o.toDec()
 0.[5]
-Abacus.Rational.fromDec(o.toDec()).toString()
+Abacus.Rational.fromString(o.toDec()).toString()
 5/9
-Abacus.Rational.fromTex(o.toTex()).toString()
+Abacus.Rational.fromString(o.toTex()).toString()
 5/9
 Abacus.Rational(5, 9).toString()
 5/9
@@ -36,7 +36,7 @@ o.neg().toTex()
 o.neg().toDec()
 -0.[5]
 
-o=Abacus.Rational.fromDec("0.[5]")
+o=Abacus.Rational.fromString("0.[5]")
 o.toString()
 5/9
 o.toTex()
@@ -70,7 +70,7 @@ o.toTex()
 o.toDec()
 0.[185]
 
-o=Abacus.Rational.fromDec("0.[5]").equ(Abacus.Rational.fromString("5/9"))
+o=Abacus.Rational.fromString("0.[5]").equ(Abacus.Rational.fromString("5/9"))
 true
 Decimals to Fractions (with optional repeating decimals)
 o=Abacus.Rational.fromDec(-3)
