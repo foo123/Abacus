@@ -54,6 +54,8 @@ Abacus.Polynomial.fromString("1 - (2/3)*x^2+x").toString()
 -(2/3)*x^2+x+1
 Abacus.Polynomial.fromString("1 - \frac{2}{3}*x^{2}+x").toString()
 -(2/3)*x^2+x+1
+Abacus.Polynomial.fromString("1 - x").add(Abacus.Polynomial.fromString("1 + y")).toString()
+-x+y+2
 ---
 o=Abacus.Polynomial([2,0,1])
 o.toString()

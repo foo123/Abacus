@@ -115,6 +115,9 @@ echo(Abacus.Polynomial.fromString("1 - (2/3)*x^2+x").toString());
 echo('Abacus.Polynomial.fromString("1 - \\frac{2}{3}*x^{2}+x").toString()');
 echo(Abacus.Polynomial.fromString("1 - \\frac{2}{3}*x^{2}+x").toString());
 
+echo('Abacus.Polynomial.fromString("1 - x").add(Abacus.Polynomial.fromString("1 + y")).toString()');
+echo(Abacus.Polynomial.fromString("1 - x").add(Abacus.Polynomial.fromString("1 + y")).toString());
+
 echo('---');
 echo('o=Abacus.Polynomial([2,0,1])');
 o=Abacus.Polynomial([2,0,1]);

@@ -4639,7 +4639,7 @@ function convolution( a, b, Arithmetic )
     }
     return c;
 }
-function addition_sparse( a, b, do_subtraction, CoeffClass )
+function addition_sparse( a, b, CoeffClass, do_subtraction )
 {
     // O(n1+n2) ~ O(max(n1,n2))
     // assume a, b are arrays of **non-zero only** coeffs of Coeff class of coefficient and exponent already sorted in exponent decreasing order
@@ -4647,8 +4647,8 @@ function addition_sparse( a, b, do_subtraction, CoeffClass )
     // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
     // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
-    CoeffClass = CoeffClass===MultiCoeff ? MultiCoeff : Coeff;
     do_subtraction = (true===do_subtraction);
+    CoeffClass = CoeffClass===MultiCoeff ? MultiCoeff : Coeff;
     var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
     while( i<n1 && j<n2 )
     {
@@ -4721,14 +4721,13 @@ function multiplication_sparse( a, b, CoeffClass )
     }
     return c;
 }
-function reduction_sparse( a, b, q_and_r, CoeffClass )
+function reduction_sparse( a, b, CoeffClass, q_and_r )
 {
     // sparse polynomial reduction/long division
     // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
 
-    CoeffClass = CoeffClass===MultiCoeff ? MultiCoeff : Coeff;
     q_and_r = (true===q_and_r);
-    
+    CoeffClass = CoeffClass===MultiCoeff ? MultiCoeff : Coeff;
     var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
         heap = Heap([], "max", function(a,b){return CoeffClass.cmp(a.coeff, b.coeff);}),
         q = [], r = [], k = 0, d, res, Q;
@@ -4760,16 +4759,16 @@ function reduction_sparse( a, b, q_and_r, CoeffClass )
                 heap.pop();
         }
         
-        if ( b[0].divides(res) ) // if b[0] divides res
+        if ( b[0].divides(res) )
         {
             Q = res.div(b[0]);
-            q = addition_sparse(q, [Q], false, CoeffClass);
+            q = addition_sparse(q, [Q], CoeffClass);
             if ( nb>1 )
                 heap.push({coeff:Q.mul(b[1]), n:2, Q:Q});
         }
         else if ( q_and_r )
         {
-            r = addition_sparse(r, [res], false, CoeffClass);
+            r = addition_sparse(r, [res], CoeffClass);
         }
     }
     heap.dispose();
@@ -8112,121 +8111,51 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         }*/
 
         Add: function( x, P, do_sub ) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, res;
-            if ( (x instanceof Complex) ) x = x.real;
-            
-            if ( do_sub )
-            {
-                // substraction
-                if ( x instanceof Polynomial )
-                {
-                    // O(max(n1,n2))
-                    P.coeff = addition_sparse(P.coeff, x.coeff, true, Coeff);
-                }
-                else if ( x instanceof Rational )
-                {
-                    // O(1)
-                    if ( P.coeff.length )
-                    {
-                        if ( 0===P.coeff[P.coeff.length-1].e )
-                        {
-                            res = P.coeff[P.coeff.length-1].sub(x);
-                            if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                            else P.coeff.pop();
-                        }
-                        else if ( !x.equ(O) )
-                        {
-                            P.coeff.push(Coeff(x.neg(), 0));
-                        }
-                    }
-                    else if ( !x.equ(O) )
-                    {
-                        P.coeff = [Coeff(x.neg(), 0)];
-                    }
-                }
-                else if ( Arithmetic.isNumber(x) )
-                {
-                    // O(1)
-                    if ( P.coeff.length )
-                    {
-                        if ( 0===P.coeff[P.coeff.length-1].e )
-                        {
-                            res = P.coeff[P.coeff.length-1].sub(x);
-                            if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                            else P.coeff.pop();
-                        }
-                        else if ( !Arithmetic.equ(O, x) )
-                        {
-                            P.coeff.push(Coeff(Arithmetic.neg(x), 0));
-                        }
-                    }
-                    else if ( !Arithmetic.equ(O, x) )
-                    {
-                        P.coeff = [Coeff(Arithmetic.neg(x), 0)];
-                    }
-                }
-                return P;
-            }
+            var Arithmetic = Abacus.Arithmetic, symbol;
+            // O(max(n1,n2))
             if ( x instanceof Polynomial )
             {
-                // O(max(n1,n2))
-                P.coeff = addition_sparse(P.coeff, x.coeff, false, Coeff);
-            }
-            else if ( x instanceof Rational )
-            {
-                // O(1)
-                if ( P.coeff.length )
+                if ( x.symbol === P.symbol )
                 {
-                    if ( 0===P.coeff[P.coeff.length-1].e )
-                    {
-                        res = P.coeff[P.coeff.length-1].add(x);
-                        if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                        else P.coeff.pop();
-                    }
-                    else if ( !x.equ(O) )
-                    {
-                        P.coeff.push(Coeff(x, 0));
-                    }
+                    // O(max(n1,n2))
+                    P.coeff = addition_sparse(P.coeff, x.coeff, Coeff, true===do_sub);
                 }
-                else if ( !x.equ(O) )
+                else
                 {
-                    P.coeff = [Coeff(x, 0)];
+                    // upgrade to multivariate polynomial
+                    symbol = [P.symbol, x.symbol].sort();
+                    return MultiPolynomial.Add(MultiPolynomial(x, symbol), MultiPolynomial(P, symbol), do_sub);
                 }
             }
-            else if ( Arithmetic.isNumber(x) )
+            else if ( (x instanceof Rational) || (x instanceof Complex) || Arithmetic.isNumber(x) )
             {
                 // O(1)
-                if ( P.coeff.length )
-                {
-                    if ( 0===P.coeff[P.coeff.length-1].e )
-                    {
-                        res = P.coeff[P.coeff.length-1].add(x);
-                        if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                        else P.coeff.pop();
-                    }
-                    else if ( !Arithmetic.equ(O, x) )
-                    {
-                        P.coeff.push(Coeff(x, 0));
-                    }
-                }
-                else if ( !Arithmetic.equ(O, x) )
-                {
-                    P.coeff = [Coeff(x, 0)];
-                }
+                x = Coeff(x, 0);
+                if ( !x.equ(Arithmetic.O) )
+                    P.coeff = P.coeff.concat(P.coeff.length ? addition_sparse([P.coeff.pop()], [x], Coeff, true===do_sub) : [x]);
             }
             return P;
         }
 
         ,Mul: function( x, P ) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i;
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, symbol;
             if ( !P.coeff.length ) return P;
             
             if ( x instanceof Complex ) x = x.real;
             
             if ( x instanceof Polynomial )
             {
-                // O(n1*n2)
-                P.coeff = x.coeff.length ? multiplication_sparse(P.coeff, x.coeff, Coeff) : [];
+                if ( x.symbol === P.symbol )
+                {
+                    // O(n1*n2)
+                    P.coeff = x.coeff.length ? multiplication_sparse(P.coeff, x.coeff, Coeff) : [];
+                }
+                else
+                {
+                    // upgrade to multivariate polynomial
+                    symbol = [P.symbol, x.symbol].sort();
+                    return MultiPolynomial.Mul(MultiPolynomial(x, symbol), MultiPolynomial(P, symbol));
+                }
             }
             else if ( x instanceof Rational )
             {
@@ -8266,7 +8195,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         }
 
         ,Div: function( P, x, q_and_r ) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, q/*, r, d, diff, diff0*/;
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, symbol, q/*, r, d, diff, diff0*/;
             q_and_r = (true===q_and_r);
             
             if ( x instanceof Complex ) x = x.real;
@@ -8313,9 +8242,18 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 }
                 q = Polynomial(q, self.symbol);*/
                 
-                // sparse polynomial reduction/long division
-                q = reduction_sparse(P.coeff, x.coeff, q_and_r, Coeff);
-                return q_and_r ? [Polynomial(q[0], P.symbol), Polynomial(q[1], P.symbol)] : Polynomial(q, P.symbol);
+                if ( x.symbol === P.symbol )
+                {
+                    // sparse polynomial reduction/long division
+                    q = reduction_sparse(P.coeff, x.coeff, Coeff, q_and_r);
+                    return q_and_r ? [Polynomial(q[0], P.symbol), Polynomial(q[1], P.symbol)] : Polynomial(q, P.symbol);
+                }
+                else
+                {
+                    // upgrade to multivariate polynomial
+                    symbol = [P.symbol, x.symbol].sort();
+                    return MultiPolynomial.Div(MultiPolynomial(P, symbol), MultiPolynomial(x, symbol), q_and_r);
+                }
             }
             return P;
         }
@@ -8477,10 +8415,16 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var coeff = this.coeff;
         return (1===coeff.length) && (0!==coeff[0].e);
     }
+    ,isConst: function( ) {
+        return 0===this.deg();
+    }
     ,deg: function( ) {
         // polynomial degree
         var coeff = this.coeff;
         return coeff.length ? coeff[0].e : 0;
+    }
+    ,maxdeg: function( ) {
+        return this.deg();
     }
     ,lc: function( ) {
         // leading coefficient
@@ -8611,6 +8555,10 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                     return false;
             return true;
         }
+        else if ( p instanceof MultiPolynomial )
+        {
+            return p.equ(self);
+        }
         else if ( p instanceof Term )
         {
             if ( 1 < c.length ) return false;
@@ -8632,7 +8580,11 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().gt(a);
+            return self.isConst() ? self.cc().gt(a) : false;
+        }
+        else if ( a instanceof MultiPolynomial )
+        {
+            return a.sub(self).lt(Arithmetic.O);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8648,7 +8600,11 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().gte(a);
+            return self.isConst() ? self.cc().gte(a) : false;
+        }
+        else if ( a instanceof MultiPolynomial )
+        {
+            return a.sub(self).lte(Arithmetic.O);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8664,7 +8620,11 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().lt(a);
+            return self.isConst() ? self.cc().lt(a) : false;
+        }
+        else if ( a instanceof MultiPolynomial )
+        {
+            return a.sub(self).gt(Arithmetic.O);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8680,7 +8640,11 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().lte(a);
+            return self.isConst() ? self.cc().lte(a) : false;
+        }
+        else if ( a instanceof MultiPolynomial )
+        {
+            return a.sub(self).gte(Arithmetic.O);
         }
         else if ( a instanceof Polynomial )
         {
@@ -8706,21 +8670,19 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
 
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self)) : self);
+        return (x instanceof MultiPolynomial) ? x.add(self) : (((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().add(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self)) : self));
     }
     ,sub: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().sub(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self), true) : self);
+        return (x instanceof MultiPolynomial) ? x.neg().add(self) : (((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().sub(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Add(x, Polynomial(self), true) : self));
     }
     ,mul: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return ((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().mul(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Mul(x, Polynomial(self)) : self);
+        return (x instanceof MultiPolynomial) ? x.mul(self) : (((x instanceof Expr) || (x instanceof Term)) ? self.toExpr().mul(x) : (Arithmetic.isNumber(x) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof Polynomial) ? Polynomial.Mul(x, Polynomial(self)) : self));
     }
     ,div: function( x, q_and_r ) {
         var self = this;
-        if ( (x instanceof Polynomial) || (x instanceof Rational) || (x instanceof Complex) || Abacus.Arithmetic.isNumber(x) )
-            return Polynomial.Div(self, x, true===q_and_r);
-        return self;
+        return (x instanceof MultiPolynomial) ? MultiPolynomial(self, x.symbol).div(x, q_and_r) : (((x instanceof Polynomial) || (x instanceof Rational) || (x instanceof Complex) || Abacus.Arithmetic.isNumber(x)) ? Polynomial.Div(self, x, true===q_and_r) : self);
     }
     ,mod: function( x ) {
         var qr = this.div(x, true);
@@ -9025,9 +8987,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             self.symbol = symbol || ['x'];
             if ( !is_array(self.symbol) ) self.symbol = [String(self.symbol)];
             
-            if ( coeff instanceof Complex ) coeff = coeff.real;
-            
-            if ( (coeff instanceof Rational) || Arithmetic.isNumber(coeff) )
+            if ( (coeff instanceof Rational) || (coeff instanceof Complex) || Arithmetic.isNumber(coeff) )
             {
                 coeff = MultiCoeff(coeff, array(self.symbol.length, 0));
                 self.coeff = coeff.equ(Arithmetic.O) ? [] : [coeff];
@@ -9088,112 +9048,20 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     
     ,__static__: {
         Add: function( x, P, do_sub ) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, res, zero;
-            if ( x instanceof Complex ) x = x.real;
-            else if ( x instanceof Polynomial ) x = MultiPolynomial(x, P.symbol);
+            var Arithmetic = Abacus.Arithmetic;
+            if ( x instanceof Polynomial ) x = MultiPolynomial(x, P.symbol);
             
-            if ( do_sub )
-            {
-                // substraction
-                if ( x instanceof MultiPolynomial )
-                {
-                    // O(max(n1,n2))
-                    P.coeff = addition_sparse(P.coeff, x.coeff, true, MultiCoeff);
-                }
-                else if ( x instanceof Rational )
-                {
-                    // O(1)
-                    zero = array(P.symbol.length, 0);
-                    if ( P.coeff.length )
-                    {
-                        if ( 0===MultiCoeff.cmp(zero, P.coeff[P.coeff.length-1].e) )
-                        {
-                            res = P.coeff[P.coeff.length-1].sub(x);
-                            if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                            else P.coeff.pop();
-                        }
-                        else if ( !x.equ(O) )
-                        {
-                            P.coeff.push(MultiCoeff(x.neg(), zero));
-                        }
-                    }
-                    else if ( !x.equ(O) )
-                    {
-                        P.coeff = [MultiCoeff(x.neg(), zero)];
-                    }
-                }
-                else if ( Arithmetic.isNumber(x) )
-                {
-                    // O(1)
-                    zero = array(P.symbol.length, 0);
-                    if ( P.coeff.length )
-                    {
-                        if ( 0===MultiCoeff.cmp(zero, P.coeff[P.coeff.length-1].e) )
-                        {
-                            res = P.coeff[P.coeff.length-1].sub(x);
-                            if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                            else P.coeff.pop();
-                        }
-                        else if ( !Arithmetic.equ(O, x) )
-                        {
-                            P.coeff.push(MultiCoeff(Arithmetic.neg(x), zero));
-                        }
-                    }
-                    else if ( !Arithmetic.equ(O, x) )
-                    {
-                        P.coeff = [MultiCoeff(Arithmetic.neg(x), zero)];
-                    }
-                }
-                return P;
-            }
             if ( x instanceof MultiPolynomial )
             {
                 // O(max(n1,n2))
-                P.coeff = addition_sparse(P.coeff, x.coeff, false, MultiCoeff);
+                P.coeff = addition_sparse(P.coeff, x.coeff, MultiCoeff, true===do_sub);
             }
-            else if ( x instanceof Rational )
+            else if ( (x instanceof Rational) || (x instanceof Complex) || Arithmetic.isNumber(x) )
             {
                 // O(1)
-                zero = array(P.symbol.length, 0);
-                if ( P.coeff.length )
-                {
-                    if ( 0===MultiCoeff.cmp(zero, P.coeff[P.coeff.length-1].e) )
-                    {
-                        res = P.coeff[P.coeff.length-1].add(x);
-                        if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                        else P.coeff.pop();
-                    }
-                    else if ( !x.equ(O) )
-                    {
-                        P.coeff.push(MultiCoeff(x, zero));
-                    }
-                }
-                else if ( !x.equ(O) )
-                {
-                    P.coeff = [MultiCoeff(x, zero)];
-                }
-            }
-            else if ( Arithmetic.isNumber(x) )
-            {
-                // O(1)
-                zero = array(P.symbol.length, 0);
-                if ( P.coeff.length )
-                {
-                    if ( 0===MultiCoeff.cmp(zero, P.coeff[P.coeff.length-1].e) )
-                    {
-                        res = P.coeff[P.coeff.length-1].add(x);
-                        if ( !res.equ(O) ) P.coeff[P.coeff.length-1] = res;
-                        else P.coeff.pop();
-                    }
-                    else if ( !Arithmetic.equ(O, x) )
-                    {
-                        P.coeff.push(MultiCoeff(x, zero));
-                    }
-                }
-                else if ( !Arithmetic.equ(O, x) )
-                {
-                    P.coeff = [MultiCoeff(x, zero)];
-                }
+                x = MultiCoeff(x, array(P.symbol.length, 0));
+                if ( !x.equ(Arithmetic.O) )
+                    P.coeff = P.coeff.concat(P.coeff.length ? addition_sparse([P.coeff.pop()], [x], MultiCoeff, true===do_sub) : [x]);
             }
             return P;
         }
@@ -9274,7 +9142,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                     return q_and_r ? [q, MultiPolynomial([], P.symbol)] : q;
                 }
                 // sparse polynomial reduction/long division
-                q = reduction_sparse(P.coeff, x.coeff, q_and_r, MultiCoeff);
+                q = reduction_sparse(P.coeff, x.coeff, MultiCoeff, q_and_r);
                 return q_and_r ? [MultiPolynomial(q[0], P.symbol), MultiPolynomial(q[1], P.symbol)] : MultiPolynomial(q, P.symbol);
             }
             return P;
@@ -9371,6 +9239,10 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var coeff = this.coeff;
         return (1===coeff.length) && (0!==MultiCoeff.cmp(array(this.symbol.length, 0), coeff[0].e));
     }
+    ,isConst: function( ) {
+        var coeff = this.coeff;
+        return (0===coeff.length) || ((1===coeff.length) && (0===MultiCoeff.cmp(coeff[0].e, array(this.symbol.length, 0))));
+    }
     ,deg: function( x ) {
         // polynomial degree
         var coeff = this.coeff, index;
@@ -9380,6 +9252,15 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             return (-1 === index) || !coeff.length ? 0 : coeff[0].e[index];
         }
         return coeff.length ? coeff[0].e : array(this.symbol.length, 0);
+    }
+    ,maxdeg: function( x ) {
+        // polynomial maximum degree per symbol
+        var coeff = this.coeff, index;
+        index = arguments.length ? this.symbol.indexOf(String(x||'x')) : 0;
+        if ( (-1 === index) || !coeff.length ) return 0;
+        return 0 === index ? coeff[0].e[0] : operate(function(max, c){
+            return stdMath.max(max, c.e[index]);
+        }, 0, coeff);
     }
     ,lc: function( ) {
         // leading coefficient
@@ -9451,8 +9332,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         {
             if ( 1 < c.length ) return false;
             else if ( 0 === c.length ) return p.c().equ(O);
-            s = c[0].toMonomial(self.symbol);
-            if ( !s.length ) s = '1';
+            s = c[0].toMonomial(self.symbol); if ( !s.length ) s = '1';
             return (s === p.symbol) && p.c().equ(c[0].c);
         }
         else if ( p instanceof Expr )
@@ -9469,7 +9349,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().gt(a);
+            return self.isConst() ? self.cc().gt(a) : false;
         }
         else if ( (a instanceof MultiPolynomial) || (a instanceof Polynomial) )
         {
@@ -9485,7 +9365,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().gte(a);
+            return self.isConst() ? self.cc().gte(a) : false;
         }
         else if ( (a instanceof MultiPolynomial) || (a instanceof Polynomial) )
         {
@@ -9501,7 +9381,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().lt(a);
+            return self.isConst() ? self.cc().lt(a) : false;
         }
         else if ( (a instanceof MultiPolynomial) || (a instanceof Polynomial) )
         {
@@ -9517,7 +9397,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (a instanceof Complex) || (a instanceof Rational) || Arithmetic.isNumber(a) )
         {
-            return 0 < self.deg() ? false : self.cc().lte(a);
+            return self.isConst() ? self.cc().lte(a) : false;
         }
         else if ( (a instanceof MultiPolynomial) || (a instanceof Polynomial) )
         {
@@ -9598,10 +9478,10 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     }
     ,compose: NotImplemented
     
-    ,shift: function( s, x ) {
+    ,shift: function( x, s ) {
         // shift <-> equivalent to multiplication/division by a monomial x^s
         var self = this, Arithmetic = Abacus.Arithmetic, index;
-        x = String(x || self.symbol[0]);
+        x = String(x || self.symbol[0]); s = s || 0;
         index = self.symbol.indexOf(x); if ( -1===index ) index = 0;
         s = Arithmetic.val(s);
         if ( 0 === s )
@@ -9618,13 +9498,13 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             return coeff;
         }), self.symbol);
     }
-    ,d: function( n, x ) {
-        // polynomial (formal) derivative of nth order
+    ,d: function( x, n ) {
+        // partial polynomial (formal) derivative of nth order with respect to symbol x
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, index;
+        x = String(x || self.symbol[0]);
         if ( null == n ) n = 1;
         n = +n;
         if ( 0 > n ) return null; // not supported
-        x = String(x || self.symbol[0]);
         index = self.symbol.indexOf(x); if ( -1===index ) index = 0;
         return MultiPolynomial(self.coeff.map(function(coeff){
             if ( n > coeff.e[index] ) return null;
