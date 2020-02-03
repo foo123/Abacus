@@ -1,4 +1,4 @@
-Abacus.Partitions Filtered (VERSION = 0.9.10)
+Abacus.Partitions Filtered (VERSION = 1.0.0)
 ---
 o = Abacus.Partition(10).filterBy(Abacus.Filter.UNIQUE())
 o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */

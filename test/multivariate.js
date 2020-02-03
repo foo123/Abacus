@@ -24,6 +24,8 @@ echo(Abacus.MultiPolynomial().toString());
 echo('Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toString()');
 echo(Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toString());
 
+echo('Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toTex()');
+echo(Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toTex());
 
 echo('Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString()');
 echo(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString());

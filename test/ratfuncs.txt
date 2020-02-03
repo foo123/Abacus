@@ -1,0 +1,16 @@
+Abacus.rationalFuncs (VERSION = 1.0.0)
+---
+Rational Functions and Operations
+---
+Abacus.RationalFunc().toString()
+0
+Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).toString()
+(x*y+1)/(x-y)
+Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).add(2).toString()
+(x*y+2*x-2*y+1)/(x-y)
+Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).add(Abacus.Polynomial.fromString("x+2")).toString()
+(x^2+2*x-2*y+1)/(x-y)
+Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).mul(Abacus.Polynomial.fromString("x+2")).toString()
+(x^2*y+2*x*y+x+2)/(x-y)
+Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).div(Abacus.Polynomial.fromString("x+2")).toString()
+(x*y+1)/(x^2-x*y+2*x-2*y)

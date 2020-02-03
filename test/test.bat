@@ -8,6 +8,7 @@ call node number_theory.js > number_theory.txt
 call node progressions.js > progressions.txt
 call node polynomials.js > polynomials.txt
 call node multivariate.js > multivariate.txt
+call node ratfuncs.js > ratfuncs.txt
 call node matrices.js > matrices.txt
 call node expressions.js > expressions.txt
 call node primes.js > primes.txt

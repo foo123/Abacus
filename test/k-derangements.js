@@ -21,6 +21,24 @@ echo('---');
 
 // k-Derangements (derangements with exactly k fixed points)= (n,k)-Combinations combinedWith (n-k)-Derangements
 
+echo('o = Abacus.Combination(4,4).completeWith(Abacus.Permutation(0,{type:"derangement"}))');
+o = Abacus.Combination(4,4).completeWith(Abacus.Permutation(0,{type:"derangement"}));
+
+echo('o.dimension()'); 
+echo(o.dimension());
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+o.dispose();
+
 echo('o = Abacus.Combination(6,3).completeWith(Abacus.Permutation(6-3,{type:"derangement"}))');
 o = Abacus.Combination(6,3).completeWith(Abacus.Permutation(6-3,{type:"derangement"}));
 

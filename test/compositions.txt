@@ -1,4 +1,4 @@
-Abacus.Compositions (VERSION = 0.9.10)
+Abacus.Compositions (VERSION = 1.0.0)
 ---
 o = Abacus.Partition(7,{type:"composition"})
 o.total()
@@ -278,7 +278,7 @@ o.order("colex,reflected")
 o.order("colex,reversed")
 [ 7 ]
 o.random()
-[ 4, 3 ]
+[ 1, 1, 2, 2, 1 ]
 o.dispose()
 o = Abacus.Partition(8,{type:"composition"})
 o.total()
@@ -808,7 +808,7 @@ o.order("lex,reversed")
 [ 1, 1, 1, 1, 1, 1, 2 ]
 [ 1, 1, 1, 1, 1, 1, 1, 1 ]
 o.random()
-[ 2, 1, 4, 1 ]
+[ 1, 4, 1, 2 ]
 o.dispose()
 o = Abacus.Partition(10,{type:"composition"})
 o.dimension()
@@ -2876,5 +2876,5 @@ o.order("lex,reversed")
 [ 1, 1, 1, 1, 1, 1, 1, 1, 2 ]
 [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 o.random()
-[ 2, 2, 2, 3, 1 ]
+[ 1, 1, 3, 1, 1, 1, 1, 1 ]
 o.dispose()

@@ -1,4 +1,4 @@
-Abacus.Numbers (VERSION = 0.9.10)
+Abacus.Numbers (VERSION = 1.0.0)
 ---
 Triangular numbers
 -----------------

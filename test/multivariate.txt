@@ -6,6 +6,8 @@ Abacus.MultiPolynomial().toString()
 0
 Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toString()
 2*x^2*y+x*y^2+4
+Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toTex()
+2x^{2}y+xy^{2}+4
 Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString()
 4+x*y+2*x^2*y
 Abacus.MultiPolynomial.fromExpr(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr(), ["x", "y"]).toString()
