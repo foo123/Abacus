@@ -26,9 +26,13 @@ Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiP
 -x*y+4*y
 Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
 (-x^2*y+3*x*y+1)/(x+1)=(x+1)*(-x*y+4*y)+(-4*y+1)=-x^2*y+3*x*y+1 true
+Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy + 8x^4y^4", ["x","y"]).multidiv([Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy^2", ["x","y"])]).toString()
+(8*x^4*y^4-x^2*y+3*x*y+1)/[x+1,x*y^2]=(x+1)*(8*x^3*y^4-8*x^2*y^4+8*x*y^4-x*y-8*y^4+4*y)+(x*y^2)*(0)+(8*y^4-4*y+1)=8*x^4*y^4-x^2*y+3*x*y+1 true
 Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString()
 -x^6*y^3+9*x^5*y^3-27*x^4*y^3+3*x^4*y^2+27*x^3*y^3-18*x^3*y^2+27*x^2*y^2-3*x^2*y+9*x*y+1
 Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("x").toString()
 -2*x*y+3*y
 Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("y").toString()
 -x^2+3*x
+Abacus.Math.groebner([Abacus.MultiPolynomial.fromString("x^2-y", ["x","y"]),Abacus.MultiPolynomial.fromString("x^3-x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy-x", ["x","y"]),Abacus.MultiPolynomial.fromString("y^2-y", ["x","y"])])
+x^2-y,x*y-x,y^2-y

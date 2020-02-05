@@ -2,6 +2,7 @@
 rem @echo off
 
 call node numbers.js > numbers.txt
+call node integers.js > integers.txt
 call node rationals.js > rationals.txt
 call node complex.js > complex.txt
 call node number_theory.js > number_theory.txt

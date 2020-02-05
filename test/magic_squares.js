@@ -3,7 +3,7 @@ var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = con
 
 function print_square( s )
 {
-    var str = Abacus.MagicSquare.toString(s);
+    var str = String(s);
     echo(str.length ? str : 'null');
 }
 
@@ -13,52 +13,52 @@ echo('Abacus.MagicSquares (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // MagicSquares
-o = Abacus.MagicSquare.make(1);
+o = Abacus.MagicSquare(1);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(2);
+o = Abacus.MagicSquare(2);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(3);
+o = Abacus.MagicSquare(3);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(4);
+o = Abacus.MagicSquare(4);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(5);
+o = Abacus.MagicSquare(5);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(8);
+o = Abacus.MagicSquare(8);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(6);
+o = Abacus.MagicSquare(6);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.product(Abacus.MagicSquare.make(3),Abacus.MagicSquare.make(3));
+o = Abacus.MagicSquare(3).mul(Abacus.MagicSquare(3));
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.product(Abacus.MagicSquare.make(3),Abacus.MagicSquare.make(4));
+o = Abacus.MagicSquare(3).mul(Abacus.MagicSquare(4));
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');
 
-o = Abacus.MagicSquare.make(12);
+o = Abacus.MagicSquare(12);
 print_square(o);
 echo(Abacus.MagicSquare.isMagic(o));
 echo('---');

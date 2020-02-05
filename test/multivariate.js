@@ -6,8 +6,18 @@ use_biginteger_arithmetic( Abacus );
 
 function check_div( n, d )
 {
-    var qr = n.divmod(d), q = qr[0], r = qr[1], nn = q.mul(d).add(r);
-    console.log('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
+    var nn, qr, q, r;
+    if ( d.push )
+    {
+        qr = n.multidivmod(d); q = qr[0]; r = qr[1];
+        nn = q.reduce(function(p, qi, i){return p.add(qi.mul(d[i]));}, r);
+        echo('('+n.toString()+')/['+d.map(String).join(',')+']='+d.map(function(di, i){return '('+di.toString()+')*('+q[i].toString()+')';}).join('+')+'+('+r.toString()+')='+nn.toString(), nn.equ(n));
+    }
+    else
+    {
+        qr = n.divmod(d); q = qr[0]; r = qr[1]; nn = q.mul(d).add(r);
+        console.log('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
+    }
 }
 
 var o;
@@ -54,6 +64,9 @@ echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.M
 echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()');
 check_div(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]), Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]));
 
+echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy + 8x^4y^4", ["x","y"]).multidiv([Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy^2", ["x","y"])]).toString()');
+check_div(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy + 8x^4y^4", ["x","y"]), [Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy^2", ["x","y"])]);
+
 echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString()');
 echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString());
 
@@ -63,3 +76,5 @@ echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("x").toStr
 echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("y").toString()');
 echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("y").toString());
 
+echo('Abacus.Math.groebner([Abacus.MultiPolynomial.fromString("x^2-y", ["x","y"]),Abacus.MultiPolynomial.fromString("x^3-x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy-x", ["x","y"]),Abacus.MultiPolynomial.fromString("y^2-y", ["x","y"])])');
+echo(Abacus.Math.groebner([Abacus.MultiPolynomial.fromString("x^2-y", ["x","y"]),Abacus.MultiPolynomial.fromString("x^3-x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy-x", ["x","y"]),Abacus.MultiPolynomial.fromString("y^2-y", ["x","y"])]).map(String).join(','));

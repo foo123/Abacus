@@ -7,8 +7,17 @@ use_biginteger_arithmetic( Abacus );
 
 function check_div( n, d, q, r )
 {
-    var nn = q.mul(d).add(r);
-    console.log('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
+    var nn;
+    if ( d.push )
+    {
+        nn = q.reduce(function(p, qi, i){return p.add(qi.mul(d[i]));}, r);
+        echo('('+n.toString()+')/['+d.map(String).join(',')+']='+d.map(function(di, i){return '('+di.toString()+')*('+q[i].toString()+')';}).join('+')+'+('+r.toString()+')='+nn.toString(), nn.equ(n));
+    }
+    else
+    {
+        nn = q.mul(d).add(r);
+        echo('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
+    }
 }
 function check_xgcd( args, gcd, tex )
 {
@@ -31,7 +40,7 @@ function check_xgcd( args, gcd, tex )
         }
         out += ' = '+gcd[0].toString();
     }
-    console.log(out, res.equ(gcd[0]));
+    echo(out, res.equ(gcd[0]));
 }
 function check_factors(p, factors, constant)
 {
@@ -42,7 +51,7 @@ function check_factors(p, factors, constant)
         out += '('+factors[i][0].toString()+')'+(1<factors[i][1]?('^'+String(factors[i][1])):'');
         res = res.mul(factors[i][0].pow(factors[i][1]));
     }
-    console.log(out, res.mul(constant).equ(p));
+    echo(out, res.mul(constant).equ(p));
 }
 var o, d, qr, args;
 
@@ -57,8 +66,8 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
-echo('o.valueOf()');
-echo(o.valueOf().toString());
+echo('o.evaluate()');
+echo(o.evaluate().toString());
 echo('o.d()');
 echo(o.d().toString());
 echo('o.dispose()');
@@ -125,8 +134,8 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
-echo('o.valueOf(3)');
-echo(o.valueOf(3).toString());
+echo('o.evaluate(3)');
+echo(o.evaluate(3).toString());
 echo('o.add(1)');
 echo(o.add(1).toString());
 echo('o.add(Abacus.Polynomial([1,1]))');
@@ -154,8 +163,8 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
-echo('o.valueOf(3)');
-echo(o.valueOf(3).toString());
+echo('o.evaluate(3)');
+echo(o.evaluate(3).toString());
 echo('o.neg()');
 echo(o.neg().toString());
 echo('o.add(1)');
@@ -198,6 +207,10 @@ echo('o.div(Abacus.Polynomial([1,1]))');
 d=Abacus.Polynomial([1,1]);
 qr=o.divmod(d);
 check_div( o, d, qr[0], qr[1] );
+echo('o.multidiv([Abacus.Polynomial([1,1]), Abacus.Polynomial([0,0,2])])');
+d=[Abacus.Polynomial([1,1]), Abacus.Polynomial([0,0,2])];
+qr=o.multidivmod(d);
+check_div( o, d, qr[0], qr[1] );
 echo('o.d()');
 echo(o.d().toString());
 echo('o.toExpr()');
@@ -224,6 +237,10 @@ echo(o.toString());
 echo('o.div(Abacus.Polynomial([-3,1]))');
 d=Abacus.Polynomial([-3,1]);
 qr=o.divmod(d);
+check_div( o, d, qr[0], qr[1] );
+echo('o.multidiv([Abacus.Polynomial([-3,1]), Abacus.Polynomial([1,0,2])])');
+d=[Abacus.Polynomial([-3,1]), Abacus.Polynomial([1,0,2])];
+qr=o.multidivmod(d);
 check_div( o, d, qr[0], qr[1] );
 echo('o.d()');
 echo(o.d().toString());
@@ -275,113 +292,116 @@ echo('---');
 echo('Polynomial Factorization');
 echo('---');
 
-echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1]))');
+echo('Abacus.Polynomial([1]).factors()');
 o=Abacus.Polynomial([1]);
-d=Abacus.Math.polyfactorize(o);
+d=o.factors();
 check_factors(o, d[0], d[1]);
 
-echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).pow(2))');
+echo('Abacus.Polynomial([1,1]).pow(2).factors()');
 o=Abacus.Polynomial([1,1]).pow(2);
-d=Abacus.Math.polyfactorize(o);
+d=o.factors();
 check_factors(o, d[0], d[1]);
 
-echo('Abacus.Math.polyfactorize(Abacus.Polynomial([3,2]).pow(2))');
+echo('Abacus.Polynomial([3,2]).pow(2).factors()');
 o=Abacus.Polynomial([3,2]).pow(2);
-d=Abacus.Math.polyfactorize(o);
+d=o.factors();
 check_factors(o, d[0], d[1]);
 
-echo('Abacus.Math.polyfactorize(Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2))');
+echo('Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2).factors()');
 o=Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2);
-d=Abacus.Math.polyfactorize(o);
+d=o.factors();
 check_factors(o, d[0], d[1]);
 
-echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1])))');
+echo('Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1])).factors()');
 o=Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1]));
-d=Abacus.Math.polyfactorize(o);
+d=o.factors();
 check_factors(o, d[0], d[1]);
 
-echo('Abacus.Math.polyfactorize(Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1])))');
+echo('Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1])).factors()');
 o=Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1]));
-d=Abacus.Math.polyfactorize(o);
+d=o.factors();
 check_factors(o, d[0], d[1]);
 echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');
 echo('---');
-echo('Abacus.Math.polygcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4])).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4])).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1])).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1])).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1])).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1])).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([6]),Abacus.Polynomial([4])).toString(), Abacus.Math.gcd(6,4).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([6]),Abacus.Polynomial([4])).toString(), Abacus.Math.gcd(6,4).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(12,6,3).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(12,6,3).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(2,0,0,3).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3])).toString(), Abacus.Math.gcd(2,0,0,3).toString());
 
-echo('Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))');
-echo(Abacus.Math.polygcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153])).toString(), Abacus.Math.gcd(74, 32, 16, 153).toString());
+echo('Abacus.Polynomial.gcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))');
+echo(Abacus.Polynomial.gcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153])).toString(), Abacus.Math.gcd(74, 32, 16, 153).toString());
 echo('---');
 
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
 echo('---');
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))');
 args=[Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 check_xgcd(args, o, true);
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))');
 args=[Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))');
 args=[Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))');
 args=[Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))');
 args=[Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))');
 args=[Abacus.Polynomial([6]),Abacus.Polynomial([4])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 echo(Abacus.Math.xgcd(6,4).map(function(x){return x.toString();})); // should coincide with this
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))');
 args=[Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 echo(Abacus.Math.xgcd(12,6,3).map(function(x){return x.toString();})); // should coincide with this
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))');
 args=[Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 echo(Abacus.Math.xgcd(2,0,0,3).map(function(x){return x.toString();})); // should coincide with this
 
-echo('Abacus.Math.polyxgcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))');
+echo('Abacus.Polynomial.xgcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))');
 args=[Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153])];
-o=Abacus.Math.polyxgcd(args);
+o=Abacus.Polynomial.xgcd(args);
 check_xgcd(args, o);
 echo(Abacus.Math.xgcd(74,32,16,153).map(function(x){return x.toString();})); // should coincide with this
 echo('---');
+
+echo('Abacus.Math.groebner([Abacus.Polynomial.fromString("x^2-x", "x"),Abacus.Polynomial.fromString("x+1", "x")])');
+echo(Abacus.Math.groebner([Abacus.Polynomial.fromString("x^2-x", "x"),Abacus.Polynomial.fromString("x+1", "x")]).map(String).join(','));

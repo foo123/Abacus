@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 200kB minified, ~ 58kB zipped)
+**version 1.0.0** (~ 210kB minified, ~ 60kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -83,12 +83,12 @@ A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browse
 
 **Number Theory / Algebraic Number Theory**
 * Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
-* Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
-* `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
+* Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd` / `groebner`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
+* `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
 * `Complex` (`test/complex.js`) **with Rational arbitrary precision parts**
 * `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate/multivariate with Rational coefficients**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
-* `Matrix` (`test/matrices.js`) **with Integer coefficients**
+* `Matrix` (`test/matrices.js`) **with integer coefficients**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
@@ -111,7 +111,7 @@ A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browse
 
 See the comments in the code for algorithms and references used.
 
-A variety of combinatorial algorithms, number theory algorithms &amp; statistics are given, for example, in:
+A variety of combinatorial algorithms, algebraic number theory algorithms &amp; statistics are given, for example, in:
 
 * [The Art of Computer Programming, Donald Knuth](http://www-cs-faculty.stanford.edu/~uno/taocp.html)
 * [FXT library, Joerg Arndt](http://www.jjj.de/fxt/) and his [PhD thesis](https://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf)
@@ -141,7 +141,11 @@ A variety of combinatorial algorithms, number theory algorithms &amp; statistics
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
 * [Algorithms and Data Structures for Sparse Polynomial Arithmetic, M. Asadi, A. Brandt, R. H. C. Moir, M. M. Maza](https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic)
 * [High Performance Sparse Multivariate Polynomials: Fundamental Data Structures and Algorithms, Alex Brandt (MSc thesis)](https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1)
+* [An improved EZ-GCD algorithm for multivariate polynomials, Kuniaki Tsuji](https://core.ac.uk/download/pdf/82335256.pdf)
 * [Greedy Algorithms for Optimizing Multivariate Horner Schemes, M. Ceberio and V. Kreinovich](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.330.7430&rep=rep1&type=pdf)
+* [Gröbner basis, wikipedia](https://en.wikipedia.org/wiki/Gr%C3%B6bner_basis)
+* [Buchberger's algorithm, wikipedia](https://en.wikipedia.org/wiki/Buchberger%27s_algorithm)
+* [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
 
 ### Example API
@@ -604,13 +608,13 @@ o.dispose()
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. **[DONE]**
 * add `LatinSquare`, `MagicSquare` algorithms **[DONE]**
 * add run-time/lazy custom and/or built-in filtering support (with support for filter composition as well) to generate and select custom and complex combinatorial objects from filtering other combinatorial objects as efficiently as possible **[DONE]**
-* support efficient primality tests and prime sieves **[DONE PARTIALY]**
+* support efficient primality tests and prime sieves **[DONE]**
 * support efficient integer factorization algorithms **[DONE PARTIALY]**
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
-* support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE PARTIALY]**
-* support multivariate polynomial, multivariate operations **[DONE PARTIALY]**
-* implement groebner basis computations (TODO)
+* support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
+* support multivariate polynomial, multivariate operations **[DONE]** (evaluation/composition missing)
+* implement groebner basis computations **[DONE]**
 * implement `LLL` algorithm (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
