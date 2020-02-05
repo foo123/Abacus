@@ -59,12 +59,13 @@ var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,LEXICAL = LEX | COLEX | MINIMAL
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
-    ,Iterator, CombinatorialIterator, DefaultArithmetic
-    ,Filter, Node, Heap, HashSieve
-    ,INUMBER, INumber, Integer, Rational, Complex
+    ,Node, Heap
+    ,DefaultArithmetic, INUMBER, INumber, Integer, Rational, Complex
     ,Term, Expr, UniPolyTerm, MultiPolyTerm, Polynomial, MultiPolynomial, RationalFunc, Matrix
+    ,Iterator, CombinatorialIterator, Filter
+    ,Progression, HashSieve, PrimeSieve, Diophantine
     ,Tensor, Permutation, Combination, Subset, Partition
-    ,LatinSquare, MagicSquare, Progression, PrimeSieve, Diophantine
+    ,LatinSquare, MagicSquare
 ;
 
 // utility methods
@@ -2419,20 +2420,6 @@ function xgcd( /* args */ )
         }
     }
 }
-function rgcd( /* args */ )
-{
-    // gcd of Rational numbers
-    // https://math.stackexchange.com/questions/44836/rational-numbers-lcm-and-hcf
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return Rational(gcd(array(args.length, function(i){return args[i].num;})), lcm(array(args.length, function(i){return args[i].den;})), true);
-}
-function rlcm( /* args */ )
-{
-    // lcm of Rational numbers
-    // https://math.stackexchange.com/questions/44836/rational-numbers-lcm-and-hcf
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return Rational(lcm(array(args.length, function(i){return args[i].num;})), gcd(array(args.length, function(i){return args[i].den;})), true);
-}
 function igcd( /* args */ )
 {
     // gcd of Integer numbers
@@ -2449,9 +2436,35 @@ function ilcm( /* args */ )
 function ixgcd( /* args */ )
 {
     // xgcd of Integer numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments, res;
-    res = xgcd(array(args.length, function(i){return args[i].n;}));
-    return res ? res.map(function(g){return Integer(g);}) : res;
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    if ( !args.length ) return;
+    return xgcd(array(args.length, function(i){return args[i].n;})).map(function(g){return Integer(g);});
+}
+function rgcd( /* args */ )
+{
+    // gcd of Rational numbers
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        Arithmetic = Abacus.Arithmetic, denom;
+    denom = operate(function(p, r){return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
+    return Rational(gcd(array(args.length, function(i){return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})), denom);
+}
+function rxgcd( /* args */ )
+{
+    // xgcd of Rational numbers
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        Arithmetic = Abacus.Arithmetic, denom, factors;
+    if ( !args.length ) return;
+    denom = operate(function(p, r){return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
+    factors = array(args.length, function(i){return Arithmetic.div(denom, args[i].den);});
+    return xgcd(array(args.length, function(i){return Arithmetic.mul(factors[i], args[i].num);})).map(function(g, i){return 0===i ? Rational(g, denom) : Rational(g, Arithmetic.I);});
+}
+function rlcm( /* args */ )
+{
+    // lcm of Rational numbers
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        Arithmetic = Abacus.Arithmetic, denom;
+    denom = operate(function(p, r){return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
+    return Rational(lcm(array(args.length, function(i){return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})), denom);
 }
 function polygcd( /* args */ )
 {
@@ -2462,20 +2475,20 @@ function polygcd( /* args */ )
     // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         c = args.length, Arithmetic = Abacus.Arithmetic, are_const = true,
-        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, zeroes = 0, a, b, a0, b0, t, r, i;
+        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, a, b, a0, b0, t, r, i;
 
     if ( 0 === c ) return Polynomial([]);
     
     for(i=0; i<c; i++)
     {
-        if ( !args[i].isConst() || !args[i].isInt() )
+        if ( !args[i].isConst() )
         {
             are_const = false;
             break;
         }
     }
-    // defer to integer gcd and transform back to polynomial
-    if ( are_const ) return Polynomial(gcd(array(args.length, function(i){return args[i].cc().num;})), args[0].symbol);
+    // defer to integer/rational gcd and transform back to polynomial
+    if ( are_const ) return Polynomial(rgcd(array(args.length, function(i){return args[i].cc();})), args[0].symbol);
     
     i = 0;
     while(i<c && (a=args[i++]).equ(O)) ;
@@ -2537,14 +2550,14 @@ function polyxgcd( /* args */ )
 
     for(i=0; i<k; i++)
     {
-        if ( !args[i].isConst() || !args[i].isInt() )
+        if ( !args[i].isConst() )
         {
             are_const = false;
             break;
         }
     }
-    // defer to integer gcd and transform back to polynomial
-    if ( are_const ) return xgcd(array(args.length, function(i){return args[i].cc().num;})).map(function(g){return Polynomial(g, args[0].symbol);});
+    // defer to integer/rational gcd and transform back to polynomial
+    if ( are_const ) return rxgcd(array(args.length, function(i){return args[i].cc();})).map(function(g){return Polynomial(g, args[0].symbol);});
     
     a = args[0];
 
@@ -2634,101 +2647,6 @@ function polyxgcd( /* args */ )
             }
         }
     }
-}
-function buchberger_groebner( Basis )
-{
-    // https://en.wikipedia.org/wiki/Gr%C3%B6bner_basis
-    // https://en.wikipedia.org/wiki/Buchberger%27s_algorithm
-    /*
-    Return the unique reduced Groebner basis for (multivariate) polynomial set Basis.
-
-    Uses Buchberger's algorithm to build a Groebner basis, then minimizes
-    and reduces the basis. This is not a high-performance implementation.
-    (adapted from https://github.com/tim-becker/pyalgebra)
-    */
-    var Arithmetic = Abacus.Arithmetic, spoly, indexOf, PolynomialClass = MultiPolynomial,
-        pairs, pair, extraBasis, newBasis, s, f, g, i, n, found, others, lt, lts;
-    
-    spoly = function spoly( f1, f2 ) {
-        var lt1 = f1.ltm(), lt2 = f2.ltm(), num = PolynomialClass.Term.lcm(lt1, lt2);
-        return f1.mul(PolynomialClass([num.div(lt1)], f1.symbol)).sub(f2.mul(PolynomialClass([num.div(lt2)], f2.symbol)));
-    };
-    indexOf = function indexOf( set, poly ) {
-        for(var i=0,l=set.length; i<l; i++)
-            if ( set[i].equ(poly) )
-                return i;
-        return -1;
-    };
-
-    Basis = Basis.map(function(b){return b.monic();});
-    if ( 1 < Basis.length )
-    {
-        PolynomialClass = Basis[0] instanceof Polynomial ? Polynomial : MultiPolynomial;
-        
-        // Build a Groebner basis using Buchberger's algorithm.
-        pairs = Combination(Basis.length, 2).mapTo(function(i){return [Basis[i[0]], Basis[i[1]]];});
-        while( true )
-        {
-            newBasis = [];
-            while( pairs.hasNext() )
-            {
-                pair = pairs.next();
-                f = pair[0]; g = pair[1];
-                s = spoly(f, g).multimod(Basis);
-                if ( !s.equ(Arithmetic.O) )
-                {
-                    s = s.monic();
-                    if ( (-1 === indexOf(newBasis, s)) && (-1 === indexOf(Basis, s)) )
-                        newBasis.push(s);
-                }
-            }
-            pairs.dispose(true);
-
-            // We've stabilized.
-            if ( !newBasis.length ) break;
-
-            extraBasis = newBasis;
-            pairs = 1 === extraBasis.length ? Tensor(Basis.length, extraBasis.length).mapTo(function(i){return [Basis[i[0]], extraBasis[i[1]]];}) : CombinatorialIterator([
-                Tensor(Basis.length, extraBasis.length).mapTo(function(i){return [Basis[i[0]], extraBasis[i[1]]];}),
-                Combination(extraBasis.length, 2).mapTo(function(i){return [extraBasis[i[0]], extraBasis[i[1]]];})
-            ]);
-            Basis = Basis.concat(extraBasis);
-        }
-
-        // Minimize it.
-        lts = Basis.map(function(g){return g.ltm(true);});
-        while( lts.length )
-        {
-            found = false;
-            for(i=0,n=lts.length; i<n; i++)
-            {
-                lt = lts[i];
-                others = lts.slice(0, i).concat(lts.slice(i+1));
-                if ( others.length && lt.multimod(others).equ(Arithmetic.O) )
-                {
-                    lts = others;
-                    Basis.splice(i, 1);
-                    found = true;
-                    break;
-                }
-            }
-            if ( !found ) break;
-        }
-
-        // Reduce it.
-        for(i=0,n=Basis.length; i<n; i++)
-        {
-            g = Basis[i];
-            others = Basis.slice(0,i).concat(Basis.slice(i+1));
-            if ( others.length ) Basis[i] = g.multimod(others);
-        }
-
-        // Sort it.
-        Basis = Basis.sort(function(a, b){
-            return PolynomialClass.Term.cmp(b.ltm(), a.ltm(), true);
-        });
-    }
-    return Basis;
 }
 function divisors( n, as_generator )
 {
@@ -2903,6 +2821,101 @@ function gramschmidt( v )
         pjj[i] = dotp(ui, ui, Arithmetic);
     }
     return u;
+}
+function buchberger_groebner( Basis )
+{
+    // https://en.wikipedia.org/wiki/Gr%C3%B6bner_basis
+    // https://en.wikipedia.org/wiki/Buchberger%27s_algorithm
+    /*
+    Return the unique reduced Groebner basis for (multivariate) polynomial set Basis.
+
+    Uses Buchberger's algorithm to build a Groebner basis, then minimizes
+    and reduces the basis. This is not a high-performance implementation.
+    (adapted from https://github.com/tim-becker/pyalgebra)
+    */
+    var Arithmetic = Abacus.Arithmetic, spoly, indexOf, PolynomialClass = MultiPolynomial,
+        pairs, pair, extraBasis, newBasis, s, f, g, i, n, found, others, lt, lts;
+    
+    spoly = function spoly( f1, f2 ) {
+        var lt1 = f1.ltm(), lt2 = f2.ltm(), num = PolynomialClass.Term.lcm(lt1, lt2);
+        return f1.mul(PolynomialClass([num.div(lt1)], f1.symbol)).sub(f2.mul(PolynomialClass([num.div(lt2)], f2.symbol)));
+    };
+    indexOf = function indexOf( set, poly ) {
+        for(var i=0,l=set.length; i<l; i++)
+            if ( set[i].equ(poly) )
+                return i;
+        return -1;
+    };
+
+    Basis = Basis.map(function(b){return b.monic();});
+    if ( 1 < Basis.length )
+    {
+        PolynomialClass = Basis[0] instanceof Polynomial ? Polynomial : MultiPolynomial;
+        
+        // Build a Groebner basis using Buchberger's algorithm.
+        pairs = Combination(Basis.length, 2).mapTo(function(i){return [Basis[i[0]], Basis[i[1]]];});
+        while( true )
+        {
+            newBasis = [];
+            while( pairs.hasNext() )
+            {
+                pair = pairs.next();
+                f = pair[0]; g = pair[1];
+                s = spoly(f, g).multimod(Basis);
+                if ( !s.equ(Arithmetic.O) )
+                {
+                    s = s.monic();
+                    if ( (-1 === indexOf(newBasis, s)) && (-1 === indexOf(Basis, s)) )
+                        newBasis.push(s);
+                }
+            }
+            pairs.dispose(true);
+
+            // We've stabilized.
+            if ( !newBasis.length ) break;
+
+            extraBasis = newBasis;
+            pairs = 1 === extraBasis.length ? Tensor(Basis.length, extraBasis.length).mapTo(function(i){return [Basis[i[0]], extraBasis[i[1]]];}) : CombinatorialIterator([
+                Tensor(Basis.length, extraBasis.length).mapTo(function(i){return [Basis[i[0]], extraBasis[i[1]]];}),
+                Combination(extraBasis.length, 2).mapTo(function(i){return [extraBasis[i[0]], extraBasis[i[1]]];})
+            ]);
+            Basis = Basis.concat(extraBasis);
+        }
+
+        // Minimize it.
+        lts = Basis.map(function(g){return g.ltm(true);});
+        while( lts.length )
+        {
+            found = false;
+            for(i=0,n=lts.length; i<n; i++)
+            {
+                lt = lts[i];
+                others = lts.slice(0, i).concat(lts.slice(i+1));
+                if ( others.length && lt.multimod(others).equ(Arithmetic.O) )
+                {
+                    lts = others;
+                    Basis.splice(i, 1);
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) break;
+        }
+
+        // Reduce it.
+        for(i=0,n=Basis.length; i<n; i++)
+        {
+            g = Basis[i];
+            others = Basis.slice(0,i).concat(Basis.slice(i+1));
+            if ( others.length ) Basis[i] = g.multimod(others);
+        }
+
+        // Sort it.
+        Basis = Basis.sort(function(a, b){
+            return PolynomialClass.Term.cmp(b.ltm(), a.ltm(), true);
+        });
+    }
+    return Basis;
 }
 function solvedioph2( a, b, param )
 {
@@ -5402,8 +5415,77 @@ ORDER.REVCOLEX = ORDER.ANTICOLEX = ORDER.REVERSECOLEXICOGRAPHIC = ORDER.ANTICOLE
 ORDER.REFCOLEX = ORDER.REFLECTEDCOLEXICOGRAPHIC = COLEX | REFLECTED;
 Abacus.ORDER = ORDER;
 
+// Abacus.BitArray, Packed Bit Array Implementation
+Abacus.BitArray = Class({
+
+    constructor: function BitArray( n ) {
+        var self = this;
+        if ( !(self instanceof BitArray) ) return new BitArray(n);
+        self.length = n;
+        self.bits = new Uint32Array(stdMath.ceil(n/32));
+    }
+
+    ,length: 0
+    ,bits: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.length = null;
+        self.bits = null;
+        return self;
+    }
+
+    ,clone: function( ) {
+        var self = this, c = new Abacus.BitArray(self.length);
+        c.bits = new Uint32Array( self.bits );
+        return c;
+    }
+
+    ,fromArray: function( b ) {
+        var self = this;
+        self.bits = new Uint32Array( b );
+        return self;
+    }
+
+    ,toArray: function( ) {
+        return slice.call( this.bits );
+    }
+
+    ,toString: function( ) {
+        return this.toArray().map(to_fixed_binary_string_32).join('');
+    }
+
+    ,reset: function( ) {
+        var self = this, bits = self.bits, len = bits.length, i;
+        for (i=0; i<len; i++) bits[i] = 0;
+        return self;
+    }
+
+    ,isset: function( bit ) {
+        return !!(this.bits[bit>>>5] & (1<<(bit&31)));
+    }
+
+    ,set: function( bit ) {
+        var self = this;
+        self.bits[bit>>>5] |= 1<<(bit&31);
+        return self;
+    }
+
+    ,unset: function( bit ) {
+        var self = this;
+        self.bits[bit>>>5] &= ~(1<<(bit&31));
+        return self;
+    }
+
+    ,toggle: function( bit ) {
+        var self = this;
+        self.bits[bit>>>5] ^= 1<<(bit&31);
+        return self;
+    }
+});
+
 // Abacus.Node, Node class which can represent (dynamic) Linked Lists, Binary Trees and similar structures
-Node = Abacus.Node = function Node(value, left, right, top) {
+Node = Abacus.Node = function Node( value, left, right, top ) {
     var self = this;
     if ( !(self instanceof Node) ) return new Node(value, left, right, top);
 
@@ -5641,7 +5723,7 @@ INUMBER = {
         return [this.div(a), this.mod(a)];
     }
     ,divides: function( a ) {
-        return is_number(a) ? 0 === (a % this) : false;
+        return is_number(a) ? (0 !== this) && (0 === (a % this)) : false;
     }
     ,pow: function( n ) {
         return stdMath.pow(this, +n);
@@ -5849,13 +5931,14 @@ Integer = Abacus.Integer = Class(INumber, {
         return [self.div(a), self.mod(a)];
     }
     ,divides: function( a ) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
+        if ( Arithmetic.equ(O, self.n) ) return false;
         if ( a instanceof Integer )
-            return Arithmetic.equ(Arithmetic.O, Arithmetic.mod(a.n, self.n));
+            return Arithmetic.equ(O, Arithmetic.mod(a.n, self.n));
         else if ( a instanceof INumber )
             return true;
         else if ( Arithmetic.isNumber(a) )
-            return Arithmetic.equ(Arithmetic.O, Arithmetic.mod(a, self.n));
+            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(a), self.n));
         
         return false;
     }
@@ -5954,6 +6037,7 @@ Rational = Abacus.Rational = Class(INumber, {
         
         ,hasInverse: true
         ,gcd: rgcd
+        ,xgcd: rxgcd
         ,lcm: rlcm
         
         ,fromIntRem: function( i, r, m ) {
@@ -5962,8 +6046,8 @@ Rational = Abacus.Rational = Class(INumber, {
             return Rational(Arithmetic.add(r, Arithmetic.mul(i, m)), m);
         }
         ,fromDec: function( d ) {
-            var f = dec2frac(d, !Rational.autoSimplify);
-            return f ? Rational(f) : null;
+            var f = dec2frac(d, true);
+            return f ? Rational(f[0], f[1], true) : null;
         }
         ,fromString: function( s ) {
             var Arithmetic = Abacus.Arithmetic, num_denom, m, sign = '+', num, den;
@@ -6209,7 +6293,7 @@ Rational = Abacus.Rational = Class(INumber, {
         return [Rational(this.div(a).integer()), this.mod(a)];
     }
     ,divides: function( a ) {
-        return true;
+        return !this.equ(Abacus.Arithmetic.O);
     }
     
     ,pow: function( n ) {
@@ -6577,7 +6661,7 @@ Complex = Abacus.Complex = Class(INumber, {
         return [this.div(a).integer(), this.mod(a)];
     }
     ,divides: function( a ) {
-        return true;
+        return !this.equ(Abacus.Arithmetic.O);
     }
     
     ,pow: function( n ) {
@@ -7450,7 +7534,7 @@ UniPolyTerm = Class({
         return term instanceof UniPolyTerm ? UniPolyTerm(self.c.div(term.c), stdMath.max(0, self.e-term.e)) : UniPolyTerm(self.c.div(term), self.e);
     }
     ,divides: function( term ) {
-        return this.e <= term.e;
+        return (this.e <= term.e) && this.c.divides(term.c);
     }
     ,toTerm: function( symbol, asTex, monomialOnly ) {
         var t = this, e = t.e, c = t.c, term, Arithmetic = Abacus.Arithmetic;
@@ -8238,6 +8322,15 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,multidivmod: function( xs ) {
         return this.multidiv(xs, true);
     }
+    ,divides: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( self.equ(Arithmetic.O) ) return false;
+        if ( (a instanceof Integer) || (a instanceof Rational) || (a instanceof Complex) || Arithmetic.isNumber(a) )
+            a = Polynomial(a, self.symbol);
+        if ( (a instanceof Polynomial) || (a instanceof MultiPolynomial) )
+            return a.mod(self).equ(Arithmetic.O);
+        return false;
+    }
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
         if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
@@ -8485,7 +8578,8 @@ MultiPolyTerm = Class({
         })) :  MultiPolyTerm(self.c.div(term), self.e.slice());
     }
     ,divides: function( term ) {
-        var e1 = this.e, e2 = term.e, i, n = stdMath.max(e1.length, e2.length);
+        var self = this, e1 = self.e, e2 = term.e, i, n = stdMath.max(e1.length, e2.length);
+        if ( !self.c.divides(term.c) ) return false;
         for(i=0; i<n; i++)
         {
             if ( i >= e1.length )
@@ -9107,6 +9201,15 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     ,multidivmod: function( xs ) {
         return this.multidiv(xs, true);
     }
+    ,divides: function( a ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( self.equ(Arithmetic.O) ) return false;
+        if ( (a instanceof Polynomial) || (a instanceof Integer) || (a instanceof Rational) || (a instanceof Complex) || Arithmetic.isNumber(a) )
+            a = MultiPolynomial(a, self.symbol);
+        if ( (a instanceof MultiPolynomial) )
+            return a.mod(self).equ(Arithmetic.O);
+        return false;
+    }
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
         if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
@@ -9362,7 +9465,7 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
     ,mod: NotImplemented
     ,divmod: NotImplemented
     ,divides: function( x ) {
-        return true;
+        return !this.equ(Abacus.Arithmetic.O);
     }
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, num = self.num, den = self.den, t;
@@ -10624,74 +10727,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
 });
 
-// Abacus.BiArray, Packed Bit Array Implementation
-Abacus.BitArray = Class({
-
-    constructor: function BitArray(n) {
-        var self = this;
-        if ( !(self instanceof BitArray) ) return new BitArray(n);
-        self.length = n;
-        self.bits = new Uint32Array(stdMath.ceil(n/32));
-    }
-
-    ,length: 0
-    ,bits: null
-
-    ,dispose: function( ) {
-        var self = this;
-        self.length = null;
-        self.bits = null;
-        return self;
-    }
-
-    ,clone: function( ) {
-        var self = this, c = new Abacus.BitArray(self.length);
-        c.bits = new Uint32Array( self.bits );
-        return c;
-    }
-
-    ,fromArray: function( b ) {
-        var self = this;
-        self.bits = new Uint32Array( b );
-        return self;
-    }
-
-    ,toArray: function( ) {
-        return slice.call( this.bits );
-    }
-
-    ,toString: function( ) {
-        return this.toArray().map(to_fixed_binary_string_32).join('');
-    }
-
-    ,reset: function( ) {
-        var self = this, bits = self.bits, len = bits.length, i;
-        for (i=0; i<len; i++) bits[i] = 0;
-        return self;
-    }
-
-    ,isset: function( bit ) {
-        return !!(this.bits[bit>>>5] & (1<<(bit&31)));
-    }
-
-    ,set: function( bit ) {
-        var self = this;
-        self.bits[bit>>>5] |= 1<<(bit&31);
-        return self;
-    }
-
-    ,unset: function( bit ) {
-        var self = this;
-        self.bits[bit>>>5] &= ~(1<<(bit&31));
-        return self;
-    }
-
-    ,toggle: function( bit ) {
-        var self = this;
-        self.bits[bit>>>5] ^= 1<<(bit&31);
-        return self;
-    }
-});
 
 // Abacus.Filter, Filter class used to define and combine filters to filter combinatorial object by them
 Filter = Abacus.Filter = Class({
@@ -10977,7 +11012,6 @@ Filter = Abacus.Filter = Class({
         return self;
     }
 });
-
 
 // Base Iterator Interface & Abstract Class
 Iterator = Abacus.Iterator = Class({

@@ -4,6 +4,18 @@ var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
+function check_xgcd( args )
+{
+    var out = '', res = Abacus.Rational.Zero(), gcd = Abacus.Rational.xgcd(args);
+    for(i=0; i<args.length; i++)
+    {
+        out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
+        res = res.add(args[i].mul(gcd[i+1]));
+    }
+    out += ' = '+gcd[0].toString();
+    echo(out, res.toString(), res.equ(gcd[0]));
+}
+
 var o, i;
 
 echo('Abacus.Rationals (VERSION = '+Abacus.VERSION+')');
@@ -172,3 +184,26 @@ echo('o=Abacus.Rational.fromString("172/165").toDec()');
 echo(String(o=Abacus.Rational.fromString("172/165").toDec()));
 
 echo('---');
+
+// (X)GCD, LCM of rational
+echo('(X)GCD, LCM of Rationals');
+echo('Abacus.Rational.xgcd(Abacus.Rational.One(), Abacus.Rational(3))');
+check_xgcd([Abacus.Rational.One(), Abacus.Rational(3)]);
+
+echo('Abacus.Rational.xgcd(Abacus.Rational(6), Abacus.Rational(4))');
+check_xgcd([Abacus.Rational(6), Abacus.Rational(4)]);
+
+echo('Abacus.Rational.xgcd(Abacus.Rational(12), Abacus.Rational(6), Abacus.Rational(3))');
+check_xgcd([Abacus.Rational(12), Abacus.Rational(6), Abacus.Rational(3)]);
+
+echo('Abacus.Rational.xgcd(Abacus.Rational(3,7), Abacus.Rational(12,22))');
+check_xgcd([Abacus.Rational(3,7), Abacus.Rational(12,22)]);
+echo(Abacus.Rational.gcd([Abacus.Rational(3,7), Abacus.Rational(12,22)]).toString());
+
+echo('Abacus.Rational.xgcd(Abacus.Rational(13,6), Abacus.Rational(3,4))');
+check_xgcd([Abacus.Rational(13,6), Abacus.Rational(3,4)]);
+echo(Abacus.Rational.gcd([Abacus.Rational(13,6), Abacus.Rational(3,4)]).toString());
+
+echo('Abacus.Rational.xgcd(Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3))');
+check_xgcd([Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3)]);
+echo(Abacus.Rational.gcd([Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3)]).toString());

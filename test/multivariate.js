@@ -7,7 +7,7 @@ use_biginteger_arithmetic( Abacus );
 function check_div( n, d )
 {
     var nn, qr, q, r;
-    if ( d.push )
+    if ( d instanceof Array )
     {
         qr = n.multidivmod(d); q = qr[0]; r = qr[1];
         nn = q.reduce(function(p, qi, i){return p.add(qi.mul(d[i]));}, r);
@@ -15,8 +15,9 @@ function check_div( n, d )
     }
     else
     {
-        qr = n.divmod(d); q = qr[0]; r = qr[1]; nn = q.mul(d).add(r);
-        console.log('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
+        qr = n.divmod(d); q = qr[0]; r = qr[1];
+        nn = q.mul(d).add(r);
+        echo('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
     }
 }
 
