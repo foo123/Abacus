@@ -1,38 +1,39 @@
 Abacus.MultiPolynomials (VERSION = 1.0.0)
 ---
 Multivariate Polynomials and Polynomial operations
+ring = Abacus.Ring.Q("x", "y")
 ---
-Abacus.MultiPolynomial().toString()
+ring.create().toString()
 0
-Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toString()
+ring.create({"y*x^2":2,"x*y^2":1,"1":4}).toString()
 2*x^2*y+x*y^2+4
-Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toTex()
+ring.create({"y*x^2":2,"x*y^2":1,"1":4}).toTex()
 2x^{2}y+xy^{2}+4
-Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString()
+ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr().toString()
 4+x*y+2*x^2*y
-Abacus.MultiPolynomial.fromExpr(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr(), ["x", "y"]).toString()
+ring.fromExpr(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr()).toString()
 2*x^2*y+x*y+4
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).toString()
+ring.fromString("1 - yx^2 + 3xy").toString()
 -x^2*y+3*x*y+1
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(1).toString()
+ring.fromString("1 - yx^2 + 3xy").add(1).toString()
 -x^2*y+3*x*y+2
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.Polynomial.fromString("1+x")).toString()
+ring.fromString("1 - yx^2 + 3xy").add(Abacus.Polynomial.fromString("1+x")).toString()
 -x^2*y+3*x*y+x+2
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+ring.fromString("1 - yx^2 + 3xy").add(ring.fromString("1 + x")).toString()
 -x^2*y+3*x*y+x+2
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).mul(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+ring.fromString("1 - yx^2 + 3xy").mul(ring.fromString("1 + x")).toString()
 -x^3*y+2*x^2*y+3*x*y+x+1
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString()
 -x*y+4*y
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()
+ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString()
 (-x^2*y+3*x*y+1)/(x+1)=(x+1)*(-x*y+4*y)+(-4*y+1)=-x^2*y+3*x*y+1 true
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy + 8x^4y^4", ["x","y"]).multidiv([Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy^2", ["x","y"])]).toString()
+ring.fromString("1 - yx^2 + 3xy + 8x^4y^4").multidiv([ring.fromString("1 + x"),ring.fromString("xy^2")]).toString()
 (8*x^4*y^4-x^2*y+3*x*y+1)/[x+1,x*y^2]=(x+1)*(8*x^3*y^4-8*x^2*y^4+8*x*y^4-x*y-8*y^4+4*y)+(x*y^2)*(0)+(8*y^4-4*y+1)=8*x^4*y^4-x^2*y+3*x*y+1 true
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString()
+ring.fromString("1 - yx^2 + 3xy").pow(3).toString()
 -x^6*y^3+9*x^5*y^3-27*x^4*y^3+3*x^4*y^2+27*x^3*y^3-18*x^3*y^2+27*x^2*y^2-3*x^2*y+9*x*y+1
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("x").toString()
+ring.fromString("1 - yx^2 + 3xy").d("x").toString()
 -2*x*y+3*y
-Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("y").toString()
+ring.fromString("1 - yx^2 + 3xy").d("y").toString()
 -x^2+3*x
-Abacus.Math.groebner([Abacus.MultiPolynomial.fromString("x^2-y", ["x","y"]),Abacus.MultiPolynomial.fromString("x^3-x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy-x", ["x","y"]),Abacus.MultiPolynomial.fromString("y^2-y", ["x","y"])])
+Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])
 x^2-y,x*y-x,y^2-y

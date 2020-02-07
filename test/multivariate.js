@@ -20,62 +20,85 @@ function check_div( n, d )
         echo('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
     }
 }
+function check_xgcd( ring, args )
+{
+    var out = '', res = ring.Zero(), gcd = ring.xgcd(args);
+    for(i=0; i<args.length; i++)
+    {
+        out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
+        res = res.add(args[i].mul(gcd[i+1]));
+        if ( !args[i].mod(gcd[0]).equ(0) ) echo(args[i].toString()+' is not divided!');
+    }
+    out += ' = '+gcd[0].toString();
+    echo(out, res.equ(gcd[0]));
+}
 
-var o;
+var o, ring = Abacus.Ring.Q("x", "y");
 
 echo('Abacus.MultiPolynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Multivariate Polynomials and Polynomial operations');
+echo('ring = Abacus.Ring.Q("x", "y")');
 echo('---');
 
-echo('Abacus.MultiPolynomial().toString()');
-echo(Abacus.MultiPolynomial().toString());
+echo('ring.create().toString()');
+echo(ring.create().toString());
 
-echo('Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toString()');
-echo(Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toString());
+echo('ring.create({"y*x^2":2,"x*y^2":1,"1":4}).toString()');
+echo(ring.create({"y*x^2":2,"x*y^2":1,"1":4}).toString());
 
-echo('Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toTex()');
-echo(Abacus.MultiPolynomial({"y*x^2":2,"x*y^2":1,"1":4}, ["x","y"]).toTex());
+echo('ring.create({"y*x^2":2,"x*y^2":1,"1":4}).toTex()');
+echo(ring.create({"y*x^2":2,"x*y^2":1,"1":4}).toTex());
 
-echo('Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString()');
-echo(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr().toString());
+echo('ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr().toString()');
+echo(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr().toString());
 
-echo('Abacus.MultiPolynomial.fromExpr(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr(), ["x", "y"]).toString()');
-echo(Abacus.MultiPolynomial.fromExpr(Abacus.MultiPolynomial({"y*x^2":2,"x*y":1,"1":4}, ["x","y"]).toExpr(), ["x", "y"]).toString());
+echo('ring.fromExpr(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr()).toString()');
+echo(ring.fromExpr(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr()).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(1).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(1).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").add(1).toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").add(1).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.Polynomial.fromString("1+x")).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.Polynomial.fromString("1+x")).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").add(Abacus.Polynomial.fromString("1+x")).toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").add(Abacus.Polynomial.fromString("1+x")).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).add(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").add(ring.fromString("1 + x")).toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").add(ring.fromString("1 + x")).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).mul(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).mul(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").mul(ring.fromString("1 + x")).toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").mul(ring.fromString("1 + x")).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).div(Abacus.MultiPolynomial.fromString("1 + x", ["x","y"])).toString()');
-check_div(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]), Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]));
+echo('ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString()');
+check_div(ring.fromString("1 - yx^2 + 3xy"), ring.fromString("1 + x"));
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy + 8x^4y^4", ["x","y"]).multidiv([Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy^2", ["x","y"])]).toString()');
-check_div(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy + 8x^4y^4", ["x","y"]), [Abacus.MultiPolynomial.fromString("1 + x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy^2", ["x","y"])]);
+echo('ring.fromString("1 - yx^2 + 3xy + 8x^4y^4").multidiv([ring.fromString("1 + x"),ring.fromString("xy^2")]).toString()');
+check_div(ring.fromString("1 - yx^2 + 3xy + 8x^4y^4"), [ring.fromString("1 + x"),ring.fromString("xy^2")]);
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).pow(3).toString());
+echo('ring.fromString("1 - yx^2 + 3xy").pow(3).toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").pow(3).toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("x").toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("x").toString());
+echo('ring.fromString("1 - yx^2 + 3xy").d("x").toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").d("x").toString());
 
-echo('Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("y").toString()');
-echo(Abacus.MultiPolynomial.fromString("1 - yx^2 + 3xy", ["x","y"]).d("y").toString());
+echo('ring.fromString("1 - yx^2 + 3xy").d("y").toString()');
+echo(ring.fromString("1 - yx^2 + 3xy").d("y").toString());
 
-echo('Abacus.Math.groebner([Abacus.MultiPolynomial.fromString("x^2-y", ["x","y"]),Abacus.MultiPolynomial.fromString("x^3-x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy-x", ["x","y"]),Abacus.MultiPolynomial.fromString("y^2-y", ["x","y"])])');
-echo(Abacus.Math.groebner([Abacus.MultiPolynomial.fromString("x^2-y", ["x","y"]),Abacus.MultiPolynomial.fromString("x^3-x", ["x","y"]),Abacus.MultiPolynomial.fromString("xy-x", ["x","y"]),Abacus.MultiPolynomial.fromString("y^2-y", ["x","y"])]).map(String).join(','));
+echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])');
+echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")]).map(String).join(','));
+
+/*
+echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
+echo('---');
+echo('ring.xgcd(ring.fromString("1+x"),ring.fromString("1+x"))');
+check_xgcd(ring, [ring.fromString("1+x"),ring.fromString("1+x")]);
+
+echo('ring.xgcd(ring.fromString("1-xy+x^2"),ring.fromString("1+xy"))');
+check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
+*/

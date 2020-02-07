@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 210kB minified, ~ 60kB zipped)
+**version 1.0.0** (~ 218kB minified, ~ 62kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -87,8 +87,9 @@ A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browse
 * `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
 * `Complex` (`test/complex.js`) **with Rational arbitrary precision parts**
 * `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate/multivariate with Rational coefficients**
+* Generic algebraic `Ring`s (`test/polynomials.js`, `test/multivariate.js`) **including Polynomial rings based on a generic coefficient ring**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
-* `Matrix` (`test/matrices.js`) **with integer coefficients**
+* `Matrix` (`test/matrices.js`) **with Integer coefficients**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)

@@ -1,8 +1,9 @@
 Abacus.Polynomials (VERSION = 1.0.0)
 ---
 Polynomials and Polynomial operations
+ring = Abacus.Ring.Q("x")
 ---
-o=Abacus.Polynomial()
+o=ring.create()
 o.toString()
 0
 o.toTex()
@@ -13,18 +14,18 @@ o.d()
 0
 o.dispose()
 ---
-Abacus.Polynomial.fromValues([[1,0],[1,1]])
+ring.fromValues([[1,0],[1,1]])
 null
-Abacus.Polynomial.fromValues([[1,1],[2,1],[3,1]]).toString()
+ring.fromValues([[1,1],[2,1],[3,1]]).toString()
 1
-Abacus.Polynomial.fromValues([[1,1],[2,4],[3,9]]).toString()
+ring.fromValues([[1,1],[2,4],[3,9]]).toString()
 x^2
-Abacus.Polynomial.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString()
+ring.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString()
 x^2
-Abacus.Polynomial.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString()
+ring.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString()
 x^3
 ---
-o=Abacus.Polynomial({"50":1,"2":2})
+o=ring.create({"50":1,"2":2})
 o.toString()
 x^50+2*x^2
 o.toTex()
@@ -40,24 +41,24 @@ o.d(4)
 o.toExpr()
 2*x^2+x^50
 2x^{2}+x^{50}
-Abacus.Polynomial.fromExpr(o.toExpr())
+ring.fromExpr(o.toExpr())
 x^50+2*x^2
 o.dispose()
 ---
-Abacus.Polynomial.fromString("1").toString()
+ring.fromString("1").toString()
 1
-Abacus.Polynomial.fromString("1 + x^2").toString()
+ring.fromString("1 + x^2").toString()
 x^2+1
-Abacus.Polynomial.fromString("1 - x^2").toString()
+ring.fromString("1 - x^2").toString()
 -x^2+1
-Abacus.Polynomial.fromString("1 - (2/3)*x^2+x").toString()
+ring.fromString("1 - (2/3)*x^2+x").toString()
 -(2/3)*x^2+x+1
-Abacus.Polynomial.fromString("1 - \frac{2}{3}*x^{2}+x").toString()
+ring.fromString("1 - \frac{2}{3}*x^{2}+x").toString()
 -(2/3)*x^2+x+1
-Abacus.Polynomial.fromString("1 - x").add(Abacus.Polynomial.fromString("1 + y")).toString()
--x+y+2
+ring.fromString("1 - x").add(ring.fromString("1 + y")).toString()
+-x+2
 ---
-o=Abacus.Polynomial([2,0,1])
+o=ring.create([2,0,1])
 o.toString()
 x^2+2
 o.toTex()
@@ -66,24 +67,24 @@ o.evaluate(3)
 11
 o.add(1)
 x^2+3
-o.add(Abacus.Polynomial([1,1]))
+o.add(ring.create([1,1]))
 x^2+x+3
 o.mul(2)
 2*x^2+4
-o.mul(Abacus.Polynomial([1,1]))
+o.mul(ring.create([1,1]))
 x^3+x^2+2*x+2
 o.shift(1)
 x^3+2*x
 o.shift(-1)
 x
-o.compose(Abacus.Polynomial([1]))
+o.compose(ring.create([1]))
 3
-o.compose(Abacus.Polynomial([0,1]))
+o.compose(ring.create([0,1]))
 x^2+2
-o.compose(Abacus.Polynomial([1,1]))
+o.compose(ring.create([1,1]))
 x^2+2*x+3
 ---
-o=Abacus.Polynomial([1,2])
+o=ring.create([1,2])
 o.toString()
 2*x+1
 o.toTex()
@@ -94,23 +95,23 @@ o.neg()
 -2*x-1
 o.add(1)
 2*x+2
-o.add(Abacus.Polynomial([1,1]))
+o.add(ring.create([1,1]))
 3*x+2
 o.mul(2)
 4*x+2
-o.mul(Abacus.Polynomial([1,1]))
+o.mul(ring.create([1,1]))
 2*x^2+3*x+1
 o.shift(1)
 2*x^2+x
 o.shift(-1)
 2
-o.compose(Abacus.Polynomial([1]))
+o.compose(ring.create([1]))
 3
-o.compose(Abacus.Polynomial([0,1]))
+o.compose(ring.create([0,1]))
 2*x+1
-o.compose(Abacus.Polynomial([1,1]))
+o.compose(ring.create([1,1]))
 2*x+3
-Abacus.Polynomial([1,1,1]).compose(o)
+ring.create([1,1,1]).compose(o)
 4*x^2+6*x+3
 o.pow(0)
 1
@@ -122,125 +123,124 @@ o.pow(3)
 8*x^3+12*x^2+6*x+1
 o.div(2)
 (2*x+1)/(2)=(2)*(x+1/2)+(0)=2*x+1 true
-o.div(Abacus.Polynomial([2]))
+o.div(ring.create([2]))
 (2*x+1)/(2)=(2)*(x+1/2)+(0)=2*x+1 true
-o.div(Abacus.Polynomial([1,1]))
+o.div(ring.create([1,1]))
 (2*x+1)/(x+1)=(x+1)*(2)+(-1)=2*x+1 true
-o.multidiv([Abacus.Polynomial([1,1]), Abacus.Polynomial([0,0,2])])
+o.multidiv([ring.create([1,1]), ring.create([0,0,2])])
 (2*x+1)/[x+1,2*x^2]=(x+1)*(2)+(2*x^2)*(0)+(-1)=2*x+1 true
 o.d()
 0
 o.toExpr()
 1+2*x
-Abacus.Polynomial.fromExpr(o.toExpr())
+ring.fromExpr(o.toExpr())
 2*x+1
 o.dispose()
 ---
-o=Abacus.Polynomial([6,12])
+o=ring.create([6,12])
 o.toString()
 12*x+6
 o.toTex()
 12x+6
 ---
-o=Abacus.Polynomial([-4,0,-2,1])
+o=ring.create([-4,0,-2,1])
 o.toString()
 x^3-2*x^2-4
-o.div(Abacus.Polynomial([-3,1]))
+o.div(ring.create([-3,1]))
 (x^3-2*x^2-4)/(x-3)=(x-3)*(x^2+x+3)+(5)=x^3-2*x^2-4 true
-o.multidiv([Abacus.Polynomial([-3,1]), Abacus.Polynomial([1,0,2])])
+o.multidiv([ring.create([-3,1]), ring.create([1,0,2])])
 (x^3-2*x^2-4)/[x-3,2*x^2+1]=(x-3)*(x^2+x+3)+(2*x^2+1)*(0)+(5)=x^3-2*x^2-4 true
 o.d()
 3*x^2-4*x
 o.toExpr()
 -4-2*x^2+x^3
-Abacus.Polynomial.fromExpr(o.toExpr())
+ring.fromExpr(o.toExpr())
 x^3-2*x^2-4
 o.dispose()
 ---
 Polynomial Rational Roots
 ---
-Abacus.Polynomial([0]).roots()
+ring.create([0]).roots()
 
-Abacus.Polynomial([1]).roots()
+ring.create([1]).roots()
 
-Abacus.Polynomial([0,1]).roots()
+ring.create([0,1]).roots()
 (0,1)
-Abacus.Polynomial([0,0,3]).roots()
+ring.create([0,0,3]).roots()
 (0,2)
-Abacus.Polynomial([1,1]).roots()
+ring.create([1,1]).roots()
 (-1,1)
-Abacus.Polynomial([-1,1,0,2]).roots()
+ring.create([-1,1,0,2]).roots()
 
-Abacus.Polynomial([6,-7,0,1]).roots()
+ring.create([6,-7,0,1]).roots()
 (1,1), (2,1), (-3,1)
-Abacus.Polynomial([6,-7,0,1]).shift(2).roots()
+ring.create([6,-7,0,1]).shift(2).roots()
 (0,2), (1,1), (2,1), (-3,1)
-Abacus.Polynomial([-2,5,-5,3]).roots()
+ring.create([-2,5,-5,3]).roots()
 (2/3,1)
-Abacus.Polynomial([1,1]).pow(2).roots()
+ring.create([1,1]).pow(2).roots()
 (-1,2)
-Abacus.Polynomial([1,1]).pow(2).mul(Abacus.Polynomial([0,0,1])).roots()
+ring.create([1,1]).pow(2).mul(ring.create([0,0,1])).roots()
 (0,2), (-1,2)
 ---
 Polynomial Factorization
 ---
-Abacus.Polynomial([1]).factors()
+ring.create([1]).factors()
 1 = (1)(1) true
-Abacus.Polynomial([1,1]).pow(2).factors()
+ring.create([1,1]).pow(2).factors()
 x^2+2*x+1 = (1)(x+1)^2 true
-Abacus.Polynomial([3,2]).pow(2).factors()
+ring.create([3,2]).pow(2).factors()
 4*x^2+12*x+9 = (1)(2*x+3)^2 true
-Abacus.Polynomial([Abacus.Rational.fromString("3/2"),1]).pow(2).factors()
+ring.create([ring.CoefficientRing.fromString("3/2"),1]).pow(2).factors()
 x^2+3*x+9/4 = (1/4)(2*x+3)^2 true
-Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([0,0,1])).factors()
+ring.create([1,1]).mul(ring.create([0,0,1])).factors()
 x^3+x^2 = (1)(x)^2(x+1) true
-Abacus.Polynomial([1,1]).mul(Abacus.Polynomial([1,1,1])).factors()
+ring.create([1,1]).mul(ring.create([1,1,1])).factors()
 x^3+2*x^2+2*x+1 = (1)(x+1)(x^2+x+1) true
 ---
 Polynomial GCD, generalisation of GCD of numbers
 ---
-Abacus.Polynomial.gcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
+ring.gcd(ring.create([1,2]),ring.create([1,3,4]))
 1
-Abacus.Polynomial.gcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))
+ring.gcd(ring.create([1,1,1,1,5]),ring.create([2,1,3]))
 1
-Abacus.Polynomial.gcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))
+ring.gcd(ring.create([6,7,1]),ring.create([-6,-5,1]))
 x+1
-Abacus.Polynomial.gcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))
+ring.gcd(ring.create([6,7,1]),ring.create([-6,-5,1]),ring.create([1,1]))
 x+1
-Abacus.Polynomial.gcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))
+ring.gcd(ring.create([6]),ring.create([4]))
 2 2
-Abacus.Polynomial.gcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))
+ring.gcd(ring.create([12]),ring.create([6]),ring.create([3]))
 3 3
-Abacus.Polynomial.gcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))
+ring.gcd(ring.create([2]),ring.create([0]),ring.create([0]),ring.create([3]))
 1 1
-Abacus.Polynomial.gcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))
+ring.gcd(ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153]))
 1 1
 ---
 Polynomial Extended GCD, generalisation of xGCD of numbers
 ---
-Abacus.Polynomial.xgcd(Abacus.Polynomial([2,0,1]),Abacus.Polynomial([6,12]))
+ring.xgcd(ring.create([2,0,1]),ring.create([6,12]))
 (x^2+2)(4/9) + (12*x+6)(-(1/27)*x+1/54) = 1 true
-(x^{2}+2)(\frac{4}{9}) + (12x+6)(-\frac{1}{27}x+\frac{1}{54}) = 1 true
-Abacus.Polynomial.xgcd(Abacus.Polynomial([1,2]),Abacus.Polynomial([1,3,4]))
+ring.xgcd(ring.create([1,2]),ring.create([1,3,4]))
 (2*x+1)(-4*x-1) + (4*x^2+3*x+1)(2) = 1 true
-Abacus.Polynomial.xgcd(Abacus.Polynomial([1,1,1,1,5]),Abacus.Polynomial([2,1,3]))
+ring.xgcd(ring.create([1,1,1,1,5]),ring.create([2,1,3]))
 (5*x^4+x^3+x^2+x+1)(-(58/193)*x+137/579) + (3*x^2+x+2)((290/579)*x^3-(89/193)*x^2-(92/579)*x+221/579) = 1 true
-Abacus.Polynomial.xgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]))
+ring.xgcd(ring.create([6,7,1]),ring.create([-6,-5,1]))
 (x^2+7*x+6)(1/12) + (x^2-5*x-6)(-1/12) = x+1 true
-Abacus.Polynomial.xgcd(Abacus.Polynomial([6,7,1]),Abacus.Polynomial([-6,-5,1]),Abacus.Polynomial([1,1]))
+ring.xgcd(ring.create([6,7,1]),ring.create([-6,-5,1]),ring.create([1,1]))
 (x^2+7*x+6)(0) + (x^2-5*x-6)(0) + (x+1)(1) = x+1 true
-Abacus.Polynomial.xgcd(Abacus.Polynomial([6]),Abacus.Polynomial([4]))
+ring.xgcd(ring.create([6]),ring.create([4]))
 (6)(1) + (4)(-1) = 2 true
 [ '2', '1', '-1' ]
-Abacus.Polynomial.xgcd(Abacus.Polynomial([12]),Abacus.Polynomial([6]),Abacus.Polynomial([3]))
+ring.xgcd(ring.create([12]),ring.create([6]),ring.create([3]))
 (12)(0) + (6)(0) + (3)(1) = 3 true
 [ '3', '0', '0', '1' ]
-Abacus.Polynomial.xgcd(Abacus.Polynomial([2]),Abacus.Polynomial([0]),Abacus.Polynomial([0]),Abacus.Polynomial([3]))
+ring.xgcd(ring.create([2]),ring.create([0]),ring.create([0]),ring.create([3]))
 (2)(-1) + (0)(1) + (0)(1) + (3)(1) = 1 true
 [ '1', '-1', '1', '1', '1' ]
-Abacus.Polynomial.xgcd(Abacus.Polynomial([74]),Abacus.Polynomial([32]),Abacus.Polynomial([16]),Abacus.Polynomial([153]))
+ring.xgcd(ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153]))
 (74)(0) + (32)(0) + (16)(67) + (153)(-7) = 1 true
 [ '1', '0', '0', '67', '-7' ]
 ---
-Abacus.Math.groebner([Abacus.Polynomial.fromString("x^2-x", "x"),Abacus.Polynomial.fromString("x+1", "x")])
+Abacus.Math.groebner([ring.fromString("x^2-x", "x"),ring.fromString("x+1", "x")])
 1
