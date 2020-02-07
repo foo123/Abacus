@@ -117,6 +117,14 @@ o=Abacus.Rational.fromString("9/10").toDec()
 0.9
 o=Abacus.Rational.fromString("172/165").toDec()
 1.0[42]
+o=Abacus.Rational.fromString("1.11").round()
+1
+o=Abacus.Rational.fromString("-1.11").round()
+-1
+o=Abacus.Rational.fromString("1.75").round()
+2
+o=Abacus.Rational.fromString("-1.75").round()
+-2
 ---
 (X)GCD, LCM of Rationals
 Abacus.Rational.xgcd(Abacus.Rational.One(), Abacus.Rational(3))

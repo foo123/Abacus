@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 218kB minified, ~ 62kB zipped)
+**version 1.0.0 in progress** (~ 220kB minified, ~ 62kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -81,15 +81,15 @@ A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browse
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..) (and with filtering applied, if set). **Note** `rank`/`unrank` methods have to be implemented for this feature to work
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
 
-**Number Theory / Algebraic Number Theory**
+**Algebraic Number Theory**
 * Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
 * Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd` / `groebner`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
 * `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`) **supporting arbitrary precision decimals and repeating decimals as well**
 * `Complex` (`test/complex.js`) **with Rational arbitrary precision parts**
-* `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate/multivariate with Rational coefficients**
-* Generic algebraic `Ring`s (`test/polynomials.js`, `test/multivariate.js`) **including Polynomial rings based on a generic coefficient ring**
+* `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate/multivariate with coefficients from a Ring**
+* Generic algebraic `Ring`s / `Field`s eg `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`) **including Polynomial rings based on a generic coefficient ring**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
-* `Matrix` (`test/matrices.js`) **with Integer coefficients**
+* `Matrix` (`test/matrices.js`) **with coefficients from a Ring (default Integer Ring.Z())**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)

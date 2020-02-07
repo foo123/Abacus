@@ -4,6 +4,20 @@ var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
+function check_xgcd( args )
+{
+    var out = '', res = Abacus.Complex.Zero(), gcd = Abacus.Complex.xgcd(args), d;
+    for(i=0; i<args.length; i++)
+    {
+        out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
+        res = res.add(args[i].mul(gcd[i+1]));
+        d = args[i].div(gcd[0]);
+        if ( !d.real.isInt() || !d.imag.isInt() ) echo(args[i].toString() + ' is NOT divided!');
+    }
+    out += ' = '+gcd[0].toString();
+    echo(out, res.toString(), res.equ(gcd[0]));
+}
+
 var o, i;
 
 echo('Abacus.Complex (VERSION = '+Abacus.VERSION+')');
@@ -21,6 +35,33 @@ echo('o.toDec()');
 echo(o.toDec());
 
 echo();
+
+echo('Abacus.Complex.fromString("1+i")');
+echo(Abacus.Complex.fromString("1+i").toString());
+
+echo('Abacus.Complex.fromString("1")');
+echo(Abacus.Complex.fromString("1").toString());
+
+echo('Abacus.Complex.fromString("1+0i")');
+echo(Abacus.Complex.fromString("1+0i").toString());
+
+echo('Abacus.Complex.fromString("0+1i")');
+echo(Abacus.Complex.fromString("0+1i").toString());
+
+echo('Abacus.Complex.fromString("-3/2+(1/2)*i")');
+echo(Abacus.Complex.fromString("-3/2+(1/2)*i").toString());
+
+echo('Abacus.Complex.fromString("-0.2+(1/2)*i")');
+echo(Abacus.Complex.fromString("-0.2+(1/2)*i").toString());
+
+echo('Abacus.Complex.fromString("-0.2[8]+(1/2)*i")');
+echo(Abacus.Complex.fromString("-0.2[8]+(1/2)*i").toString());
+
+echo('Abacus.Complex.fromString("-0.[8]+(1/2)*i")');
+echo(Abacus.Complex.fromString("-0.[8]+(1/2)*i").toString());
+
+echo('Abacus.Complex.fromString("-\\frac{3}{2}+\\frac{1}{2}i")');
+echo(Abacus.Complex.fromString("-\\frac{3}{2}+\\frac{1}{2}i").toString());
 
 echo('o=Abacus.Complex(Abacus.Arithmetic.I)');
 o=Abacus.Complex(Abacus.Arithmetic.I);
@@ -109,3 +150,16 @@ echo(o.pow(2).toTex());
 
 echo();
 
+// (X)GCD, LCM of complex
+echo('(X)GCD, LCM of Complex');
+echo('Abacus.Complex.xgcd(Abacus.Complex.One(), Abacus.Complex(3))');
+check_xgcd([Abacus.Complex.One(), Abacus.Complex(3)]); // 1
+
+echo('Abacus.Complex.xgcd(Abacus.Complex(6), Abacus.Complex(4))');
+check_xgcd([Abacus.Complex(6), Abacus.Complex(4)]); // 2
+
+echo('Abacus.Complex.xgcd(Abacus.Complex(11, 7), Abacus.Complex(18, -1))');
+check_xgcd([Abacus.Complex(11, 7), Abacus.Complex(18, -1)]); // 1
+
+echo('Abacus.Complex.xgcd(Abacus.Complex(135, -14), Abacus.Complex(155, 34))');
+check_xgcd([Abacus.Complex(135, -14), Abacus.Complex(155, 34)]); // 12 - 5i

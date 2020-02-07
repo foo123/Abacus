@@ -363,5 +363,17 @@ check_xgcd(ring, [ring.create([74]),ring.create([32]),ring.create([16]),ring.cre
 echo(Abacus.Math.xgcd(74,32,16,153).map(function(x){return x.toString();})); // should coincide with this
 echo('---');
 
-echo('Abacus.Math.groebner([ring.fromString("x^2-x", "x"),ring.fromString("x+1", "x")])');
-echo(Abacus.Math.groebner([ring.fromString("x^2-x", "x"),ring.fromString("x+1", "x")]).map(String).join(','));
+echo('Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")])');
+echo(Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")]).map(String).join(','));
+
+ring = Abacus.Ring.C("x");
+echo('ring = Abacus.Ring.C("x")');
+echo('----------');
+echo('ring.create(Abacus.Complex.One())');
+echo(ring.create(Abacus.Complex.One()).toString());
+
+echo('ring.create(Abacus.Complex.Img())');
+echo(ring.create(Abacus.Complex.Img()).toString());
+
+echo('ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)))');
+echo(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2))).toString());

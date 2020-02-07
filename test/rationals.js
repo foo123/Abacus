@@ -183,6 +183,18 @@ echo(String(o=Abacus.Rational.fromString("9/10").toDec()));
 echo('o=Abacus.Rational.fromString("172/165").toDec()');
 echo(String(o=Abacus.Rational.fromString("172/165").toDec()));
 
+echo('o=Abacus.Rational.fromString("1.11").round()');
+echo(String(o=Abacus.Rational.fromString("1.11").round()));
+
+echo('o=Abacus.Rational.fromString("-1.11").round()');
+echo(String(o=Abacus.Rational.fromString("-1.11").round()));
+
+echo('o=Abacus.Rational.fromString("1.75").round()');
+echo(String(o=Abacus.Rational.fromString("1.75").round()));
+
+echo('o=Abacus.Rational.fromString("-1.75").round()');
+echo(String(o=Abacus.Rational.fromString("-1.75").round()));
+
 echo('---');
 
 // (X)GCD, LCM of rational

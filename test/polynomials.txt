@@ -242,5 +242,13 @@ ring.xgcd(ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153
 (74)(0) + (32)(0) + (16)(67) + (153)(-7) = 1 true
 [ '1', '0', '0', '67', '-7' ]
 ---
-Abacus.Math.groebner([ring.fromString("x^2-x", "x"),ring.fromString("x+1", "x")])
+Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")])
 1
+ring = Abacus.Ring.C("x")
+----------
+ring.create(Abacus.Complex.One())
+1
+ring.create(Abacus.Complex.Img())
+i
+ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)))
+(2-i)*x+1+3*i
