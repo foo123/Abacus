@@ -49,7 +49,7 @@ echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Polynomials and Polynomial operations');
-echo('ring = Abacus.Ring.Q("x")');
+echo('ring = Abacus.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
 echo('o=ring.create()');
 o=ring.create();

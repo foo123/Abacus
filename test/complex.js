@@ -160,6 +160,16 @@ check_xgcd([Abacus.Complex(6), Abacus.Complex(4)]); // 2
 
 echo('Abacus.Complex.xgcd(Abacus.Complex(11, 7), Abacus.Complex(18, -1))');
 check_xgcd([Abacus.Complex(11, 7), Abacus.Complex(18, -1)]); // 1
+echo(Abacus.Complex.gcd([Abacus.Complex(11, 7), Abacus.Complex(18, -1)]).toString());
 
 echo('Abacus.Complex.xgcd(Abacus.Complex(135, -14), Abacus.Complex(155, 34))');
 check_xgcd([Abacus.Complex(135, -14), Abacus.Complex(155, 34)]); // 12 - 5i
+echo(Abacus.Complex.gcd([Abacus.Complex(135, -14), Abacus.Complex(155, 34)]).toString());
+
+echo('Abacus.Complex.xgcd(Abacus.Complex(Abacus.Rational(3,7)), Abacus.Complex(Abacus.Rational(12,22)))');
+check_xgcd([Abacus.Complex(Abacus.Rational(3,7)), Abacus.Complex(Abacus.Rational(12,22))]); // 3/77
+echo(Abacus.Complex.gcd([Abacus.Complex(Abacus.Rational(3,7)), Abacus.Complex(Abacus.Rational(12,22))]).toString());
+
+echo('Abacus.Complex.xgcd(Abacus.Complex(Abacus.Rational(13,6)), Abacus.Complex(Abacus.Rational(3,4)))');
+check_xgcd([Abacus.Complex(Abacus.Rational(13,6)), Abacus.Complex(Abacus.Rational(3,4))]); // 1/12
+echo(Abacus.Complex.gcd([Abacus.Complex(Abacus.Rational(13,6)), Abacus.Complex(Abacus.Rational(3,4))]).toString());

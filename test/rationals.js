@@ -209,13 +209,13 @@ echo('Abacus.Rational.xgcd(Abacus.Rational(12), Abacus.Rational(6), Abacus.Ratio
 check_xgcd([Abacus.Rational(12), Abacus.Rational(6), Abacus.Rational(3)]);
 
 echo('Abacus.Rational.xgcd(Abacus.Rational(3,7), Abacus.Rational(12,22))');
-check_xgcd([Abacus.Rational(3,7), Abacus.Rational(12,22)]);
+check_xgcd([Abacus.Rational(3,7), Abacus.Rational(12,22)]); // 3/77
 echo(Abacus.Rational.gcd([Abacus.Rational(3,7), Abacus.Rational(12,22)]).toString());
 
 echo('Abacus.Rational.xgcd(Abacus.Rational(13,6), Abacus.Rational(3,4))');
-check_xgcd([Abacus.Rational(13,6), Abacus.Rational(3,4)]);
+check_xgcd([Abacus.Rational(13,6), Abacus.Rational(3,4)]); // 1/12
 echo(Abacus.Rational.gcd([Abacus.Rational(13,6), Abacus.Rational(3,4)]).toString());
 
 echo('Abacus.Rational.xgcd(Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3))');
-check_xgcd([Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3)]);
+check_xgcd([Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3)]); // 1/12
 echo(Abacus.Rational.gcd([Abacus.Rational(1,3), Abacus.Rational(3,4), Abacus.Rational(3)]).toString());

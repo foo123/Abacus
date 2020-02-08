@@ -109,5 +109,13 @@ Abacus.Complex.xgcd(Abacus.Complex(6), Abacus.Complex(4))
 (6)(-1) + (4)(2) = 2 2 true
 Abacus.Complex.xgcd(Abacus.Complex(11, 7), Abacus.Complex(18, -1))
 (11+7*i)(-11+13*i) + (18-i)(12-3*i) = 1 1 true
+1
 Abacus.Complex.xgcd(Abacus.Complex(135, -14), Abacus.Complex(155, 34))
 (135-14*i)(-1+7*i) + (155+34*i)(-1-6*i) = 12-5*i 12-5*i true
+12-5*i
+Abacus.Complex.xgcd(Abacus.Complex(Abacus.Rational(3,7)), Abacus.Complex(Abacus.Rational(12,22)))
+(3/7)(-5) + (6/11)(4) = 3/77 3/77 true
+3/77
+Abacus.Complex.xgcd(Abacus.Complex(Abacus.Rational(13,6)), Abacus.Complex(Abacus.Rational(3,4)))
+(13/6)(-1) + (3/4)(3) = 1/12 1/12 true
+1/12

@@ -4,29 +4,30 @@ var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
-var o;
+var o, pring = Abacus.Ring.Q("x", "y"), ring = pring.fieldOfFractions();
 
-echo('Abacus.rationalFuncs (VERSION = '+Abacus.VERSION+')');
+echo('Abacus.RationalFuncs (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Rational Functions and Operations');
+echo('pring = AbacusAbacus.'+pring.toString()+' ('+pring.toTex()+'), ring = pring.fieldOfFractions()');
 echo('---');
 
-echo('Abacus.RationalFunc().toString()');
-echo(Abacus.RationalFunc().toString());
+echo('ring.create().toString()');
+echo(ring.create().toString());
 
-echo('Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).toString()');
-echo(Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).toString());
+echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()');
+echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString());
 
-echo('Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).add(2).toString()');
-echo(Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).add(2).toString());
+echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(2).toString()');
+echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(2).toString());
 
-echo('Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).add(Abacus.Polynomial.fromString("x+2")).toString()');
-echo(Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).add(Abacus.Polynomial.fromString("x+2")).toString());
+echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(pring.fromString("x+2")).toString()');
+echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(pring.fromString("x+2")).toString());
 
-echo('Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).mul(Abacus.Polynomial.fromString("x+2")).toString()');
-echo(Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).mul(Abacus.Polynomial.fromString("x+2")).toString());
+echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).mul(pring.fromString("x+2")).toString()');
+echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).mul(pring.fromString("x+2")).toString());
 
-echo('Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).div(Abacus.Polynomial.fromString("x+2")).toString()');
-echo(Abacus.RationalFunc(Abacus.MultiPolynomial.fromString("1+xy", ["x","y"]), Abacus.MultiPolynomial.fromString("x-y", ["x","y"]), ["x","y"]).div(Abacus.Polynomial.fromString("x+2")).toString());
+echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString()');
+echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString());
 

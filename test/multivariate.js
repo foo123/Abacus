@@ -33,13 +33,21 @@ function check_xgcd( ring, args )
     echo(out, res.equ(gcd[0]));
 }
 
+function check_recursive( p, x )
+{
+    var p_x = p.recur(x), p_xx = p_x.recur(x), p_xy = p_x.recur('x'===x?'y':'x'),
+        pp = p_x.recur(false), ppp = p_xy.recur(false);
+    echo(p_x.toString()+', again: '+p_xx.toString()+'('+p_xx.equ(p_x)+'), again on other: '+p_xy.toString());
+    echo(p.toString()+'='+pp.toString()+'='+ppp.toString(), p.equ(pp), p.equ(ppp));
+}
+
 var o, ring = Abacus.Ring.Q("x", "y");
 
 echo('Abacus.MultiPolynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Multivariate Polynomials and Polynomial operations');
-echo('ring = Abacus.Ring.Q("x", "y")');
+echo('ring = Abacus.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
 
 echo('ring.create().toString()');
@@ -59,6 +67,21 @@ echo(ring.fromExpr(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr()).toString());
 
 echo('ring.fromString("1 - yx^2 + 3xy").toString()');
 echo(ring.fromString("1 - yx^2 + 3xy").toString());
+
+echo('ring.fromString("1 - yx").evaluate({"x":1,"y":2})');
+echo(ring.fromString("1 - yx").evaluate({"x":1,"y":2}).toString());
+
+echo('ring.fromString("1 - y+x").evaluate({"x":1,"y":2})');
+echo(ring.fromString("1 - y+x").evaluate({"x":1,"y":2}).toString());
+
+echo('ring.fromString("1+xy+xy^2").evaluate({"x":1,"y":2})');
+echo(ring.fromString("1+xy+xy^2").evaluate({"x":1,"y":2}).toString());
+
+echo('ring.fromString("1 - yx").compose({"x":ring.fromString("y^2+x")})');
+echo(ring.fromString("1 - yx").compose({"x":ring.fromString("y^2+x")}).toString());
+
+echo('ring.fromString("1+xy+xy^2").compose({"x":ring.fromString("y^2+x")})');
+echo(ring.fromString("1+xy+xy^2").compose({"x":ring.fromString("y^2+x")}).toString());
 
 echo('ring.fromString("1 - yx^2 + 3xy").add(1).toString()');
 echo(ring.fromString("1 - yx^2 + 3xy").add(1).toString());
@@ -90,8 +113,30 @@ echo(ring.fromString("1 - yx^2 + 3xy").d("x").toString());
 echo('ring.fromString("1 - yx^2 + 3xy").d("y").toString()');
 echo(ring.fromString("1 - yx^2 + 3xy").d("y").toString());
 
+echo('---');
 echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])');
 echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")]).map(String).join(','));
+
+echo('---');
+ring = Abacus.Ring.Q("x", "y", "z");
+echo('ring = Abacus.'+ring.toString()+' ('+ring.toTex()+')');
+echo('---');
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")');
+check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2"), "x" );
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2").recur("y")');
+check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2"), "y" );
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("x")');
+check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy"), "x" );
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("y")');
+check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy"), "y" );
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur(true)');
+o = ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy");
+echo(o.recur(true).toString()+' '+o.recur(true).recur(false).equ(o));
+echo('----');
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2})');
+echo(ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2}).toString());
+echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5})');
+echo(ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5}).toString());
 
 /*
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
