@@ -49,7 +49,7 @@ echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Polynomials and Polynomial operations');
-echo('ring = Abacus.'+ring.toString()+' ('+ring.toTex()+')');
+echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
 echo('o=ring.create()');
 o=ring.create();
@@ -367,7 +367,7 @@ echo('Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")])');
 echo(Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")]).map(String).join(','));
 
 ring = Abacus.Ring.C("x");
-echo('ring = Abacus.Ring.C("x")');
+echo('ring = Abacus.Ring.'+ring.toString());
 echo('----------');
 echo('ring.create(Abacus.Complex.One())');
 echo(ring.create(Abacus.Complex.One()).toString());

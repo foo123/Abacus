@@ -47,7 +47,7 @@ echo('Abacus.MultiPolynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Multivariate Polynomials and Polynomial operations');
-echo('ring = Abacus.'+ring.toString()+' ('+ring.toTex()+')');
+echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
 
 echo('ring.create().toString()');
@@ -117,9 +117,19 @@ echo('---');
 echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])');
 echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")]).map(String).join(','));
 
+/*
+echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
+echo('---');
+echo('ring.xgcd(ring.fromString("1+x"),ring.fromString("1+x"))');
+check_xgcd(ring, [ring.fromString("1+x"),ring.fromString("1+x")]);
+
+echo('ring.xgcd(ring.fromString("1-xy+x^2"),ring.fromString("1+xy"))');
+check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
+*/
+
 echo('---');
 ring = Abacus.Ring.Q("x", "y", "z");
-echo('ring = Abacus.'+ring.toString()+' ('+ring.toTex()+')');
+echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
 echo('ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")');
 check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2"), "x" );
@@ -137,13 +147,3 @@ echo('ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2})');
 echo(ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2}).toString());
 echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5})');
 echo(ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5}).toString());
-
-/*
-echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
-echo('---');
-echo('ring.xgcd(ring.fromString("1+x"),ring.fromString("1+x"))');
-check_xgcd(ring, [ring.fromString("1+x"),ring.fromString("1+x")]);
-
-echo('ring.xgcd(ring.fromString("1-xy+x^2"),ring.fromString("1+xy"))');
-check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
-*/

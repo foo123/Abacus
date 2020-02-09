@@ -1,7 +1,7 @@
 Abacus.Polynomials (VERSION = 1.0.0)
 ---
 Polynomials and Polynomial operations
-ring = Abacus.Ring.Q(x) (\mathbb{Q}[x])
+ring = Abacus.Ring.Q("x") (\mathbb{Q}[x])
 ---
 o=ring.create()
 o.toString()

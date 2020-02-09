@@ -1,7 +1,7 @@
 Abacus.MultiPolynomials (VERSION = 1.0.0)
 ---
 Multivariate Polynomials and Polynomial operations
-ring = Abacus.Ring.Q(x,y) (\mathbb{Q}[x,y])
+ring = Abacus.Ring.Q("x","y") (\mathbb{Q}[x,y])
 ---
 ring.create().toString()
 0
@@ -49,24 +49,24 @@ ring.fromString("1 - yx^2 + 3xy").d("y").toString()
 Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])
 x^2-y,x*y-x,y^2-y
 ---
-ring = Abacus.Ring.Q(x,y,z) (\mathbb{Q}[x,y,z])
+ring = Abacus.Ring.Q("x","y","z") (\mathbb{Q}[x,y,z])
 ---
 ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")
-(y^2+y)*x^2+(y+1)*x+2, again: (y^2+y)*x^2+(y+1)*x+2(true), again on other: ((y^2+y)*x^2+(y+1)*x+2)
+(y^2+y)*x^2+(y+1)*x+2, again: (y^2+y)*x^2+(y+1)*x+2(true), again on other: (y^2+y)*x^2+(y+1)*x+2
 x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2 true true
 ring.fromString("x^2y+x^2y^2+x+yx+2").recur("y")
-(x^2)*y^2+(x^2+x)*y+(x+2), again: (x^2)*y^2+(x^2+x)*y+(x+2)(true), again on other: ((x^2)*y^2+(x^2+x)*y+(x+2))
+(x^2)*y^2+(x^2+x)*y+(x+2), again: (x^2)*y^2+(x^2+x)*y+(x+2)(true), again on other: (x^2)*y^2+(x^2+x)*y+(x+2)
 x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2 true true
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("x")
-(y^2+y)*x^2+(y*z+y+1)*x+(y*z+2), again: (y^2+y)*x^2+(y*z+y+1)*x+(y*z+2)(true), again on other: ((y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2))
+(y^2+y)*x^2+(y*z+y+1)*x+(y*z+2), again: (y^2+y)*x^2+(y*z+y+1)*x+(y*z+2)(true), again on other: (y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2)
 x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2 true true
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("y")
-(x^2)*y^2+(x^2+x*z+x+z)*y+(x+2), again: (x^2)*y^2+(x^2+x*z+x+z)*y+(x+2)(true), again on other: ((x^2)*y^2+(x^2+(z+1)*x+(z))*y+(x+2))
+(x^2)*y^2+(x^2+x*z+x+z)*y+(x+2), again: (x^2)*y^2+(x^2+x*z+x+z)*y+(x+2)(true), again on other: (x^2)*y^2+(x^2+(z+1)*x+(z))*y+(x+2)
 x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2 true true
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur(true)
-((y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2)) true
+(y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2) true
 ----
 ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2})
-0
+11
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5})
-0
+31

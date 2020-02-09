@@ -26,7 +26,7 @@ echo('Abacus.Matrices (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Matrices and Matrix operations');
-echo('ring = Abacus.Ring.Z() /* ring of integers */');
+echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+') /* ring of integers */');
 echo('---');
 echo('o=Abacus.Matrix(ring, 3)');
 o=Abacus.Matrix(ring, 3);
