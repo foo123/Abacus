@@ -1,0 +1,40 @@
+ring = Abacus.Ring.C("x")
+----
+ring.fromString("1")
+1
+ring.fromString("1 + x^2")
+x^2+1
+ring.fromString("1 - x^2")
+-x^2+1
+ring.fromString("1 - (2/3)*x^2+x")
+-2/3*x^2+x+1
+ring.fromString("1 - \frac{2}{3}*x^{2}+x")
+-2/3*x^2+x+1
+ring.fromString("1 - x")
+-x+1
+ring.fromString("1 + y")
+1
+ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString())
+(2-i)*x+i
+ring.fromString("(1/2)ix^2+(1+(2/3)i)x")
+((1/2)*i)*x^2+(1+(2/3)*i)*x
+ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")
+(3/2+(1/2)*i)*x+1+(2/3)*i
+ring = Abacus.Ring.C("x","y","z")
+----
+ring.fromString("1 - yx^2 + 3xy")
+-x^2*y+3*x*y+1
+ring.fromString("1 - yx")
+-x*y+1
+ring.fromString("1 - y+x")
+x-y+1
+ring.fromString("1+xy+xy^2")
+x*y^2+x*y+1
+ring.fromString("1 - yx")
+-x*y+1
+ring.fromString("1+xy+xy^2")
+x*y^2+x*y+1
+ring.fromString("x^2y+x^2y^2+x+yx+2")
+x^2*y^2+x^2*y+x*y+x+2
+ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy")
+x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2

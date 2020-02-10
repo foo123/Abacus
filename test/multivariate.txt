@@ -54,19 +54,25 @@ ring = Abacus.Ring.Q("x","y","z") (\mathbb{Q}[x,y,z])
 ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")
 (y^2+y)*x^2+(y+1)*x+2, again: (y^2+y)*x^2+(y+1)*x+2(true), again on other: (y^2+y)*x^2+(y+1)*x+2
 x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2 true true
+Derivatives: on same=2*x*y^2+2*x*y+y+1, on other: (2*y+1)*x^2+x
 ring.fromString("x^2y+x^2y^2+x+yx+2").recur("y")
 (x^2)*y^2+(x^2+x)*y+(x+2), again: (x^2)*y^2+(x^2+x)*y+(x+2)(true), again on other: (x^2)*y^2+(x^2+x)*y+(x+2)
 x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2 true true
+Derivatives: on same=2*x^2*y+x^2+x, on other: (2*x)*y^2+(2*x+1)*y+1
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("x")
 (y^2+y)*x^2+(y*z+y+1)*x+(y*z+2), again: (y^2+y)*x^2+(y*z+y+1)*x+(y*z+2)(true), again on other: (y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2)
 x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2 true true
+Derivatives: on same=2*x*y^2+2*x*y+y*z+y+1, on other: (2*y+1)*x^2+(z+1)*x+(z)
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("y")
 (x^2)*y^2+(x^2+x*z+x+z)*y+(x+2), again: (x^2)*y^2+(x^2+x*z+x+z)*y+(x+2)(true), again on other: (x^2)*y^2+(x^2+(z+1)*x+(z))*y+(x+2)
 x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2 true true
+Derivatives: on same=2*x^2*y+x^2+x*z+x+z, on other: (2*x)*y^2+(2*x+z+1)*y+1
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur(true)
 (y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2) true
 ----
 ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2})
+11
+ring.fromString("x^2z+x^2z^2+x+zx+2").evaluate({"x":1,"z":2})
 11
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5})
 31

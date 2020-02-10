@@ -252,3 +252,9 @@ ring.create(Abacus.Complex.Img())
 i
 ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)))
 (2-i)*x+1+3*i
+ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString())
+(2-i)*x+i
+ring.fromString("(1/2)ix^2+(1+(2/3)i)x")
+((1/2)*i)*x^2+(1+(2/3)*i)*x
+ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")
+(3/2+(1/2)*i)*x+1+(2/3)*i

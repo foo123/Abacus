@@ -10,6 +10,7 @@ call node progressions.js > progressions.txt
 call node polynomials.js > polynomials.txt
 call node multivariate.js > multivariate.txt
 call node ratfuncs.js > ratfuncs.txt
+call node parse_strings.js > parse_strings.txt
 call node matrices.js > matrices.txt
 call node expressions.js > expressions.txt
 call node primes.js > primes.txt

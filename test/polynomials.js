@@ -377,3 +377,12 @@ echo(ring.create(Abacus.Complex.Img()).toString());
 
 echo('ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)))');
 echo(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2))).toString());
+
+echo('ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString())');
+echo(ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString()).toString());
+
+echo('ring.fromString("(1/2)ix^2+(1+(2/3)i)x")');
+echo(ring.fromString("(1/2)ix^2+(1+(2/3)i)x").toString());
+
+echo('ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")');
+echo(ring.fromString("(3/2+(1/2)i)x+1+(2/3)i").toString());

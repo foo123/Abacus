@@ -36,6 +36,15 @@ echo(o.toDec());
 
 echo();
 
+echo('Abacus.Complex.fromString("+i")');
+echo(Abacus.Complex.fromString("+i").toString());
+
+echo('Abacus.Complex.fromString("-i")');
+echo(Abacus.Complex.fromString("-i").toString());
+
+echo('Abacus.Complex.fromString("(2/3)i")');
+echo(Abacus.Complex.fromString("(2/3)i").toString());
+
 echo('Abacus.Complex.fromString("1+i")');
 echo(Abacus.Complex.fromString("1+i").toString());
 
