@@ -52,21 +52,49 @@ x^2-y,x*y-x,y^2-y
 ring = Abacus.Ring.Q("x","y","z") (\mathbb{Q}[x,y,z])
 ---
 ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")
+Recursive representations by x:
 (y^2+y)*x^2+(y+1)*x+2, again: (y^2+y)*x^2+(y+1)*x+2(true), again on other: (y^2+y)*x^2+(y+1)*x+2
 x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2 true true
-Derivatives: on same=2*x*y^2+2*x*y+y+1, on other: (2*y+1)*x^2+x
+---------------------------
+Derivatives:
+on same=(2*y^2+2*y)*x+(y+1), on other: (2*y+1)*x^2+x
+---------------------------
+Negative Shifts:
+on same=(y^2+y)*x+(y+1), on other: (y+1)*x^2+x
+---------------------------
 ring.fromString("x^2y+x^2y^2+x+yx+2").recur("y")
+Recursive representations by y:
 (x^2)*y^2+(x^2+x)*y+(x+2), again: (x^2)*y^2+(x^2+x)*y+(x+2)(true), again on other: (x^2)*y^2+(x^2+x)*y+(x+2)
 x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2=x^2*y^2+x^2*y+x*y+x+2 true true
-Derivatives: on same=2*x^2*y+x^2+x, on other: (2*x)*y^2+(2*x+1)*y+1
+---------------------------
+Derivatives:
+on same=(2*x^2)*y+(x^2+x), on other: (2*x)*y^2+(2*x+1)*y+1
+---------------------------
+Negative Shifts:
+on same=(x^2)*y+(x^2+x), on other: (x)*y^2+(x+1)*y+1
+---------------------------
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("x")
+Recursive representations by x:
 (y^2+y)*x^2+(y*z+y+1)*x+(y*z+2), again: (y^2+y)*x^2+(y*z+y+1)*x+(y*z+2)(true), again on other: (y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2)
 x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2 true true
-Derivatives: on same=2*x*y^2+2*x*y+y*z+y+1, on other: (2*y+1)*x^2+(z+1)*x+(z)
+---------------------------
+Derivatives:
+on same=(2*y^2+2*y)*x+(y*z+y+1), on other: (2*y+1)*x^2+(z+1)*x+(z)
+---------------------------
+Negative Shifts:
+on same=(y^2+y)*x+(y*z+y+1), on other: (y+1)*x^2+((z+1))*x+((z))
+---------------------------
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("y")
+Recursive representations by y:
 (x^2)*y^2+(x^2+x*z+x+z)*y+(x+2), again: (x^2)*y^2+(x^2+x*z+x+z)*y+(x+2)(true), again on other: (x^2)*y^2+(x^2+(z+1)*x+(z))*y+(x+2)
 x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2=x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2 true true
-Derivatives: on same=2*x^2*y+x^2+x*z+x+z, on other: (2*x)*y^2+(2*x+z+1)*y+1
+---------------------------
+Derivatives:
+on same=(2*x^2)*y+(x^2+x*z+x+z), on other: (2*x)*y^2+(2*x+z+1)*y+1
+---------------------------
+Negative Shifts:
+on same=(x^2)*y+(x^2+x*z+x+z), on other: (x)*y^2+(x+(z+1))*y+1
+---------------------------
 ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur(true)
 (y^2+y)*x^2+((z+1)*y+1)*x+((z)*y+2) true
 ----
