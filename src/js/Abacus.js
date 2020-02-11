@@ -2654,7 +2654,7 @@ function polygcd( /* args */ )
         else if ( b.equ(O) ) break;
         // swap them (a >= b)
         if ( 0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true) ) { t=b; b=a; a=t; }
-        while ( !b.equ(O) /*0 < b.deg()*/)
+        while ( !b.equ(O) )
         {
             a0 = a; b0 = b;
             r = a.mod(b); a = b; b = r;
@@ -8197,7 +8197,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             
             if ( x instanceof Polynomial )
             {
-                if ( 0 === x.deg() )
+                if ( x.isConst() )
                 {
                     // constant polynomial, simple numeric division
                     x = x.cc();
@@ -9374,7 +9374,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             
             if ( x instanceof MultiPolynomial )
             {
-                if ( 0 === MultiPolyTerm.cmp(x.deg(), [0]) )
+                if ( x.isConst() )
                 {
                     // constant polynomial, simple numeric division
                     x = x.cc();
@@ -9563,12 +9563,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     }
     ,deg: function( x, recur ) {
         // polynomial degree
-        var terms = this.terms, symbol = this.symbol, index;
+        var self = this, terms = self.terms, symbol = self.symbol, index;
         if ( arguments.length )
         {
             recur = (true===recur);
             index = symbol.indexOf(String(x||'x'));
-            return (-1 === index) || !terms.length ? 0 : (recur && (term[0].c instanceof MultiPolynomial) ? stdMath.max(terms[0].e[index], term[0].c.deg(x, recur)) : terms[0].e[index]);
+            return (-1 === index) || !terms.length ? 0 : (recur && (term[0].c instanceof MultiPolynomial) ? (terms[0].e[index]+term[0].c.deg(x, recur)) : terms[0].e[index]);
         }
         return terms.length ? terms[0].e : array(symbol.length, 0);
     }
@@ -9619,12 +9619,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     }
     ,lm: function( x ) {
         // leading monomial (per symbol)
-        var lt = arguments.length ? this.ltm(false, x) : this.ltm(false);
+        var self = this, lt = arguments.length ? self.ltm(false, x) : self.ltm(false);
         return lt.e;
     }
     ,lc: function( x ) {
         // leading coefficient (per symbol)
-        var lt = arguments.length ? this.ltm(false, x) : this.ltm(false);
+        var self = this, lt = arguments.length ? self.ltm(false, x) : self.ltm(false);
         return lt.c;
     }
     ,cc: function( ) {
@@ -9674,7 +9674,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                         tt.c = t.c.mul(MultiPolynomial([t], symbol, ring)).recur(x);
                         p = MultiPolynomial([tt], symbol, ring);
                     }
-                    else*/ if ( t.c.isUni(x) )
+                    else */if ( t.c.isUni(x) )
                     {
                         // recursive on same
                         p = MultiPolynomial([t], symbol, ring);
