@@ -16,10 +16,20 @@ ring.fromString("1 + y")
 1
 ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString())
 (2-i)*x+i
+ring.fromString("ix^2+1")
+(i)*x^2+1
 ring.fromString("(1/2)ix^2+(1+(2/3)i)x")
 ((1/2)*i)*x^2+(1+(2/3)*i)*x
 ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")
 (3/2+(1/2)*i)*x+1+(2/3)*i
+ring.fromString("1+2ix") /* this is taken as one complex coefficient unfortunately */
+(1+2*i)*x
+ring.fromString("1+(2i)x") /* this is taken as one complex coefficient unfortunately */
+(1+2*i)*x
+ring.fromString("1+((2)i)x") /* this is workaround, parsed correctly */
+(2*i)*x+1
+ring.fromString("2ix+1") /* this is workaround, parsed correctly, in fact .toString() methods output strings in this order so always parsed correctly */
+(2*i)*x+1
 ring = Abacus.Ring.C("x","y","z")
 ----
 ring.fromString("1 - yx^2 + 3xy")

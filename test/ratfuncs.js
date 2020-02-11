@@ -10,7 +10,7 @@ echo('Abacus.RationalFuncs (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Rational Functions and Operations');
-echo('pring = AbacusAbacus.'+pring.toString()+' ('+pring.toTex()+'), ring = pring.fieldOfFractions()');
+echo('pring = Abacus.Ring.'+ring.toString()+', ring = pring.fieldOfFractions()');
 echo('---');
 
 echo('ring.create().toString()');
