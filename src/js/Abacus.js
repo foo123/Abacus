@@ -4740,7 +4740,6 @@ function division_sparse( a, b, TermClass, q_and_r )
 {
     // sparse polynomial reduction/long division
     // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
-
     q_and_r = (true===q_and_r);
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
@@ -5373,6 +5372,19 @@ function find( a, b, nested )
         return a && a.length ? a.indexOf(b) : -1;
     }
 }
+function remove_duplicates( a, KEY )
+{
+    KEY = "function"===typeof KEY ? KEY : String;
+    var hash = Obj(), dupl = [], k, i, l;
+    for(i=0,l=a.length; i<l; i++)
+    {
+        k = KEY(a[i]);
+        if ( HAS.call(hash, k) ) dupl.push(i);
+        else hash[k] = i;
+    }
+    while(dupl.length) a.splice(dupl.pop(), 1);
+    return a;
+}
 function rndInt( m, M )
 {
     return stdMath.round( (M-m)*Abacus.Math.rnd( ) + m );
@@ -5387,75 +5399,75 @@ Abacus.Options = {
 };
 
 DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as distinct
-
- // whether using default arithmetic or using external implementation (eg big-int or other)
- isDefault: function( ){ return true; }
-,isNumber: function( x ) {
-    var Arithmetic = this;
-    if ( Arithmetic.isDefault() ) return is_number(x);
-    return is_number(x) || (x instanceof Arithmetic.O[CLASS]);
-}
-
-,J: -1
-,O: 0
-,I: 1
-,II: 2
-,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}, toTex: function(){return "\\infty";}} // a representation of Infinity
-,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}, toTex: function(){return "-\\infty";}} // a representation of -Infinity
-
-,nums: function( a ) {
-    var Arithmetic = this;
-    if ( is_array(a) || is_args(a) )
-    {
-        for(var i=0,l=a.length; i<l; i++) a[i] = Arithmetic.nums(a[i]); // recursive
-        return a;
+     // whether using default arithmetic or using external implementation (eg big-int or other)
+     isDefault: function( ){
+         return true;
+     }
+    ,isNumber: function( x ) {
+        var Arithmetic = this;
+        if ( Arithmetic.isDefault() ) return is_number(x);
+        return is_number(x) || (x instanceof Arithmetic.O[CLASS]);
     }
-    return Arithmetic.num(a);
-}
-,num: function( a ) {
-    return is_number(a) ? stdMath.floor(a) : parseInt(a||0,10);
-}
-,val: function( a ) {
-    return stdMath.floor(a.valueOf());
-}
-,digits: function( a, base ){
-    var s = a.toString(+(base||10)); /* default base 10 */
-    if ( '-' === s.charAt(0) ) s = s.slice(1); // dont include the sign in digits
-    return s;
-}
 
-,neg: function( a ) { return -(+a); }
-,inv: NotImplemented
+    ,J: -1
+    ,O: 0
+    ,I: 1
+    ,II: 2
+    ,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}, toTex: function(){return "\\infty";}} // a representation of Infinity
+    ,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}, toTex: function(){return "-\\infty";}} // a representation of -Infinity
 
-,equ: function( a, b ) { return a===b; }
-,gte: function( a, b ) { return a>=b; }
-,lte: function( a, b ) { return a<=b; }
-,gt: function( a, b ) { return a>b; }
-,lt: function( a, b ) { return a<b; }
+    ,nums: function( a ) {
+        var Arithmetic = this;
+        if ( is_array(a) || is_args(a) )
+        {
+            for(var i=0,l=a.length; i<l; i++) a[i] = Arithmetic.nums(a[i]); // recursive
+            return a;
+        }
+        return Arithmetic.num(a);
+    }
+    ,num: function( a ) {
+        return is_number(a) ? stdMath.floor(a) : parseInt(a||0,10);
+    }
+    ,val: function( a ) {
+        return stdMath.floor(a.valueOf());
+    }
+    ,digits: function( a, base ){
+        var s = a.toString(+(base||10)); /* default base 10 */
+        if ( '-' === s.charAt(0) ) s = s.slice(1); // dont include the sign in digits
+        return s;
+    }
 
-,inside: function( a, m, M, closed ) { return closed ? (a >= m) && (a <= M) : (a > m) && (a < M); }
-,clamp: function( a, m, M ) { return a < m ? m : (a > M ? M : a); }
-,wrap: function( a, m, M ) { return a < m ? M : (a > M ? m : a); }
-,wrapR: function( a, M ) { return a < 0 ? a+M : a; }
+    ,neg: function( a ) { return -(+a); }
+    ,inv: NotImplemented
 
-,add: addn
-,sub: function( a, b ){ return a-b; }
-,mul: muln
-,div: function( a, b ){ return stdMath.floor(a/b); }
-,mod: function( a, b ){ return a % b; }
-,pow: stdMath.pow
+    ,equ: function( a, b ) { return a===b; }
+    ,gte: function( a, b ) { return a>=b; }
+    ,lte: function( a, b ) { return a<=b; }
+    ,gt: function( a, b ) { return a>b; }
+    ,lt: function( a, b ) { return a<b; }
 
-,shl: function( a, b ){ return a << b; }
-,shr: function( a, b ){ return a >> b; }
-,bor: function( a, b ){ return a | b; }
-,band: function( a, b ){ return a & b; }
-,xor: function( a, b ){ return a ^ b; }
+    ,inside: function( a, m, M, closed ) { return closed ? (a >= m) && (a <= M) : (a > m) && (a < M); }
+    ,clamp: function( a, m, M ) { return a < m ? m : (a > M ? M : a); }
+    ,wrap: function( a, m, M ) { return a < m ? M : (a > M ? m : a); }
+    ,wrapR: function( a, M ) { return a < 0 ? a+M : a; }
 
-,abs: stdMath.abs
-,min: stdMath.min
-,max: stdMath.max
-,rnd: rndInt
+    ,add: addn
+    ,sub: function( a, b ){ return a-b; }
+    ,mul: muln
+    ,div: function( a, b ){ return stdMath.floor(a/b); }
+    ,mod: function( a, b ){ return a % b; }
+    ,pow: stdMath.pow
 
+    ,shl: function( a, b ){ return a << b; }
+    ,shr: function( a, b ){ return a >> b; }
+    ,bor: function( a, b ){ return a | b; }
+    ,band: function( a, b ){ return a & b; }
+    ,xor: function( a, b ){ return a ^ b; }
+
+    ,abs: stdMath.abs
+    ,min: stdMath.min
+    ,max: stdMath.max
+    ,rnd: rndInt
 };
 
 // pluggable arithmetics, eg biginteger Arithmetic
@@ -5469,188 +5481,185 @@ Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
 
 // math / num theory utilities
 Abacus.Math = {
+     rnd: stdMath.random
+    ,rndInt: rndInt
 
- rnd: stdMath.random
-,rndInt: rndInt
+    ,factorial: factorial
+    ,stirling: stirling
+    ,partitions: partitions
+    ,compositions: compositions
+    ,bell: bell
+    ,catalan: catalan
+    ,fibonacci: fibonacci
+    ,polygonal: polygonal
 
-,factorial: factorial
-,stirling: stirling
-,partitions: partitions
-,compositions: compositions
-,bell: bell
-,catalan: catalan
-,fibonacci: fibonacci
-,polygonal: polygonal
+    ,sum: sum
+    ,product: product
+    ,pow2: pow2
+    ,exp: exp
 
-,sum: sum
-,product: product
-,pow2: pow2
-,exp: exp
+    ,powsq: function( b, e ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return powsq(Arithmetic.num(b), Arithmetic.num(e));
+    }
+    ,addm: function( a, b, m ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return addm(Arithmetic.num(a), Arithmetic.num(b), Arithmetic.num(m));
+    }
+    ,negm: function( a, m ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return negm(Arithmetic.num(a), Arithmetic.num(m));
+    }
+    ,mulm: function( a, b, m ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return mulm(Arithmetic.num(a), Arithmetic.num(b), Arithmetic.num(m));
+    }
+    ,invm: function( a, m ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return invm(Arithmetic.num(a), Arithmetic.num(m));
+    }
+    ,powm: function( a, b, m ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return powm(Arithmetic.num(a), Arithmetic.num(b), Arithmetic.num(m));
+    }
+    ,isqrt: function( a ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return isqrt(Arithmetic.num(a));
+    }
+    ,ikthroot: function( a, k ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return ikthroot(Arithmetic.num(a), +k);
+    }
+    ,isqrtp: function( a, p ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return isqrtp(Arithmetic.num(a), Arithmetic.num(p));
+    }
+    ,ilog: function( x, b ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return ilog(Arithmetic.num(x), Arithmetic.num(b));
+    }
+    ,gcd: function( /* args */ ) {
+        var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
+        return gcd(Arithmetic.nums(args));
+    }
+    ,xgcd: function( /* args */ ) {
+        var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
+        return xgcd(Arithmetic.nums(args));
+    }
+    ,lcm: function( /* args */ ) {
+        var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
+        return lcm(Arithmetic.nums(args));
+    }
+    ,dotp: function( a, b ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return (is_array(a)||is_args(a)) && (is_array(b)||is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
+    }
+    ,orthogonalize: function( v ) {
+        return (is_array(v)||is_args(v)) && v.length ? gramschmidt(v) : [];
+    }
+    ,divisors: function( n, as_generator ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return divisors(Arithmetic.num(n), true===as_generator);
+    }
+    ,legendre: function( a, p ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return legendre_symbol(Arithmetic.num(a), Arithmetic.num(p));
+    }
+    ,jacobi: function( a, n ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return jacobi_symbol(Arithmetic.num(a), Arithmetic.num(n));
+    }
+    ,moebius: function( n ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return moebius(Arithmetic.num(n));
+    }
+    ,pollardRho: function( n, s, a, retries, max_steps, F ) {
+        var N = Abacus.Arithmetic.num;
+        return pollard_rho(N(n), null==s?null:N(s), null==a?null:N(a), retries, max_steps||null, F||null);
+    }
+    ,factorize: function( n ) {
+        return factorize(Abacus.Arithmetic.num(n));
+    }
+    ,isProbablePrime: function( n ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return is_probable_prime(Arithmetic.num(n));
+    }
+    ,isPrime: function( n ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return is_prime(Arithmetic.num(n));
+    }
+    ,nextPrime: function( n, dir ) {
+        var Arithmetic = Abacus.Arithmetic;
+        return next_prime(Arithmetic.num(n), -1===dir?-1:1);
+    }
 
-,powsq: function( b, e ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return powsq(Arithmetic.num(b), Arithmetic.num(e));
-}
-,addm: function( a, b, m ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return addm(Arithmetic.num(a), Arithmetic.num(b), Arithmetic.num(m));
-}
-,negm: function( a, m ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return negm(Arithmetic.num(a), Arithmetic.num(m));
-}
-,mulm: function( a, b, m ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return mulm(Arithmetic.num(a), Arithmetic.num(b), Arithmetic.num(m));
-}
-,invm: function( a, m ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return invm(Arithmetic.num(a), Arithmetic.num(m));
-}
-,powm: function( a, b, m ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return powm(Arithmetic.num(a), Arithmetic.num(b), Arithmetic.num(m));
-}
-,isqrt: function( a ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return isqrt(Arithmetic.num(a));
-}
-,ikthroot: function( a, k ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return ikthroot(Arithmetic.num(a), +k);
-}
-,isqrtp: function( a, p ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return isqrtp(Arithmetic.num(a), Arithmetic.num(p));
-}
-,ilog: function( x, b ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return ilog(Arithmetic.num(x), Arithmetic.num(b));
-}
-,gcd: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return gcd(Arithmetic.nums(args));
-}
-,xgcd: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return xgcd(Arithmetic.nums(args));
-}
-,lcm: function( /* args */ ) {
-    var Arithmetic = Abacus.Arithmetic, args = arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments;
-    return lcm(Arithmetic.nums(args));
-}
-,dotp: function( a, b ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return (is_array(a)||is_args(a)) && (is_array(b)||is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
-}
-,orthogonalize: function( v ) {
-    return (is_array(v)||is_args(v)) && v.length ? gramschmidt(v) : [];
-}
-,divisors: function( n, as_generator ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return divisors(Arithmetic.num(n), true===as_generator);
-}
-,legendre: function( a, p ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return legendre_symbol(Arithmetic.num(a), Arithmetic.num(p));
-}
-,jacobi: function( a, n ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return jacobi_symbol(Arithmetic.num(a), Arithmetic.num(n));
-}
-,moebius: function( n ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return moebius(Arithmetic.num(n));
-}
-,pollardRho: function( n, s, a, retries, max_steps, F ) {
-    var N = Abacus.Arithmetic.num;
-    return pollard_rho(N(n), null==s?null:N(s), null==a?null:N(a), retries, max_steps||null, F||null);
-}
-,factorize: function( n ) {
-    return factorize(Abacus.Arithmetic.num(n));
-}
-,isProbablePrime: function( n ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return is_probable_prime(Arithmetic.num(n));
-}
-,isPrime: function( n ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return is_prime(Arithmetic.num(n));
-}
-,nextPrime: function( n, dir ) {
-    var Arithmetic = Abacus.Arithmetic;
-    return next_prime(Arithmetic.num(n), -1===dir?-1:1);
-}
+    ,diophantine: function( a, b, with_param, with_free_vars ) {
+        var Arithmetic = Abacus.Arithmetic;
+        if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+        return solvedioph(Arithmetic.nums(a), Arithmetic.num(b||0), with_param, true===with_free_vars);
+    }
+    ,diophantines: function( a, b, with_param, with_free_vars ) {
+        var ring = Ring.Z();
+        if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
+        if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
+        if ( !(a instanceof Matrix) && !a.length ) return null;
+        //a = a instanceof Matrix ? a : a;
+        if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
+        b = b instanceof Matrix ? b : ring.cast(b);
+        return solvediophs(a, b, with_param, true===with_free_vars);
+    }
+    ,congruence: function( a, b, m, with_param, with_free_vars ) {
+        var Arithmetic = Abacus.Arithmetic;
+        if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+        return solvecongr(Arithmetic.nums(a), Arithmetic.num(b||0), Arithmetic.num(m||0), with_param, true===with_free_vars);
+    }
+    ,congruences: function( a, b, m, with_param, with_free_vars ) {
+        var ring = Ring.Z();
+        if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
+        if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
+        if ( !(a instanceof Matrix) && !a.length ) return null;
+        a = a instanceof Matrix ? a : ring.cast(a);
+        if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
+        b = b instanceof Matrix ? b : ring.cast(b);
+        if ( !(m instanceof Matrix) && !is_array(m) && !is_args(m) ) m = array(a instanceof Matrix ? a.nr : a.length, function(){return m||0;});
+        m = m instanceof Matrix ? m : ring.cast(m);
+        return solvecongrs(a, b, m, with_param, true===with_free_vars);
+    }
+    ,pythagorean: function( a, with_param ) {
+        var Arithmetic = Abacus.Arithmetic;
+        if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
+        return solvepythag(Arithmetic.nums(a), with_param)
+    }
 
-,diophantine: function( a, b, with_param, with_free_vars ) {
-    var Arithmetic = Abacus.Arithmetic;
-    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    return solvedioph(Arithmetic.nums(a), Arithmetic.num(b||0), with_param, true===with_free_vars);
-}
-,diophantines: function( a, b, with_param, with_free_vars ) {
-    var ring = Ring.Z();
-    if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
-    if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
-    if ( !(a instanceof Matrix) && !a.length ) return null;
-    //a = a instanceof Matrix ? a : a;
-    if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
-    b = b instanceof Matrix ? b : ring.cast(b);
-    return solvediophs(a, b, with_param, true===with_free_vars);
-}
-,congruence: function( a, b, m, with_param, with_free_vars ) {
-    var Arithmetic = Abacus.Arithmetic;
-    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    return solvecongr(Arithmetic.nums(a), Arithmetic.num(b||0), Arithmetic.num(m||0), with_param, true===with_free_vars);
-}
-,congruences: function( a, b, m, with_param, with_free_vars ) {
-    var ring = Ring.Z();
-    if ( !(a instanceof Matrix) && !is_array(a) && !is_args(a) ) return null;
-    if ( (a instanceof Matrix) && (!a.nr || !a.nc) ) return null;
-    if ( !(a instanceof Matrix) && !a.length ) return null;
-    a = a instanceof Matrix ? a : ring.cast(a);
-    if ( !(b instanceof Matrix) && !is_array(b) && !is_args(b) ) b = array(a instanceof Matrix ? a.nr : a.length, function(){return b||0;});
-    b = b instanceof Matrix ? b : ring.cast(b);
-    if ( !(m instanceof Matrix) && !is_array(m) && !is_args(m) ) m = array(a instanceof Matrix ? a.nr : a.length, function(){return m||0;});
-    m = m instanceof Matrix ? m : ring.cast(m);
-    return solvecongrs(a, b, m, with_param, true===with_free_vars);
-}
-,pythagorean: function( a, with_param ) {
-    var Arithmetic = Abacus.Arithmetic;
-    if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
-    return solvepythag(Arithmetic.nums(a), with_param)
-}
-
-,groebner: buchberger_groebner
+    ,groebner: buchberger_groebner
 };
 
 // array/list utilities
 Abacus.Util = {
-
- array: array
-,operate: operate
-,unique: unique
-,intersection: intersection
-,difference: difference
-,multi_difference: multi_difference
-,union: merge
-,bsearch: binarysearch
-,bisect: bisect
-,complementation: complementation
-,reflection: reflection
-,reversion: reversion
-,gray: gray
-,finitedifference: fdiff
-,partialsum: psum
-,convolution: convolution
-,summation: summation
-,wheel: wheel
-,sort: mergesort
-,shuffle: shuffle
-,pick: pick
-,pluck: pluck
-,is_mirror_image: is_mirror_image
-,cycle_detection: floyd_cycle_detection
-
+     array: array
+    ,operate: operate
+    ,unique: unique
+    ,intersection: intersection
+    ,difference: difference
+    ,multi_difference: multi_difference
+    ,union: merge
+    ,bsearch: binarysearch
+    ,bisect: bisect
+    ,complementation: complementation
+    ,reflection: reflection
+    ,reversion: reversion
+    ,gray: gray
+    ,finitedifference: fdiff
+    ,partialsum: psum
+    ,convolution: convolution
+    ,summation: summation
+    ,wheel: wheel
+    ,sort: mergesort
+    ,shuffle: shuffle
+    ,pick: pick
+    ,pluck: pluck
+    ,is_mirror_image: is_mirror_image
+    ,cycle_detection: floyd_cycle_detection
 };
 
 // combinatorial objects iterator ordering patterns
@@ -8274,11 +8283,11 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 return [ring.cast(vi[0]), ring.cast(vi[1])];
             });
             // check and filter out duplicate values
-            hash = {}; dupl = [];
+            hash = Obj(); dupl = [];
             for(n=0; n<v.length; n++)
             {
                 vi = v[n][0].toString();
-                if ( null == hash[vi] ) hash[vi] = n;
+                if ( !HAS.call(hash, vi) ) hash[vi] = n;
                 else if ( !v[hash[vi]][1].equ(v[n][1]) ) return null; // no polynomial exists
                 else dupl.push(n); // duplicate value to be removed
             }
@@ -8443,6 +8452,13 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         var terms = this.terms, i;
         for(i=terms.length-1; i>=0; i--)
             if ( !terms[i].c.isReal() ) return false;
+        return true;
+    }
+    ,isImag: function( ) {
+        // has imaginary coefficients
+        var terms = this.terms, i;
+        for(i=terms.length-1; i>=0; i--)
+            if ( !terms[i].c.isImag() ) return false;
         return true;
     }
     ,isMono: function( ) {
@@ -9205,6 +9221,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             self.terms = (self.ring !== terms.ring) || (self.symbol.length !== terms.symbol.length) ? terms.terms.map(function(t){
                 return MultiPolyTerm(t.c, self.symbol.length <= terms.symbol.length ? t.e.slice(0, self.symbol.length) : t.e.concat(array(self.symbol.length-terms.symbol.length, 0)), self.ring);
             }) : terms.terms.slice();
+            self._recur = terms._recur;
+            self._rsym = terms._rsym ? terms._rsym.slice() : null;
         }
         else if ( terms instanceof Polynomial )
         {
@@ -9306,19 +9324,29 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         }
         ,cast: null // added below
         
-        ,gcd: polygcd
-        ,xgcd: polyxgcd
-        ,lcm: polylcm
+        ,gcd: null//polygcd
+        ,xgcd: null//polyxgcd
+        ,lcm: null//polylcm
         
-        ,Add: function( x, P, do_sub ) {
-            var Arithmetic = Abacus.Arithmetic, res;
+        ,Add: function( x, P, do_sub, recur ) {
+            var Arithmetic = Abacus.Arithmetic, res, rsym;
             if ( x instanceof Polynomial ) x = MultiPolynomial(x, P.symbol, P.ring);
             
             if ( x instanceof MultiPolynomial )
             {
                 // O(max(n1,n2))
                 if ( x.terms.length )
+                {
+                    recur = (true===recur);
+                    if ( recur )
+                    {
+                        rsym = P._rsym;
+                        P = P.recur(false);
+                        x = x.recur(false);
+                    }
                     P.terms = addition_sparse(P.terms, x.terms, MultiPolyTerm, true===do_sub);
+                    if ( recur ) P = P.recur(rsym);
+                }
             }
             else if ( (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || Arithmetic.isNumber(x) )
             {
@@ -9333,8 +9361,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             return P;
         }
 
-        ,Mul: function( x, P ) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i;
+        ,Mul: function( x, P, recur ) {
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, rsym;
             if ( !P.terms.length ) return P;
             
             if ( x instanceof Polynomial )
@@ -9343,7 +9371,22 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             if ( x instanceof MultiPolynomial )
             {
                 // O(n1*n2)
-                P.terms = x.terms.length ? multiplication_sparse(P.terms, x.terms, MultiPolyTerm) : [];
+                if ( x.terms.length )
+                {
+                    recur = (true===recur);
+                    if ( recur )
+                    {
+                        rsym = P._rsym;
+                        P = P.recur(false);
+                        x = x.recur(false);
+                    }
+                    P.terms = multiplication_sparse(P.terms, x.terms, MultiPolyTerm);
+                    if ( recur ) P = P.recur(rsym);
+                }
+                else
+                {
+                    P.terms = [];
+                }
             }
             else if ( (x instanceof Complex) || (x instanceof Rational) || (x instanceof Integer) || Arithmetic.isNumber(x) )
             {
@@ -9366,14 +9409,16 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             return P;
         }
 
-        ,Div: function( P, x, q_and_r ) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, q/*, r, d, diff, diff0*/;
+        ,Div: function( P, x, q_and_r, recur ) {
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, rsym, q/*, r, d, diff, diff0*/;
             q_and_r = (true===q_and_r);
             
             if ( x instanceof Polynomial ) x = MultiPolynomial(x, P.symbol, P.ring);
             
             if ( x instanceof MultiPolynomial )
             {
+                recur = (true===recur);
+                if ( recur ) x = x.recur(false); // convert to flat representation
                 if ( x.isConst() )
                 {
                     // constant polynomial, simple numeric division
@@ -9384,8 +9429,19 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                     return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
                 }
                 // sparse polynomial reduction/long division
+                if ( recur )
+                {
+                    rsym = P._rsym;
+                    P = P.recur(false);
+                }
                 q = division_sparse(P.terms, x.terms, MultiPolyTerm, q_and_r);
-                return q_and_r ? [MultiPolynomial(q[0], P.symbol, P.ring), MultiPolynomial(q[1], P.symbol, P.ring)] : MultiPolynomial(q, P.symbol, P.ring);
+                q = q_and_r ? [MultiPolynomial(q[0], P.symbol, P.ring), MultiPolynomial(q[1], P.symbol, P.ring)] : MultiPolynomial(q, P.symbol, P.ring);
+                if ( recur )
+                {
+                    if ( q_and_r ) { q[0] = q[0].recur(rsym); q[1] = q[1].recur(rsym); }
+                    else q = q.recur(rsym);
+                }
+                return q;
             }
             else if ( (x instanceof Complex) || (x instanceof Rational) || (x instanceof Integer) || Arithmetic.isNumber(x) )
             {
@@ -9496,6 +9552,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     ,_expr: null
     ,_prim: null
     ,_recur: null
+    ,_rsym: null
     
     ,dispose: function( ) {
         var self = this;
@@ -9509,6 +9566,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         self._expr = null;
         self._prim = null;
         self._recur = null;
+        self._rsym = null;
         return self;
     }
     ,clone: function( ) {
@@ -9526,6 +9584,13 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var terms = this.terms, i;
         for(i=terms.length-1; i>=0; i--)
             if ( !terms[i].c.isReal() ) return false;
+        return true;
+    }
+    ,isImag: function( ) {
+        // has imaginary coefficients
+        var terms = this.terms, i;
+        for(i=terms.length-1; i>=0; i--)
+            if ( !terms[i].c.isImag() ) return false;
         return true;
     }
     ,isMono: function( ) {
@@ -9638,32 +9703,54 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     }
     ,recur: function( x ) {
         var self = this, terms = self.terms, symbol = self.symbol, ring = self.ring,
-            Arithmetic = Abacus.Arithmetic, index, maxdeg, pr, c;
+            Arithmetic = Abacus.Arithmetic, index, maxdeg, pr, c = null;
         if ( false === x )
         {
             // make non-recursive
-            return (1 >= symbol.length) || !self.isRecur() ? self : operate(function(p, t){
-                return p.add(t.c instanceof MultiPolynomial ? MultiPolynomial([MultiPolyTerm(ring.One(), t.e, ring)], symbol, ring).mul(t.c.recur(false)) : MultiPolynomial([t], symbol, ring));
-            }, MultiPolynomial.Zero(symbol, ring), terms);
+            if ( (1 >= symbol.length) || !self.isRecur() )
+            {
+                pr = self;
+            }
+            else
+            {
+                pr = operate(function(p, t){
+                    return p.add(t.c instanceof MultiPolynomial ? MultiPolynomial([MultiPolyTerm(ring.One(), t.e.slice(), ring)], symbol, ring).mul(t.c.recur(false)) : MultiPolynomial([t], symbol, ring));
+                }, MultiPolynomial.Zero(symbol, ring), terms);
+            }
+            pr._rsym = null;
+            return pr;
         }
         else if ( true === x )
         {
             // make recursive on all variables succesively
             if ( null == self._recur )
-                self._recur = 1 >= symbol.length ? self : operate(function(p, i){return p.recur(symbol[i]);}, self.recur(false), null, 0, symbol.length-1);
+                self._recur = 1 >= symbol.length ? self : operate(function(p, x){return p.recur(x);}, self.recur(false), symbol);
             return self._recur;
         }
-        else
+        else if ( is_array(x) )
+        {
+            return operate(function(p, xi){return p.recur(xi);}, self, x);
+        }
+        else if ( x )
         {
             // make recursive on/group by symbol x
-            // idempotent if is already univariate on x
+            // idempotent if is already grouped on x
             if ( 1 >= symbol.length ) return self;
             x = String(x||'x'); index = symbol.indexOf(x);
-            if ( (-1 === index) || self.isUni(x) ) return self;
+            if ( (-1 === index) || (self._rsym && (-1 !== self._rsym.indexOf(x))) ) return self;
+            if ( self.isUni(x) )
+            {
+                self._rsym = (self._rsym||[]).concat(x);
+                return self;
+            }
             maxdeg = self.maxdeg(x, true)
-            if ( 0 === maxdeg ) return self;
+            if ( 0 === maxdeg )
+            {
+                self._rsym = (self._rsym||[]).concat(x);
+                return self;
+            }
             pr = MultiPolynomial(operate(function(terms, t){
-                var e = t.e[index], tt, p;
+                var e = t.e[index], i = maxdeg-e, tt, p;
                 if ( t.c instanceof MultiPolynomial )
                 {
                     /*if ( (0 < e) && (0 < t.c.maxdeg(x, true)) )
@@ -9698,14 +9785,19 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                 {
                     p = MultiPolynomial([t], symbol, ring);
                 }
-                terms[e] = terms[e] ? terms[e].add(p) : p;
+                // group by same power/exponent of recursive symbol
+                // put them directly in reverse order to avoid reversing later on
+                terms[i] = terms[i] ? terms[i].add(p) : p;
                 return terms;
             }, new Array(maxdeg+1), terms).map(function(t, e){
-                return t.equ(Arithmetic.O) ? null : MultiPolyTerm(t, array(symbol.length, function(i){return index===i ? e : 0;}));
-            }).filter(MultiPolyTerm.isNonZero).reverse(), symbol, ring);
+                return t.equ(Arithmetic.O) ? null : MultiPolyTerm(t, array(symbol.length, function(i){return index===i ? maxdeg-e : 0;}));
+            }).filter(MultiPolyTerm.isNonZero), symbol, ring);
             while ( pr.isConst() && ((c=pr.cc()) instanceof MultiPolynomial) ) pr = c;
+            if ( c === pr ) pr = pr.clone(); // copy it to avoid mutating existing poly
+            pr._rsym = (self._rsym||[]).concat(x);
             return pr;
         }
+        return self;
     }
     ,monic: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
@@ -9757,7 +9849,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
     }
-    ,equ: function( p ) {
+    ,equ: function( p, strict ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             t = self.terms, tp, s, i;
         if ( Arithmetic.isNumber(p) )
@@ -9771,7 +9863,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         }
         else if ( (p instanceof MultiPolynomial) || (p instanceof Polynomial) )
         {
-            tp = p instanceof Polynomial ? MultiPolynomial(p, self.symbol, self.ring).terms : p.terms;
+            strict = (false!==strict);
+            p = p instanceof Polynomial ? MultiPolynomial(p, self.symbol, self.ring).terms : p;
+            if ( !strict )
+            {
+                t = self.recur(false).terms;
+                p = p.recur(false);
+            }
+            tp = p.terms;
             if ( t.length !== tp.length ) return false;
             for(i=t.length-1; i>=0; i--)
                 if ( !t[i].equ(tp[i]) )
@@ -9895,26 +9994,46 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (x instanceof Expr) || (x instanceof Term) ) return self.toExpr().add(x);
         else if ( x instanceof RationalFunc ) return x.add(self);
-        return Arithmetic.isNumber(x) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof MultiPolynomial) || (x instanceof Polynomial) ? MultiPolynomial.Add(x, self.clone()) : self;
+        return Arithmetic.isNumber(x) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof MultiPolynomial) || (x instanceof Polynomial) ? MultiPolynomial.Add(x, self.clone(), false, false) : self;
+    }
+    ,addr: function( x ) {
+        // add while preserving same recursive representation
+        var self = this;
+        return x instanceof MultiPolynomial ? MultiPolynomial.Add(x, self.clone(), false, true) : self.add(x);
     }
     ,sub: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (x instanceof Expr) || (x instanceof Term) ) return self.toExpr().sub(x);
         else if ( x instanceof RationalFunc ) return x.neg().add(self);
-        return Arithmetic.isNumber(x) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof MultiPolynomial) || (x instanceof Polynomial) ? MultiPolynomial.Add(x, self.clone(), true) : self;
+        return Arithmetic.isNumber(x) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof MultiPolynomial) || (x instanceof Polynomial) ? MultiPolynomial.Add(x, self.clone(), true, false) : self;
+    }
+    ,subr: function( x ) {
+        // sub while preserving same recursive representation
+        var self = this;
+        return x instanceof MultiPolynomial ? MultiPolynomial.Add(x, self.clone(), true, true) : self.sub(x);
     }
     ,mul: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (x instanceof Expr) || (x instanceof Term) ) return self.toExpr().mul(x);
         else if ( x instanceof RationalFunc ) return x.mul(self);
-        return Arithmetic.isNumber(x) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof MultiPolynomial) || (x instanceof Polynomial) ? MultiPolynomial.Mul(x, self.clone()) : self;
+        return Arithmetic.isNumber(x) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || (x instanceof MultiPolynomial) || (x instanceof Polynomial) ? MultiPolynomial.Mul(x, self.clone(), false) : self;
+    }
+    ,mulr: function( x ) {
+        // mul while preserving same recursive representation
+        var self = this;
+        return x instanceof MultiPolynomial ? MultiPolynomial.Mul(x, self.clone(), true) : self.mul(x);
     }
     ,div: function( x, q_and_r ) {
         var self = this;
         if ( x instanceof RationalFunc ) return RationalFunc(self, null).div(x);
         else if ( (x instanceof MultiPolynomial) || (x instanceof Polynomial) || (x instanceof Integer) || (x instanceof Rational) || (x instanceof Complex) || Abacus.Arithmetic.isNumber(x) )
-            return MultiPolynomial.Div(self, x, true===q_and_r);
+            return MultiPolynomial.Div(self, x, true===q_and_r, false);
         return self;
+    }
+    ,divr: function( x, q_and_r ) {
+        // div while preserving same recursive representation
+        var self = this;
+        return x instanceof MultiPolynomial ? MultiPolynomial.Div(self, x, true===q_and_r, true) : self.div(x, q_and_r);
     }
     ,multidiv: function( xs, q_and_r ) {
         var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
@@ -9962,12 +10081,19 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         var qr = this.div(x, true);
         return qr[1];
     }
+    ,modr: function( x ) {
+        var qr = this.divr(x, true);
+        return qr[1];
+    }
     ,multimod: function( xs ) {
         var qr = this.multidiv(xs, true);
         return qr[1];
     }
     ,divmod: function( x ) {
         return this.div(x, true);
+    }
+    ,divmodr: function( x ) {
+        return this.divr(x, true);
     }
     ,multidivmod: function( xs ) {
         return this.multidiv(xs, true);
@@ -9983,7 +10109,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         return false;
     }
     ,pow: function( n ) {
-        var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
+        var self = this, Arithmetic = Abacus.Arithmetic, pow, b, is_recur;
         if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
         n = Arithmetic.val(n);
         if ( 0 === n )
@@ -9996,18 +10122,19 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         }
         else if ( 2 === n )
         {
-            return MultiPolynomial.Mul(self, self.clone());
+            return MultiPolynomial.Mul(self, self.clone(), self.isRecur());
         }
         else
         {
             // exponentiation by squaring
+            is_recur = self.isRecur();
             pow = MultiPolynomial.One(self.symbol, self.ring);
             b = self.clone();
             while ( 0 !== n )
             {
-                if ( n & 1 ) pow = MultiPolynomial.Mul(b, pow);
+                if ( n & 1 ) pow = MultiPolynomial.Mul(b, pow, is_recur);
                 n >>= 1;
-                b = MultiPolynomial.Mul(b, b);
+                b = MultiPolynomial.Mul(b, b, is_recur);
             }
             return pow;
         }
@@ -10370,7 +10497,11 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
     }
     ,isReal: function( ) {
         var self = this;
-        return self.num.isReal() && self.den.isReal();
+        return (self.num.isReal() && self.den.isReal()) || (self.num.isImag() && self.den.isImag());
+    }
+    ,isImag: function( ) {
+        var self = this;
+        return (self.num.isReal() && self.den.isImag()) || (self.num.isImag() && self.den.isReal());
     }
     ,isConst: function( recur ) {
         var self = this;
@@ -10580,29 +10711,30 @@ Ring = Abacus.Ring = Class({
         
         if ( is_array(PolynomialSymbol) && PolynomialSymbol.length )
         {
+            PolynomialSymbol = remove_duplicates(PolynomialSymbol.map(String));
             self.CoefficientRing = Integer===self.NumberClass ? Ring.Z() : (Complex===self.NumberClass ? Ring.C() : Ring.Q());
             if ( true===isFraction )
             {
                 self.PolynomialClass = RationalFunc;
-                self.PolynomialSymbol = PolynomialSymbol.slice();
+                self.PolynomialSymbol = PolynomialSymbol;
             }
             else
             {
                 if ( 1===PolynomialSymbol.length )
                 {
                     self.PolynomialClass = Polynomial;
-                    self.PolynomialSymbol = String(PolynomialSymbol[0]);
+                    self.PolynomialSymbol = PolynomialSymbol[0];
                 }
                 else
                 {
                     self.PolynomialClass = MultiPolynomial;
-                    self.PolynomialSymbol = PolynomialSymbol.slice();
+                    self.PolynomialSymbol = PolynomialSymbol;
                 }
             }
         }
         else
         {
-            if ( true===isFraction && Integer===self.NumberClass ) self.NumberClass = Rational;
+            if ( (true===isFraction) && (Integer===self.NumberClass) ) self.NumberClass = Rational;
             self.PolynomialClass = null;
             self.CoefficientRing = null;
             self.PolynomialSymbol = null;
@@ -10615,17 +10747,17 @@ Ring = Abacus.Ring = Class({
         ,CC: null
         ,Z: function( /* "x","y",.. */ ) {
             if ( null == Ring.ZZ ) Ring.ZZ = Ring(Integer);
-            var args = slice.call(arguments.length ? (is_array(arguments[0])||is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(function(x){return String(x);}).filter(function(x){return 0<x.length;});
+            var args = slice.call(arguments.length ? (is_array(arguments[0])||is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(String).filter(function(x){return 0<x.length;});
             return args.length ? Ring(Integer, args) : Ring.ZZ;
         }
         ,Q: function( /* "x","y",.. */ ) {
             if ( null == Ring.QQ ) Ring.QQ = Ring(Rational);
-            var args = slice.call(arguments.length ? (is_array(arguments[0])||is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(function(x){return String(x);}).filter(function(x){return 0<x.length;});
+            var args = slice.call(arguments.length ? (is_array(arguments[0])||is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(String).filter(function(x){return 0<x.length;});
             return args.length ? Ring(Rational, args) : Ring.QQ;
         }
         ,C: function( /* "x","y",.. */ ) {
             if ( null == Ring.CC ) Ring.CC = Ring(Complex);
-            var args = slice.call(arguments.length ? (is_array(arguments[0])||is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(function(x){return String(x);}).filter(function(x){return 0<x.length;});
+            var args = slice.call(arguments.length ? (is_array(arguments[0])||is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(String).filter(function(x){return 0<x.length;});
             return args.length ? Ring(Complex, args) : Ring.CC;
         }
     }
@@ -11047,6 +11179,43 @@ Matrix = Abacus.Matrix = Class(INumber, {
             return self;
         }
         return self.val[r][c];
+    }
+    
+    ,isInt: function( ) {
+        var self = this, r = self.nr, c = self.nc, i, j;
+        for(i=0; i<r; i++)
+        {
+            for(j=0; j<c; j++)
+            {
+                if ( !self.val[i][j].isInt() )
+                    return false;
+            }
+        }
+        return true;
+    }
+    ,isReal: function( ) {
+        var self = this, r = self.nr, c = self.nc, i, j;
+        for(i=0; i<r; i++)
+        {
+            for(j=0; j<c; j++)
+            {
+                if ( !self.val[i][j].isReal() )
+                    return false;
+            }
+        }
+        return true;
+    }
+    ,isImag: function( ) {
+        var self = this, r = self.nr, c = self.nc, i, j;
+        for(i=0; i<r; i++)
+        {
+            for(j=0; j<c; j++)
+            {
+                if ( !self.val[i][j].isImag() )
+                    return false;
+            }
+        }
+        return true;
     }
 
     ,equ: function( a, eq_all ) {

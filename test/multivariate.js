@@ -45,6 +45,10 @@ function check_recursive( p, x )
     echo('Derivatives:');
     echo('on same='+p_x_x.toString()+', on other: '+p_x_y.toString());
     echo('---------------------------');
+    echo('Recursive operations:');
+    echo('('+p_xy.toString()+')+('+p_x.toString()+')='+p_xy.addr(p_x).toString());
+    echo('('+p_xy.toString()+')*('+p_x.toString()+')='+p_xy.mulr(p_x).toString());
+    echo('---------------------------');
     echo('Negative Shifts:');
     echo('on same='+p_xs.toString()+', on other: '+p_xys.toString());
     echo('---------------------------');
