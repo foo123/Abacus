@@ -401,3 +401,25 @@ for(var i=0; i<m.length; i++)
 print_dots( m );
 o.dispose();
 echo('---');
+
+ring = Abacus.Ring.Q("x");
+echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+') /* ring of polynomials */');
+echo('---');
+echo('o=Abacus.Matrix.I(ring, 3)');
+o=Abacus.Matrix.I(ring, 3);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(ring.fieldOfFractions(), 3)));
+o.dispose();
+echo();
+echo('o=Abacus.Matrix(ring, [[ring.fromString("x-1"),ring.fromString("x^2-1")],[ring.fromString("x^2-1"),ring.fromString("x-1")]])');
+o=Abacus.Matrix(ring, [[ring.fromString("x-1"),ring.fromString("x^2-1")],[ring.fromString("x^2-1"),ring.fromString("x-1")]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.rref().toString()');
+echo(o.rref().toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(ring.fieldOfFractions(), 2)));
+o.dispose();
+echo('---');

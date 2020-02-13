@@ -423,3 +423,26 @@ Vector 1(true):
 |-3 0 1|
 <0,1> = 6
 ---
+ring = Abacus.Ring.Q("x") (\mathbb{Q}[x]) /* ring of polynomials */
+---
+o=Abacus.Matrix.I(ring, 3)
+o.toString()
+|1 0 0|
+|0 1 0|
+|0 0 1|
+o.inv().toString()
+|1 0 0|
+|0 1 0|
+|0 0 1| true
+
+o=Abacus.Matrix(ring, [[ring.fromString("x-1"),ring.fromString("x^2-1")],[ring.fromString("x^2-1"),ring.fromString("x-1")]])
+o.toString()
+|  x-1 x^2-1|
+|x^2-1   x-1|
+o.rref().toString()
+|-1            0|
+| 0 -x^3-x^2+2*x|
+o.inv().toString()
+| (1)/(-x^3-x^2+2*x) (x+1)/(x^3+x^2-2*x)|
+|(x+1)/(x^3+x^2-2*x)  (1)/(-x^3-x^2+2*x)| true
+---
