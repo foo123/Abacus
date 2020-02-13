@@ -11139,8 +11139,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,_tex: null
     ,_n: null
     ,_t: null
+    ,_h: null
     ,_i: null
     ,_ir: null
+    ,_pi: null
     ,_snf: null
     ,_lu: null
     ,_qr: null
@@ -11165,6 +11167,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             self._t._tr = null;
             self._t._det = null;
         }
+        if ( self._h && (self === self._h._h) )
+        {
+            self._h._h = null;
+        }
         if ( self._i && (self === self._i._i) )
         {
             self._i._i = null;
@@ -11177,8 +11183,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
         self._tex = null;
         self._n = null;
         self._t = null;
+        self._h = null;
         self._i = null;
         self._ir = null;
+        self._pi = null;
         self._snf = null;
         self._lu = null;
         self._qr = null;
@@ -11229,7 +11237,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         k = k || 0; r = 0 < k ? 0 : -k; c = r ? 0 : k;
         return 0<=c && c<self.nc && 0<=r && r<self.nr ? array(stdMath.min(self.nr-r, self.nc-c), function(i){return self.val[r+i][c+i];}) : null;
     }
-    ,coeff: function( r, c, v ) {
+    ,entry: function( r, c, v ) {
         var self = this, rows = self.nr, columns = self.nc;
         if ( 0 > r ) r += rows;
         if ( 0 > c ) c += columns;
@@ -11250,6 +11258,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     self._t._tr = null;
                     self._t._det = null;
                 }
+                if ( self._h && (self === self._h._h) )
+                {
+                    self._h._h = null;
+                }
                 if ( self._i && (self === self._i._i) )
                 {
                     self._i._i = null;
@@ -11258,8 +11270,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._tex = null;
                 self._n = null;
                 self._t = null;
+                self._h = null;
                 self._i = null;
                 self._ir = null;
+                self._pi = null;
                 self._snf = null;
                 self._lu = null;
                 self._qr = null;
@@ -11276,6 +11290,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             return self;
         }
         return self.val[r][c];
+    }
+    ,coeff: function( ) {
+        // alias of entry
+        return this.entry.apply(this, arguments);
     }
 
     ,isInt: function( ) {
@@ -11363,6 +11381,15 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return false;
     }
 
+    ,neg: function( ) {
+        var self = this;
+        if ( null == self._n )
+        {
+            self._n = self.map(function(vij){return vij.neg();});
+            self._n._n = self;
+        }
+        return self._n;
+    }
     ,t: function( ) {
         // transpose
         var self = this;
@@ -11375,14 +11402,20 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return self._t;
     }
-    ,neg: function( ) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( null == self._n )
+    ,h: function( ) {
+        // hermitian
+        var self = this, ring = self.ring, rows = self.nr, columns = self.nc;
+        if ( ring.NumberClass!==Complex ) return self.t();
+        if ( null == self._h )
         {
-            self._n = self.map(function(vij){return vij.neg();});
-            self._n._n = self;
+            self._h = Matrix(ring, array(columns, function(j){
+                return array(rows, function(i){
+                    return self.val[i][j].conj();
+                });
+            }));
+            self._h._h = self;
         }
-        return self._n;
+        return self._h;
     }
     ,inv: function( ) {
         var self = this, rows = self.nr, columns = self.nc, ring, field, Arithmetic = Abacus.Arithmetic;
@@ -11403,10 +11436,29 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._i = Matrix(field, self._ir.slice(0, columns, rows-1, 2*columns-1).map(function(rref_ij, ij){
                     return field.cast(rref_ij).div(field.cast(self._ir.val[ij[0]][ij[0]]));
                 }, true));
-                self._i._i = self;
+                self._i._i = ring.isField() ? self : Matrix(field, self.val);
             }
         }
         return self._i;
+    }
+    ,pinv: function( left_else_right ) {
+        // left or right pseudo-inverse
+        // https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse
+        var A = this, A_H, AA, AAi;
+        if ( null == A._pi )
+        {
+            A._pi = [null, null];
+            A_H = A.h();
+
+            // left pseudo-inverse
+            AA = A_H.mul(A);
+            if ( (AAi=AA.inv()) ) A._pi[0] = AAi.mul(A_H);
+
+            // right pseudo-inverse
+            AA = A.mul(A_H);
+            if ( (AAi=AA.inv()) ) A._pi[1] = A_H.mul(AAi);
+        }
+        return A._pi[left_else_right ? 0 : 1];
     }
 
     ,add: function( a ) {
@@ -11425,7 +11477,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 });
             }));
         }
-        a = self.ring.cast(a);
+        if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
         return self.map(function(vij){return vij.add(a);});
     }
     ,sub: function( a ) {
@@ -11444,7 +11496,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 });
             }));
         }
-        a = self.ring.cast(a);
+        if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
         return self.map(function(vij){return vij.sub(a);});
     }
     ,mul: function( a ) {
@@ -11463,7 +11515,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 });
             }));
         }
-        a = self.ring.cast(a);
+        if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
         return self.map(function(vij){return vij.mul(a);});
     }
     ,dot: function( a ) {
@@ -11482,7 +11534,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 })
             }));
         }
-        a = self.ring.cast(a);
+        if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
         return self.map(function(vij){return vij.mul(a);});
     }
     ,prod: function( a ) {
@@ -11502,7 +11554,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 });
             }));
         }
-        a = self.ring.cast(a);
+        if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
         return self.map(function(vij){return vij.mul(a);});
     }
     ,kron: function( a ) {
@@ -11511,23 +11563,26 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
     ,div: function( a ) {
         var self = this;
-        if ( (a instanceof Complex) || (a instanceof Rational) || (a instanceof Integer) || Abacus.Arithmetic.isNumber(a) )
+        if ( (a instanceof Complex) || (a instanceof Rational) || (a instanceof Integer) || Abacus.Arithmetic.isNumber(a) || is_string(a) )
         {
-            a = self.ring.cast(a);
+            if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
             return self.map(function(vij){return vij.div(a);});
         }
         return self;
     }
     ,mod: function( a ) {
         var self = this;
-        if ( (a instanceof Complex) || (a instanceof Rational) || (a instanceof Integer) || Abacus.Arithmetic.isNumber(a) )
+        if ( (a instanceof Complex) || (a instanceof Rational) || (a instanceof Integer) || Abacus.Arithmetic.isNumber(a) || is_string(a) )
         {
-            a = self.ring.cast(a);
+            if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
             return self.map(function(vij){return vij.mod(a);});
         }
         return self;
     }
-    ,divmod: NotImplemented
+    ,divmod: function( a ) {
+        var self = this;
+        return [self.div(a), self.mod(a)];
+    }
     ,pow: function( n ) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
         if ( !Arithmetic.isNumber(n) || Arithmetic.gt(Arithmetic.O, n) || (is_number(n) && n>MAX_DEFAULT) || (!is_number(n) && Arithmetic.gt(n, MAX_DEFAULT)) ) return null;
@@ -11850,7 +11905,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,ref: function( with_pivots, odim ) {
         var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
             rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, im, min, a, z, m, find_dupl;
-        // integer row echelon form (ref) (also known as Hermite normal form), using integer row reduction or fraction-free gaussian elimination
+        // fraction-free/integer row echelon form (ref) (also known as Hermite normal form), using fraction-free/integer row reduction or fraction-free gaussian elimination
         // https://en.wikipedia.org/wiki/Row_echelon_form
         // https://en.wikipedia.org/wiki/Gaussian_elimination
         // https://en.wikipedia.org/wiki/Hermite_normal_form
@@ -11957,7 +12012,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
             rows = self.nr, columns = self.nc, dim, pivots, det, pl,
             lead, r, i, j, a, g, ref;
-        // integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from row echelon form (gauss elimination)
+        // fraction-free/integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from fraction-free row echelon form (gauss elimination)
         // https://en.wikipedia.org/wiki/Row_echelon_form
         if ( null == self._rref )
         {
