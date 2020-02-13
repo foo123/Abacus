@@ -6196,13 +6196,16 @@ Integer = Abacus.Integer = Class(INumber, {
         return false;
     }
 
+    ,abs: function( ) {
+        return Integer(Abacus.Arithmetic.abs(this.num));
+    }
+    ,conj: function( ) {
+        return this;
+    }
     ,neg: function( ) {
         return Integer(Abacus.Arithmetic.neg(this.num));
     }
     ,inv: NotImplemented
-    ,abs: function( ) {
-        return Integer(Abacus.Arithmetic.abs(this.num));
-    }
 
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -6559,6 +6562,13 @@ Rational = Abacus.Rational = Class(INumber, {
             return Arithmetic.lte(self.num, Arithmetic.mul(self.den, a));
         return false;
     }
+    ,abs: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Rational(Arithmetic.abs(self.num), self.den, self._simpl);
+    }
+    ,conj: function( ) {
+        return this;
+    }
     ,neg: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         return Rational(Arithmetic.neg(self.num), self.den, self._simpl);
@@ -6569,10 +6579,6 @@ Rational = Abacus.Rational = Class(INumber, {
     }
     ,rev: function( ) {
         return this.inv();
-    }
-    ,abs: function( ) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
-        return Rational(Arithmetic.abs(self.num), self.den, self._simpl);
     }
 
     ,add: function( a ) {
@@ -6909,10 +6915,6 @@ Complex = Abacus.Complex = Class(INumber, {
         var self = this;
         return self.real.isInt() && self.imag.isInt();
     }
-    ,abs: function( ) {
-        var self = this;
-        return Complex(self.real.abs(), self.imag.abs());
-    }
 
     ,equ: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -7008,6 +7010,10 @@ Complex = Abacus.Complex = Class(INumber, {
             self._norm = real.pow(two).add(imag.pow(two));
         }
         return self._norm;
+    }
+    ,abs: function( ) {
+        var self = this;
+        return Complex(self.real.abs(), self.imag.abs());
     }
     ,neg: function( ) {
         var self = this;
@@ -8519,10 +8525,6 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         // alias of cc()
         return this.cc();
     }
-    ,abs: function( ) {
-        var self = this;
-        return self.lc().lt(Abacus.Arithmetic.O) ? self.neg() : self;
-    }
     ,monic: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
         if ( lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O) ) return self;
@@ -8811,6 +8813,16 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         return false;
     }
 
+    ,abs: function( ) {
+        var self = this;
+        return self.lc().lt(Abacus.Arithmetic.O) ? self.neg() : self;
+    }
+    ,conj: function( ) {
+        var self = this, ring = self.ring;
+        return ring.NumberClass===Complex ? Polynomial(self.terms.map(function(t){
+            return UniPolyTerm(t.c.conj(), t.e, ring);
+        }), self.symbol, ring) : self;
+    }
     ,neg: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( null == self._n )
@@ -9718,10 +9730,6 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         // alias of cc()
         return this.cc();
     }
-    ,abs: function( ) {
-        var self = this;
-        return self.lc().lt(Abacus.Arithmetic.O) ? self.neg() : self;
-    }
     ,recur: function( x ) {
         var self = this, terms = self.terms, symbol = self.symbol, ring = self.ring,
             Arithmetic = Abacus.Arithmetic, index, maxdeg, pr, c = null;
@@ -10000,6 +10008,16 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         return false;
     }
 
+    ,abs: function( ) {
+        var self = this;
+        return self.lc().lt(Abacus.Arithmetic.O) ? self.neg() : self;
+    }
+    ,conj: function( ) {
+        var self = this, ring = self.ring;
+        return ring.NumberClass===Complex ? MultiPolynomial(self.terms.map(function(t){
+            return MultiPolyTerm(t.c.conj(), t.e.slice(), ring);
+        }), self.symbol, ring) : self;
+    }
     ,neg: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( null == self._n )
@@ -10552,6 +10570,14 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
         var self = this;
         return RationalFunc(self.den, self.num, self.den.symbol, self.den.ring, self._simpl);
     }
+    ,abs: function( ) {
+        var self = this;
+        return RationalFunc(self.num.abs(), self.den, self.num.symbol, self.num.ring, self._simpl);
+    }
+    ,conj: function( ) {
+        var self = this;
+        return RationalFunc(self.num.conj(), self.den.conj(), self.num.symbol, self.num.ring, self._simpl);
+    }
     ,equ: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( (x instanceof Complex) && x.isReal() ) x = x.real;
@@ -10672,13 +10698,20 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
             }
             else
             {
-                qr = self.num.divmod(self.den); // here best if we could use multipolynomial gcd if possible
-                if ( qr[1].equ(Arithmetic.O) )
+                // here best if we could use multipolynomial gcd if possible
+                if ( (qr=self.num.divmod(self.den)) && qr[1].equ(Arithmetic.O) )
                 {
                     // den divides num exactly, simplify
                     self.num = qr[0];
                     self.den = MultiPolynomial.One(self.num.symbol, self.num.ring);
                 }
+                else if ( (qr=self.den.divmod(self.num)) && qr[1].equ(Arithmetic.O) )
+                {
+                    // den divides num exactly, simplify
+                    self.den = qr[0];
+                    self.num = MultiPolynomial.One(self.num.symbol, self.num.ring);
+                }
+
                 num = self.num.primitive(true);
                 den = self.den.primitive(true);
                 if ( num[1].isReal() && den[1].isReal() )
