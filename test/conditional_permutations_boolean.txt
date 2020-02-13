@@ -449,7 +449,7 @@ o.rewind(-1)
 [ 0, 1, 3, 4, 2, 5 ]
 [ 0, 2, 3, 4, 1, 5 ]
 o.random()
-[ 0, 1, 2, 3, 5, 4 ]
+[ 2, 3, 4, 5, 1, 0 ]
 o.dispose()
 6,4-Combinations where values in 0th position ARE (0,1) and in 1st position [0]+1
 o = Abacus.Tensor(6,{type:"partial",data:["{0,1}","[0]+1"],ordering:"<",position:[0,1]}).completeWith(Abacus.Combination(6-2,4-2)).filterBy(Abacus.Filter.SORTED("<"))
@@ -490,5 +490,5 @@ o.order("revlex|revlex")
 [ 0, 1, 2, 4 ]
 [ 0, 1, 2, 3 ]
 o.random()
-[ 1, 2, 3, 4 ]
+[ 0, 1, 3, 4 ]
 o.dispose()

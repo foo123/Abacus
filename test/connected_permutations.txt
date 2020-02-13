@@ -14,14 +14,14 @@ o = Abacus.Permutation(4,{type:"connected"})
 o.total()
 6
 o.random()
-[ 3, 0, 1, 2 ]
+[ 3, 2, 0, 1 ]
 o = Abacus.Permutation(5,{type:"connected"})
 o.total()
 24
 o.random()
-[ 4, 3, 0, 2, 1 ]
+[ 4, 2, 3, 0, 1 ]
 o = Abacus.Permutation(6,{type:"connected"})
 o.total()
 120
 o.random()
-[ 4, 0, 5, 1, 2, 3 ]
+[ 3, 2, 0, 4, 5, 1 ]

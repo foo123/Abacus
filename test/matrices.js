@@ -58,8 +58,8 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('o=Abacus.Matrix(ring, [[1,2],[3,4]]).kron(Abacus.Matrix(ring, [[1,1],[2,2]]))');
-o=Abacus.Matrix(ring, [[1,2],[3,4]]).kron(Abacus.Matrix(ring, [[1,1],[2,2]]));
+echo('o=Abacus.Matrix(ring, [[1,2],[3,4]]).prod(Abacus.Matrix(ring, [[1,1],[2,2]]))');
+o=Abacus.Matrix(ring, [[1,2],[3,4]]).prod(Abacus.Matrix(ring, [[1,1],[2,2]]));
 echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
@@ -196,6 +196,23 @@ echo("D:");
 echo(m[1].toString());
 echo("R:");
 echo(m[2].toString());
+o.dispose();
+echo('---');
+
+echo('o=Abacus.Matrix.I(ring, 3)');
+o=Abacus.Matrix.I(ring, 3);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.mul(o.inv()).equ(Abacus.Matrix.I(ring.fieldOfFractions(), 3)));
+o.dispose();
+echo();
+echo('o=Abacus.Matrix(ring, [[4,7],[2,6]])');
+o=Abacus.Matrix(ring, [[4,7],[2,6]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.mul(o.inv()).equ(Abacus.Matrix.I(ring.fieldOfFractions(), 2)));
 o.dispose();
 echo('---');
 

@@ -1,6 +1,6 @@
 # Abacus
 
-A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browser / XPCOM Javascript, Python, Java
+A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
 **version 1.0.0** (~ 233kB minified, ~ 70kB zipped)
@@ -102,7 +102,8 @@ A **Combinatorics** and **Algebraic Number Theory** library for Node.js / Browse
 * `random` methods are **statisticaly unbiased** (ie uniform sampling methods, see below as well)
 * `successor` methods use **efficient CAT (ie constant average time) or Loopless (ie strictly constant time)** algorithms to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above) (**note** a couple of methods are **linear time** algorithms because the lib does not use extra space to store information between successive runs and also support static random access to successors so any extra is computed at `run-time`, but can easily be made `CAT` or even `Loopless` by storing extra information, eg current index position)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit `ranking` / `unranking` is needed and objects are large)
-* integer/number-theoretic/math computations support pluggable arithmetics (thus if used can compute with Big Integers), algorithms implemented are efficient but not necessarily the most efficient version (theoritically) possible (eg default `gcd` algorithm used, although optimised), possible to implement even faster algorithms in future verions
+* symbolic polynomials use efficient sparse representation
+* number-theoretic/math computations support pluggable arithmetics (thus if used can compute with arbitrary precision arithmetic), algorithms implemented are efficient but not necessarily the most efficient version (theoritically) possible (eg default Euclidean algorithm for `gcd` used, although optimised), possible to implement even faster algorithms in future verions
 
 **Note** that the lib can generate **very large** (and also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary `random`, `ranking` and `unranking` have to be used (see above)
 

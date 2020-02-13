@@ -36,7 +36,9 @@ function check_xgcd( ring, args )
 function check_recursive( p, x )
 {
     var p_x = p.recur(x), p_xx = p_x.recur(x), p_xy = p_x.recur('x'===x?'y':'x'),
-        p_x_x = p_x.d(x), p_x_y = p_x.d('x'===x?'y':'x'), p_xs = p_x.shift(x, -1), p_xys = p_xy.shift('x'===x?'y':'x', -1),
+        p_x_x = p_x.d(x), p_x_y = p_x.d('x'===x?'y':'x'),
+        p_x_xx = p_x.d(x, 2), p_x_yy = p_x.d('x'===x?'y':'x', 2),
+        p_xs = p_x.shift(x, -1), p_xys = p_xy.shift('x'===x?'y':'x', -1),
         pp = p_x.recur(false), ppp = p_xy.recur(false);
     echo('Recursive representations by '+x+':');
     echo(p_x.toString()+', again: '+p_xx.toString()+'('+p_xx.equ(p_x)+'), again on other: '+p_xy.toString());
@@ -44,10 +46,11 @@ function check_recursive( p, x )
     echo('---------------------------');
     echo('Derivatives:');
     echo('on same='+p_x_x.toString()+', on other: '+p_x_y.toString());
+    echo('on same='+p_x_xx.toString()+', on other: '+p_x_yy.toString());
     echo('---------------------------');
     echo('Recursive operations:');
-    echo('('+p_xy.toString()+')+('+p_x.toString()+')='+p_xy.addr(p_x).toString());
-    echo('('+p_xy.toString()+')*('+p_x.toString()+')='+p_xy.mulr(p_x).toString());
+    echo('('+p_xy.toString()+')+('+p_x.toString()+')='+p_xy.add(p_x).toString());
+    echo('('+p_xy.toString()+')*('+p_x.toString()+')='+p_xy.mul(p_x).toString());
     echo('---------------------------');
     echo('Negative Shifts:');
     echo('on same='+p_xs.toString()+', on other: '+p_xys.toString());

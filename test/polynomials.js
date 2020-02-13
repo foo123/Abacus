@@ -365,6 +365,42 @@ echo('---');
 
 echo('Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")])');
 echo(Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")]).map(String).join(','));
+echo('---');
+
+ring = Abacus.Ring.Z("x");
+echo('ring = Abacus.Ring.'+ring.toString());
+echo('----------');
+echo('ring.xgcd(ring.create([2,0,1]),ring.create([6,12]))');
+check_xgcd(ring, [ring.create([2,0,1]),ring.create([6,12])]);
+
+echo('ring.xgcd(ring.create([1,2]),ring.create([1,3,4]))');
+check_xgcd(ring, [ring.create([1,2]),ring.create([1,3,4])]);
+
+echo('ring.xgcd(ring.create([1,1,1,1,5]),ring.create([2,1,3]))');
+check_xgcd(ring, [ring.create([1,1,1,1,5]),ring.create([2,1,3])]);
+
+echo('ring.xgcd(ring.create([6,7,1]),ring.create([-6,-5,1]))');
+check_xgcd(ring, [ring.create([6,7,1]),ring.create([-6,-5,1])]);
+
+echo('ring.xgcd(ring.create([6,7,1]),ring.create([-6,-5,1]),ring.create([1,1]))');
+check_xgcd(ring, [ring.create([6,7,1]),ring.create([-6,-5,1]),ring.create([1,1])]);
+
+echo('ring.xgcd(ring.create([6]),ring.create([4]))');
+check_xgcd(ring, [ring.create([6]),ring.create([4])]);
+echo(Abacus.Math.xgcd(6,4).map(function(x){return x.toString();})); // should coincide with this
+
+echo('ring.xgcd(ring.create([12]),ring.create([6]),ring.create([3]))');
+check_xgcd(ring, [ring.create([12]),ring.create([6]),ring.create([3])]);
+echo(Abacus.Math.xgcd(12,6,3).map(function(x){return x.toString();})); // should coincide with this
+
+echo('ring.xgcd(ring.create([2]),ring.create([0]),ring.create([0]),ring.create([3]))');
+check_xgcd(ring, [ring.create([2]),ring.create([0]),ring.create([0]),ring.create([3])]);
+echo(Abacus.Math.xgcd(2,0,0,3).map(function(x){return x.toString();})); // should coincide with this
+
+echo('ring.xgcd(ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153]))');
+check_xgcd(ring, [ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153])]);
+echo(Abacus.Math.xgcd(74,32,16,153).map(function(x){return x.toString();})); // should coincide with this
+echo('---');
 
 ring = Abacus.Ring.C("x");
 echo('ring = Abacus.Ring.'+ring.toString());

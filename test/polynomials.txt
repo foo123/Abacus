@@ -244,6 +244,32 @@ ring.xgcd(ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153
 ---
 Abacus.Math.groebner([ring.fromString("x^2-x"),ring.fromString("x+1")])
 1
+---
+ring = Abacus.Ring.Z("x")
+----------
+ring.xgcd(ring.create([2,0,1]),ring.create([6,12]))
+(x^2+2)(1) + (12*x+6)(0) = x^2+2 true
+ring.xgcd(ring.create([1,2]),ring.create([1,3,4]))
+(2*x+1)(-4*x-1) + (4*x^2+3*x+1)(2) = 1 true
+ring.xgcd(ring.create([1,1,1,1,5]),ring.create([2,1,3]))
+(5*x^4+x^3+x^2+x+1)(1) + (3*x^2+x+2)(0) = 5*x^4+x^3+x^2+x+1 true
+ring.xgcd(ring.create([6,7,1]),ring.create([-6,-5,1]))
+(x^2+7*x+6)(1) + (x^2-5*x-6)(-1) = 12*x+12 true
+ring.xgcd(ring.create([6,7,1]),ring.create([-6,-5,1]),ring.create([1,1]))
+(x^2+7*x+6)(0) + (x^2-5*x-6)(0) + (x+1)(1) = x+1 true
+ring.xgcd(ring.create([6]),ring.create([4]))
+(6)(1) + (4)(-1) = 2 true
+[ '2', '1', '-1' ]
+ring.xgcd(ring.create([12]),ring.create([6]),ring.create([3]))
+(12)(0) + (6)(0) + (3)(1) = 3 true
+[ '3', '0', '0', '1' ]
+ring.xgcd(ring.create([2]),ring.create([0]),ring.create([0]),ring.create([3]))
+(2)(-1) + (0)(1) + (0)(1) + (3)(1) = 1 true
+[ '1', '-1', '1', '1', '1' ]
+ring.xgcd(ring.create([74]),ring.create([32]),ring.create([16]),ring.create([153]))
+(74)(0) + (32)(0) + (16)(67) + (153)(-7) = 1 true
+[ '1', '0', '0', '67', '-7' ]
+---
 ring = Abacus.Ring.C("x")
 ----------
 ring.create(Abacus.Complex.One())

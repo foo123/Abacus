@@ -40,7 +40,7 @@ o.mul(Abacus.Matrix.I(ring, 3))
 |0 0 1|
 o.dispose()
 ---
-o=Abacus.Matrix(ring, [[1,2],[3,4]]).kron(Abacus.Matrix(ring, [[1,1],[2,2]]))
+o=Abacus.Matrix(ring, [[1,2],[3,4]]).prod(Abacus.Matrix(ring, [[1,1],[2,2]]))
 |1 1 2 2|
 |2 2 4 4|
 |3 3 4 4|
@@ -216,6 +216,24 @@ R:
 |2  4   6|
 |0 12 -12|
 |0  0   1|
+---
+o=Abacus.Matrix.I(ring, 3)
+o.toString()
+|1 0 0|
+|0 1 0|
+|0 0 1|
+o.inv().toString()
+|1 0 0|
+|0 1 0|
+|0 0 1| true
+
+o=Abacus.Matrix(ring, [[4,7],[2,6]])
+o.toString()
+|4 7|
+|2 6|
+o.inv().toString()
+| 3/5 -7/10|
+|-1/5   2/5| true
 ---
 o=Abacus.Matrix(ring, 3, 3)
 o.toString()
