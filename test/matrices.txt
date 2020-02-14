@@ -226,6 +226,10 @@ o.inv().toString()
 |1 0 0|
 |0 1 0|
 |0 0 1| true
+o.adj().toString()
+|1 0 0|
+|0 1 0|
+|0 0 1| true
 
 o=Abacus.Matrix(ring, [[4,7],[2,6]])
 o.toString()
@@ -234,6 +238,19 @@ o.toString()
 o.inv().toString()
 | 3/5 -7/10|
 |-1/5   2/5| true
+o.adj().toString()
+| 6 -7|
+|-2  4| true
+
+o=Abacus.Matrix(ring, [[-3,2,-5],[-1,0,-2],[3,-4,1]])
+o.toString()
+|-3  2 -5|
+|-1  0 -2|
+| 3 -4  1|
+o.adj().toString()
+|-8 18 -4|
+|-5 12 -1|
+| 4 -6  2| true
 ---
 o=Abacus.Matrix(ring, 3, 3)
 o.toString()
@@ -443,6 +460,6 @@ o.rref().toString()
 |-1            0|
 | 0 -x^3-x^2+2*x|
 o.inv().toString()
-| (1)/(-x^3-x^2+2*x) (x+1)/(x^3+x^2-2*x)|
-|(x+1)/(x^3+x^2-2*x)  (1)/(-x^3-x^2+2*x)| true
+| (-1)/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)|
+|(x+1)/(x^3+x^2-2*x)  (-1)/(x^3+x^2-2*x)| true
 ---

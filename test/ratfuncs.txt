@@ -1,12 +1,40 @@
 Abacus.RationalFuncs (VERSION = 1.0.0)
 ---
 Rational Functions and Operations
-pring = Abacus.Ring.Q("x","y"), ring = pring.fieldOfFractions()
+pring = Abacus.Ring.C("x","y"), ring = pring.fieldOfFractions()
 ---
 ring.create().toString()
 0
+ring.fromString(ring.create().toString()).toString()
+0
 ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()
 (x*y+1)/(x-y)
+ring.fromString("(1+xy)/(x-y)").toString()
+(x*y+1)/(x-y)
+ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toTex()).toString()
+(x*y+1)/(x-y)
+ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()).toString()
+(x*y+1)/(x-y)
+ring.fromString("(1+i)/(x-y)").toString()
+(1)/((1/2-(1/2)*i)*x+(-1/2+(1/2)*i)*y)
+ring.fromString("(3x+(1+i))/(1+i)").toString()
+(3/2-(3/2)*i)*x+1
+ring.fromString("1/(x-y)").toString()
+(1)/(x-y)
+ring.fromString("1/(3/2)x").toString()
+(2)/(3*x)
+ring.fromString("(3/2)/x").toString()
+(3)/(2*x)
+ring.fromString("x-y").toString()
+x-y
+ring.fromString("3/2").toString()
+(3)/(2)
+ring.fromString("xy+3/2").toString()
+(2*x*y+3)/(2)
+pring.fromString("xy+3/2").toString()
+x*y+3/2
+ring.fromString(pring.fromString("xy+3/2").toString()).toString()
+(2*x*y+3)/(2)
 ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(2).toString()
 (x*y+2*x-2*y+1)/(x-y)
 ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(pring.fromString("x+2")).toString()

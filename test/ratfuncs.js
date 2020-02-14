@@ -4,7 +4,7 @@ var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
-var o, pring = Abacus.Ring.Q("x", "y"), ring = pring.fieldOfFractions();
+var o, pring = Abacus.Ring.C("x", "y"), ring = pring.fieldOfFractions();
 
 echo('Abacus.RationalFuncs (VERSION = '+Abacus.VERSION+')');
 echo('---');
@@ -16,8 +16,50 @@ echo('---');
 echo('ring.create().toString()');
 echo(ring.create().toString());
 
+echo('ring.fromString(ring.create().toString()).toString()');
+echo(ring.fromString(ring.create().toString()).toString());
+
 echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()');
 echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString());
+
+echo('ring.fromString("(1+xy)/(x-y)").toString()');
+echo(ring.fromString("(1+xy)/(x-y)").toString());
+
+echo('ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toTex()).toString()');
+echo(ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toTex()).toString());
+
+echo('ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()).toString()');
+echo(ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()).toString());
+
+echo('ring.fromString("(1+i)/(x-y)").toString()');
+echo(ring.fromString("(1+i)/(x-y)").toString());
+
+echo('ring.fromString("(3x+(1+i))/(1+i)").toString()');
+echo(ring.fromString("(3x+(1+i))/(1+i)").toString());
+
+echo('ring.fromString("1/(x-y)").toString()');
+echo(ring.fromString("1/(x-y)").toString());
+
+echo('ring.fromString("1/(3/2)x").toString()');
+echo(ring.fromString("1/(3/2)x").toString());
+
+echo('ring.fromString("(3/2)/x").toString()');
+echo(ring.fromString("(3/2)/x").toString());
+
+echo('ring.fromString("x-y").toString()');
+echo(ring.fromString("x-y").toString());
+
+echo('ring.fromString("3/2").toString()');
+echo(ring.fromString("3/2").toString());
+
+echo('ring.fromString("xy+3/2").toString()');
+echo(ring.fromString("xy+3/2").toString());
+
+echo('pring.fromString("xy+3/2").toString()');
+echo(pring.fromString("xy+3/2").toString());
+
+echo('ring.fromString(pring.fromString("xy+3/2").toString()).toString()');
+echo(ring.fromString(pring.fromString("xy+3/2").toString()).toString());
 
 echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(2).toString()');
 echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).add(2).toString());
@@ -30,4 +72,3 @@ echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).mul(pring.fr
 
 echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString()');
 echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString());
-
