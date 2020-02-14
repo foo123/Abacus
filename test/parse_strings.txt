@@ -7,9 +7,9 @@ x^2+1
 ring.fromString("1 - x^2")
 -x^2+1
 ring.fromString("1 - (2/3)*x^2+x")
--2/3*x^2+x+1
+-(2/3)*x^2+x+1
 ring.fromString("1 - \frac{2}{3}*x^{2}+x")
--2/3*x^2+x+1
+-(2/3)*x^2+x+1
 ring.fromString("1 - x")
 -x+1
 ring.fromString("1 + y")

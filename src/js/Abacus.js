@@ -2625,7 +2625,7 @@ function polygcd( /* args */ )
     // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         c = args.length, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
-        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, a, b, a0, b0, t, r, i;
+        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, a, b, a0, b0, t, r, i, p, q, field;
 
     if ( 0 === c ) return PolynomialClass.Zero();
     PolynomialClass = args[0] instanceof MultiPolynomial ? MultiPolynomial : Polynomial;
@@ -2640,6 +2640,24 @@ function polygcd( /* args */ )
     }
     // defer to gcd of coefficients and transform back to polynomial
     if ( are_const ) return PolynomialClass(args[0].ring.gcd(array(args.length, function(i){return args[i].cc();})), args[0].symbol, args[0].ring);
+
+    // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
+    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
+    if ( Integer===args[0].ring.NumberClass )
+    {
+        a = args[0];
+        if ( 1 == c )
+        {
+            return a.monic();
+        }
+        else if ( 2 <= c )
+        {
+            field = a.ring.fieldOfFractions(); // Q[X]
+            p = PolynomialClass(a, a.symbol, field);
+            q = PolynomialClass(2===c ? args[1] : polygcd(slice.call(args, 1)), a.symbol, field);
+            return PolynomialClass(polygcd(p, q).primitive()/*.mul(field.gcd(p.content(), q.content()))*/, a.symbol, a.ring);
+        }
+    }
 
     i = 0;
     while(i<c && (a=args[i++]).equ(O)) ;
@@ -2656,9 +2674,9 @@ function polygcd( /* args */ )
         if ( 0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true) ) { t=b; b=a; a=t; }
         while ( !b.equ(O) )
         {
-            a0 = a; b0 = b;
+            //a0 = a; b0 = b;
             r = a.mod(b); a = b; b = r;
-            if ( a.equ(b0) && b.equ(a0) ) break; // will not change anymore
+            //if ( a.equ(b0) && b.equ(a0) ) break; // will not change anymore
         }
     }
     // simplify, positive and monic
@@ -2674,7 +2692,7 @@ function polyxgcd( /* args */ )
         k = args.length, i, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
         O = Arithmetic.O, I = Arithmetic.I, asign, bsign,
         a, b, a0, b0, a1, b1, a2, b2, lead,
-        qr, gcd;
+        qr, gcd, g, p, q, field;
 
     if ( 0 === k ) return;
     PolynomialClass = args[0] instanceof MultiPolynomial ? MultiPolynomial : Polynomial;
@@ -2691,6 +2709,55 @@ function polyxgcd( /* args */ )
     if ( are_const ) return args[0].ring.xgcd(array(args.length, function(i){return args[i].cc();})).map(function(g){return PolynomialClass(g, args[0].symbol, args[0].ring);});
 
     a = args[0];
+
+    // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
+    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
+    if ( Integer===a.ring.NumberClass )
+    {
+        field = a.ring.fieldOfFractions(); // Q[X]
+        asign = field.One(); bsign = field.One();
+        if ( 1 == k )
+        {
+            // normalize it
+            lead = a.lc();
+            if ( lead.divides(asign) )
+            {
+                a = a.monic();
+                if ( !lead.equ(a.lc()) ) {asign = asign.div(lead);}
+            }
+            else if ( lead.lt(O) )
+            {
+                a = a.neg(); asign = asign.neg();
+            }
+            return [a, PolynomialClass(asign, a.symbol, field)];
+        }
+        else //if ( 2 <= k )
+        {
+            gcd = 2===k ? [args[1], PolynomialClass.One(a.symbol, field)] : polyxgcd(slice.call(args, 1));
+            b = gcd[0];
+            if ( 2 === k )
+            {
+                // normalize it
+                lead = b.lc();
+                if ( lead.divides(asign) && lead.divides(bsign) )
+                {
+                    b = b.monic();
+                    if ( !lead.equ(b.lc()) ) {asign = asign.div(lead); bsign = bsign.div(lead);}
+                }
+                else if ( lead.lt(O) )
+                {
+                    b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
+                }
+            }
+            g = polyxgcd(PolynomialClass(a, a.symbol, field), PolynomialClass(b, a.symbol, field));
+            // Bezout's Identity for Polynomials works only for polys over a field, not simply a ring, like Z
+            // thus the coefficients are in general polys over Q ie Q[x]
+            // https://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity#For_polynomials
+            return array(gcd.length+1, function(i){
+                return 0===i ? PolynomialClass(g[0].primitive()/*.mul(field.gcd(a.content(), b.content()))*/, a.symbol, a.ring) : (1===i ? g[1].mul(asign) : g[2].mul(gcd[i-1]).mul(bsign));
+            });
+        }
+    }
 
     asign = args[0].ring.One(); bsign = args[0].ring.One();
     if ( 1 === k )
@@ -2765,7 +2832,7 @@ function polyxgcd( /* args */ )
 
         for(;;)
         {
-            a0 = a; b0 = b;
+            //a0 = a; b0 = b;
 
             qr = a.divmod(b);
             a = qr[1];
@@ -2813,7 +2880,7 @@ function polyxgcd( /* args */ )
                 });
             }
 
-            if ( a.equ(a0) && b.equ(b0) )
+            /*if ( a.equ(a0) && b.equ(b0) )
             {
                 // will not change anymore
                 // normalize it
@@ -2831,7 +2898,7 @@ function polyxgcd( /* args */ )
                 return array(gcd.length+1, function(i){
                     return 0===i ? a : (1===i ? a1 : gcd[i-1].mul(b1));
                 });
-            }
+            }*/
         }
     }
 }
@@ -4713,7 +4780,7 @@ function multiplication_sparse( a, b, TermClass )
     {
         ring = a[0].ring || Ring.Q();
         k = 0;
-        c[0] = a[0].mul(b[0]); c[0].c = ring.Zero();
+        c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
         heap = Heap(array(n1, function(i){
             return [a[i].mul(b[0]), i];
         }), "max", function(a, b){
@@ -8615,7 +8682,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         else
         {
             divides = true; t = self.terms;
-            for(i=t.length-2; i>=0; i--)
+            for(i=t.length-1; i>0; i--)
             {
                 if ( !lc.divides(t[i].c) )
                 {
@@ -8654,6 +8721,10 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             }
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
+    }
+    ,content: function( ) {
+        var p = this.primitive(true);
+        return p[1];
     }
     ,roots: function( ) {
         // find all rational roots, if any
@@ -9921,7 +9992,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         else
         {
             divides = true; t = self.terms;
-            for(i=t.length-2; i>=0; i--)
+            for(i=t.length-1; i>0; i--)
             {
                 if ( !lc.divides(t[i].c) )
                 {
@@ -9960,6 +10031,10 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             }
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
+    }
+    ,content: function( ) {
+        var p = this.primitive(true);
+        return p[1];
     }
     ,equ: function( p, strict ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -10105,7 +10180,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             if ( ring.NumberClass===Complex )
             {
                 self._c = MultiPolynomial(self.terms.map(function(t){
-                    return MultiPolyTerm(t.c.conj(), t.e.slice(), ring);
+                    return MultiPolyTerm(t.c.conj(), t.e, ring);
                 }), self.symbol, ring);
                 self._c._c = self;
             }
@@ -10646,8 +10721,8 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
                 {
                     if ( !is_tex && !paren && !braket &&
                         (
-                        (parts[j].length && ('(' === parts[j].charAt(0)) && (')' === parts[j].charAt(parts[j].length-1))) ||
-                        (i<l && ('('===s.charAt(i)))
+                        (parts[j].length && (')' === parts[j].charAt(parts[j].length-1))) ||
+                        ((i<l) && ('('===s.charAt(i)))
                         )
                     )
                     {
@@ -10700,14 +10775,6 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
                     parts[j] += c;
                 }
             }
-            if ( parts[0].length && parts[1].length && ('(' === parts[0].charAt(0)) && (')'===parts[0].charAt(parts[0].length-1)) )
-            {
-                parts[0] = trim(parts[0].slice(1,-1));
-            }
-            if ( parts[1].length && ('(' === parts[1].charAt(0)) && (')'===parts[1].charAt(parts[1].length-1)) )
-            {
-                parts[1] = trim(parts[1].slice(1,-1));
-            }
             if ( paren || braket )
             {
                 num = MultiPolynomial.fromString(parts[0], symbol, ring);
@@ -10715,6 +10782,14 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
             }
             else
             {
+                if ( parts[0].length && parts[1].length && ('(' === parts[0].charAt(0)) && (')'===parts[0].charAt(parts[0].length-1)) )
+                {
+                    parts[0] = trim(parts[0].slice(1,-1));
+                }
+                if ( parts[1].length && ('(' === parts[1].charAt(0)) && (')'===parts[1].charAt(parts[1].length-1)) )
+                {
+                    parts[1] = trim(parts[1].slice(1,-1));
+                }
                 num = MultiPolynomial.fromString(parts[0], symbol, ring);
                 den = parts[1].length ? MultiPolynomial.fromString(parts[1], symbol, ring) : null;
             }
@@ -10937,7 +11012,7 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
             else
             {
                 // here best if we could use multipolynomial gcd if possible
-                if ( 1 === self.num.symbol.length )
+                if ( (1 === self.num.symbol.length) && (1 === self.den.symbol.length) )
                 {
                     qr = polygcd(self.num, self.den); // works correctly for univariate case only
                     self.num = self.num.div(qr);
@@ -10958,37 +11033,34 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
 
                 num = self.num.primitive(true);
                 den = self.den.primitive(true);
-                if ( (num[1].equ(den[1])) || (num[1].isReal() && den[1].isReal()) || (num[1].isImag() && den[1].isImag()) )
+                if ( num[1].equ(den[1]) )
                 {
-                    if ( num[1].equ(den[1]) )
+                    self.num = num[0];
+                    self.den = den[0];
+                }
+                else if ( (num[1].isReal() && den[1].isReal()) || (num[1].isImag() && den[1].isImag()) )
+                {
+                    if ( Complex===num[0].ring.NumberClass )
                     {
-                        self.num = num[0];
-                        self.den = den[0];
-                    }
-                    else
-                    {
-                        if ( Complex===num[0].ring.NumberClass )
+                        if ( num[1].isImag() )
                         {
-                            if ( num[1].isImag() )
-                            {
-                                n = Arithmetic.mul(den[1].imag.den, num[1].imag.num);
-                                d = Arithmetic.mul(num[1].imag.den, den[1].imag.num);
-                            }
-                            else
-                            {
-                                n = Arithmetic.mul(den[1].real.den, num[1].real.num);
-                                d = Arithmetic.mul(num[1].real.den, den[1].real.num);
-                            }
+                            n = Arithmetic.mul(den[1].imag.den, num[1].imag.num);
+                            d = Arithmetic.mul(num[1].imag.den, den[1].imag.num);
                         }
                         else
                         {
-                            n = Arithmetic.mul(den[1].den, num[1].num);
-                            d = Arithmetic.mul(num[1].den, den[1].num);
+                            n = Arithmetic.mul(den[1].real.den, num[1].real.num);
+                            d = Arithmetic.mul(num[1].real.den, den[1].real.num);
                         }
-                        g = gcd(n, d);
-                        self.num = num[0].mul(Arithmetic.div(n, g));
-                        self.den = den[0].mul(Arithmetic.div(d, g));
                     }
+                    else
+                    {
+                        n = Arithmetic.mul(den[1].den, num[1].num);
+                        d = Arithmetic.mul(num[1].den, den[1].num);
+                    }
+                    g = gcd(n, d);
+                    self.num = num[0].mul(Arithmetic.div(n, g));
+                    self.den = den[0].mul(Arithmetic.div(d, g));
                 }
             }
             self._simpl = true;
@@ -11605,6 +11677,14 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return this.entry.apply(this, arguments);
     }
 
+    ,isSquare: function( ) {
+        var self = this;
+        return self.nr===self.nc;
+    }
+    ,isScalar: function( ) {
+        var self = this;
+        return (1===self.nr) && (1===self.nc);
+    }
     ,isInt: function( ) {
         var self = this, r = self.nr, c = self.nc, i, j;
         for(i=0; i<r; i++)

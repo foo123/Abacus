@@ -22,14 +22,14 @@ function check_div( n, d )
 }
 function check_xgcd( ring, args )
 {
-    var out = '', res = ring.Zero(), gcd = ring.xgcd(args);
+    var out = '', res = (Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring).Zero(), gcd = ring.xgcd(args);
     for(i=0; i<args.length; i++)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
-        res = res.add(args[i].mul(gcd[i+1]));
+        res = res.add(gcd[i+1].mul(args[i]));
         if ( !args[i].mod(gcd[0]).equ(0) ) echo(args[i].toString()+' is not divided!');
     }
-    out += ' = '+gcd[0].toString();
+    out += ' = '+res.toString()+' (gcd: '+gcd[0].toString()+')';
     echo(out, res.equ(gcd[0]));
 }
 
