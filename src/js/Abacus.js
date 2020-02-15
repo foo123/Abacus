@@ -2930,7 +2930,7 @@ function rfxgcd( /* args */ )
         denom;
     if ( !args.length ) return;
     denom = operate(function(p, r){return r.den.mul(p);}, Abacus.Arithmetic.I, args);
-    return polyxgcd(array(args.length, function(i){return args[i].num.mul(denom.div(args[i].den));})).map(function(g, i){return 0===i ? RationalFunc(g, denom) : RationalFunc(g, null);});
+    return polyxgcd(array(args.length, function(i){return args[i].num.mul(denom.div(args[i].den));})).map(function(g, i){return 0===i ? RationalFunc(g, denom) : RationalFunc(g);});
 }
 function rflcm( /* args */ )
 {
@@ -8123,7 +8123,7 @@ UniPolyTerm = Class({
 
         if ( c instanceof UniPolyTerm ){ring = ring || c.ring; e = c.e; c = c.c;}
         self.ring = ring instanceof Ring ? ring : Ring.Q();
-        self.c = self.ring.cast(c||0);
+        self.c = c instanceof RationalFunc ? c : self.ring.cast(c||0);
         self.e = +(e||0);
     }
 
@@ -8200,13 +8200,13 @@ UniPolyTerm = Class({
         {
             term = 0 < e ? (to_tex(symbol) + (1<e ? '^{'+Tex(e)+'}' : '')) : '';
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((!c.isReal() ? ('('+c.toTex()+')') : (c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : c.toTex()))) + term) : c.toTex();
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : ((c instanceof RationalFunc) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : ((c instanceof RationalFunc) && !c.isConst(true) ? '('+c.toTex()+')' : c.toTex());
         }
         else
         {
             term = 0 < e ? (symbol + (1<e ? '^'+String(e) : '')) : '';
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((!c.isReal() ? ('('+c.toString()+')*') : (c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (c.toString(true)+'*')))) + term) : c.toString();
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : ((c instanceof RationalFunc) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : ((c instanceof RationalFunc) ? '('+c.toString()+')' : c.toString());
         }
         return term;
     }
@@ -9215,7 +9215,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && (!ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
+                out += (prev && ((ti.c instanceof RationalFunc) || !ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
                 prev = true;
             }
             self._str = out.length ? out : '0';
@@ -9230,7 +9230,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && (!ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
+                out += (prev && ((ti.c instanceof RationalFunc) || !ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
                 prev = true;
             }
             self._tex = out.length ? out : '0';
@@ -9389,7 +9389,7 @@ MultiPolyTerm = Class({
                 return 0 < e[i] ? (monom + to_tex(sym) + (1<e[i] ? '^{'+Tex(e[i])+'}' : '')) : monom;
             }, '');
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (((c instanceof MultiPolynomial) || (c instanceof RationalFunc)) && !c.isConst(true) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : (((c instanceof MultiPolynomial) || (c instanceof RationalFunc)) && !c.isConst(true) ? '('+c.toTex()+')' : c.toTex());
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (((c instanceof MultiPolynomial) && !c.isConst(true)) || (c instanceof RationalFunc) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : (((c instanceof MultiPolynomial) && !c.isConst(true)) || (c instanceof RationalFunc) ? '('+c.toTex()+')' : c.toTex());
         }
         else
         {
@@ -9397,7 +9397,7 @@ MultiPolyTerm = Class({
                 return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1<e[i] ? '^'+String(e[i]) : '')) : monom;
             }, '');
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (((c instanceof MultiPolynomial) || (c instanceof RationalFunc)) && !c.isConst(true) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : (((c instanceof MultiPolynomial) || (c instanceof RationalFunc)) && !c.isConst(true) ? '('+c.toString()+')' : c.toString());
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (((c instanceof MultiPolynomial) && !c.isConst(true)) || (c instanceof RationalFunc) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : (((c instanceof MultiPolynomial) && !c.isConst(true)) || (c instanceof RationalFunc) ? '('+c.toString()+')' : c.toString());
         }
         return term;
     }
@@ -10596,7 +10596,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && (((ti.c instanceof MultiPolynomial) && !ti.c.isConst(true)) || !ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
+                out += (prev && ((((ti.c instanceof MultiPolynomial) && !ti.c.isConst(true)) || (ti.c instanceof RationalFunc)) || !ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
                 prev = true;
             }
             self._str = out.length ? out : '0';
@@ -10611,7 +10611,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && (((ti.c instanceof MultiPolynomial) && !ti.c.isConst(true)) || !ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
+                out += (prev && ((((ti.c instanceof MultiPolynomial) && !ti.c.isConst(true)) || (ti.c instanceof RationalFunc)) || !ti.c.isReal() || ti.c.gt(Abacus.Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
                 prev = true;
             }
             self._tex = out.length ? out : '0';
@@ -11073,7 +11073,7 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
             {
                 self.den = MultiPolynomial.One(self.num.symbol, self.num.ring);
             }
-            else
+            else if ( !self.den.equ(Arithmetic.I) )
             {
                 // here best if we could use multipolynomial gcd if possible
                 if ( (1 === self.num.symbol.length) && (1 === self.den.symbol.length) )
@@ -11142,7 +11142,7 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
     ,toString: function( ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( null == self._str )
-            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ('('+self.num.toString()+')/('+self.den.toString()+')');
+            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('('+self.num.toString()+')'))+'/'+(self.den.isConst(true) && (self.den.isReal()) ? self.den.toString() : ('('+self.den.toString()+')')));
         return self._str;
     }
     ,toTex: function( ) {
@@ -11975,14 +11975,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 });
                 coeff[n-k] = A.mul(M).tr().div(-k);
             }
-            if ( ring.PolynomialClass )
-            {
-                A._p = MultiPolynomial(RationalFunc===ring.PolynomialClass ? coeff : coeff.map(function(c){return MultiPolynomial(c);}), [x], ring.CoefficientRing);
-            }
-            else
-            {
-                A._p = Polynomial(coeff, x, ring);
-            }
+            A._p = ring.PolynomialClass ? Polynomial(coeff.map(function(c){return RationalFunc(c);}), x, ring.CoefficientRing) : Polynomial(coeff, x, ring);
         }
         return A._p;
     }

@@ -458,7 +458,7 @@ o.inv().toString()
 |0 1 0|
 |0 0 1| true
 o.charpoly("y").toString()
-y^3-3*y^2+3*y-1
+y^3+(-3)*y^2+(3)*y+(-1)
 
 o=Abacus.Matrix(ring, [[ring.fromString("x-1"),ring.fromString("x^2-1")],[ring.fromString("x^2-1"),ring.fromString("x-1")]])
 o.toString()
@@ -468,8 +468,8 @@ o.rref().toString()
 |-1            0|
 | 0 -x^3-x^2+2*x|
 o.inv().toString()
-| (-1)/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)|
-|(x+1)/(x^3+x^2-2*x)  (-1)/(x^3+x^2-2*x)| true
+|   -1/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)|
+|(x+1)/(x^3+x^2-2*x)    -1/(x^3+x^2-2*x)| true
 o.charpoly("y").toString()
 y^2+(-2*x+2)*y+(-x^4+3*x^2-2*x)
 ---
