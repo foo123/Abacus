@@ -3486,7 +3486,7 @@ function solvediophs( a, b, with_param, with_free_vars )
         tmp, ref, pivots, rank, Rt, Tt, i, j, t, p, free_vars;
 
     if ( !(a instanceof Matrix) ) a = Matrix(ring, a);
-    else if ( a.ring.NumberClass!==Integer ) a = Matrix(ring, a.val);
+    else if ( a.ring.NumberClass!==Integer ) a = Matrix(ring, a.clone(true));
     m = a.nr; if ( !m ) return null;
     k = a.nc; if ( !k ) return null;
     if ( b instanceof Matrix ) b = b.col(0);
@@ -3587,7 +3587,7 @@ function solvecongrs( a, b, m, with_param, with_free_vars )
     // solve linear congruence using the associated linear diophantine equation
     var ring = Ring.Z(), Arithmetic = Abacus.Arithmetic, O = ring.Zero(), solution, M, MM, mc, free_vars;
     if ( !(a instanceof Matrix) ) a = Matrix(ring, a);
-    else if ( a.ring.NumberClass!==Integer ) a = Matrix(ring, a.val);
+    else if ( a.ring.NumberClass!==Integer ) a = Matrix(ring, a.clone(true));
     if ( !a.nr || !a.nc ) return null;
     if ( !is_array(m) && !is_args(m) && !(m instanceof Matrix) )
     {
@@ -6079,17 +6079,29 @@ function nmin( /* args */ )
         return a.lt(min) ? a : min;
     }, args[0], 1, args.length-1) : null;
 }
-function typecast( ClassType, toClassType )
+function typecast( ClassTypeCheck, toClassType )
 {
+    var ClassType = null;
+    if ( is_array(ClassTypeCheck) && ("function" === typeof ClassTypeCheck[0]) )
+    {
+        ClassType = ClassTypeCheck[0];
+        ClassTypeCheck = function(a){return (a instanceof ClassType);};
+        toClassType = "function"===typeof toClassType ? toClassType : function(a){return new ClassType(a);};
+    }
+    else if ( !("function" === typeof ClassTypeCheck) )
+    {
+        ClassTypeCheck = function(a){return true;};
+        toClassType = function(a){return a;};
+    }
     return function type_cast( a ) {
         if ( is_array(a) || is_args(a) )
         {
             for(var i=0,l=a.length; i<l; i++)
                 a[i] = type_cast(a[i]);
         }
-        else if ( !(a instanceof ClassType) )
+        else if ( !ClassTypeCheck(a) )
         {
-            a = "function"===typeof toClassType ? toClassType(a) : new ClassType(a);
+            a = toClassType(a);
         }
         return a;
     };
@@ -6408,7 +6420,7 @@ Integer = Abacus.Integer = Class(INumber, {
         return this.toString();
     }
 });
-Integer.cast = typecast(Integer, function(a){
+Integer.cast = typecast([Integer], function(a){
     return is_string(a) ? Integer.fromString(a) : new Integer(a);
 });
 
@@ -6887,7 +6899,7 @@ Rational = Abacus.Rational = Class(INumber, {
         return self._tex;
     }
 });
-Rational.cast = typecast(Rational, function(a){
+Rational.cast = typecast([Rational], function(a){
     return is_string(a) ? Rational.fromString(a) : new Rational(a);
 });
 
@@ -7374,7 +7386,7 @@ Complex = Abacus.Complex = Class(INumber, {
         return self._dec;
     }
 });
-Complex.cast = typecast(Complex, function(a){
+Complex.cast = typecast([Complex], function(a){
     return is_string(a) ? Complex.fromString(a) : new Complex(a);
 });
 
@@ -9257,7 +9269,9 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
 Polynomial.cast = function(a, symbol, ring) {
     ring = ring || Ring.Q();
     symbol = String(symbol || 'x');
-    var type_cast = typecast(Polynomial, function(a){
+    var type_cast = typecast(function(a){
+        return (a instanceof Polynomial) && (a.ring===ring);
+    }, function(a){
         return is_string(a) ? Polynomial.fromString(a, symbol, ring) : new Polynomial(a, symbol, ring);
     });
     return type_cast(a);
@@ -10645,7 +10659,9 @@ MultiPolynomial.cast = function( a, symbol, ring ) {
     ring = ring || Ring.Q();
     symbol = symbol || 'x';
     if ( !is_array(symbol) ) symbol = [String(symbol)];
-    var type_cast = typecast(MultiPolynomial, function(a){
+    var type_cast = typecast(function(a){
+        return (a instanceof MultiPolynomial) && (a.ring===ring);
+    }, function(a){
         return is_string(a) ? MultiPolynomial.fromString(a, symbol, ring) : new MultiPolynomial(a, symbol, ring);
     });
     return type_cast(a);
@@ -11156,7 +11172,7 @@ RationalFunc.cast = function(a, symbol, ring) {
     ring = ring || Ring.Q();
     symbol = symbol || 'x';
     if ( !is_array(symbol) ) symbol = [String(symbol)];
-    var type_cast = typecast(RationalFunc, function(a){
+    var type_cast = typecast([RationalFunc], function(a){
         return is_string(a) ? RationalFunc.fromString(a, symbol, ring) : new RationalFunc(MultiPolynomial(a, symbol, ring));
     });
     return type_cast(a);
@@ -11891,7 +11907,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._i = Matrix(field, self._ir.slice(0, columns, rows-1, 2*columns-1).map(function(rref_ij, ij){
                     return field.cast(rref_ij).div(field.cast(self._ir.val[ij[0]][ij[0]]));
                 }, true));
-                self._i._i = ring.isField() ? self : Matrix(field, self.val.map(function(row){return row.slice();}));
+                self._i._i = ring.isField() ? self : Matrix(field, self.clone(true));
             }
         }
         return self._i;
