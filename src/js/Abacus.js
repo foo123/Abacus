@@ -4722,35 +4722,39 @@ function addition_sparse( a, b, TermClass, do_subtraction, ring )
     // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
     do_subtraction = (true===do_subtraction);
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
-    var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
     ring = ring || Ring.Q();
+    var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
     while( i<n1 && j<n2 )
     {
         if ( 0<TermClass.cmp(a[i], b[j]) )
         {
-            c[k++] = TermClass(a[i], null, ring);
+            res = a[i].cast(ring);
+            if ( !res.equ(O) ) c[k++] = res; // check if zero
             i++;
         }
         else if ( 0<TermClass.cmp(b[j], a[i]) )
         {
-            c[k++] = TermClass(do_subtraction ? b[j].neg() : b[j], null, ring);
+            res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
+            if ( !res.equ(O) ) c[k++] = res; // check if zero
             j++;
         }
         else //equal
         {
-            res = do_subtraction ? a[i].sub(b[j]) : a[i].add(b[j]);
-            if ( !res.equ(O) ) c[k++] = TermClass(res, null, ring); // check if cancelled
+            res = (do_subtraction ? a[i].sub(b[j]) : a[i].add(b[j])).cast(ring);
+            if ( !res.equ(O) ) c[k++] = res; // check if cancelled
             i++; j++;
         }
     }
     while( i<n1 )
     {
-        c[k++] = TermClass(a[i], null, ring);
+        res = a[i].cast(ring);
+        if ( !res.equ(O) ) c[k++] = res; // check if zero
         i++;
     }
     while( j<n2 )
     {
-        c[k++] = TermClass(do_subtraction ? b[j].neg() : b[j], null, ring);
+        res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
+        if ( !res.equ(O) ) c[k++] = res; // check if zero
         j++;
     }
     if ( c.length > k ) c.length = k; // truncate if needed
@@ -4765,16 +4769,16 @@ function multiplication_sparse( a, b, TermClass, ring )
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
     // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    ring = ring || Ring.Q();
     var k, t, n1, n2, c, f, max, heap, O = Abacus.Arithmetic.O;
     if ( a.length > b.length ){ t=a; a=b; b=t;} // swap to achieve better performance
     n1 = a.length; n2 = b.length; c = new Array(n1*n2);
-    ring = ring || Ring.Q();
     if ( 0<n1 && 0<n2 )
     {
         k = 0;
         c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
         heap = Heap(array(n1, function(i){
-            return [TermClass(a[i], null, ring).mul(TermClass(b[0], null, ring)), i];
+            return [a[i].cast(ring).mul(b[0].cast(ring)), i];
         }), "max", function(a, b){
             return TermClass.cmp(a[0], b[0]);
         });
@@ -4788,7 +4792,7 @@ function multiplication_sparse( a, b, TermClass, ring )
             }
             c[k] = c[k].add(max[0]);
             f[max[1]]++;
-            if ( f[max[1]] < n2 ) heap.replace([TermClass(a[max[1]], null, ring).mul(TermClass(b[f[max[1]]], null, ring)), max[1]]);
+            if ( f[max[1]] < n2 ) heap.replace([a[max[1]].cast(ring).mul(b[f[max[1]]].cast(ring)), max[1]]);
             else heap.pop();
         }
         heap.dispose();
@@ -4802,45 +4806,47 @@ function division_sparse( a, b, TermClass, q_and_r, ring )
     // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
     q_and_r = (true===q_and_r);
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    ring = ring || Ring.Q();
     var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
         heap = Heap([], "max", function(a,b){return TermClass.cmp(a.term, b.term);}),
         q = [], r = [], k = 0, d, res, Q, b0;
 
-    ring = ring || Ring.Q();
-    b0 = TermClass(b[0], null, ring);
+    if ( !b.length ) return null;
+    b0 = b[0].cast(ring);
     while( (d=heap.peek()) || k<na )
     {
         if ( (null == d) || (k<na && 0>TermClass.cmp(d.term, a[k])) )
         {
-            res = TermClass(a[k], null, ring);
+            res = a[k].cast(ring);
             k++;
         }
         else if ( k<na && 0===TermClass.cmp(d.term, a[k]) )
         {
-            res = TermClass(a[k], null, ring).sub(d.term);
+            res = a[k].cast(ring).sub(d.term);
             if ( nb>d.n )
-                heap.replace({term:d.Q.mul(TermClass(b[d.n], null, ring)), n:d.n+1, Q:d.Q});
+                heap.replace({term:d.Q.mul(b[d.n].cast(ring)), n:d.n+1, Q:d.Q});
             else
                 heap.pop();
             k++;
 
-            if ( res.equ(O) ) continue; // zero coefficient, skip
+            //if ( res.equ(O) ) continue; // zero coefficient, skip
         }
         else
         {
             res = d.term.neg();
             if ( nb>d.n )
-                heap.replace({term:d.Q.mul(TermClass(b[d.n], null, ring)), n:d.n+1, Q:d.Q});
+                heap.replace({term:d.Q.mul(b[d.n].cast(ring)), n:d.n+1, Q:d.Q});
             else
                 heap.pop();
         }
+        if ( res.equ(O) ) continue; // zero coefficient, skip
 
         if ( b0.divides(res) )
         {
             Q = res.div(b0);
             q = addition_sparse(q, [Q], TermClass, false, ring);
             if ( nb>1 )
-                heap.push({term:Q.mul(TermClass(b[1], null, ring)), n:2, Q:Q});
+                heap.push({term:Q.mul(b[1].cast(ring)), n:2, Q:Q});
         }
         else if ( q_and_r )
         {
@@ -8131,6 +8137,10 @@ UniPolyTerm = Class({
     ,clone: function( ) {
         return new UniPolyTerm(this);
     }
+    ,cast: function( ring ) {
+        var self = this;
+        return ring===self.ring ? self : new UniPolyTerm(self.c, self.e, ring);
+    }
     ,equ: function( term ) {
         var self = this;
         return term instanceof UniPolyTerm ? (self.c.equ(term.c) && self.e===term.e) : self.c.equ(term);
@@ -9293,6 +9303,10 @@ MultiPolyTerm = Class({
     }
     ,clone: function( ) {
         return new MultiPolyTerm(this);
+    }
+    ,cast: function( ring ) {
+        var self = this;
+        return ring===self.ring ? self : new MultiPolyTerm(self.c, self.e, ring);
     }
     ,equ: function( term ) {
         var self = this;
