@@ -23,7 +23,8 @@ function check_div( n, d )
 }
 function check_xgcd( ring, args )
 {
-    var out = '', res = (Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring).Zero(), gcd = ring.xgcd(args);
+    var out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
+        res = field.Zero(), gcd = ring.xgcd(args);
     for(i=0; i<args.length; i++)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
@@ -371,6 +372,9 @@ echo('---');
 ring = Abacus.Ring.Z("x");
 echo('ring = Abacus.Ring.'+ring.toString());
 echo('----------');
+echo('ring.xgcd(ring.create([4,0,2]),ring.create([6,12]))');
+check_xgcd(ring, [ring.create([4,0,2]),ring.create([6,12])]);
+
 echo('ring.xgcd(ring.create([2,0,1]),ring.create([6,12]))');
 check_xgcd(ring, [ring.create([2,0,1]),ring.create([6,12])]);
 

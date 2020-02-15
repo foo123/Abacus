@@ -22,7 +22,8 @@ function check_div( n, d )
 }
 function check_xgcd( ring, args )
 {
-    var out = '', res = (Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring).Zero(), gcd = ring.xgcd(args);
+    var out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
+        res = field.Zero(), gcd = ring.xgcd(args);
     for(i=0; i<args.length; i++)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';

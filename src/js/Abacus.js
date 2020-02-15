@@ -2650,12 +2650,12 @@ function polygcd( /* args */ )
         {
             return a.monic();
         }
-        else if ( 2 <= c )
+        else //if ( 2 <= c )
         {
             field = a.ring.fieldOfFractions(); // Q[X]
             p = PolynomialClass(a, a.symbol, field);
             q = PolynomialClass(2===c ? args[1] : polygcd(slice.call(args, 1)), a.symbol, field);
-            return PolynomialClass(polygcd(p, q).primitive()/*.mul(field.gcd(p.content(), q.content()))*/, a.symbol, a.ring);
+            return PolynomialClass(polygcd(p, q).primitive().mul(field.gcd(p.content(), q.content())), a.symbol, a.ring);
         }
     }
 
@@ -2692,10 +2692,12 @@ function polyxgcd( /* args */ )
         k = args.length, i, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
         O = Arithmetic.O, I = Arithmetic.I, asign, bsign,
         a, b, a0, b0, a1, b1, a2, b2, lead,
-        qr, gcd, g, p, q, field;
+        qr, gcd, g, f, p, q, field;
 
     if ( 0 === k ) return;
-    PolynomialClass = args[0] instanceof MultiPolynomial ? MultiPolynomial : Polynomial;
+
+    a = args[0];
+    PolynomialClass = a instanceof MultiPolynomial ? MultiPolynomial : Polynomial;
 
     for(i=0; i<k; i++)
     {
@@ -2706,16 +2708,15 @@ function polyxgcd( /* args */ )
         }
     }
     // defer to xgcd of coefficients and transform back to polynomial
-    if ( are_const ) return args[0].ring.xgcd(array(args.length, function(i){return args[i].cc();})).map(function(g){return PolynomialClass(g, args[0].symbol, args[0].ring);});
+    if ( are_const ) return a.ring.xgcd(array(args.length, function(i){return args[i].cc();})).map(function(g){return PolynomialClass(g, a.symbol, a.ring);});
 
-    a = args[0];
 
-    // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
+    // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
     if ( Integer===a.ring.NumberClass )
     {
         field = a.ring.fieldOfFractions(); // Q[X]
-        asign = field.One(); bsign = field.One();
+        asign = field.One(); bsign = asign;
         if ( 1 == k )
         {
             // normalize it
@@ -2735,31 +2736,21 @@ function polyxgcd( /* args */ )
         {
             gcd = 2===k ? [args[1], PolynomialClass.One(a.symbol, field)] : polyxgcd(slice.call(args, 1));
             b = gcd[0];
-            if ( 2 === k )
-            {
-                // normalize it
-                lead = b.lc();
-                if ( lead.divides(asign) && lead.divides(bsign) )
-                {
-                    b = b.monic();
-                    if ( !lead.equ(b.lc()) ) {asign = asign.div(lead); bsign = bsign.div(lead);}
-                }
-                else if ( lead.lt(O) )
-                {
-                    b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
-                }
-            }
-            g = polyxgcd(PolynomialClass(a, a.symbol, field), PolynomialClass(b, a.symbol, field));
+            p = PolynomialClass(a, a.symbol, field);
+            q = PolynomialClass(b, a.symbol, field);
+            g = polyxgcd(p, q);
+            f = field.gcd(p.content(), q.content());
             // Bezout's Identity for Polynomials works only for polys over a field, not simply a ring, like Z
             // thus the coefficients are in general polys over Q ie Q[x]
             // https://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity#For_polynomials
+            g[0] = g[0].primitive().mul(f); g[1] = g[1].mul(f); g[2] = g[2].mul(f);
             return array(gcd.length+1, function(i){
-                return 0===i ? PolynomialClass(g[0].primitive()/*.mul(field.gcd(a.content(), b.content()))*/, a.symbol, a.ring) : (1===i ? g[1].mul(asign) : g[2].mul(gcd[i-1]).mul(bsign));
+                return 0===i ? PolynomialClass(g[0], a.symbol, a.ring) : (1===i ? g[1] : gcd[i-1].mul(g[2]));
             });
         }
     }
 
-    asign = args[0].ring.One(); bsign = args[0].ring.One();
+    asign = a.ring.One(); bsign = asign;
     if ( 1 === k )
     {
         // normalize it
@@ -4721,7 +4712,7 @@ function convolution( a, b, Arithmetic )
     }
     return c;
 }
-function addition_sparse( a, b, TermClass, do_subtraction )
+function addition_sparse( a, b, TermClass, do_subtraction, ring )
 {
     // O(n1+n2) ~ O(max(n1,n2))
     // assume a, b are arrays of **non-zero only** coeffs of Term class of coefficient and exponent already sorted in exponent decreasing order
@@ -4732,39 +4723,40 @@ function addition_sparse( a, b, TermClass, do_subtraction )
     do_subtraction = (true===do_subtraction);
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
+    ring = ring || Ring.Q();
     while( i<n1 && j<n2 )
     {
         if ( 0<TermClass.cmp(a[i], b[j]) )
         {
-            c[k++] = a[i];
+            c[k++] = TermClass(a[i], null, ring);
             i++;
         }
         else if ( 0<TermClass.cmp(b[j], a[i]) )
         {
-            c[k++] = do_subtraction ? b[j].neg() : b[j];
+            c[k++] = TermClass(do_subtraction ? b[j].neg() : b[j], null, ring);
             j++;
         }
         else //equal
         {
             res = do_subtraction ? a[i].sub(b[j]) : a[i].add(b[j]);
-            if ( !res.equ(O) ) c[k++] = res; // check if cancelled
+            if ( !res.equ(O) ) c[k++] = TermClass(res, null, ring); // check if cancelled
             i++; j++;
         }
     }
     while( i<n1 )
     {
-        c[k++] = a[i];
+        c[k++] = TermClass(a[i], null, ring);
         i++;
     }
     while( j<n2 )
     {
-        c[k++] = do_subtraction ? b[j].neg() : b[j];
+        c[k++] = TermClass(do_subtraction ? b[j].neg() : b[j], null, ring);
         j++;
     }
     if ( c.length > k ) c.length = k; // truncate if needed
     return c;
 }
-function multiplication_sparse( a, b, TermClass )
+function multiplication_sparse( a, b, TermClass, ring )
 {
     // O(log(n1)*n1*n2)
     // assume a, b are arrays of **non-zero only** coeffs of Term class of coefficient and exponent already sorted in exponent decreasing order
@@ -4773,16 +4765,16 @@ function multiplication_sparse( a, b, TermClass )
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
     // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
-    var ring, k, t, n1, n2, c, f, max, heap, O = Abacus.Arithmetic.O;
+    var k, t, n1, n2, c, f, max, heap, O = Abacus.Arithmetic.O;
     if ( a.length > b.length ){ t=a; a=b; b=t;} // swap to achieve better performance
     n1 = a.length; n2 = b.length; c = new Array(n1*n2);
+    ring = ring || Ring.Q();
     if ( 0<n1 && 0<n2 )
     {
-        ring = a[0].ring || Ring.Q();
         k = 0;
         c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
         heap = Heap(array(n1, function(i){
-            return [a[i].mul(b[0]), i];
+            return [TermClass(a[i], null, ring).mul(TermClass(b[0], null, ring)), i];
         }), "max", function(a, b){
             return TermClass.cmp(a[0], b[0]);
         });
@@ -4796,7 +4788,7 @@ function multiplication_sparse( a, b, TermClass )
             }
             c[k] = c[k].add(max[0]);
             f[max[1]]++;
-            if ( f[max[1]] < n2 ) heap.replace([a[max[1]].mul(b[f[max[1]]]), max[1]]);
+            if ( f[max[1]] < n2 ) heap.replace([TermClass(a[max[1]], null, ring).mul(TermClass(b[f[max[1]]], null, ring)), max[1]]);
             else heap.pop();
         }
         heap.dispose();
@@ -4804,7 +4796,7 @@ function multiplication_sparse( a, b, TermClass )
     }
     return c;
 }
-function division_sparse( a, b, TermClass, q_and_r )
+function division_sparse( a, b, TermClass, q_and_r, ring )
 {
     // sparse polynomial reduction/long division
     // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
@@ -4812,20 +4804,22 @@ function division_sparse( a, b, TermClass, q_and_r )
     TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
         heap = Heap([], "max", function(a,b){return TermClass.cmp(a.term, b.term);}),
-        q = [], r = [], k = 0, d, res, Q;
+        q = [], r = [], k = 0, d, res, Q, b0;
 
+    ring = ring || Ring.Q();
+    b0 = TermClass(b[0], null, ring);
     while( (d=heap.peek()) || k<na )
     {
         if ( (null == d) || (k<na && 0>TermClass.cmp(d.term, a[k])) )
         {
-            res = a[k];
+            res = TermClass(a[k], null, ring);
             k++;
         }
         else if ( k<na && 0===TermClass.cmp(d.term, a[k]) )
         {
-            res = a[k].sub(d.term);
+            res = TermClass(a[k], null, ring).sub(d.term);
             if ( nb>d.n )
-                heap.replace({term:d.Q.mul(b[d.n]), n:d.n+1, Q:d.Q});
+                heap.replace({term:d.Q.mul(TermClass(b[d.n], null, ring)), n:d.n+1, Q:d.Q});
             else
                 heap.pop();
             k++;
@@ -4836,21 +4830,21 @@ function division_sparse( a, b, TermClass, q_and_r )
         {
             res = d.term.neg();
             if ( nb>d.n )
-                heap.replace({term:d.Q.mul(b[d.n]), n:d.n+1, Q:d.Q});
+                heap.replace({term:d.Q.mul(TermClass(b[d.n], null, ring)), n:d.n+1, Q:d.Q});
             else
                 heap.pop();
         }
 
-        if ( b[0].divides(res) )
+        if ( b0.divides(res) )
         {
-            Q = res.div(b[0]);
-            q = addition_sparse(q, [Q], TermClass);
+            Q = res.div(b0);
+            q = addition_sparse(q, [Q], TermClass, false, ring);
             if ( nb>1 )
-                heap.push({term:Q.mul(b[1]), n:2, Q:Q});
+                heap.push({term:Q.mul(TermClass(b[1], null, ring)), n:2, Q:Q});
         }
         else if ( q_and_r )
         {
-            r = addition_sparse(r, [res], TermClass);
+            r = addition_sparse(r, [res], TermClass, false, ring);
         }
     }
     heap.dispose();
@@ -8096,7 +8090,7 @@ UniPolyTerm = Class({
         var self = this;
         if ( !(self instanceof UniPolyTerm) ) return new UniPolyTerm(c, e, ring);
 
-        if ( c instanceof UniPolyTerm ){ring = c.ring; e = c.e; c = c.c;}
+        if ( c instanceof UniPolyTerm ){ring = ring || c.ring; e = c.e; c = c.c;}
         self.ring = ring instanceof Ring ? ring : Ring.Q();
         self.c = self.ring.cast(c||0);
         self.e = +(e||0);
@@ -8147,22 +8141,23 @@ UniPolyTerm = Class({
     }
     ,add: function( term ) {
         var self = this;
-        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.add(term.c), self.e, self.ring) : UniPolyTerm(self.c.add(self.ring.cast(term)), self.e, self.ring);
+        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.add(term.c), self.e, self.ring) : UniPolyTerm(self.c.add(term), self.e, self.ring);
     }
     ,sub: function( term ) {
         var self = this;
-        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.sub(term.c), self.e, self.ring) : UniPolyTerm(self.c.sub(self.ring.cast(term)), self.e, self.ring);
+        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.sub(term.c), self.e, self.ring) : UniPolyTerm(self.c.sub(term), self.e, self.ring);
     }
     ,mul: function( term ) {
         var self = this;
-        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.mul(term.c), self.e+term.e, self.ring) : UniPolyTerm(self.c.mul(self.ring.cast(term)), self.e, self.ring);
+        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.mul(term.c), self.e+term.e, self.ring) : UniPolyTerm(self.c.mul(term), self.e, self.ring);
     }
     ,div: function( term ) {
         var self = this;
-        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.div(term.c), stdMath.max(0, self.e-term.e), self.ring) : UniPolyTerm(self.c.div(self.ring.cast(term)), self.e, self.ring);
+        return term instanceof UniPolyTerm ? UniPolyTerm(self.c.div(term.c), stdMath.max(0, self.e-term.e), self.ring) : UniPolyTerm(self.c.div(term), self.e, self.ring);
     }
     ,divides: function( term ) {
-        return (this.e <= term.e) && this.c.divides(term.c);
+        var self = this;
+        return (self.e <= term.e) && self.c.divides(term.c);
     }
     ,toTerm: function( symbol, asTex, monomialOnly ) {
         var t = this, e = t.e, c = t.c, term, Arithmetic = Abacus.Arithmetic;
@@ -8289,7 +8284,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 {
                     // O(max(n1,n2))
                     if ( x.terms.length )
-                        P.terms = addition_sparse(P.terms, x.terms, UniPolyTerm, true===do_sub);
+                        P.terms = addition_sparse(P.terms, x.terms, UniPolyTerm, true===do_sub, P.ring);
                 }
                 else
                 {
@@ -8304,7 +8299,7 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 x = UniPolyTerm(x, 0, P.ring);
                 if ( !x.equ(Arithmetic.O) )
                 {
-                    res = P.terms.length ? addition_sparse([P.terms.pop()], [x], UniPolyTerm, true===do_sub) : [x];
+                    res = P.terms.length ? addition_sparse([P.terms.pop()], [x], UniPolyTerm, true===do_sub, P.ring) : [x];
                     P.terms = P.terms.concat(res);
                 }
             }
@@ -8320,13 +8315,13 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 if ( x.symbol === P.symbol )
                 {
                     // O(n1*n2)
-                    P.terms = x.terms.length ? multiplication_sparse(P.terms, x.terms, UniPolyTerm) : [];
+                    P.terms = x.terms.length ? multiplication_sparse(P.terms, x.terms, UniPolyTerm, P.ring) : [];
                 }
                 else
                 {
                     // upgrade to multivariate polynomial
                     symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
-                    return MultiPolynomial.Mul(MultiPolynomial(x, symbol, P.ring), MultiPolynomial(P, symbol, P.ring));
+                    return MultiPolynomial.Mul(MultiPolynomial(x, symbol, x.ring), MultiPolynomial(P, symbol, P.ring));
                 }
             }
             else if ( (x instanceof Complex) || (x instanceof Rational) || (x instanceof Integer) || Arithmetic.isNumber(x) )
@@ -8392,14 +8387,14 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 if ( x.symbol === P.symbol )
                 {
                     // sparse polynomial reduction/long division
-                    q = division_sparse(P.terms, x.terms, UniPolyTerm, q_and_r);
+                    q = division_sparse(P.terms, x.terms, UniPolyTerm, q_and_r, P.ring);
                     return q_and_r ? [Polynomial(q[0], P.symbol, P.ring), Polynomial(q[1], P.symbol, P.ring)] : Polynomial(q, P.symbol, P.ring);
                 }
                 else
                 {
                     // upgrade to multivariate polynomial
                     symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
-                    return MultiPolynomial.Div(MultiPolynomial(P, symbol, P.ring), MultiPolynomial(x, symbol, P.ring), q_and_r);
+                    return MultiPolynomial.Div(MultiPolynomial(P, symbol, P.ring), MultiPolynomial(x, symbol, x.ring), q_and_r);
                 }
             }
             else if ( (x instanceof Complex) || (x instanceof Rational) || (x instanceof Integer) || Arithmetic.isNumber(x) )
@@ -9034,14 +9029,14 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
             {
                 // Perform the division.
                 t = plt.div(xlt);
-                qs[i] = addition_sparse(qs[i], [t], UniPolyTerm);
-                p.terms = addition_sparse(p.terms, xs[i].terms.map(function(xt){return xt.mul(t);}), UniPolyTerm, true);
+                qs[i] = addition_sparse(qs[i], [t], UniPolyTerm, false, p.ring);
+                p.terms = addition_sparse(p.terms, xs[i].terms.map(function(xt){return xt.mul(t);}), UniPolyTerm, true, p.ring);
             }
             else
             {
                 // None of them divided. Cancel and Move the leading term to r.
                 p.terms.shift();
-                if ( q_and_r ) r = addition_sparse(r, [plt], UniPolyTerm);
+                if ( q_and_r ) r = addition_sparse(r, [plt], UniPolyTerm, false, p.ring);
             }
         }
         qs = qs.map(function(qi){return Polynomial(qi, p.symbol, p.ring);});
@@ -9239,8 +9234,8 @@ MultiPolyTerm = Class({
         var self = this;
         if ( !(self instanceof MultiPolyTerm) ) return new MultiPolyTerm(c, e, ring);
 
-        if ( c instanceof MultiPolyTerm ){ring = c.ring; e = c.e.slice(); c = c.c;}
-        else if ( c instanceof UniPolyTerm ){ring = c.ring; e = [c.e]; c = c.c;}
+        if ( c instanceof MultiPolyTerm ){ring = ring || c.ring; e = c.e.slice(); c = c.c;}
+        else if ( c instanceof UniPolyTerm ){ring = ring || c.ring; e = [c.e]; c = c.c;}
         self.ring = ring instanceof Ring ? ring : Ring.Q();
         self.c = c instanceof MultiPolynomial ? c : self.ring.cast(c||0);
         self.e = is_array(e) ? e : [+(e||0)];
@@ -9309,23 +9304,23 @@ MultiPolyTerm = Class({
     }
     ,add: function( term ) {
         var self = this;
-        return term instanceof MultiPolyTerm ? MultiPolyTerm(self.c.add(term.c), self.e.slice(), self.ring) : MultiPolyTerm(self.c.add(self.ring.cast(term)), self.e.slice(), self.ring);
+        return term instanceof MultiPolyTerm ? MultiPolyTerm(self.c.add(term.c), self.e.slice(), self.ring) : MultiPolyTerm(self.c.add(term), self.e.slice(), self.ring);
     }
     ,sub: function( term ) {
         var self = this;
-        return term instanceof MultiPolyTerm ? MultiPolyTerm(self.c.sub(term.c), self.e.slice(), self.ring) : MultiPolyTerm(self.c.sub(self.ring.cast(term)), self.e.slice(), self.ring);
+        return term instanceof MultiPolyTerm ? MultiPolyTerm(self.c.sub(term.c), self.e.slice(), self.ring) : MultiPolyTerm(self.c.sub(term), self.e.slice(), self.ring);
     }
     ,mul: function( term ) {
         var self = this;
         return term instanceof MultiPolyTerm ? MultiPolyTerm(self.c.mul(term.c), array(stdMath.max(self.e.length, term.e.length), function(i){
             return i<self.e.length && i<term.e.length ? self.e[i]+term.e[i] : (i<term.e.length ? term.e[i] : self.e[i]);
-        }), self.ring) : MultiPolyTerm(self.c.mul(self.ring.cast(term)), self.e.slice(), self.ring);
+        }), self.ring) : MultiPolyTerm(self.c.mul(term), self.e.slice(), self.ring);
     }
     ,div: function( term ) {
         var self = this;
         return term instanceof MultiPolyTerm ? MultiPolyTerm(self.c.div(term.c), array(stdMath.max(self.e.length, term.e.length), function(i){
             return i<self.e.length && i<term.e.length ? stdMath.max(0, self.e[i]-term.e[i]) : (i<term.e.length ? 0 : self.e[i]);
-        }), self.ring) :  MultiPolyTerm(self.c.div(self.ring.cast(term)), self.e.slice(), self.ring);
+        }), self.ring) :  MultiPolyTerm(self.c.div(term), self.e.slice(), self.ring);
     }
     ,divides: function( term ) {
         var self = this, e1 = self.e, e2 = term.e, i, n = stdMath.max(e1.length, e2.length);
@@ -9512,7 +9507,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                         P = P.recur(false);
                         x = x.recur(false);
                     }
-                    P.terms = addition_sparse(P.terms, x.terms, MultiPolyTerm, true===do_sub);
+                    P.terms = addition_sparse(P.terms, x.terms, MultiPolyTerm, true===do_sub, P.ring);
                     if ( recur && rsym ) P = P.recur(rsym);
                 }
             }
@@ -9522,7 +9517,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                 x = MultiPolyTerm(x, array(P.symbol.length, 0), P.ring);
                 if ( !x.equ(Arithmetic.O) )
                 {
-                    res = P.terms.length ? addition_sparse([P.terms.pop()], [x], MultiPolyTerm, true===do_sub) : [x];
+                    res = P.terms.length ? addition_sparse([P.terms.pop()], [x], MultiPolyTerm, true===do_sub, P.ring) : [x];
                     P.terms = P.terms.concat(res);
                 }
             }
@@ -9548,7 +9543,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                         P = P.recur(false);
                         x = x.recur(false);
                     }
-                    P.terms = multiplication_sparse(P.terms, x.terms, MultiPolyTerm);
+                    P.terms = multiplication_sparse(P.terms, x.terms, MultiPolyTerm, P.ring);
                     if ( recur && rsym ) P = P.recur(rsym);
                 }
                 else
@@ -9604,7 +9599,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                     rsym = P._rsym;
                     P = P.recur(false);
                 }
-                q = division_sparse(P.terms, x.terms, MultiPolyTerm, q_and_r);
+                q = division_sparse(P.terms, x.terms, MultiPolyTerm, q_and_r, P.ring);
                 q = q_and_r ? [MultiPolynomial(q[0], P.symbol, P.ring), MultiPolynomial(q[1], P.symbol, P.ring)] : MultiPolynomial(q, P.symbol, P.ring);
                 if ( recur && rsym )
                 {
@@ -10277,14 +10272,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
             {
                 // Perform the division.
                 t = plt.div(xlt);
-                qs[i] = addition_sparse(qs[i], [t], MultiPolyTerm);
-                p.terms = addition_sparse(p.terms, xs[i].terms.map(function(xt){return xt.mul(t);}), MultiPolyTerm, true);
+                qs[i] = addition_sparse(qs[i], [t], MultiPolyTerm, false, p.ring);
+                p.terms = addition_sparse(p.terms, xs[i].terms.map(function(xt){return xt.mul(t);}), MultiPolyTerm, true, p.ring);
             }
             else
             {
                 // None of them divided. Cancel and Move the leading term to r.
                 p.terms.shift();
-                if ( q_and_r ) r = addition_sparse(r, [plt], MultiPolyTerm);
+                if ( q_and_r ) r = addition_sparse(r, [plt], MultiPolyTerm, false, p.ring);
             }
         }
         qs = qs.map(function(qi){
@@ -11259,6 +11254,7 @@ Ring = Abacus.Ring = Class({
         if ( null == self._str )
         {
             self._str = (Integer===self.NumberClass ? 'Z(' : (Rational===self.NumberClass ? 'Q(' : 'C(')) + (self.PolynomialSymbol ? ('"'+[].concat(self.PolynomialSymbol).join('","')+'"') : '') + ')';
+            if ( RationalFunc === self.PolynomialClass ) self._str += '.fieldOfFractions()';
         }
         return self._str;
     }
@@ -11307,7 +11303,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
         else //if ( is_number(r) && is_number(c) )
         {
             if ( null == c ) c = r; // square
-            r = +(r||0); c = +(c||0);
+            r = (+(r||0))|0; c = (+(c||0))|0;
+            if ( 0>r ) r = 0;
+            if ( 0>c ) c = 0;
             self.val = array(r, function(i){
                 return array(c, function(j){
                     return self.ring.Zero();
@@ -11422,7 +11420,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             if ( null == a ) a = ring.One();
             if ( null == b ) b = ring.One();
             for(k=k0||0; k<n; k++)
-                m[i][k] = b.mul(m[i][k]).add(a.mul(m[j][k]));
+                m[i][k] = ring.cast(b.mul(m[i][k]).add(a.mul(m[j][k])));
             return m;
         }
         ,ADDC: function( ring, m, i, j, a, b, k0 ) {
@@ -11432,7 +11430,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             if ( null == a ) a = ring.One();
             if ( null == b ) b = ring.One();
             for(k=k0||0; k<n; k++)
-                m[k][i] = b.mul(m[k][i]).add(a.mul(m[k][j]));
+                m[k][i] = ring.cast(b.mul(m[k][i]).add(a.mul(m[k][j])));
             return m;
         }
         ,MULR: function( ring, m, i0, i1, a, b, c, d ) {
@@ -11441,8 +11439,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
             for (j=0; j<l; j++)
             {
                 x = m[i0][j]; y = m[i1][j];
-                m[i0][j] = a.mul(x).add(b.mul(y));
-                m[i1][j] = c.mul(x).add(d.mul(y));
+                m[i0][j] = ring.cast(a.mul(x).add(b.mul(y)));
+                m[i1][j] = ring.cast(c.mul(x).add(d.mul(y)));
             }
             return m;
         }
@@ -11452,8 +11450,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
             for (i=0; i<l; i++)
             {
                 x = m[i][j0]; y = m[i][j1];
-                m[i][j0] = a.mul(x).add(c.mul(y));
-                m[i][j1] = b.mul(x).add(d.mul(y));
+                m[i][j0] = ring.cast(a.mul(x).add(c.mul(y)));
+                m[i][j1] = ring.cast(b.mul(x).add(d.mul(y)));
             }
             return m;
         }
@@ -11671,10 +11669,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
             return self;
         }
         return self.val[r][c];
-    }
-    ,coeff: function( ) {
-        // alias of entry
-        return this.entry.apply(this, arguments);
     }
 
     ,isSquare: function( ) {
@@ -11984,10 +11978,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         if ( is_number(a) || is_string(a) ) a = self.ring.cast(a);
         return self.map(function(vij){return vij.mul(a);});
-    }
-    ,kron: function( a ) {
-        // alias of prod
-        return this.prod(a);
     }
     ,div: function( a ) {
         var self = this;
@@ -12462,7 +12452,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     if ( a.val[i][pivots[i][1]].lt(O) )
                         Matrix.ADDR(ring, a.val, i, i, O, J, pivots[i][1]);
                     // 2. remove any common factor, simplify
-                    if ( ring.hasGCD() && !I.equ(g=ring.gcd(a.val[i])) && !O.equ(g) )
+                    if ( ring.hasGCD() && !O.equ(g=ring.gcd(a.val[i])) && !I.equ(g) )
                         for (j=0; j<columns; j++) a.val[i][j] = a.val[i][j].div(g);
                 }
             }

@@ -4,7 +4,7 @@ var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
-var ring;
+var pring, ring;
 
 ring = Abacus.Ring.C("x");
 echo('ring = Abacus.Ring.'+ring.toString());
@@ -27,6 +27,8 @@ echo('ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).
 echo(ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString()).toString());
 echo('ring.fromString("ix^2+1")');
 echo(ring.fromString("ix^2+1").toString());
+echo('ring.fromString("(1/2+i)x^2+3/2")');
+echo(ring.fromString("(1/2+i)x^2+3/2").toString());
 echo('ring.fromString("(1/2)ix^2+(1+(2/3)i)x")');
 echo(ring.fromString("(1/2)ix^2+(1+(2/3)i)x").toString());
 echo('ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")');
@@ -39,6 +41,7 @@ echo('ring.fromString("1+((2)i)x") /* this is workaround, parsed correctly */');
 echo(ring.fromString("1+((2)i)x").toString());
 echo('ring.fromString("2ix+1") /* this is workaround, parsed correctly, in fact .toString() methods output strings in this order so always parsed correctly */');
 echo(ring.fromString("2ix+1").toString());
+echo();
 
 ring = Abacus.Ring.C("x","y","z");
 echo('ring = Abacus.Ring.'+ring.toString());
@@ -59,3 +62,26 @@ echo('ring.fromString("x^2y+x^2y^2+x+yx+2")');
 echo(ring.fromString("x^2y+x^2y^2+x+yx+2").toString());
 echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy")');
 echo(ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").toString());
+echo();
+
+pring = Abacus.Ring.C("x", "y"); ring = pring.fieldOfFractions();
+echo('ring = Abacus.Ring.'+ring.toString());
+echo('----');
+echo('ring.fromString("(1+xy)/(x-y)")');
+echo(ring.fromString("(1+xy)/(x-y)").toString());
+echo('ring.fromString("(1+i)/(x-y)")');
+echo(ring.fromString("(1+i)/(x-y)").toString());
+echo('ring.fromString("(3x+(1+i))/(1+i)")');
+echo(ring.fromString("(3x+(1+i))/(1+i)").toString());
+echo('ring.fromString("1/(x-y)")');
+echo(ring.fromString("1/(x-y)").toString());
+echo('ring.fromString("1/(3/2)x")');
+echo(ring.fromString("1/(3/2)x").toString());
+echo('ring.fromString("(3/2)/x")');
+echo(ring.fromString("(3/2)/x").toString());
+echo('ring.fromString("x-y")');
+echo(ring.fromString("x-y").toString());
+echo('ring.fromString("3/2")');
+echo(ring.fromString("3/2").toString());
+echo('ring.fromString("xy+3/2")');
+echo(ring.fromString("xy+3/2").toString());
