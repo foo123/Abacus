@@ -25,6 +25,12 @@ echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString());
 echo('ring.fromString("(1+xy)/(x-y)").toString()');
 echo(ring.fromString("(1+xy)/(x-y)").toString());
 
+echo('ring.fromString("(1+xy)/(x-y)").d("x").toString()');
+echo(ring.fromString("(1+xy)/(x-y)").d("x").toString());
+
+echo('ring.fromString("(1+xy)/(x-y)").d("y").toString()');
+echo(ring.fromString("(1+xy)/(x-y)").d("y").toString());
+
 echo('ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toTex()).toString()');
 echo(ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toTex()).toString());
 
