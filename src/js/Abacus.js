@@ -1,7 +1,7 @@
 /**
 *
 *   Abacus
-*   A combinatorics and number theory library for Node.js / Browser / XPCOM Javascript, Python, Java
+*   Combinatorics and Algebraic Number Theory Symbolic Computation library for Node.js/Browser/XPCOM Javascript, Python, Java
 *   @version: 1.0.0
 *   https://github.com/foo123/Abacus
 **/
@@ -8768,48 +8768,63 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         // factorise into content and primitive part
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials#Primitive_part%E2%80%93content_factorization
         var self = this, symbol = self.symbol, ring = self.ring, field = ring.fieldOfFractions(), terms = self.terms,
-            Arithmetic = Abacus.Arithmetic, coeffp, LCM, content;
+            Arithmetic = Abacus.Arithmetic, coeffp, LCM, content, isReal, isImag;
         if ( null == self._prim )
         {
             if ( !terms.length )
             {
                 self._prim = [self, field.One()];
             }
-            else if ( (Complex===ring.NumberClass) && !self.isReal() && !self.isImag() )
+            else if ( Complex===ring.NumberClass )
             {
-                    content = ring.gcd(terms.map(function(t){return t.c;})).simpl();
-                    self._prim = [Polynomial(terms.map(function(t){return UniPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                    isReal = self.isReal(); isImag = self.isImag();
+                    if ( !isReal && !isImag )
+                    {
+                        content = ring.gcd(terms.map(function(t){return t.c;})).simpl();
+                        self._prim = [Polynomial(terms.map(function(t){return UniPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                    }
+                    else if ( isImag )
+                    {
+                        LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.imag.den);}, Arithmetic.I);
+                        coeffp = terms.map(function(t){return t.c.mul(LCM).imag.num;});
+                        content = gcd(coeffp);
+                        coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                        // make positive lead
+                        if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                        {
+                            coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                            content = Arithmetic.neg(content);
+                        }
+                        self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                    }
+                    else
+                    {
+                        LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);}, Arithmetic.I);
+                        coeffp = terms.map(function(t){return t.c.mul(LCM).real.num;});
+                        content = gcd(coeffp);
+                        coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                        // make positive lead
+                        if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                        {
+                            coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                            content = Arithmetic.neg(content);
+                        }
+                        self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                    }
             }
             else
             {
-                if ( self.isImag() )
+                LCM = Integer===ring.NumberClass ? Arithmetic.I : terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);
+                coeffp = terms.map(function(t){return t.c.mul(LCM).num;});
+                content = gcd(coeffp);
+                coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                // make positive lead
+                if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
                 {
-                    LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.imag.den);}, Arithmetic.I);
-                    coeffp = terms.map(function(t){return t.c.mul(LCM).imag.num;});
-                    content = gcd(coeffp);
-                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
-                    // make positive lead
-                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
-                    {
-                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
-                        content = Arithmetic.neg(content);
-                    }
-                    self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                    coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                    content = Arithmetic.neg(content);
                 }
-                else
-                {
-                    LCM = ring.NumberClass===Integer ? Arithmetic.I : terms.reduce(ring.NumberClass===Complex ? function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);} : function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);
-                    coeffp = terms.map(ring.NumberClass===Complex ? function(t){return t.c.mul(LCM).real.num;} : function(t){return t.c.mul(LCM).num;});
-                    content = gcd(coeffp);
-                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
-                    // make positive lead
-                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
-                    {
-                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
-                        content = Arithmetic.neg(content);
-                    }
-                    self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
-                }
+                self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
             }
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
@@ -10107,7 +10122,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
         // factorise into content and primitive part
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials#Primitive_part%E2%80%93content_factorization
         var self = this, symbol = self.symbol, ring = self.ring, field = ring.fieldOfFractions(), terms = self.terms,
-            Arithmetic = Abacus.Arithmetic, coeffp, LCM, content;
+            Arithmetic = Abacus.Arithmetic, coeffp, LCM, content, isReal, isImag;
         if ( null == self._prim )
         {
             if ( !terms.length )
@@ -10125,41 +10140,56 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
                     return MultiPolyTerm(c[0].mul(ring.cast(c[1].div(content))), terms[i].e, ring);
                 }), symbol, ring), content];
             }
-            else if ( (Complex===ring.NumberClass) && !self.isReal() && !self.isImag() )
+            else if ( Complex===ring.NumberClass )
             {
-                    content = ring.gcd(terms.map(function(t){return t.c;})).simpl();
-                    self._prim = [MultiPolynomial(terms.map(function(t){return MultiPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                    isReal = self.isReal(); isImag = self.isImag();
+                    if ( !isReal && !isImag )
+                    {
+                        content = ring.gcd(terms.map(function(t){return t.c;})).simpl();
+                        self._prim = [MultiPolynomial(terms.map(function(t){return MultiPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                    }
+                    else if ( isImag )
+                    {
+                        LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.imag.den);}, Arithmetic.I);
+                        coeffp = terms.map(function(t){return t.c.mul(LCM).imag.num;});
+                        content = gcd(coeffp);
+                        coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                        // make positive lead
+                        if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                        {
+                            coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                            content = Arithmetic.neg(content);
+                        }
+                        self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                    }
+                    else
+                    {
+                        LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);}, Arithmetic.I);
+                        coeffp = terms.map(function(t){return t.c.mul(LCM).real.num;});
+                        content = gcd(coeffp);
+                        coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                        // make positive lead
+                        if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                        {
+                            coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                            content = Arithmetic.neg(content);
+                        }
+                        self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                    }
             }
             else
             {
-                if ( self.isImag() )
+                LCM = Integer===ring.NumberClass ? Arithmetic.I : terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);
+                coeffp = terms.map(function(t){return t.c.mul(LCM).num;});
+                content = gcd(coeffp);
+                coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                // make positive lead
+                if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
                 {
-                    LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.imag.den);}, Arithmetic.I);
-                    coeffp = terms.map(function(t){return t.c.mul(LCM).imag.num;});
-                    content = gcd(coeffp);
-                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
-                    // make positive lead
-                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
-                    {
-                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
-                        content = Arithmetic.neg(content);
-                    }
-                    self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                    coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                    content = Arithmetic.neg(content);
                 }
-                else
-                {
-                    LCM = Integer===ring.NumberClass ? Arithmetic.I : terms.reduce(Complex===ring.NumberClass ? function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);} : function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);  //lcm(terms.map(function(t){return t.c.den;}));
-                    coeffp = terms.map(ring.NumberClass===Complex ? function(t){return t.c.mul(LCM).real.num;} : function(t){return t.c.mul(LCM).num;});
-                    content = gcd(coeffp);
-                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
-                    // make positive lead
-                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
-                    {
-                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
-                        content = Arithmetic.neg(content);
-                    }
-                    self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
-                }
+                self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
             }
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
@@ -11231,7 +11261,7 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
                         }
                         else
                         {
-                            g = Complex.gcd(num[1], den[1]);
+                            g = cgcd(num[1], den[1]);
                             self.num = num[0].mul(num[1].div(g));
                             self.den = den[0].mul(den[1].div(g));
                         }
@@ -12227,11 +12257,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         else if ( 1 === n )
         {
-            return self.clone();
-        }
-        else if ( 2 === n )
-        {
-            return self.mul(self);
+            return self;
         }
         else
         {

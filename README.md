@@ -152,6 +152,10 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Faugère's F4 and F5 algorithms, wikipedia](https://en.wikipedia.org/wiki/Faug%C3%A8re%27s_F4_and_F5_algorithms)
 * [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
+* [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
+* [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
+* [Aberth method, wikipedia](https://en.wikipedia.org/wiki/Aberth_method)
+* [Numerical computation of polynomial zeros by means of Aberth's method, D. A. Bini](https://www.researchgate.net/publication/225654837_Numerical_computation_of_polynomial_zeros_by_means_of_Aberth's_method)
 
 ### Example API
 

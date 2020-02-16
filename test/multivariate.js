@@ -155,7 +155,7 @@ check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
 */
 
 echo('---');
-ring = Abacus.Ring.Q("x", "y", "z");
+ring = Abacus.Ring.C("x", "y", "z");
 echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
 echo('ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")');
@@ -166,6 +166,10 @@ echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("x")');
 check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy"), "x" );
 echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("y")');
 check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy"), "y" );
+echo('ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2").recur("x")');
+check_recursive( ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2"), "x" );
+echo('ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2").recur("y")');
+check_recursive( ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2"), "y" );
 echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur(true)');
 o = ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy");
 echo(o.recur(true).toString()+' '+o.recur(true).recur(false).equ(o));
