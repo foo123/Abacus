@@ -8,6 +8,18 @@ o.toTex()
 o.toDec()
 0
 
+o=Abacus.Rational.rnd01()
+o.toString()
+3613/4096
+o.toDec()
+0.882080078125
+
+o=Abacus.Rational.rnd("0.5","1")
+o.toString()
+103/128
+o.toDec()
+0.8046875
+
 o=Abacus.Rational.fromString("5/9")
 o.toString()
 5/9

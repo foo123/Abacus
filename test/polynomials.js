@@ -45,6 +45,11 @@ function check_factors( p, factors, constant )
     }
     echo(out, res.mul(constant).equ(p));
 }
+function check_primitive( p )
+{
+    var prim = p.primitive(true);
+    echo(p.toString()+'=('+prim[1].toString()+')*('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
+}
 var o, d, ring = Abacus.Ring.Q("x");
 
 echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
@@ -127,6 +132,8 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
+echo('o.primitive()');
+check_primitive(o);
 echo('o.evaluate(3)');
 echo(o.evaluate(3).toString());
 echo('o.add(1)');
@@ -156,6 +163,8 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
 echo(o.toTex());
+echo('o.primitive()');
+check_primitive(o);
 echo('o.evaluate(3)');
 echo(o.evaluate(3).toString());
 echo('o.neg()');
@@ -219,6 +228,8 @@ echo('o=ring.create([-4,0,-2,1])');
 o=ring.create([-4,0,-2,1]);
 echo('o.toString()');
 echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);
 echo('o.div(ring.create([-3,1]))');
 check_div( o, ring.create([-3,1]) );
 echo('o.multidiv([ring.create([-3,1]), ring.create([1,0,2])])');
@@ -411,19 +422,37 @@ ring = Abacus.Ring.C("x");
 echo('ring = Abacus.Ring.'+ring.toString());
 echo('----------');
 echo('ring.create(Abacus.Complex.One())');
-echo(ring.create(Abacus.Complex.One()).toString());
+o=ring.create(Abacus.Complex.One());
+echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);
 
 echo('ring.create(Abacus.Complex.Img())');
-echo(ring.create(Abacus.Complex.Img()).toString());
+o=ring.create(Abacus.Complex.Img());
+echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);
 
 echo('ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)))');
-echo(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2))).toString());
+o=ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)));
+echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);
 
 echo('ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString())');
-echo(ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString()).toString());
+o=ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString());
+echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);
 
 echo('ring.fromString("(1/2)ix^2+(1+(2/3)i)x")');
-echo(ring.fromString("(1/2)ix^2+(1+(2/3)i)x").toString());
+o=ring.fromString("(1/2)ix^2+(1+(2/3)i)x");
+echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);
 
 echo('ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")');
-echo(ring.fromString("(3/2+(1/2)i)x+1+(2/3)i").toString());
+o=ring.fromString("(3/2+(1/2)i)x+1+(2/3)i");
+echo(o.toString());
+echo('o.primitive()');
+check_primitive(o);

@@ -6,6 +6,10 @@ o.toString()
 o.toTex()
 0
 
+o=Abacus.Integer.rnd(1,100)
+o.toString()
+37
+
 o=Abacus.Integer(Abacus.Arithmetic.I)
 o.toString()
 1

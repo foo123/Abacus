@@ -45,6 +45,11 @@ function check_recursive( p, x )
     echo(p_x.toString()+', again: '+p_xx.toString()+'('+p_xx.equ(p_x)+'), again on other: '+p_xy.toString());
     echo(p.toString()+'='+pp.toString()+'='+ppp.toString(), p.equ(pp), p.equ(ppp));
     echo('---------------------------');
+    echo('Primitive (on original, same and other):');
+    check_primitive(p);
+    check_primitive(p_x);
+    check_primitive(p_xy);
+    echo('---------------------------');
     echo('Derivatives:');
     echo('on same='+p_x_x.toString()+', on other: '+p_x_y.toString());
     echo('on same='+p_x_xx.toString()+', on other: '+p_x_yy.toString());
@@ -56,6 +61,11 @@ function check_recursive( p, x )
     echo('Negative Shifts:');
     echo('on same='+p_xs.toString()+', on other: '+p_xys.toString());
     echo('---------------------------');
+}
+function check_primitive( p )
+{
+    var prim = p.primitive(true);
+    echo(p.toString()+'=('+prim[1].toString()+')*('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
 }
 
 var o, ring = Abacus.Ring.Q("x", "y");

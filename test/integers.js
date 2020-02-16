@@ -18,6 +18,13 @@ echo(o.toTex());
 
 echo();
 
+echo('o=Abacus.Integer.rnd(1,100)');
+o=Abacus.Integer.rnd(1,100);
+echo('o.toString()');
+echo(o.toString());
+
+echo();
+
 echo('o=Abacus.Integer(Abacus.Arithmetic.I)');
 o=Abacus.Integer(Abacus.Arithmetic.I);
 echo('o.toString()');

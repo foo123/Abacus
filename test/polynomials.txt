@@ -63,6 +63,8 @@ o.toString()
 x^2+2
 o.toTex()
 x^{2}+2
+o.primitive()
+x^2+2=(1)*(x^2+2) true
 o.evaluate(3)
 11
 o.add(1)
@@ -89,6 +91,8 @@ o.toString()
 2*x+1
 o.toTex()
 2x+1
+o.primitive()
+2*x+1=(1)*(2*x+1) true
 o.evaluate(3)
 7
 o.neg()
@@ -146,6 +150,8 @@ o.toTex()
 o=ring.create([-4,0,-2,1])
 o.toString()
 x^3-2*x^2-4
+o.primitive()
+x^3-2*x^2-4=(1)*(x^3-2*x^2-4) true
 o.div(ring.create([-3,1]))
 (x^3-2*x^2-4)/(x-3)=(x-3)*(x^2+x+3)+(5)=x^3-2*x^2-4 true
 o.multidiv([ring.create([-3,1]), ring.create([1,0,2])])
@@ -276,13 +282,25 @@ ring = Abacus.Ring.C("x")
 ----------
 ring.create(Abacus.Complex.One())
 1
+o.primitive()
+1=(1)*(1) true
 ring.create(Abacus.Complex.Img())
 i
+o.primitive()
+i=(i)*(1) true
 ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).add(ring.create(Abacus.Complex(1,2)))
 (2-i)*x+1+3*i
+o.primitive()
+(2-i)*x+1+3*i=(1)*((2-i)*x+1+3*i) true
 ring.fromString(ring.create([Abacus.Complex.Img(), Abacus.Complex(2,-1)]).toString())
 (2-i)*x+i
+o.primitive()
+(2-i)*x+i=(1)*((2-i)*x+i) true
 ring.fromString("(1/2)ix^2+(1+(2/3)i)x")
 ((1/2)*i)*x^2+(1+(2/3)*i)*x
+o.primitive()
+((1/2)*i)*x^2+(1+(2/3)*i)*x=(1/6)*((3*i)*x^2+(6+4*i)*x) true
 ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")
 (3/2+(1/2)*i)*x+1+(2/3)*i
+o.primitive()
+(3/2+(1/2)*i)*x+1+(2/3)*i=(1/6-(1/6)*i)*((3+6*i)*x+1+5*i) true

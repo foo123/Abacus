@@ -20,9 +20,9 @@ ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).t
 ring.fromString(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()).toString()
 (x*y+1)/(x-y)
 ring.fromString("(1+i)/(x-y)").toString()
-1/((1/2-(1/2)*i)*x+(-1/2+(1/2)*i)*y)
+(1+i)/(x-y)
 ring.fromString("(3x+(1+i))/(1+i)").toString()
-(3/2-(3/2)*i)*x+1
+(3*x+1+i)/(1+i)
 ring.fromString("1/(x-y)").toString()
 1/(x-y)
 ring.fromString("1/(3/2)x").toString()

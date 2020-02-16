@@ -36,6 +36,15 @@ echo(o.toDec());
 
 echo();
 
+echo('o=Abacus.Complex.rnd("0", "1+i")');
+o=Abacus.Complex.rnd("0", "1+i");
+echo('o.toString()');
+echo(o.toString());
+echo('o.toDec()');
+echo(o.toDec());
+
+echo();
+
 echo('Abacus.Complex.fromString("+i")');
 echo(Abacus.Complex.fromString("+i").toString());
 

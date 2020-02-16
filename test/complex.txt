@@ -8,6 +8,12 @@ o.toTex()
 o.toDec()
 0
 
+o=Abacus.Complex.rnd("0", "1+i")
+o.toString()
+0
+o.toDec()
+0
+
 Abacus.Complex.fromString("+i")
 i
 Abacus.Complex.fromString("-i")

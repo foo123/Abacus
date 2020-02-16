@@ -34,6 +34,24 @@ echo(o.toDec());
 
 echo();
 
+echo('o=Abacus.Rational.rnd01()');
+o=Abacus.Rational.rnd01();
+echo('o.toString()');
+echo(o.toString());
+echo('o.toDec()');
+echo(o.toDec());
+
+echo();
+
+echo('o=Abacus.Rational.rnd("0.5","1")');
+o=Abacus.Rational.rnd("0.5","1");
+echo('o.toString()');
+echo(o.toString());
+echo('o.toDec()');
+echo(o.toDec());
+
+echo();
+
 echo('o=Abacus.Rational.fromString("5/9")');
 o=Abacus.Rational.fromString("5/9");
 echo('o.toString()');

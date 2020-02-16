@@ -60,7 +60,7 @@ var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,Node, Heap
-    ,DefaultArithmetic, INUMBER, INumber, Integer, Rational, Complex
+    ,DefaultArithmetic, INUMBER, INumber, Integer, IntegerMod, Rational, Complex
     ,Term, Expr, UniPolyTerm, MultiPolyTerm, Polynomial, MultiPolynomial, RationalFunc, Ring, Matrix
     ,Iterator, CombinatorialIterator, Filter
     ,Progression, HashSieve, PrimeSieve, Diophantine
@@ -87,10 +87,7 @@ function to_tex( s )
     var p = String(s).split('_');
     return p[0] + (p.length > 1 ? ('_{'+p[1]+'}') : '');
 }
-function Tex( s )
-{
-    return "function" === typeof s.toTex ? s.toTex() : String(s);
-}
+function Tex( s ) { return is_callable(s.toTex) ? s.toTex() : String(s); }
 
 // https://github.com/foo123/FnList.js
 function operate( F, F0, x, i0, i1, ik, strict )
@@ -5467,7 +5464,7 @@ function find( a, b, nested )
 }
 function remove_duplicates( a, KEY )
 {
-    KEY = "function"===typeof KEY ? KEY : String;
+    KEY = is_callable(KEY) ? KEY : String;
     var hash = Obj(), dupl = [], k, i, l;
     for(i=0,l=a.length; i<l; i++)
     {
@@ -6082,13 +6079,13 @@ function nmin( /* args */ )
 function typecast( ClassTypeCheck, toClassType )
 {
     var ClassType = null;
-    if ( is_array(ClassTypeCheck) && ("function" === typeof ClassTypeCheck[0]) )
+    if ( is_array(ClassTypeCheck) && is_callable(ClassTypeCheck[0]) )
     {
         ClassType = ClassTypeCheck[0];
         ClassTypeCheck = function(a){return (a instanceof ClassType);};
-        toClassType = "function"===typeof toClassType ? toClassType : function(a){return new ClassType(a);};
+        toClassType = is_callable(toClassType) ? toClassType : function(a){return new ClassType(a);};
     }
-    else if ( !("function" === typeof ClassTypeCheck) )
+    else if ( !is_callable(ClassTypeCheck) )
     {
         ClassTypeCheck = function(a){return true;};
         toClassType = function(a){return a;};
@@ -6207,6 +6204,12 @@ Integer = Abacus.Integer = Class(INumber, {
         ,lcm: ilcm
         ,max: nmax
         ,min: nmin
+        ,rnd: function( m, M ) {
+            var Arithmetic = Abacus.Arithmetic, t;
+            m = Integer.cast(m); M = Integer.cast(M);
+            if ( M.lt(m) ) { t=m; m=M; M=t; }
+            return Integer(Arithmetic.rnd(m.num, M.num));
+        }
 
         ,fromString: function( s ) {
             s = trim(String(s));
@@ -6521,6 +6524,27 @@ Rational = Abacus.Rational = Class(INumber, {
         ,lcm: rlcm
         ,max: nmax
         ,min: nmin
+        ,rnd01: function( limit ) {
+            var Arithmetic = Abacus.Arithmetic, two = Arithmetic.II, I = Integer.One(), tries, lo, hi, mid;
+            // geerate random Rational between 0 and 1 uniformly with up to "limit" bits/tries
+            if ( null == limit ) limit = 15;
+            limit = Integer.rnd(Arithmetic.O, limit); tries = Integer.Zero();
+            lo = Rational.Zero(); hi = Rational.One();
+            while( tries.lt(limit) && lo.lte(hi) )
+            {
+                mid = hi.add(lo).div(two);
+                if ( Abacus.Math.rnd() < 0.5 ) hi = mid;
+                else lo = mid;
+                tries = tries.add(I);
+            }
+            return lo;
+        }
+        ,rnd: function( m, M, limit ) {
+            var t;
+            m = Rational.cast(m); M = Rational.cast(M);
+            if ( M.lt(m) ) { t=m; m=M; M=t; }
+            return m.add(Rational.rnd01(limit).mul(M.sub(m)));
+        }
 
         ,fromIntRem: function( i, r, m ) {
             var Arithmetic = Abacus.Arithmetic;
@@ -6979,6 +7003,10 @@ Complex = Abacus.Complex = Class(INumber, {
         ,lcm: clcm
         ,max: nmax
         ,min: nmin
+        ,rnd: function( m, M, limit ) {
+            m = Complex.cast(m); M = Complex.cast(M);
+            return Complex(Rational.rnd(m.real, M.real, limit), Rational.rnd(m.imag, M.imag, limit));
+        }
 
         ,fromString: function( s ) {
             var m, signre, signim, real, imag, O = Complex.Zero(),
@@ -8153,10 +8181,10 @@ UniPolyTerm = Class({
             return UniPolyTerm.cmp(t2, t1);
         }
         ,gcd: function( t1, t2, full ) {
-            return UniPolyTerm(true===full ? (t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), stdMath.min(t1.e, t2.e));
+            return UniPolyTerm(true===full ? (!((t1.c instanceof RationalFunc) || (t2.c instanceof RationalFunc)) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), stdMath.min(t1.e, t2.e));
         }
         ,lcm: function( t1, t2, full ) {
-            return UniPolyTerm(true===full ? (t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), stdMath.max(t1.e, t2.e));
+            return UniPolyTerm(true===full ? (!((t1.c instanceof RationalFunc) || (t2.c instanceof RationalFunc)) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), stdMath.max(t1.e, t2.e));
         }
     }
 
@@ -8739,27 +8767,49 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,primitive: function( and_content ) {
         // factorise into content and primitive part
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials#Primitive_part%E2%80%93content_factorization
-        var self = this, ring = self.ring, field = ring.fieldOfFractions(), terms = self.terms,
+        var self = this, symbol = self.symbol, ring = self.ring, field = ring.fieldOfFractions(), terms = self.terms,
             Arithmetic = Abacus.Arithmetic, coeffp, LCM, content;
         if ( null == self._prim )
         {
-            if ( terms.length && self.isReal() )
+            if ( !terms.length )
             {
-                LCM = ring.NumberClass===Integer ? Arithmetic.I : terms.reduce(ring.NumberClass===Complex ? function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);} : function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);  //lcm(terms.map(function(t){return t.c.den;}));
-                coeffp = terms.map(ring.NumberClass===Complex ? function(t){return t.c.mul(LCM).real.num;} : function(t){return t.c.mul(LCM).num;});
-                content = gcd(coeffp);
-                coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
-                // make positive lead
-                if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
-                {
-                    coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
-                    content = Arithmetic.neg(content);
-                }
-                self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), self.symbol, ring), field.create(Rational(content, LCM).simpl())];
+                self._prim = [self, field.One()];
+            }
+            else if ( (Complex===ring.NumberClass) && !self.isReal() && !self.isImag() )
+            {
+                    content = ring.gcd(terms.map(function(t){return t.c;})).simpl();
+                    self._prim = [Polynomial(terms.map(function(t){return UniPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
             }
             else
             {
-                self._prim = [self, field.One()];
+                if ( self.isImag() )
+                {
+                    LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.imag.den);}, Arithmetic.I);
+                    coeffp = terms.map(function(t){return t.c.mul(LCM).imag.num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                    {
+                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
+                    }
+                    self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                }
+                else
+                {
+                    LCM = ring.NumberClass===Integer ? Arithmetic.I : terms.reduce(ring.NumberClass===Complex ? function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);} : function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);
+                    coeffp = terms.map(ring.NumberClass===Complex ? function(t){return t.c.mul(LCM).real.num;} : function(t){return t.c.mul(LCM).num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                    {
+                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
+                    }
+                    self._prim = [Polynomial(coeffp.map(function(c, i){return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                }
             }
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
@@ -9318,12 +9368,12 @@ MultiPolyTerm = Class({
             return MultiPolyTerm.cmp(t2, t1);
         }
         ,gcd: function( t1, t2, full ) {
-            return MultiPolyTerm(true===full ? (t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), array(stdMath.max(t1.e.length, t2.e.length), function(i){
+            return MultiPolyTerm(true===full ? (!((t1.c instanceof RationalFunc) || (t2.c instanceof RationalFunc) || (t1.c instanceof MultiPolynomial) || (t2.c instanceof MultiPolynomial)) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), array(stdMath.max(t1.e.length, t2.e.length), function(i){
                 return i<t1.e.length && i<t2.e.length ? stdMath.min(t1.e[i], t2.e[i]) : 0;
             }));
         }
         ,lcm: function( t1, t2, full ) {
-            return MultiPolyTerm(true===full ? (t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), array(stdMath.max(t1.e.length, t2.e.length), function(i){
+            return MultiPolyTerm(true===full ? (!((t1.c instanceof RationalFunc) || (t2.c instanceof RationalFunc) || (t1.c instanceof MultiPolynomial) || (t2.c instanceof MultiPolynomial)) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), array(stdMath.max(t1.e.length, t2.e.length), function(i){
                 return i<t1.e.length && i<t2.e.length ? stdMath.max(t1.e[i], t2.e[i]) : (i<t1.e.length ? t1.e[i] : t2.e[i]);
             }));
         }
@@ -10056,27 +10106,60 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(INumber, {
     ,primitive: function( and_content ) {
         // factorise into content and primitive part
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials#Primitive_part%E2%80%93content_factorization
-        var self = this, ring = self.ring, field = ring.fieldOfFractions(), terms = self.terms,
+        var self = this, symbol = self.symbol, ring = self.ring, field = ring.fieldOfFractions(), terms = self.terms,
             Arithmetic = Abacus.Arithmetic, coeffp, LCM, content;
         if ( null == self._prim )
         {
-            if ( terms.length && self.isReal() && !self.isRecur() )
+            if ( !terms.length )
             {
-                LCM = ring.NumberClass===Integer ? Arithmetic.I : terms.reduce(ring.NumberClass===Complex ? function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);} : function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);  //lcm(terms.map(function(t){return t.c.den;}));
-                coeffp = terms.map(ring.NumberClass===Complex ? function(t){return t.c.mul(LCM).real.num;} : function(t){return t.c.mul(LCM).num;});
-                content = gcd(coeffp);
-                coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
-                // make positive lead
-                if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
-                {
-                    coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
-                    content = Arithmetic.neg(content);
-                }
-                self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), self.symbol, ring), field.create(Rational(content, LCM).simpl())];
+                self._prim = [self, field.One()];
+            }
+            else if ( self.isRecur() )
+            {
+                coeffp = terms.reduce(function(coeffp, t){
+                    coeffp.push(t.c instanceof MultiPolynomial ? t.c.primitive(true) : [MultiPolynomial([t], symbol, ring), field.One()]);
+                    return coeffp;
+                }, []);
+                content = field.gcd(coeffp.map(function(c){return c[1];}));
+                self._prim = [MultiPolynomial(coeffp.map(function(c, i){
+                    return MultiPolyTerm(c[0].mul(ring.cast(c[1].div(content))), terms[i].e, ring);
+                }), symbol, ring), content];
+            }
+            else if ( (Complex===ring.NumberClass) && !self.isReal() && !self.isImag() )
+            {
+                    content = ring.gcd(terms.map(function(t){return t.c;})).simpl();
+                    self._prim = [MultiPolynomial(terms.map(function(t){return MultiPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
             }
             else
             {
-                self._prim = [self, field.One()];
+                if ( self.isImag() )
+                {
+                    LCM = terms.reduce(function(LCM, t){return Arithmetic.mul(LCM, t.c.imag.den);}, Arithmetic.I);
+                    coeffp = terms.map(function(t){return t.c.mul(LCM).imag.num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                    {
+                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
+                    }
+                    self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                }
+                else
+                {
+                    LCM = Integer===ring.NumberClass ? Arithmetic.I : terms.reduce(Complex===ring.NumberClass ? function(LCM, t){return Arithmetic.mul(LCM, t.c.real.den);} : function(LCM, t){return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);  //lcm(terms.map(function(t){return t.c.den;}));
+                    coeffp = terms.map(ring.NumberClass===Complex ? function(t){return t.c.mul(LCM).real.num;} : function(t){return t.c.mul(LCM).num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if ( Arithmetic.gt(Arithmetic.O, coeffp[0]) )
+                    {
+                        coeffp = coeffp.map(function(c){return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
+                    }
+                    self._prim = [MultiPolynomial(coeffp.map(function(c, i){return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                }
             }
         }
         return true===and_content ? self._prim.slice() : self._prim[0];
@@ -10674,8 +10757,8 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
             num, den, symbol, ring, simplified, simplify = RationalFunc.autoSimplify;
 
         simplified = (4<args.length) && (true===args[4]);
-        ring = 3<args.length ? (args[3] instanceof Ring ? args[3] : Ring.Q()) : Ring.Q();
-        symbol = 2<args.length ? (is_array(args[2]) ? args[2] : [String(args[2]||'x')]) : ['x'];
+        ring = 3<args.length ? (args[3] instanceof Ring ? args[3] : null) : null;
+        symbol = 2<args.length ? (is_array(args[2]) ? args[2] : [String(symbol||'x')]) : null;
         if ( 1<args.length )
         {
             num = args[0];
@@ -10688,7 +10771,7 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
         }
         else
         {
-            num = MultiPolynomial.Zero(symbol, ring);
+            num = null;
             den = null;
         }
 
@@ -10702,14 +10785,22 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
             den = num.den;
             num = num.num;
         }
+        else if ( num instanceof Polynomial )
+        {
+            ring = ring || num.ring;
+            symbol = symbol || [num.symbol];
+        }
+        ring = ring instanceof Ring ? ring : Ring.Q();
+        symbol = is_array(symbol) ? symbol : [String(symbol||'x')];
 
-        if ( !(num instanceof MultiPolynomial) ) num = MultiPolynomial(num, symbol, ring);
+        if ( null == num ) num = MultiPolynomial.Zero(symbol, ring);
+        else if ( !(num instanceof MultiPolynomial) ) num = MultiPolynomial(num, symbol, ring);
 
         if ( null == den ) den = MultiPolynomial.One(num.symbol, num.ring);
         else if ( !(den instanceof MultiPolynomial) ) den = MultiPolynomial(den, num.symbol, num.ring);
 
         if ( den.equ(Arithmetic.O) ) throw new Error('Zero denominator in Abacus.RationalFunc!');
-        if ( num.equ(Arithmetic.O) ) den = MultiPolynomial.One(num.symbol, num.ring);
+        if ( num.equ(Arithmetic.O) && !den.equ(Arithmetic.I) ) den = MultiPolynomial.One(num.symbol, num.ring);
         if ( den.lc().lt(Arithmetic.O) ) { den = den.neg(); num = num.neg(); }
         self.num = num;
         self.den = den;
@@ -11118,29 +11209,41 @@ RationalFunc = Abacus.RationalFunc = Class(INumber, {
                     self.num = num[0];
                     self.den = den[0];
                 }
-                else if ( (num[1].isReal() && den[1].isReal()) || (num[1].isImag() && den[1].isImag()) )
+                else
                 {
                     if ( Complex===num[0].ring.NumberClass )
                     {
-                        if ( num[1].isImag() )
+                        if ( num[1].isImag() && den[1].isImag() )
                         {
                             n = Arithmetic.mul(den[1].imag.den, num[1].imag.num);
                             d = Arithmetic.mul(num[1].imag.den, den[1].imag.num);
+                            g = gcd(n, d);
+                            self.num = num[0].mul(Arithmetic.div(n, g));
+                            self.den = den[0].mul(Arithmetic.div(d, g));
                         }
-                        else
+                        else if ( num[1].isReal() && den[1].isReal() )
                         {
                             n = Arithmetic.mul(den[1].real.den, num[1].real.num);
                             d = Arithmetic.mul(num[1].real.den, den[1].real.num);
+                            g = gcd(n, d);
+                            self.num = num[0].mul(Arithmetic.div(n, g));
+                            self.den = den[0].mul(Arithmetic.div(d, g));
+                        }
+                        else
+                        {
+                            g = Complex.gcd(num[1], den[1]);
+                            self.num = num[0].mul(num[1].div(g));
+                            self.den = den[0].mul(den[1].div(g));
                         }
                     }
                     else
                     {
                         n = Arithmetic.mul(den[1].den, num[1].num);
                         d = Arithmetic.mul(num[1].den, den[1].num);
+                        g = gcd(n, d);
+                        self.num = num[0].mul(Arithmetic.div(n, g));
+                        self.den = den[0].mul(Arithmetic.div(d, g));
                     }
-                    g = gcd(n, d);
-                    self.num = num[0].mul(Arithmetic.div(n, g));
-                    self.den = den[0].mul(Arithmetic.div(d, g));
                 }
             }
             self._simpl = true;
