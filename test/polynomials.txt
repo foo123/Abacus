@@ -203,6 +203,8 @@ ring.create([1,1]).mul(ring.create([0,0,1])).factors()
 x^3+x^2 = (1)(x)^2(x+1) true
 ring.create([1,1]).mul(ring.create([1,1,1])).factors()
 x^3+2*x^2+2*x+1 = (1)(x+1)(x^2+x+1) true
+ring.fromString("x^2+x+1").factors()
+x^2+x+1 = (1)(x^2+x+1) true
 ---
 Polynomial GCD, generalisation of GCD of numbers
 ---

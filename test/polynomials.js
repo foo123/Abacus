@@ -313,6 +313,11 @@ echo('ring.create([1,1]).mul(ring.create([1,1,1])).factors()');
 o=ring.create([1,1]).mul(ring.create([1,1,1]));
 d=o.factors();
 check_factors(o, d[0], d[1]);
+
+echo('ring.fromString("x^2+x+1").factors()');
+o=ring.fromString("x^2+x+1");
+d=o.factors();
+check_factors(o, d[0], d[1]);
 echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');

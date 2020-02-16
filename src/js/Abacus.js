@@ -8843,8 +8843,9 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
         if ( null == self._roots )
         {
             roots = [];
-            // no rational roots or infinite roots for constant polynomials, no rational roots for complex polynomials
-            if ( !self.isConst(true) && self.isReal() )
+            // no rational roots or infinite roots for constant polynomials,
+            // no rational roots for strictly complex polynomials
+            if ( !self.isConst() && (self.isImag() || self.isReal()) )
             {
                 primitive = self.primitive();
                 c = primitive.terms;
@@ -8855,10 +8856,20 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 if ( 1<c.length )
                 {
                     // try all possible rational divisors of c_0(excluding trivial zero terms) and c_n
-                    iter = divisors(ring.NumberClass===Complex ? c[c.length-1].c.real.num : c[c.length-1].c.num, true);
-                    d0 = iter.get(); iter.dispose();
-                    iter = divisors(ring.NumberClass===Complex ? c[0].c.real.num : c[0].c.num, true);
-                    dn = iter.get(); iter.dispose();
+                    /*if ( primitive.isImag() ) // this never happens for primitive as imaginary unit "i" has been factored out unto content
+                    {
+                        iter = divisors(c[c.length-1].c.imag.num, true);
+                        d0 = iter.get(); iter.dispose();
+                        iter = divisors(c[0].c.imag.num, true);
+                        dn = iter.get(); iter.dispose();
+                    }
+                    else
+                    {*/
+                        iter = divisors(ring.NumberClass===Complex ? c[c.length-1].c.real.num : c[c.length-1].c.num, true);
+                        d0 = iter.get(); iter.dispose();
+                        iter = divisors(ring.NumberClass===Complex ? c[0].c.real.num : c[0].c.num, true);
+                        dn = iter.get(); iter.dispose();
+                    /*}*/
 
                     iter = Tensor([d0.length, dn.length]);
                     while(iter.hasNext())
@@ -8900,7 +8911,8 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
     ,factors: function( ) {
         // factorise polynomial over Integers/Rationals if factorisable
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
-        var p = this, Arithmetic = Abacus.Arithmetic, constant, factors, factor, root, i, n, m, remainder, roots;
+        var p = this, ring = p.ring, symbol = p.symbol, Arithmetic = Abacus.Arithmetic,
+            constant, factors, factor, root, i, n, m, remainder, roots;
         if ( null == p._factors )
         {
             remainder = p.primitive(true);
@@ -8914,21 +8926,35 @@ Polynomial = Abacus.Polynomial = Class(INumber, {
                 {
                     root = roots[i];
                     // use integer coefficients
-                    factor = Polynomial([Arithmetic.neg(root[0].num), root[0].den], p.symbol, p.ring);
+                    factor = Polynomial([Arithmetic.neg(root[0].num), root[0].den], symbol, ring);
                     factors.push([factor, root[1]]);
                     remainder = remainder.div(factor.pow(root[1]));
                 }
                 // normalise remainder to have integer coefficients, if not already
-                m = p.ring.NumberClass===Integer ? Arithmetic.I : lcm(remainder.terms.map(p.ring.NumberClass===Complex ? function(t){return t.c.real.den;} : function(t){return t.c.den;}));
-                if ( !Arithmetic.equ(Arithmetic.I, m) )
+                if ( (Complex!==ring.NumberClass) || remainder.isReal()/* || remainder.isImag()*/ )
                 {
-                    constant = constant.div(m);
-                    remainder = remainder.mul(m);
+                    if ( Integer===ring.NumberClass )
+                    {
+                        m = Arithmetic.I;
+                    }
+                    /*else if ( remainder.isImag() )
+                    {
+                        m = lcm(remainder.terms.map(function(t){return t.c.imag.den;}));
+                    }*/
+                    else
+                    {
+                        m = lcm(remainder.terms.map(Complex===ring.NumberClass ? function(t){return t.c.real.den;} : function(t){return t.c.den;}));
+                    }
+                    if ( !Arithmetic.equ(Arithmetic.I, m) )
+                    {
+                        constant = constant.div(m);
+                        remainder = remainder.mul(m);
+                    }
                 }
                 if ( 0 < remainder.deg() ) factors.push([remainder, 1]);
                 else constant = constant.mul(remainder.cc());
             }
-            if ( !factors.length ) factors.push([Polynomial.One(p.symbol, p.ring), 1]);
+            if ( !factors.length ) factors.push([remainder, 1]);
             p._factors = [factors, constant];
         }
         return [p._factors[0].slice(), p._factors[1]];
