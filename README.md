@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 242kB minified, ~ 67kB zipped)
+**version 1.0.0** (~ 240kB minified, ~ 67kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -140,6 +140,8 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Integer Programming with 2-Variable Equations and 1-Variable Inequalities, Bodirsky, Nordh, Von Oertzen](http://www.lix.polytechnique.fr/~bodirsky/publications/2var.pdf)
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
+* [Fraction-Free Methods for Determinants, Deanna Richelle Leggett (MSc thesis)](https://pdfs.semanticscholar.org/4188/73bbcad4e7bcdcf14475b4616febbdc729f2.pdf)
+* [A general matrix eigenvalue algorithm, Charles F. Van Loan](https://www.cs.cornell.edu/cv/ResearchPDF/Gen.Matrix.EigenV.Algorithm.pdf)
 * [Algorithms and Data Structures for Sparse Polynomial Arithmetic, M. Asadi, A. Brandt, R. H. C. Moir, M. M. Maza](https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic)
 * [High Performance Sparse Multivariate Polynomials: Fundamental Data Structures and Algorithms, Alex Brandt (MSc thesis)](https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1)
 * [GCDHEU: Heuristic Polynomial GCD Algorithm Based On Integer GCD Computation, B. W. Char, K. O. Geddes and G. H. Gonnet](https://www.researchgate.net/publication/221149887_GCDHEU_Heuristic_Polynomial_GCD_Algorithm_Based_on_Integer_GCD_Computation)
@@ -152,6 +154,7 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Faugère's F4 and F5 algorithms, wikipedia](https://en.wikipedia.org/wiki/Faug%C3%A8re%27s_F4_and_F5_algorithms)
 * [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
+* [Fast Methods for Large Scale Singular Value Decomposition, Nela Bosner (PhD thesis)](https://web.math.pmf.unizg.hr/~nela/doktorat.pdf)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
 * [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
 * [Aberth method, wikipedia](https://en.wikipedia.org/wiki/Aberth_method)

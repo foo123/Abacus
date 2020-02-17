@@ -458,7 +458,7 @@ o.inv().toString()
 |0 1 0|
 |0 0 1| true
 o.charpoly("y").toString()
-y^3+(-3)*y^2+(3)*y+(-1)
+y^3-3*y^2+3*y-1
 
 o=Abacus.Matrix(ring, [[ring.fromString("x-1"),ring.fromString("x^2-1")],[ring.fromString("x^2-1"),ring.fromString("x-1")]])
 o.toString()

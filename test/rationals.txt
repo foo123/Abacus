@@ -10,15 +10,19 @@ o.toDec()
 
 o=Abacus.Rational.rnd01()
 o.toString()
-3613/4096
+5/8
 o.toDec()
-0.882080078125
+0.625
 
 o=Abacus.Rational.rnd("0.5","1")
 o.toString()
-103/128
+51/64
 o.toDec()
-0.8046875
+0.796875
+o.root(2).toString()
+1381353361/1547425280
+o.sub(o.root(2).pow(2)).toString()
+-815730721/2394524997183078400
 
 o=Abacus.Rational.fromString("5/9")
 o.toString()
@@ -27,6 +31,10 @@ o.toTex()
 \frac{5}{9}
 o.toDec()
 0.[5]
+o.root(2).toString()
+2207/2961
+o.sub(o.root(2).pow(2)).toString()
+-4/8767521
 Abacus.Rational.fromString(o.toDec()).toString()
 5/9
 Abacus.Rational.fromString(o.toTex()).toString()

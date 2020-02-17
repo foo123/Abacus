@@ -22,6 +22,10 @@ echo('o=Abacus.Integer.rnd(1,100)');
 o=Abacus.Integer.rnd(1,100);
 echo('o.toString()');
 echo(o.toString());
+echo('o.root(2).toString()');
+echo(o.root(2).toString());
+echo('o.root(2).pow(2).toString()');
+echo(o.root(2).pow(2).toString());
 
 echo();
 
@@ -39,6 +43,10 @@ echo('o.mul(2).toString()');
 echo(o.mul(2).toString());
 echo('o.add(2).pow(2).toString()');
 echo(o.add(2).pow(2).toString());
+echo('o.root(2).toString()');
+echo(o.root(2).toString());
+echo('o.root(2).pow(2).toString()');
+echo(o.root(2).pow(2).toString());
 
 echo();
 
