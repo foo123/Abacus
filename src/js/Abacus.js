@@ -1167,23 +1167,24 @@ function polykthroot( p, k, limit )
 
     PolynomialClass = p[CLASS];
 
-    if ( null == limit ) limit = 10;
+    if ( null == limit ) limit = 5;
     limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
-    r = new PolynomialClass(p.ltm().rad(k), p.symbol, p.ring);
-    d = p.sub(r.pow(k));
+    // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
+    r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
+    rk = r.pow(k_1); d = p.sub(rk.mul(r));
     while ( !d.equ(O) )
     {
-        rk = r.pow(k_1).mul(k).ltm(true);
-        q = d.ltm(true).div(rk);
+        q = d.ttm(true).div(rk.mul(k).ttm(true));
         if ( q.equ(O) ) break; // no update anymore
         deg = d.deg();
-        d = d.sub(q.mul(rk.add(q.pow(k_1)))); r = r.add(q);
+        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q);
+        rk = r.pow(k_1); d = p.sub(rk.mul(r));
         // compute only up to some terms of power series
         // if p is not a perfect kth power and difference is not reduced at each step
         if ( d.deg() >= deg ) { tries++; if ( tries >= limit ) break; }
     }
-    return k.mod(two).equ(O) ? r.abs() : r;
+    return /*k.mod(two).equ(O) ? r.abs() : */r;
 }
 function kthroot( x, k, limit )
 {
@@ -9061,7 +9062,7 @@ UniPolyTerm = Class({
     ,rad: function( k ) {
         var self = this;
         k = +k;
-        return 1===k ? self : UniPolyTerm(self.c.rad(k), /*stdMath.max(*/stdMath.floor(self.e/k)/*, stdMath.min(1, self.e))*/, self.ring);
+        return 1===k ? self : UniPolyTerm(self.c.rad(k), stdMath.max(stdMath.floor(self.e/k), stdMath.min(1, self.e)), self.ring);
     }
     ,toTerm: function( symbol, asTex, monomialOnly ) {
         var t = this, e = t.e, c = t.c, term, Arithmetic = Abacus.Arithmetic;
@@ -9554,6 +9555,12 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if ( true===asPoly ) return Polynomial(terms.length ? [terms[0]] : [], symbol, ring);
         return terms.length ? terms[0] : UniPolyTerm(0, 0, ring);
     }
+    ,ttm: function( asPoly ) {
+        // tail/last term
+        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol;
+        if ( true===asPoly ) return Polynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
+        return terms.length ? terms[terms.length-1] : UniPolyTerm(0, 0, ring);
+    }
     ,lm: function( ) {
         // leading monomial
         return this.ltm(false).e;
@@ -9561,6 +9568,14 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,lc: function( ) {
         // leading coefficient
         return this.ltm(false).c;
+    }
+    ,tm: function( ) {
+        // tail monomial
+        return this.ttm(false).e;
+    }
+    ,tc: function( ) {
+        // tail coefficient
+        return this.ttm(false).c;
     }
     ,cc: function( ) {
         // constant coefficient
@@ -10333,7 +10348,7 @@ MultiPolyTerm = Class({
     ,rad: function( k ) {
         var self = this;
         k = +k;
-        return 1===k ? self : MultiPolyTerm(self.c.rad(k), array(self.e.length, function(i){return /*stdMath.max(*/stdMath.floor(self.e[i]/k)/*, stdMath.min(1, self.e[i]))*/;}), self.ring);
+        return 1===k ? self : MultiPolyTerm(self.c.rad(k), array(self.e.length, function(i){return stdMath.max(stdMath.floor(self.e[i]/k), stdMath.min(1, self.e[i]));}), self.ring);
     }
     ,toTerm: function( symbol, asTex, monomialOnly ) {
         var t = this, e = t.e, c = t.c, term, Arithmetic = Abacus.Arithmetic;
@@ -10853,6 +10868,22 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         if ( true===asPoly ) return MultiPolynomial(terms.length ? [terms[0]] : [], symbol, ring);
         return terms.length ? terms[0] : MultiPolyTerm(0, array(symbol.length, 0), ring);
     }
+    ,ttm: function( asPoly, x ) {
+        // tail/last term (per symbol)
+        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol, index, term;
+        if ( 1 < arguments.length )
+        {
+            index = symbol.indexOf(String(x||'x'));
+            if ( (-1 === index) || !terms.length ) return true===asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+            term = operate(function(min, t){
+                if ( (null == min) || (min.e[index] > t.e[index]) ) min = t;
+                return min;
+            }, null, terms);
+            return true===asPoly ? MultiPolynomial([term], symbol, ring) : term;
+        }
+        if ( true===asPoly ) return MultiPolynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
+        return terms.length ? terms[terms.length-1] : MultiPolyTerm(0, array(symbol.length, 0), ring);
+    }
     ,lm: function( x ) {
         // leading monomial (per symbol)
         var self = this, lt = arguments.length ? self.ltm(false, x) : self.ltm(false);
@@ -10862,6 +10893,16 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         // leading coefficient (per symbol)
         var self = this, lt = arguments.length ? self.ltm(false, x) : self.ltm(false);
         return lt.c;
+    }
+    ,tm: function( x ) {
+        // tail monomial (per symbol)
+        var self = this, tt = arguments.length ? self.ttm(false, x) : self.ttm(false);
+        return tt.e;
+    }
+    ,tc: function( x ) {
+        // tail coefficient (per symbol)
+        var self = this, tt = arguments.length ? self.ttm(false, x) : self.ttm(false);
+        return tt.c;
     }
     ,cc: function( ) {
         // constant coefficient

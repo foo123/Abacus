@@ -55,9 +55,9 @@ x^2+2*x+1=(x+1)^2 true
 ring.fromString("x+y").pow(5).rad(5)
 x^5+5*x^4*y+10*x^3*y^2+10*x^2*y^3+5*x*y^4+y^5=(x+y)^5 true
 ring.fromString("4x^2-12xy+9y^2").rad(2)
-4*x^2-12*x*y+9*y^2=(2*x-3*y)^2 true
-ring.fromString("x+y").rad(2)
-x+y=((1/1024)*x+1)^2 false
+4*x^2-12*x*y+9*y^2=(-2*x+3*y)^2 true
+ring.fromString("x+y+1").rad(2)
+x+y+1=((7/256)*y^5-(5/128)*y^4+(1/16)*y^3-(1/8)*y^2+(1/2)*y+1)^2 false
 ---
 Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])
 x^2-y,x*y-x,y^2-y

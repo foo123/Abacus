@@ -156,8 +156,8 @@ echo('ring.fromString("x+y").pow(5).rad(5)');
 check_radical(ring.fromString("x+y").pow(5), 5);
 echo('ring.fromString("4x^2-12xy+9y^2").rad(2)');
 check_radical(ring.fromString("4x^2-12xy+9y^2"), 2);
-echo('ring.fromString("x+y").rad(2)');
-check_radical(ring.fromString("x+y"), 2);
+echo('ring.fromString("x+y+1").rad(2)');
+check_radical(ring.fromString("x+y+1"), 2);
 echo('---');
 
 echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])');
