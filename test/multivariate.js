@@ -67,6 +67,11 @@ function check_primitive( p )
     var prim = p.primitive(true);
     echo(p.toString()+'=('+prim[1].toString()+')*('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
 }
+function check_radical( p, k )
+{
+    var r = p.rad(k);
+    echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
+}
 
 var o, ring = Abacus.Ring.Q("x", "y");
 
@@ -139,8 +144,22 @@ echo(ring.fromString("1 - yx^2 + 3xy").d("x").toString());
 
 echo('ring.fromString("1 - yx^2 + 3xy").d("y").toString()');
 echo(ring.fromString("1 - yx^2 + 3xy").d("y").toString());
-
 echo('---');
+
+echo('ring.fromString("x^2").rad(2)');
+check_radical(ring.fromString("x^2"), 2);
+echo('ring.fromString("x^2y^4").rad(2)');
+check_radical(ring.fromString("x^2y^4"), 2);
+echo('ring.fromString("x+1").pow(2).rad(2)');
+check_radical(ring.fromString("x+1").pow(2), 2);
+echo('ring.fromString("x+y").pow(5).rad(5)');
+check_radical(ring.fromString("x+y").pow(5), 5);
+echo('ring.fromString("4x^2-12xy+9y^2").rad(2)');
+check_radical(ring.fromString("4x^2-12xy+9y^2"), 2);
+echo('ring.fromString("x+y").rad(2)');
+check_radical(ring.fromString("x+y"), 2);
+echo('---');
+
 echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])');
 echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")]).map(String).join(','));
 

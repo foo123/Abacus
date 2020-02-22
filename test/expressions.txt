@@ -7,7 +7,7 @@ o.toString()
 0
 o.toTex()
 0
-o.valueOf()
+o.evaluate()
 0
 o.d("x")
 0
@@ -18,18 +18,18 @@ Abacus.Expr.fromString("1+2*x").toString()
 Abacus.Expr.fromString("1/2+2*x_{1}*x_2^2").toString()
 1/2+2*x_1*x_2^2
 ---
-o=Abacus.Expr(1, Abacus.Term("x", 2))
+o=Abacus.Expr(1, Abacus.Expr.Term("x", 2))
 o.toString()
 1+2*x
 o.toTex()
 1+2x
-o.valueOf({"x":1})
-1
+o.evaluate({"x":1})
+3
 o.d("x")
 2
 o.d("x",2)
 0 true
-o2=Abacus.Expr(Abacus.Term("y^2", 3))
+o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3))
 3*y^2
 o.add(o2)
 1+2*x+3*y^2
@@ -39,7 +39,7 @@ o.add(o2).d("y")
 6*y
 o.add(o2).d("y",2)
 6
-o2=Abacus.Expr(Abacus.Term("y^2", 3))
+o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3))
 3*y^2
 o.mul(o2)
 6*x*y^2+3*y^2

@@ -5,6 +5,7 @@ pring = Abacus.Ring.C("x","y"), ring = Abacus.Ring.C("x","y").fieldOfFractions()
 ---
 ring.create().toString()
 0
+
 ring.fromString(ring.create().toString()).toString()
 0
 ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).toString()
@@ -47,3 +48,13 @@ ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).mul(pring.fromStr
 (x^2*y+2*x*y+x+2)/(x-y)
 ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString()
 (x*y+1)/(x^2-x*y+2*x-2*y)
+ring.fromString("x^2").rad(2)
+x^2=(x)^2 true
+ring.fromString("1/(x^2)").rad(2)
+1/(x^2)=(1/(x))^2 true
+ring.fromString("x+1").pow(5).rad(5)
+x^5+5*x^4+10*x^3+10*x^2+5*x+1=(x+1)^5 true
+ring.fromString("x+y").pow(2).rad(2)
+x^2+2*x*y+y^2=(x+y)^2 true
+ring.fromString("xy+1").pow(2).rad(2)
+x^2*y^2+2*x*y+1=(x*y+1)^2 true

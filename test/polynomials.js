@@ -50,6 +50,11 @@ function check_primitive( p )
     var prim = p.primitive(true);
     echo(p.toString()+'=('+prim[1].toString()+')*('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
 }
+function check_radical( p, k )
+{
+    var r = p.rad(k);
+    echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
+}
 var o, d, ring = Abacus.Ring.Q("x");
 
 echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
@@ -124,8 +129,8 @@ echo(ring.fromString("1 - \\frac{2}{3}*x^{2}+x").toString());
 
 echo('ring.fromString("1 - x").add(ring.fromString("1 + y")).toString()');
 echo(ring.fromString("1 - x").add(ring.fromString("1 + y")).toString());
-
 echo('---');
+
 echo('o=ring.create([2,0,1])');
 o=ring.create([2,0,1]);
 echo('o.toString()');
@@ -213,6 +218,20 @@ echo('ring.fromExpr(o.toExpr())');
 echo(ring.fromExpr(o.toExpr()).toString());
 echo('o.dispose()');
 o.dispose();
+echo('---');
+
+echo('ring.fromString("x^2").rad(2)');
+check_radical(ring.fromString("x^2"), 2);
+echo('ring.fromString("x^2").pow(2).rad(2)');
+check_radical(ring.fromString("x^2").pow(2), 2);
+echo('ring.fromString("x+1").pow(5).rad(5)');
+check_radical(ring.fromString("x+1").pow(5), 5);
+echo('ring.fromString("9x^4+6x^3-11x^2-4x+4").rad(2)');
+check_radical(ring.fromString("9x^4+6x^3-11x^2-4x+4"), 2);
+echo('ring.fromString("x^4+10x^3+31x^2+30x+9").rad(2)');
+check_radical(ring.fromString("x^4+10x^3+31x^2+30x+9"), 2);
+echo('ring.fromString("x+1").rad(2)');
+check_radical(ring.fromString("x+1"), 2);
 echo('---');
 
 echo('o=ring.create([6,12])');

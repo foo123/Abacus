@@ -4,6 +4,12 @@ var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
 
 use_biginteger_arithmetic( Abacus );
 
+function check_radical( p, k )
+{
+    var r = p.rad(k);
+    echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
+}
+
 var o, pring = Abacus.Ring.C("x", "y"), ring = pring.fieldOfFractions();
 
 echo('Abacus.RationalFuncs (VERSION = '+Abacus.VERSION+')');
@@ -15,6 +21,8 @@ echo('---');
 
 echo('ring.create().toString()');
 echo(ring.create().toString());
+
+echo();
 
 echo('ring.fromString(ring.create().toString()).toString()');
 echo(ring.fromString(ring.create().toString()).toString());
@@ -78,3 +86,16 @@ echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).mul(pring.fr
 
 echo('ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString()');
 echo(ring.create(pring.fromString("1+xy"), pring.fromString("x-y")).div(pring.fromString("x+2")).toString());
+
+echo('ring.fromString("x^2").rad(2)');
+check_radical(ring.fromString("x^2"), 2);
+echo('ring.fromString("1/(x^2)").rad(2)');
+check_radical(ring.fromString("1/(x^2)"), 2);
+echo('ring.fromString("x+1").pow(5).rad(5)');
+check_radical(ring.fromString("x+1").pow(5), 5);
+echo('ring.fromString("x+y").pow(2).rad(2)');
+check_radical(ring.fromString("x+y").pow(2), 2);
+echo('ring.fromString("xy+1").pow(2).rad(2)');
+check_radical(ring.fromString("xy+1").pow(2), 2);
+//echo('ring.fromString("x").rad(2)');
+//check_radical(ring.fromString("x"), 2);

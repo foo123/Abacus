@@ -8,11 +8,20 @@ o.toTex()
 
 o=Abacus.Integer.rnd(1,100)
 o.toString()
-28
-o.root(2).toString()
-5
-o.root(2).pow(2).toString()
-25
+92
+o.rad(2).toString()
+9
+o.rad(2).pow(2).toString()
+81
+
+Abacus.Integer(1).rad(2)
+1
+Abacus.Integer(4).rad(2)
+2
+Abacus.Integer(9).rad(2)
+3
+Abacus.Integer(27).rad(3)
+3
 
 o=Abacus.Integer(Abacus.Arithmetic.I)
 o.toString()
@@ -27,9 +36,9 @@ o.mul(2).toString()
 2
 o.add(2).pow(2).toString()
 9
-o.root(2).toString()
+o.rad(2).toString()
 1
-o.root(2).pow(2).toString()
+o.rad(2).pow(2).toString()
 1
 
 o=Abacus.Integer(Abacus.Rational.fromString("9/5"))

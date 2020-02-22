@@ -42,10 +42,23 @@ echo('o.toString()');
 echo(o.toString());
 echo('o.toDec()');
 echo(o.toDec());
-echo('o.root(2).toString()');
-echo(o.root(2).toString());
-echo('o.sub(o.root(2).pow(2)).toString()');
-echo(o.sub(o.root(2).pow(2)).toString());
+echo('o.rad(2).toString()');
+echo(o.rad(2).toString());
+echo('o.sub(o.rad(2).pow(2)).toString()');
+echo(o.sub(o.rad(2).pow(2)).toString());
+
+echo();
+
+echo('Abacus.Complex(1).rad(2)');
+echo(Abacus.Complex(1).rad(2).toString());
+echo('Abacus.Complex(-1).rad(2)');
+echo(Abacus.Complex(-1).rad(2).toString());
+echo('Abacus.Complex(4).rad(2)');
+echo(Abacus.Complex(4).rad(2).toString());
+echo('Abacus.Complex(9).rad(2)');
+echo(Abacus.Complex(9).rad(2).toString());
+echo('Abacus.Complex(27).rad(3)');
+echo(Abacus.Complex(27).rad(3).toString());
 
 echo();
 

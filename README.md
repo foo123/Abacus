@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 240kB minified, ~ 67kB zipped)
+**version 1.0.0** (~ 253kB minified, ~ 69kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -159,6 +159,7 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
 * [Aberth method, wikipedia](https://en.wikipedia.org/wiki/Aberth_method)
 * [Numerical computation of polynomial zeros by means of Aberth's method, D. A. Bini](https://www.researchgate.net/publication/225654837_Numerical_computation_of_polynomial_zeros_by_means_of_Aberth's_method)
+* [General Complex Polynomial Root Solver and Its Further Optimization for Binary Microlenses, Jan Skowron and Andrew Gould](http://www.astronomy.ohio-state.edu/~jskowron/paper/paper.pdf)
 
 ### Example API
 
