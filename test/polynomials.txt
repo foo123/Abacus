@@ -148,7 +148,7 @@ x^4=(x^2)^2 true
 ring.fromString("x+1").pow(5).rad(5)
 x^5+5*x^4+10*x^3+10*x^2+5*x+1=(x+1)^5 true
 ring.fromString("9x^4+6x^3-11x^2-4x+4").rad(2)
-9*x^4+6*x^3-11*x^2-4*x+4=(-3*x^2-x+2)^2 true
+9*x^4+6*x^3-11*x^2-4*x+4=(3*x^2+x-2)^2 true
 ring.fromString("x^4+10x^3+31x^2+30x+9").rad(2)
 x^4+10*x^3+31*x^2+30*x+9=(x^2+5*x+3)^2 true
 ring.fromString("x+1").rad(2)

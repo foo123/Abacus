@@ -1160,29 +1160,32 @@ function polykthroot( p, k, limit )
     // https://math.stackexchange.com/questions/3550942/algorithm-to-compute-nth-root-radical-sqrtnpx-of-polynomial
     // similarities with modified Newton's algorithm adapted for polynomials
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        PolynomialClass, k_1, r, rk, d, q, deg, tries = 0;
+        PolynomialClass, k_1, r, rk, d, q, deg, nterms = 0;
 
     if ( k.lt(I) ) return null; // undefined
     else if ( (k.equ(I)) || p.equ(O) || p.equ(I) ) return p;
 
     PolynomialClass = p[CLASS];
 
-    if ( null == limit ) limit = 5;
+    if ( null == limit ) limit = 6;
     limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
     r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
-    rk = r.pow(k_1); d = p.sub(rk.mul(r)); deg = p.maxdeg(true);
+    deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
     while ( !d.equ(O) )
     {
         q = d.ttm(true).div(rk.mul(k).ttm(true));
         if ( q.equ(O) ) break; // no update anymore
         /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-        // compute only up to some terms of power series
-        // if p is not a perfect kth power and difference is not reduced at each step
-        if ( r.maxdeg(true)*k > deg ) { tries++; if ( tries >= limit ) break; }
+        // compute only up to some terms of power series (truncated power series approximation)
+        // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
+        if ( r.maxdeg(true)*k > deg ) { nterms++; if ( (r.terms.length >= limit) || (nterms >= limit) ) break; }
     }
-    return /*k.mod(two).equ(O) ? r.abs() : */r;
+    // normalise r to have positive lead coeff
+    // if k is multiple of 2 (since then both r and -r are roots)
+    // and is not a (truncated) power series approximation
+    return (0===nterms) && k.mod(two).equ(O) ? r.abs() : r;
 }
 function kthroot( x, k, limit )
 {
@@ -1192,6 +1195,7 @@ function kthroot( x, k, limit )
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         ObjectClass, r, d, k_1, tries = 0;
     if ( k.equ(O) ) return null;
+    if ( (is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x))) ) return x;
     ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational :  x[CLASS];
     x = ObjectClass.cast(x);
     if ( is_class(ObjectClass, Rational) && x.lt(O) && k.mod(two).equ(O) )
@@ -9557,7 +9561,15 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,mindeg: function( ) {
         // minimum polynomial degree
         var terms = this.terms;
-        return terms.length ? (0===terms[terms.length-1].e ? (1<terms.length ? terms[terms.length-2].e : 0) : terms[terms.length-1].e) : 0;
+        //return terms.length ? (0===terms[terms.length-1].e ? (1<terms.length ? terms[terms.length-2].e : 0) : terms[terms.length-1].e) : 0;
+        return terms.length ? terms[terms.length-1].e : 0;
+    }
+    ,term: function( i, as_degree ) {
+        // term(s) matching i as index or as degree
+        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol;
+        if ( true===as_degree )
+            return Polynomial(terms.reduce(function(matched, t){return i===t.e ? [t] : matched;}, []), symbol, ring);
+        return Polynomial(0<=i && i<terms.length ? [terms[i]] : [], symbol, ring);
     }
     ,ltm: function( asPoly ) {
         // leading term
@@ -10858,15 +10870,31 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         // polynomial minimum degree per symbol
         var self = this, terms = self.terms, symbol = self.symbol, index;
         recur = (true===recur);
+        if ( arguments.length && (true===x) )
+        {
+            return operate(function(min, xi){
+                return -1 === min ? self.mindeg(xi, recur) : stdMath.min(min, self.mindeg(xi, recur));
+            }, -1, symbol);
+        }
         index = arguments.length ? symbol.indexOf(String(x||'x')) : 0;
         if ( (-1 === index) || !terms.length ) return 0;
         x = symbol[index];
         return operate(function(min, t){
             var deg = t.e[index]+(recur && is_instance(t.c, MultiPolynomial) ? t.c.mindeg(x, recur) : 0);
-            if ( 0===deg ) return min;
-            else if ( 0===min ) return deg;
-            return stdMath.min(min, deg);
-        }, 0, terms);
+            return -1===min ? deg : stdMath.min(min, deg);
+        }, -1, terms);
+    }
+    ,term: function( i, as_degree ) {
+        // term(s) matching i as index or as degree
+        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol;
+        if ( true===as_degree )
+            return terms.reduce(function(matched, t){
+                // amtch all terms which have i as aggregate degree
+                if ( i===t.e.reduce(addn, 0) )
+                    matched = matched.add(MultiPolynomial([t], symbol, ring));
+                return matched;
+            }, MultiPolynomial.Zero(symbol, ring));
+        return MultiPolynomial(0<=i && i<terms.length ? [terms[i]] : [], symbol, ring);
     }
     ,ltm: function( asPoly, x ) {
         // leading term (per symbol)
