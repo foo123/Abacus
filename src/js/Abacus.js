@@ -1172,17 +1172,15 @@ function polykthroot( p, k, limit )
     k_1 = k.sub(I);
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
     r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
-    rk = r.pow(k_1); d = p.sub(rk.mul(r));
+    rk = r.pow(k_1); d = p.sub(rk.mul(r)); deg = p.maxdeg(true);
     while ( !d.equ(O) )
     {
         q = d.ttm(true).div(rk.mul(k).ttm(true));
         if ( q.equ(O) ) break; // no update anymore
-        deg = d.deg();
-        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q);
-        rk = r.pow(k_1); d = p.sub(rk.mul(r));
+        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
         // compute only up to some terms of power series
         // if p is not a perfect kth power and difference is not reduced at each step
-        if ( d.deg() >= deg ) { tries++; if ( tries >= limit ) break; }
+        if ( r.maxdeg(true)*k > deg ) { tries++; if ( tries >= limit ) break; }
     }
     return /*k.mod(two).equ(O) ? r.abs() : */r;
 }
@@ -8553,6 +8551,17 @@ MulTerm = Class(Symbolic, {
             return factors;
         }, {}), self.factors['1'].pow(n));
     }
+    ,rad: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, factors, f;
+        n = Integer.cast(n);
+        if ( self.equ(O) ) return MulTerm(1, O);
+        if ( n.equ(O) ) return null; // undefined
+        if ( n.equ(I) ) return self;
+        return MulTerm(self.symbols().reduce(function(factors, symbol){
+            if ( '1' !== symbol ) factors[symbol] = self.factors[symbol].rad(n);
+            return factors;
+        }, {}), self.factors['1'].rad(n));
+    }
     ,d: function( x, n ) {
         // nth order formal derivative with respect to symbol x
         var self = this, factors = self.factors, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
@@ -8922,6 +8931,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return pow;
     }
+    ,rad: NotImplemented
     ,d: function( x, n ) {
         var self = this;
         // nth order formal derivative with respect to symbol x
@@ -10828,6 +10838,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         // polynomial maximum degree per symbol
         var self = this, terms = self.terms, symbol = self.symbol, index;
         recur = (true===recur);
+        if ( arguments.length && (true===x) )
+        {
+            return operate(function(max, xi){
+                return stdMath.max(max, self.maxdeg(xi));
+            }, 0, symbol);
+        }
         index = arguments.length ? symbol.indexOf(String(x||'x')) : 0;
         if ( (-1 === index) || !terms.length ) return 0;
         x = symbol[index];
