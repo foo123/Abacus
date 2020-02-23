@@ -39,6 +39,8 @@ o.add(o2).d("y")
 6*y
 o.add(o2).d("y",2)
 6
+o.rad(2)
+(1+2*x)^(1/2)
 o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3))
 3*y^2
 o.mul(o2)
@@ -51,3 +53,22 @@ o.mul(o2).d("y",2)
 6+12*x true
 o.dispose()
 ---
+o2=Abacus.RationalExpr(Abacus.Expr(1, Abacus.Expr.Term("x", 2)))
+o2.toString()
+1+2*x
+
+o=Abacus.RationalExpr(Abacus.Expr(1, Abacus.Expr.Term("x", 2)), Abacus.Expr(1, Abacus.Expr.Term("y", 2)))
+o.toString()
+(1+2*x)/(1+2*y)
+o.pow(2)
+(1+4*x+4*x^2)/(1+4*y+4*y^2)
+o.rad(2)
+((1+2*x)^(1/2))/((1+2*y)^(1/2))
+o.add(o2)
+(2+4*x+4*x*y+2*y)/(1+2*y)
+o.mul(o2)
+(1+4*x+4*x^2)/(1+2*y)
+o.sub(o2)
+(-4*x*y-2*y)/(1+2*y)
+o.div(o2)
+(1+2*x)/(1+2*x+4*x*y+2*y)

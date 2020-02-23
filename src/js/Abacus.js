@@ -61,7 +61,7 @@ var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = '
 
     ,Node, Heap
     ,DefaultArithmetic, INUMBER, INumber, Numeric, Integer, IntegerMod, Rational, Complex
-    ,Symbolic, SymbolTerm, PowTerm, MulTerm, Expr
+    ,Symbolic, SymbolTerm, PowTerm, MulTerm, AddTerm, Expr, RationalExpr
     ,UniPolyTerm, MultiPolyTerm, Poly, Polynomial, MultiPolynomial, RationalFunc
     ,Ring, Matrix
     ,Iterator, CombinatorialIterator, Filter
@@ -8104,21 +8104,20 @@ PowTerm = Class(Symbolic, {
     }
     ,d: function( n ) {
         // nth order formal derivative
-        var self = this, Arithmetic = Abacus.Arithmetic, d;
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, d, k;
         if ( null == n ) n = 1;
         n = +n;
         if ( 0 > n ) return null; // not supported
-        if ( self.exp.lt(Arithmetic.O) || self.exp.gt(n) )
+        k = self.exp.sub(n);
+        if ( self.exp.lt(O) || !is_instance(k, Numeric) || !k.isReal() || !k.isInt() || k.gte(O) )
         {
-            d = MulTerm(PowTerm(self.base, self.exp.sub(n)), operate(function(f, i){
+            d = MulTerm(PowTerm(self.base, k), operate(function(f, i){
                 return self.exp.sub(i).mul(f);
             }, Arithmetic.I, null, 0, n-1, 1));
         }
         else
         {
-            d = MulTerm(1, self.exp.equ(n) ? operate(function(f, i){
-                return self.exp.sub(i).mul(f);
-            }, Arithmetic.I, null, 0, n-1, 1) : Arithmetic.O);
+            d = MulTerm(1, O);
         }
         return d;
     }
@@ -8437,7 +8436,7 @@ MulTerm = Class(Symbolic, {
             return self.symbol===a.symbol ? MulTerm(self.factors, self.factors['1'].add(a.factors['1'])) : Expr([self, a]);
         else if ( is_instance(a, [PowTerm, SymbolTerm]) )
             return self.symbol===a.toString() ? MulTerm(self.factors, self.factors['1'].add(Arithmetic.I)) : Expr([self, MulTerm(a)]);
-        else if ( is_instance(a, Expr) )
+        else if ( is_instance(a, [Expr, RationalExpr]) )
             return a.add(self);
         else if ( is_instance(a, Poly) )
             return a.toExpr().add(self);
@@ -8453,6 +8452,8 @@ MulTerm = Class(Symbolic, {
             return self.symbol===a.toString() ? MulTerm(self.factors, self.factors['1'].sub(Arithmetic.I)) : Expr([self, Multerm(a).neg()]);
         else if ( is_instance(a, Expr) )
             return Expr([self, a.neg()]);
+        else if ( is_instance(a, RationalExpr) )
+            return a.neg().add(self);
         else if ( is_instance(a, Poly) )
             return Expr([self, a.toExpr().neg()]);
         return self;
@@ -8489,7 +8490,7 @@ MulTerm = Class(Symbolic, {
             MulTerm.SymbolTerm(T);
             return T;
         }
-        else if ( is_instance(a, Expr) )
+        else if ( is_instance(a, [Expr, RationalExpr]) )
         {
             return a.mul(self);
         }
@@ -8531,7 +8532,7 @@ MulTerm = Class(Symbolic, {
             MulTerm.SymbolTerm(T);
             return T;
         }
-        else if ( is_instance(a, Expr) )
+        else if ( is_instance(a, [Expr, RationalExpr]) )
         {
             return self;
         }
@@ -8634,7 +8635,7 @@ MulTerm = Class(Symbolic, {
 });
 
 // Abacus.Expr, represents (symbolic) (linear) algebraic expressions of sums of (multiplicative) terms
-Expr = Abacus.Expr = Class(Symbolic, {
+AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
 
     constructor: function Expr( /* args */ ) {
         var self = this, i, l,
@@ -8784,6 +8785,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return false;
             return true;
         }
+        else if ( is_instance(a, RationalExpr) )
+        {
+            return a.equ(self);
+        }
         else if ( is_string(a) )
         {
             return (a === self.toString()) || (a === self.toTex());
@@ -8793,7 +8798,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,gt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
         if ( is_instance(a, Poly) ) a = a.toExpr();
-        if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        if ( is_instance(a, RationalExpr) )
+        {
+            return a.lt(self);
+        }
+        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().gt(Arithmetic.O) : false;
@@ -8807,7 +8816,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,gte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
         if ( is_instance(a, Poly) ) a = a.toExpr();
-        if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        if ( is_instance(a, RationalExpr) )
+        {
+            return a.lte(self);
+        }
+        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().gte(Arithmetic.O) : false;
@@ -8821,7 +8834,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,lt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
         if ( is_instance(a, Poly) ) a = a.toExpr();
-        if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        if ( is_instance(a, RationalExpr) )
+        {
+            return a.gt(self);
+        }
+        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().lt(Arithmetic.O) : false;
@@ -8835,7 +8852,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,lte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, r;
         if ( is_instance(a, Poly) ) a = a.toExpr();
-        if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        if ( is_instance(a, RationalExpr) )
+        {
+            return a.gte(self);
+        }
+        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().lte(Arithmetic.O) : false;
@@ -8863,6 +8884,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, RationalExpr) ) return x.add(self);
         return Arithmetic.isNumber(x) || is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm, Expr, Poly]) ? Expr([self, x]) : self;
     }
     ,sub: function( x ) {
@@ -8875,6 +8897,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if ( is_instance(x, [SymbolTerm, PowTerm]) ) x = MulTerm(x, Arithmetic.I);
             return self.add(x.neg());
+        }
+        else if ( is_instance(x, RationalExpr) )
+        {
+            return x.neg().add(self);
         }
         return self;
     }
@@ -8900,6 +8926,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 return self.terms[symbols[i]].mul(x.terms[symbols2[j]]);
             }));
         }
+        else if ( is_instance(x, RationalExpr) )
+        {
+            return x.mul(self);
+        }
         return self;
     }
     ,div: function( x ) {
@@ -8911,6 +8941,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             return Expr(array(symbols.length, function(i){
                 return self.terms[symbols[i]].div(x);
             }));
+        }
+        else if ( is_instance(x, RationalExpr) )
+        {
+            return x.inv().mul(self);
         }
         return self;
     }
@@ -8935,7 +8969,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return pow;
     }
-    ,rad: NotImplemented
+    ,rad: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, factors, f;
+        n = Integer.cast(n);
+        if ( self.equ(O) ) return Expr();
+        if ( n.equ(O) ) return null; // undefined
+        if ( n.equ(I) ) return self;
+        return Expr(1===self.symbols().length ? self.terms['1'].rad(n) : MulTerm(PowTerm(self, Rational(I, n.num)), I));
+    }
     ,d: function( x, n ) {
         var self = this;
         // nth order formal derivative with respect to symbol x
@@ -8985,6 +9026,321 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             self._tex = out.length ? out : '0';
         }
+        return self._tex;
+    }
+});
+
+// Abacus.Rationalexpr, represents a rational function/fraction of expressions
+RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
+    constructor: function RationalExpr( num, den ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+
+        if ( !is_instance(self, RationalExpr) ) return new RationalExpr(num, den);
+
+        if ( is_instance(num, RationalExpr) )
+        {
+            den = num.den;
+            num = num.num;
+        }
+        if ( null == num ) num = Expr();
+        else if ( !is_instance(num, Expr) ) num = Expr(num);
+
+        if ( null == den ) den = Expr(Arithmetic.I);
+        else if ( !is_instance(den, Expr) ) den = Expr(den);
+
+        if ( den.equ(Arithmetic.O) ) throw new Error('Zero denominator in Abacus.RationalExpr!');
+        if ( num.equ(Arithmetic.O) && !den.equ(Arithmetic.I) ) den = Expr(Arithmetic.I);
+        self.num = num;
+        self.den = den;
+    }
+
+    ,__static__: {
+        Term: Expr//AddTerm
+
+        ,fromString: function( s ) {
+            var paren = 0, braket = 0, parts = ['', ''], sign = '', is_tex = false,
+                i = 0, l, c, j, num, den, space = /\s/;
+            s = trim(String(s));
+            if ( !s.length ) return RationalExpr();
+            if ( ('-' === s.charAt(0)) || ('+' === s.charAt(0)) )
+            {
+                sign = s.charAt(0);
+                s = trim(s.slice(1));
+                if ( !s.length ) return RationalExpr();
+                sign = '-' === sign ? '-' : '';
+            }
+            is_tex = ('\\frac' === s.slice(0, 5));
+            l = s.length;
+            i = is_tex ? 5 : 0;
+            j = 0; // parse num
+            c = s.charAt(i);
+            // skip first braket if tex
+            if ( is_tex && ('{' === c) )
+            {
+                braket++;
+                i++;
+            }
+            while( i<l )
+            {
+                c = s.charAt(i++);
+
+                if ( space.test(c) )
+                {
+                    // continue
+                }
+                else if ( '/' === c )
+                {
+                    if ( !is_tex && !paren && !braket &&
+                        (
+                        (parts[j].length && (')' === parts[j].charAt(parts[j].length-1))) ||
+                        ((i<l) && ('('===s.charAt(i)))
+                        )
+                    )
+                    {
+                        j = 1; // parse den
+                    }
+                    else
+                    {
+                        parts[j] += c;
+                    }
+                }
+                else if ( '(' === c )
+                {
+                    paren++;
+                    parts[j] += c;
+                }
+                else if ( ')' === c )
+                {
+                    paren--;
+                    parts[j] += c;
+                    if ( !is_tex && !paren && !braket && ((i>=l) || ('/'===s.charAt(i))) )
+                    {
+                        if ( (i<l) && ('/'===s.charAt(i)) ) i++;
+                        j = 1; // parse den
+                    }
+                }
+                else if ( '{' === c )
+                {
+                    braket++;
+                    parts[j] += c;
+                }
+                else if ( '}' === c )
+                {
+                    braket--;
+                    if ( !paren && !braket )
+                    {
+                        if ( is_tex && (i<l) && ('{'===s.charAt(i)) )
+                        {
+                            braket++;
+                            i++;
+                        }
+                        j = 1; // parse den
+                    }
+                    else
+                    {
+                        parts[j] += c;
+                    }
+                }
+                else
+                {
+                    parts[j] += c;
+                }
+            }
+            if ( paren || braket )
+            {
+                num = Expr.fromString(parts[0]);
+                den = null;
+            }
+            else
+            {
+                if ( parts[0].length && parts[1].length && ('(' === parts[0].charAt(0)) && (')'===parts[0].charAt(parts[0].length-1)) )
+                {
+                    parts[0] = trim(parts[0].slice(1,-1));
+                }
+                if ( parts[1].length && ('(' === parts[1].charAt(0)) && (')'===parts[1].charAt(parts[1].length-1)) )
+                {
+                    parts[1] = trim(parts[1].slice(1,-1));
+                }
+                num = Expr.fromString(parts[0]);
+                den = parts[1].length ? Expr.fromString(parts[1]) : null;
+            }
+            if ( '-' === sign ) num = num.neg();
+            return new RationalExpr(num, den);
+        }
+    }
+
+    ,num: null
+    ,den: null
+    ,_str: null
+    ,_tex: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.num = null;
+        self.den = null;
+        self._str = null;
+        self._tex = null;
+        return self;
+    }
+    ,c: function( ) {
+        var self = this;
+        return self.num.c().div(self.den.c());
+    }
+    ,neg: function( ) {
+        var self = this;
+        return RationalExpr(self.num.neg(), self.den);
+    }
+    ,inv: function( ) {
+        var self = this;
+        return RationalExpr(self.den, self.num);
+    }
+    ,conj: function( ) {
+        var self = this;
+        return RationalExpr(self.num.conj(), self.den.conj());
+    }
+    ,equ: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        if ( is_instance(x, [Integer, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+            return self.num.equ(self.den.mul(x));
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return self.num.mul(x.den).equ(self.den.mul(x.num));
+        else if ( is_string(x) )
+            return (x===self.toString()) || (x===self.toTex());
+        return false;
+    }
+    ,gt: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        if ( is_instance(x, [Integer, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+            return self.num.gt(self.den.mul(x));
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return self.num.mul(x.den).gt(self.den.mul(x.num));
+        return false;
+    }
+    ,gte: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        if ( is_instance(x, [Integer, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+            return self.num.gte(self.den.mul(x));
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return self.num.mul(x.den).gte(self.den.mul(x.num));
+        return false;
+    }
+    ,lt: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        if ( is_instance(x, [Integer, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+            return self.num.lt(self.den.mul(x));
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return self.num.mul(x.den).lt(self.den.mul(x.num));
+        return false;
+    }
+    ,lte: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        if ( is_instance(x, [Integer, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+            return self.num.lte(self.den.mul(x));
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return self.num.mul(x.den).lte(self.den.mul(x.num));
+        return false;
+    }
+
+    ,add: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        else if ( is_instance(x, Integer) || Arithmetic.isNumber(x) ) x = Rational(x);
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+            return RationalExpr(self.num.add(self.den.mul(x)), self.den);
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return RationalExpr(self.num.mul(x.den).add(self.den.mul(x.num)), self.den.mul(x.den));
+        return self;
+    }
+    ,sub: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        else if ( is_instance(x, Integer) || Arithmetic.isNumber(x) ) x = Rational(x);
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+            return RationalExpr(self.num.sub(self.den.mul(x)), self.den);
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return RationalExpr(self.num.mul(x.den).sub(self.den.mul(x.num)), self.den.mul(x.den));
+        return self;
+    }
+    ,mul: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        else if ( is_instance(x, Integer) || Arithmetic.isNumber(x) ) x = Rational(x);
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+            return RationalExpr(self.num.mul(x), self.den);
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return RationalExpr(self.num.mul(x.num), self.den.mul(x.den));
+        return self;
+    }
+    ,div: function( x ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( is_instance(x, Complex) && x.isReal() ) x = x.real;
+        else if ( is_instance(x, Integer) || Arithmetic.isNumber(x) ) x = Rational(x);
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+            return RationalExpr(self.num, self.den.mul(x));
+        else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
+            return RationalExpr(self.num.mul(x.den), self.den.mul(x.num));
+        return self;
+    }
+    ,mod: NotImplemented
+    ,divmod: NotImplemented
+    ,divides: function( x ) {
+        return !this.equ(Abacus.Arithmetic.O);
+    }
+    ,pow: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic, num = self.num, den = self.den, t;
+        n = Integer.cast(n);
+        if ( n.gt(MAX_DEFAULT) ) return null;
+        n = Arithmetic.val(n.num);
+        if ( 0 > n ) { n = -n; t = num; num = den; den = t; }
+        if ( 0 === n )
+            return RationalExpr(Arithmetic.I);
+        else if ( 1 === n )
+            return RationalExpr(num, den);
+        else
+            return RationalExpr(num.pow(n), den.pow(n));
+    }
+    ,rad: function( n ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        n = Integer.cast(n);
+        if ( n.equ(Arithmetic.I) ) return self;
+        return RationalExpr(self.num.rad(n), self.den.rad(n));
+    }
+    ,d: function( x, n ) {
+        // partial rational (formal) derivative of nth order with respect to symbol x
+        var self = this, num, den, d_num, d_den, Arithmetic = Abacus.Arithmetic;
+        if ( null == n ) n = 1;
+        n = Arithmetic.val(n);
+        if ( 0 > n ) return null; // not supported
+        else if ( 0 === n ) return self;
+        num = self.num; den = self.den;
+        while( 0<n && !num.equ(Arithmetic.O) )
+        {
+            d_num = num.d(x, 1).mul(den).sub(num.mul(den.d(x, 1)));
+            d_den = den.pow(2);
+            num = d_num; den = d_den; n--;
+        }
+        return RationalExpr(d_num, d_den);
+    }
+    ,evaluate: function( symbolValues ) {
+        var self = this;
+        symbolValues = symbolValues || {};
+        return self.num.evaluate(symbolValues).div(self.den.evaluate(symbolValues));
+    }
+    ,toString: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._str )
+            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((1===self.num.symbols().length && self.num.c().isReal() ? self.num.toString(true) : ('('+self.num.toString()+')'))+'/'+(1===self.den.symbols().length && self.den.isReal() ? self.den.toString() : ('('+self.den.toString()+')')));
+        return self._str;
+    }
+    ,toTex: function( ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null == self._tex )
+            self._tex = self.den.equ(Arithmetic.I) ? self.num.toTex() : ('\\frac{'+self.num.toTex()+'}{'+self.den.toTex()+'}');
         return self._tex;
     }
 });
