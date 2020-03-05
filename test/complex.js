@@ -12,7 +12,7 @@ function check_xgcd( args )
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(args[i].mul(gcd[i+1]));
         d = args[i].div(gcd[0]);
-        if ( !d.real.isInt() || !d.imag.isInt() ) echo(args[i].toString() + ' is NOT divided!');
+        if ( !d.real().isInt() || !d.imag().isInt() ) echo(args[i].toString() + ' is NOT divided!');
     }
     out += ' = '+gcd[0].toString();
     echo(out, res.toString(), res.equ(gcd[0]));

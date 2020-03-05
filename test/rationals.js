@@ -78,6 +78,10 @@ echo('o.toTex()');
 echo(o.toTex());
 echo('o.toDec()');
 echo(o.toDec());
+echo('o.toDec(2)');
+echo(o.toDec(2));
+echo('o.toDec(7)');
+echo(o.toDec(7));
 echo('o.rad(2).toString()');
 echo(o.rad(2).toString());
 echo('o.sub(o.rad(2).pow(2)).toString()');
@@ -113,6 +117,21 @@ echo('o.toTex()');
 echo(o.toTex());
 echo('o.toDec()');
 echo(o.toDec());
+echo('o.toDec(2)');
+echo(o.toDec(2));
+echo('o.toDec(7)');
+echo(o.toDec(7));
+
+echo();
+
+echo('o=Abacus.Rational.fromString("3.125e7")');
+o=Abacus.Rational.fromString("3.125e7");
+echo('o.toString()');
+echo(o.toString());
+echo('o.toTex()');
+echo(o.toTex());
+echo('o.toDec()');
+echo(o.toDec());
 
 echo();
 
@@ -137,6 +156,10 @@ echo('o.toTex()');
 echo(o.toTex());
 echo('o.toDec()');
 echo(o.toDec());
+echo('o.toDec(2)');
+echo(o.toDec(2));
+echo('o.toDec(7)');
+echo(o.toDec(7));
 
 echo();
 
@@ -148,6 +171,10 @@ echo('o.toTex()');
 echo(o.toTex());
 echo('o.toDec()');
 echo(o.toDec());
+echo('o.toDec(2)');
+echo(o.toDec(2));
+echo('o.toDec(7)');
+echo(o.toDec(7));
 
 echo();
 
@@ -222,6 +249,21 @@ echo(String(o=Abacus.Rational.fromString("9/10").toDec()));
 
 echo('o=Abacus.Rational.fromString("172/165").toDec()');
 echo(String(o=Abacus.Rational.fromString("172/165").toDec()));
+
+echo('o=Abacus.Rational.fromString("0.12566").toDec(4)');
+echo(String(o=Abacus.Rational.fromString("0.12566").toDec(4)));
+
+echo('o=Abacus.Rational.fromString("0.99999").toDec(4)');
+echo(String(o=Abacus.Rational.fromString("0.99999").toDec(4)));
+
+echo('o=Abacus.Rational.fromString("-9.99999").toDec(4)');
+echo(String(o=Abacus.Rational.fromString("-9.99999").toDec(4)));
+
+echo('o=Abacus.Rational.fromString("0.9[5]").toDec(4)');
+echo(String(o=Abacus.Rational.fromString("0.9[5]").toDec(4)));
+
+echo('o=Abacus.Rational.fromString("0.999[5]").toDec(4)');
+echo(String(o=Abacus.Rational.fromString("0.999[5]").toDec(4)));
 
 echo('o=Abacus.Rational.fromString("1.11").round()');
 echo(String(o=Abacus.Rational.fromString("1.11").round()));
