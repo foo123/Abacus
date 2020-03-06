@@ -44,8 +44,8 @@ echo('o.toDec()');
 echo(o.toDec());
 echo('o.rad(2).toString()');
 echo(o.rad(2).toString());
-echo('o.sub(o.rad(2).pow(2)).toString()');
-echo(o.sub(o.rad(2).pow(2)).toString());
+//echo('o.sub(o.rad(2).pow(2)).toString()');
+//echo(o.sub(o.rad(2).pow(2)).toString());
 
 echo();
 

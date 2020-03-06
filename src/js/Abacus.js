@@ -1136,11 +1136,23 @@ function isqrt( n )
 }
 function jskthroot( x, k )
 {
-    var kg = k & 1, r, x0;
-    if ( (1 === kg) || x<0 ) x = -x;
-    r = stdMath.pow(x, 1/k); x0 = stdMath.pow(r, k);
-    if ( stdMath.abs(x-x0)<1 && ((x>0) === (x0>0)) ) return kg ? -r : r;
-    return r;
+    var kg, r, p;
+    k = +k;
+    if ( 0 === k ) return null;
+    if ( 0 > k )
+    {
+        x = 1.0/x;
+        k = -k;
+    }
+    if ( 1 === k ) return x;
+    kg = k & 1;
+    if ( (1===kg) && (0>x) ) x = -x;
+    r = stdMath.pow(x, 1.0/k);
+    p = stdMath.pow(r, k);
+
+    if ( (stdMath.abs(x-p)<1.0) && ((0<x) === (0<p)) )
+        return kg && (0>x) ? -r : r;
+    return 1;
 }
 function ikthroot( n, k )
 {
@@ -1234,7 +1246,7 @@ function kthroot( x, k, limit )
     {
         if ( x.isReal() && (x.real().gte(O) || !k.mod(two).equ(O)) )
         {
-            r = new ObjectClass(Rational(ikthroot(x.real().num, k.num), ikthroot(x.real().den, k.num)));
+            r = new ObjectClass(Rational(ikthroot(x.real().num, k.num), ikthroot(x.real().den, k.num)), Rational.Zero());
         }
         else
         {
@@ -6530,23 +6542,7 @@ INUMBER = {
         return stdMath.pow(this, +n);
     }
     ,rad: function( n ) {
-        var x = this, ng, r, p;
-        n = +n;
-        if ( 0 === n ) return null;
-        if ( 0 > n )
-        {
-            x = 1.0/x;
-            n = -n;
-        }
-        if ( 1 === n ) return x;
-        ng = n & 1;
-        if ( (1===ng) && (0>x) ) x = -x;
-        r = stdMath.pow(x, 1.0/n);
-        p = stdMath.pow(r, n);
-
-        if ( (stdMath.abs(x-p)<1.0) && ((0 < x) === (0 < p)) )
-            return ng ? -r : r;
-        return 1;
+        return jskthroot(this, n);
    }
 };
 INumber = Class(Merge({
@@ -7298,6 +7294,7 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if ( n.equ(Arithmetic.I) ) return self;
+        if ( self.lt(Arithmetic.O) && n.mod(Arithmetic.II).equ(Arithmetic.O) ) return Complex(self).rad(n);
         return kthroot(self, n);
     }
     ,simpl: function( ) {
@@ -7859,9 +7856,25 @@ Complex = Abacus.Complex = Class(Numeric, {
         return pow;
     }
     ,rad: function( n ) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, Arithmetic = Abacus.Arithmetic, norm;
         n = Integer.cast(n);
-        if ( n.equ(Arithmetic.I) ) return self;
+        if ( n.equ(Arithmetic.I) )
+        {
+            return self;
+        }
+        if ( n.equ(Arithmetic.II) )
+        {
+            // https://en.wikipedia.org/wiki/Complex_number#Square_root
+            if ( self.imag().equ(0) )
+            {
+                return self.real().lt(0) ? Complex(Rational.Zero(), self.real().abs().rad(n)) : Complex(self.real().rad(n), Rational.Zero());
+            }
+            else
+            {
+                norm = self.norm().rad(2);
+                return Complex(norm.add(self.real()).div(2).rad(n), norm.sub(self.real()).div(2).rad(n).mul(self.imag().lt(0) ? -1 : 1));
+            }
+        }
         return kthroot(self, n);
     }
     ,simpl: function( ) {
@@ -14304,7 +14317,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         // https://en.wikipedia.org/wiki/Power_iteration
         var self = this, ring = self.ring, m = self.nr, n = self.nc, epsilon, matrixFor1D, e, u, i, j, es, us;
 
-        if ( ring.isSymbolic() || (m !== n) || !self.h().equ(self) ) return null; // only for square diagonalisable numeric symmetric matrices
+        if ( ring.isSymbolic() || (m !== n) || !self.h().equ(self) ) return null; // only for square symmetric/hermitian diagonalisable numeric matrices
 
         function pow1(A, x, eps, max_iter) {
             var x0 = null, iter = 0, norm;
@@ -14360,13 +14373,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 matrixFor1D = self;
                 for(i=0; i<n; i++)
                 {
-                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 3); // next eigen vector
+                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 5); // next eigen vector
                     if ( null == u )
                     {
                         self._evd = false; // non diagonalisable
                         break;
                     }
-                    e = u.h().mul(self.mul(u)).val[0][0].div(u.h().mul(u).val[0][0]).rad(2); // next eigen value
+                    e = u.h().mul(self.mul(u)).val[0][0].div(u.h().mul(u).val[0][0]); // next eigen value
                     es.push(e); us.push(u);
                     matrixFor1D = matrixFor1D.sub(u.mul(u.h()).mul(e));
                 }
@@ -14389,7 +14402,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
 
         wantu = (false!==wantu); wantv = (false!==wantv);
 
-        if ( null == self._svd )
+        /*if ( null == self._svd )
         {
             // svd from evd of A.T*A or A*A.T
             if ( !ring.isField() )
@@ -14413,7 +14426,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             }
         }
         return wantu && wantv ? self._svd.slice() : (wantu ? [self._svd[0], self._svd[1]] : (wantv ? [self._svd[0], self._svd[2]] : self._svd[0]));
-
+*/
         function hypotenuse(a, b) {
             var r;
             if ( a.abs().gt(b.abs()) )
@@ -14440,7 +14453,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 // get svd of transpose and transpose
                 s = self.t().svd(true, true);
                 self._svd = [s[0], s[2].t(), s[1].t()];
-                return wantu && wantv ? self._svd.slice() : (wantu ? [self._svd[0], self._svd[1]] : (wantv ? [self._svd[0], self._svd[2]] : self._svd[0]));
             }
             else
             {
@@ -14602,7 +14614,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                         for(ks=p-1; ks>=k; ks--)
                         {
                             if ( ks===k ) break;
-                            t = (ks !== p ? e[ks].abs() : ring.Zero()) + (ks !== k + 1 ? e[ks - 1].abs() : ring.Zero());
+                            t = (ks !== p ? e[ks].abs() : ring.Zero()).add(ks !== k + 1 ? e[ks - 1].abs() : ring.Zero());
                             if ( s[ks].abs().lte(eps.mul(t)) )
                             {
                                 s[ks] = ring.Zero();

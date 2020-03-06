@@ -51,8 +51,8 @@ echo('o.toDec()');
 echo(o.toDec());
 echo('o.rad(2).toString()');
 echo(o.rad(2).toString());
-echo('o.sub(o.rad(2).pow(2)).toString()');
-echo(o.sub(o.rad(2).pow(2)).toString());
+//echo('o.sub(o.rad(2).pow(2)).toString()');
+//echo(o.sub(o.rad(2).pow(2)).toString());
 
 echo();
 
@@ -258,6 +258,9 @@ echo(String(o=Abacus.Rational.fromString("0.99999").toDec(4)));
 
 echo('o=Abacus.Rational.fromString("-9.99999").toDec(4)');
 echo(String(o=Abacus.Rational.fromString("-9.99999").toDec(4)));
+
+echo('o=Abacus.Rational.fromString("-9.99999").toDec(0)');
+echo(String(o=Abacus.Rational.fromString("-9.99999").toDec(0)));
 
 echo('o=Abacus.Rational.fromString("0.9[5]").toDec(4)');
 echo(String(o=Abacus.Rational.fromString("0.9[5]").toDec(4)));
