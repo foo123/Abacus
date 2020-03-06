@@ -1134,6 +1134,14 @@ function isqrt( n )
     }
     return sqrt;
 }
+function jskthroot( x, k )
+{
+    var kg = k & 1, r, x0;
+    if ( (1 === kg) || x<0 ) x = -x;
+    r = stdMath.pow(x, 1/k); x0 = stdMath.pow(r, k);
+    if ( stdMath.abs(x-x0)<1 && ((x>0) === (x0>0)) ) return kg ? -r : r;
+    return r;
+}
 function ikthroot( n, k )
 {
     // Return the integer k-th root of a number by Newton's method
@@ -1141,6 +1149,9 @@ function ikthroot( n, k )
 
     if ( Arithmetic.gt(I, k) ) return null; // undefined
     else if ( Arithmetic.equ(I, k) || Arithmetic.equ(n, I) || Arithmetic.equ(n, Arithmetic.O) ) return n;
+
+    if ( Arithmetic.isDefault() || Arithmetic.lte(n, MAX_DEFAULT) )
+        return Arithmetic.num(stdMath.floor(jskthroot(Arithmetic.val(n), Arithmetic.val(k))));
 
     k_1 = Arithmetic.sub(k, I);
     u = n;
@@ -6680,6 +6691,7 @@ Integer = Abacus.Integer = Class(Numeric, {
             s = trim(String(s));
             if ( !s.length ) return Integer.Zero();
             if ( '+' === s.charAt(0) ) s = trim(s.slice(1));
+            if ( (-1 !== s.indexOf('e')) || (-1 !== s.indexOf('.')) ) return Rational.fromString(s).integer();
             return s.length ? Integer(Abacus.Arithmetic.num(s)) : Integer.Zero();
         }
     }
@@ -14300,7 +14312,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             {
                 norm = x.h().mul(x).val[0][0];
                 if ( norm.equ(0) ) return null;
-                x = x.div(norm);
+                x = x.div(norm.rad(2));
                 while(true)
                 {
                     iter++;
@@ -14308,7 +14320,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     x = A.mul(x);
                     norm = x.h().mul(x).val[0][0];
                     if ( norm.equ(0) ) return null;
-                    x = x.div(norm);
+                    x = x.div(norm.rad(2));
                     if ( (null != max_iter) && (iter >= max_iter) ) break;
                     if ( x.h().mul(x0).val[0][0].norm().add(eps).gt(1) ) break;
                 }
@@ -14317,7 +14329,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             {
                 norm = x.t().mul(x).val[0][0];
                 if ( norm.equ(0) ) return null;
-                x = x.div(norm);
+                x = x.div(norm.rad(2));
                 while(true)
                 {
                     iter++;
@@ -14325,7 +14337,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     x = A.mul(x);
                     norm = x.t().mul(x).val[0][0];
                     if ( norm.equ(0) ) return null;
-                    x = x.div(norm);
+                    x = x.div(norm.rad(2));
                     if ( (null != max_iter) && (iter >= max_iter) ) break;
                     if ( x.t().mul(x0).val[0][0].abs().add(eps).gt(1) ) break;
                 }
@@ -14348,13 +14360,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 matrixFor1D = self;
                 for(i=0; i<n; i++)
                 {
-                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 2); // next eigen vector
+                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 3); // next eigen vector
                     if ( null == u )
                     {
                         self._evd = false; // non diagonalisable
                         break;
                     }
-                    e = u.h().mul(self.mul(u)).div(u.h().mul(u)).val[0][0]; // next eigen value
+                    e = u.h().mul(self.mul(u)).val[0][0].div(u.h().mul(u).val[0][0]).rad(2); // next eigen value
                     es.push(e); us.push(u);
                     matrixFor1D = matrixFor1D.sub(u.mul(u.h()).mul(e));
                 }
@@ -14395,7 +14407,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 evd = self.mul(self.t()).evd();
                 U = evd[1];
                 V = self.t().mul(U);
-                s = array(V.nc, function(i){var vm = Matrix(ring, V.col(i)); return vm.t().mul(vm).val[0][0];});
+                s = array(V.nc, function(i){var vm = Matrix(ring, V.col(i)); return vm.t().mul(vm).val[0][0].rad(2);});
                 V = V.map(function(vij, ij){return vij.div(s[ij[1]]);});
                 self._svd = [Matrix(ring, s), U.t(), V];
             }
