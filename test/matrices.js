@@ -144,8 +144,8 @@ echo("V:");
 echo(m[2].toDec(4));
 echo('---');
 
-echo('o=Abacus.Matrix(ring, [[3,2,2], [0,2,3], [0,0,1]])');
-o=Abacus.Matrix(ring, [[3,2,2], [0,2,3], [0,0,1]]);
+echo('o=Abacus.Matrix(ring, [[3,2,2], [2,3,-2]])');
+o=Abacus.Matrix(ring, [[3,2,2], [2,3,-2]]);
 echo('o.toString()');
 echo(o.toString());
 echo('o.svd()');
@@ -157,6 +157,20 @@ echo(m[0].toString());
 echo("V:");
 echo(m[2].toString());
 echo('---');
+
+/*echo('o=Abacus.Matrix(ring, [[3,2,2], [0,2,3], [0,0,1]])');
+o=Abacus.Matrix(ring, [[3,2,2], [0,2,3], [0,0,1]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.svd()');
+m=o.svd();
+echo("U:");
+echo(m[1].toString());
+echo("S:");
+echo(m[0].toString());
+echo("V:");
+echo(m[2].toString());
+echo('---');*/
 
 echo('o=Abacus.Matrix(ring, [91, 21])');
 o=Abacus.Matrix(ring, [91, 21]);

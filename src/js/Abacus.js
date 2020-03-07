@@ -50,7 +50,8 @@ var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = '
         return ctor;
     }
 
-    ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic
+    ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MIN_VALUE, Number.MAX_VALUE
+    ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
 
     ,V_EQU=1, V_DIFF=-1, V_INC=3, V_DEC=-3, V_NONINC=-2, V_NONDEC=2
 
@@ -1147,8 +1148,7 @@ function jskthroot( x, k )
     if ( 1 === k ) return x;
     kg = k & 1;
     if ( (1===kg) && (0>x) ) x = -x;
-    r = stdMath.pow(x, 1.0/k);
-    p = stdMath.pow(r, k);
+    r = stdMath.pow(x, 1.0/k); p = stdMath.pow(r, k);
 
     if ( (stdMath.abs(x-p)<1.0) && ((0<x) === (0<p)) )
         return kg && (0>x) ? -r : r;
@@ -1216,7 +1216,7 @@ function kthroot( x, k, limit )
     // https://en.wikipedia.org/wiki/Shifting_nth_root_algorithm
     // Return the approximate k-th root of a rational number by Newton's method
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        ObjectClass, r, d, k_1, tries = 0;
+        ObjectClass, r, d, k_1, tries = 0, epsilon = Rational.Epsilon();
     if ( k.equ(O) ) return null;
     if ( (is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x))) ) return x;
     ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational :  x[CLASS];
@@ -1257,15 +1257,25 @@ function kthroot( x, k, limit )
     {
         r = ObjectClass.One();
     }
-    if ( null == limit ) limit = 6; // for up to 6 tries Newton method converges with 64bit precision
-    limit = stdMath.abs(+limit);
+    //if ( null == limit ) limit = 6; // for up to 6 tries Newton method converges with 64bit precision
+    //limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
-    do {
-        d = x.div(r.pow(k_1)).sub(r).div(k);
-        if ( d.equ(O) ) break;
-        r = r.add(d);
-        tries++;
-    } while( tries<limit );
+    if ( is_class(ObjectClass, Complex) )
+    {
+        do {
+            d = x.div(r.pow(k_1)).sub(r).div(k);
+            if ( d.real().abs().lte(epsilon) && d.imag().abs().lte(epsilon) ) break;
+            r = r.add(d);
+        } while( true );
+    }
+    else
+    {
+        do {
+            d = x.div(r.pow(k_1)).sub(r).div(k);
+            if ( d.abs().lte(epsilon) ) break;
+            r = r.add(d);
+        } while( true );
+    }
     return r;
 }
 /*function quadres( a, n )
@@ -1987,6 +1997,8 @@ function pollard_rho( n, s, a, retries, max_steps, F )
 {
     // find a non-trivial factor of n using the Pollard-Rho heuristic
     // http://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
+    // https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
+    // https://en.wikipedia.org/wiki/Pollard%27s_kangaroo_algorithm
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         two = Arithmetic.II, V, U, i, j, g, n_1, n_3;
 
@@ -2366,7 +2378,7 @@ function default_eq( a, b )
 }
 function floyd_cycle_detection( f, x0, eq )
 {
-    // https://en.wikipedia.org/wiki/Cycle_detection
+    // https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare
     // floyd tortoise-hare algorithm for cycle detection
     var tortoise, hare, mu, lam;
     eq = eq || default_eq;
@@ -6968,6 +6980,18 @@ Rational = Abacus.Rational = Class(Numeric, {
         ,MinusOne: function( ) {
             if ( null == Rational.J ) Rational.J = Rational(Abacus.Arithmetic.J, Abacus.Arithmetic.I, true);
             return Rational.J;
+        }
+        ,EPS: null
+        ,Epsilon: function( newEpsilon ) {
+            if ( null != newEpsilon )
+            {
+                Rational.EPS = Rational.fromString(newEpsilon.toString());
+            }
+            else if ( null == Rational.EPS )
+            {
+                Rational.EPS = Rational.fromString(EPSILON.toString());
+            }
+            return Rational.EPS;
         }
 
         ,hasInverse: function( ) {
@@ -14368,12 +14392,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
             }
             else
             {
-                epsilon = Rational.fromString('1e-10');
+                epsilon = Rational.Epsilon();
                 es = []; us = [];
                 matrixFor1D = self;
                 for(i=0; i<n; i++)
                 {
-                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 5); // next eigen vector
+                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 10); // next eigen vector
                     if ( null == u )
                     {
                         self._evd = false; // non diagonalisable
@@ -14425,8 +14449,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._svd = [Matrix(ring, s), U.t(), V];
             }
         }
-        return wantu && wantv ? self._svd.slice() : (wantu ? [self._svd[0], self._svd[1]] : (wantv ? [self._svd[0], self._svd[2]] : self._svd[0]));
-*/
+        return wantu && wantv ? self._svd.slice() : (wantu ? [self._svd[0], self._svd[1]] : (wantv ? [self._svd[0], self._svd[2]] : self._svd[0]));*/
+
         function hypotenuse(a, b) {
             var r;
             if ( a.abs().gt(b.abs()) )
@@ -14599,7 +14623,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     {
                         if ( k === -1 ) break;
                         alpha = MIN_VAL.add(eps.mul(s[k].add(s[k + 1].abs()).abs()));
-                        if ( e[k].abs().lte(alpha) || Number.isNaN(e[k].valueOf()) )
+                        if ( e[k].abs().lte(alpha) /*|| Number.isNaN(e[k].valueOf())*/ )
                         {
                             e[k] = ring.Zero();
                             break;
