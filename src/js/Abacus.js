@@ -50,7 +50,7 @@ var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = '
         return ctor;
     }
 
-    ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MIN_VALUE, Number.MAX_VALUE
+    ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MAX_SAFE_INTEGER
     ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
 
     ,V_EQU=1, V_DIFF=-1, V_INC=3, V_DEC=-3, V_NONINC=-2, V_NONDEC=2
@@ -6985,7 +6985,7 @@ Rational = Abacus.Rational = Class(Numeric, {
         ,Epsilon: function( newEpsilon ) {
             if ( null != newEpsilon )
             {
-                Rational.EPS = Rational.fromString(newEpsilon.toString());
+                Rational.EPS = true === newEpsilon ? Rational.fromString(EPSILON.toString()) : Rational.fromString(newEpsilon.toString());
             }
             else if ( null == Rational.EPS )
             {
@@ -7518,7 +7518,7 @@ Complex = Abacus.Complex = Class(Numeric, {
 
         ,fromString: function( s ) {
             var m, signre, signim, real, imag, O = Complex.Zero(),
-                pattern = /^\(?(?:([\+\-])?\s*\(?((?:\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/-?\d+)?))?\)?(\*?[ij])?)(?:\s*([\+\-])?\s*(?:\(?((?:\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/-?\d+)?))\)?\*?)?([ij]))?\)?$/;
+                pattern = /^\(?(?:([\+\-])?\s*\(?((?:\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/-?\d+)?))?\)?(\*?[ij])?)(?:\s*([\+\-])?\s*(?:\(?((?:\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/-?\d+)?))\)?\*?)?([ij]))?\)?$/;
             s = trim(String(s));
             if ( !s.length ) return O;
             m = s.match(pattern);
@@ -8860,7 +8860,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         }
         ,fromString: function( s ) {
             var Arithmetic = Abacus.Arithmetic, terms = [], m, coeff, symbol, n, i,
-                term_re = /(\(?(?:(?:[\+\-])?\s*\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/\-?\d+)?))?\)?)(?:\s*(?:[\+\-])?\s*(?:\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/\-?\d+)?))\)?\*?)?(?:[ij]))?\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?(?:\s*\*\s*[a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?)*)?)?/g;
+                term_re = /(\(?(?:(?:[\+\-])?\s*\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/\-?\d+)?))?\)?)(?:\s*(?:[\+\-])?\s*(?:\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/\-?\d+)?))\)?\*?)?(?:[ij]))?\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?(?:\s*\*\s*[a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?)*)?)?/g;
             s = trim(String(s));
             while( (m=term_re.exec(s)) )
             {
@@ -10113,7 +10113,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         ,fromString: function( s, symbol, ring ) {
             var Arithmetic = Abacus.Arithmetic, terms = {}, _symbol = null, m, coeff, exp, sym, n, i,
-                term_re = /(\(?(?:(?:[\+\-])?\s*\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/\-?\d+)?))?\)?)(?:\s*(?:[\+\-])?\s*(?:\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/\-?\d+)?))\)?\*?)?(?:[ij]))?\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?)(?:\^\{?(\d+)\}?)?)?/g;
+                term_re = /(\(?(?:(?:[\+\-])?\s*\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/\-?\d+)?))?\)?)(?:\s*(?:[\+\-])?\s*(?:\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/\-?\d+)?))\)?\*?)?(?:[ij]))?\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?)(?:\^\{?(\d+)\}?)?)?/g;
             ring = ring || Ring.Q();
             s = trim(String(s)); if ( !s.length ) return Polynomial.Zero(symbol||'x', ring);
             while( (m=term_re.exec(s)) )
@@ -11440,7 +11440,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         ,fromString: function( s, symbol, ring ) {
             var Arithmetic = Abacus.Arithmetic, terms = {}, m, mm, coeff, sym, found_symbols = [], n, i,
-                term_re = /(\(?(?:(?:[\+\-])?\s*\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/\-?\d+)?))?\)?)(?:\s*(?:[\+\-])?\s*(?:\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:\/\-?\d+)?))\)?\*?)?(?:[ij]))?\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?(?:\s*\*?\s*[a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?)*)?)?/g,
+                term_re = /(\(?(?:(?:[\+\-])?\s*\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/\-?\d+)?))?\)?)(?:\s*(?:[\+\-])?\s*(?:\(?(?:(?:\\frac\{\-?\d+\}\{\-?\d+\})|(?:\-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/\-?\d+)?))\)?\*?)?(?:[ij]))?\)?)?(?:\s*\*?\s*([a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?(?:\s*\*?\s*[a-zA-Z](?:_\{?\d+\}?)?(?:\^\{?\d+\}?)?)*)?)?/g,
                 monomial_re = /([a-zA-Z])(?:_\{?(\d+)\}?)?(?:\^\{?(\d+)\}?)?/g, monomials, ms, me, term;
             ring = ring || Ring.Q();
             s = trim(String(s)); if ( !s.length ) return MultiPolynomial.Zero(symbol||['x'], ring);
@@ -14412,19 +14412,17 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return false===self._evd ? null : self._evd.slice();
     }
-    ,svd: function( wantu, wantv ) {
+    ,svd: function( ) {
         // singular value decomposition
         // https://en.wikipedia.org/wiki/Singular_value_decomposition
         var self = this, ring = self.ring,
             m = self.nr, n = self.nc, a, nu, ni, s, U, V, e, work, si, i,
             nct, nrt, mrc, k, j, t, p, pp, iter, eps, kase, alpha, ks,
             f, cs, sn, scale, sp, spm1, epm1, sk, ek, b, c, shift, g, MIN_VAL,
-            evd;
+            evd, wantu = true, wantv = true;
 
         // only for real numeric fields (ie Rationals)
         if ( ring.isSymbolic() || !ring.isReal() ) return null;
-
-        wantu = (false!==wantu); wantv = (false!==wantv);
 
         /*if ( null == self._svd )
         {
@@ -14449,7 +14447,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._svd = [Matrix(ring, s), U.t(), V];
             }
         }
-        return wantu && wantv ? self._svd.slice() : (wantu ? [self._svd[0], self._svd[1]] : (wantv ? [self._svd[0], self._svd[2]] : self._svd[0]));*/
+        return self._svd.slice();*/
 
         function hypotenuse(a, b) {
             var r;
@@ -14615,8 +14613,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
 
                 pp = p - 1;
                 iter = 0;
-                eps = ring.cast(Number.EPSILON.toString());
-                MIN_VAL = ring.cast(Number.MIN_VALUE.toString());
+                eps = Rational.Epsilon();//ring.cast(Number.EPSILON.toString());
+                MIN_VAL = Rational.Epsilon();//ring.cast(Number.MIN_VALUE.toString());
                 while( p>0 )
                 {
                     for(k=p-2; k>=-1; k--)
@@ -14728,7 +14726,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                             shift = ring.Zero();
                             if ( !b.equ(0) || !c.equ(0) )
                             {
-                                if ( b.lt(0) ) shift = b.mul(b).add(c).rad(2);
+                                if ( b.lt(0) ) shift = b.mul(b).add(c).rad(2).neg();
                                 else shift = b.mul(b).add(c).rad(2);
                                 shift = c.div(b.add(shift));
                             }
@@ -14820,7 +14818,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._svd = [Matrix(ring, s), U, V];
             }
         }
-        return wantu && wantv ? self._svd.slice() : (wantu ? [self._svd[0], self._svd[1]] : (wantv ? [self._svd[0], self._svd[2]] : self._svd[0]));
+        return self._svd.slice();
     }
     ,lu: function( ) {
         var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
