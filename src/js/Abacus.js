@@ -7085,6 +7085,7 @@ Rational = Abacus.Rational = Class(Numeric, {
     ,_str: null
     ,_strp: null
     ,_tex: null
+    ,_cfr: null
     ,_dec: null
     ,_int: null
     ,_rem: null
@@ -7107,6 +7108,7 @@ Rational = Abacus.Rational = Class(Numeric, {
         self._str = null;
         self._strp = null;
         self._tex = null;
+        self._cfr = null;
         self._dec = null;
         self._int = null;
         self._rem = null;
@@ -7363,8 +7365,76 @@ Rational = Abacus.Rational = Class(Numeric, {
             self._rem = Rational(Arithmetic.mod(self.num, self.den), Arithmetic.I, true); // return remainder part
         return true===raw ? self._rem.num : self._rem;
     }
+    ,approximate: function( bound ) {
+        // compute an approximation of given rational with denominator no larger than bound via Farey sequence
+        var self = this, nn = self.num, dd = self.den, a, b, c, d, m1, m2, nm, dm, i, neg, rn = null, rd = null,
+            Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I;
+
+        bound = Arithmetic.num(bound); neg = self.lt(O);
+        nn = Arithmetic.abs(nn); i = Arithmetic.div(nn, dd); nn = Arithmetic.mod(nn, dd);
+        a = O; b = I; c = I; d = I;
+        while ( Arithmetic.lte(b, bound) && Arithmetic.lte(d, bound) )
+        {
+            m1 = Arithmetic.add(a, c); m2 = Arithmetic.add(b, d);
+            nm = Arithmetic.mul(nn, m2); dm = Arithmetic.mul(dd, m1);
+            if ( Arithmetic.equ(nm, dm) )
+            {
+                if ( Arithmetic.lte(m2, bound) )
+                {
+                    rn = m1; rd = m2;
+                    break;
+                }
+                else if ( Arithmetic.gt(d, b) )
+                {
+                    rn = c; rd = d;
+                    break;
+                }
+                else
+                {
+                    rn = a; rd = b;
+                    break;
+                }
+            }
+            else if ( Arithmetic.gt(nm, dm) )
+            {
+                a = m1; b = m2;
+            }
+            else
+            {
+                c = m1; d = m2;
+            }
+        }
+        if ( null==rn || null==rd )
+        {
+            if ( Arithmetic.gt(b, bound) )
+            {
+                rn = c; rd = d;
+            }
+            else
+            {
+                rn = a; rd = b;
+            }
+        }
+        return new Rational(neg ? Arithmetic.neg(Arithmetic.add(rn, Arithmetic.mul(i, rd))) : Arithmetic.add(rn, Arithmetic.mul(i, rd)), rd);
+    }
     ,tuple: function( ) {
         return [this.num, this.den];
+    }
+    ,toContFrac: function( ) {
+        // compute continued fraction representation of rational r
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, n, d, n0, d0, i, cfr;
+        if ( null == self._cfr )
+        {
+            n = self.num; d = self.den; cfr = [];
+            while( !Arithmetic.equ(O, d) )
+            {
+                i = Arithmetic.div(n, d); cfr.push(i);
+                n0 = n; d0 = d;
+                n = d0; d = Arithmetic.sub(n0, Arithmetic.mul(i, d0));
+            }
+            self._cfr = cfr;
+        }
+        return self._cfr.slice();
     }
     ,toDec: function( precision ) {
         var self = this, dec, point, repeating, ndigits, digit, d, i, i0, carry;
@@ -14419,7 +14489,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             m = self.nr, n = self.nc, a, nu, ni, s, U, V, e, work, si, i,
             nct, nrt, mrc, k, j, t, p, pp, iter, eps, kase, alpha, ks,
             f, cs, sn, scale, sp, spm1, epm1, sk, ek, b, c, shift, g, MIN_VAL,
-            evd, wantu = true, wantv = true;
+            evd, wantu = true, wantv = true, Epsilon, Limit;
 
         // only for real numeric fields (ie Rationals)
         if ( ring.isSymbolic() || !ring.isReal() ) return null;
@@ -14429,12 +14499,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
             // svd from evd of A.T*A or A*A.T
             if ( !ring.isField() )
             {
-                self._svd = Matrix(ring.fieldOfFractions(), self).svd(true, true);
+                self._svd = Matrix(ring.fieldOfFractions(), self).svd();
             }
             else if ( m > n )
             {
                 // get svd of transpose and transpose
-                s = self.t().svd(true, true);
+                s = self.t().svd();
                 self._svd = [s[0], s[2].t(), s[1].t()];
             }
             else
@@ -14468,17 +14538,20 @@ Matrix = Abacus.Matrix = Class(INumber, {
         {
             if ( !ring.isField() )
             {
-                self._svd = Matrix(ring.fieldOfFractions(), self).svd(true, true);
+                self._svd = Matrix(ring.fieldOfFractions(), self).svd();
             }
             else if ( m < n )
             {
                 // get svd of transpose and transpose
-                s = self.t().svd(true, true);
+                s = self.t().svd();
                 self._svd = [s[0], s[2].t(), s[1].t()];
             }
             else
             {
                 // this version of svd adapted from javascript version at https://github.com/mljs/matrix
+                Epsilon = Rational.Epsilon();
+                Limit = Epsilon.inv().integer();
+
                 a = self.clone(true);
                 nu = stdMath.min(m, n);
                 ni = stdMath.min(m + 1, n);
@@ -14613,8 +14686,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
 
                 pp = p - 1;
                 iter = 0;
-                eps = Rational.Epsilon();//ring.cast(Number.EPSILON.toString());
-                MIN_VAL = Rational.Epsilon();//ring.cast(Number.MIN_VALUE.toString());
+                eps = Epsilon;//ring.cast(Number.EPSILON.toString());
+                MIN_VAL = Epsilon;//ring.cast(Number.MIN_VALUE.toString());
                 while( p>0 )
                 {
                     for(k=p-2; k>=-1; k--)

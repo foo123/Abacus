@@ -282,6 +282,31 @@ echo(String(o=Abacus.Rational.fromString("-1.75").round()));
 
 echo('---');
 
+// Continued Fractions
+echo('Continued Fractions');
+
+echo('Abacus.Rational.fromString("3.14").toContFrac()');
+echo(Abacus.Rational.fromString("3.14").toContFrac());
+
+echo('Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()');
+echo(Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac());
+
+echo('---');
+
+// Approximations
+echo('Approximations');
+
+echo('Abacus.Rational.fromString("3.14").approximate(100).toString()');
+echo(Abacus.Rational.fromString("3.14").approximate(100).toString());
+
+echo('Abacus.Rational.fromString("3.1415926535897932384626433").approximate(100).toString()');
+echo(Abacus.Rational.fromString("3.1415926535897932384626433").approximate(100).toString());
+
+echo('Abacus.Rational.fromString("3.1415926535897932384626433").approximate(200).toString()');
+echo(Abacus.Rational.fromString("3.1415926535897932384626433").approximate(200).toString());
+
+echo('---');
+
 // (X)GCD, LCM of rational
 echo('(X)GCD, LCM of Rationals');
 echo('Abacus.Rational.xgcd(Abacus.Rational.One(), Abacus.Rational(3))');

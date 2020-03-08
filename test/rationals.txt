@@ -10,17 +10,17 @@ o.toDec()
 
 o=Abacus.Rational.rnd01()
 o.toString()
-31/64
+125/512
 o.toDec()
-0.484375
+0.244140625
 
 o=Abacus.Rational.rnd("0.5","1")
 o.toString()
-635/1024
+983/1024
 o.toDec()
-0.6201171875
+0.9599609375
 o.rad(2).toString()
-31751/40320
+1889447/1928448
 
 Abacus.Rational(1).rad(2)
 1
@@ -190,6 +190,68 @@ o=Abacus.Rational.fromString("1.75").round()
 2
 o=Abacus.Rational.fromString("-1.75").round()
 -2
+---
+Continued Fractions
+Abacus.Rational.fromString("3.14").toContFrac()
+[ Integer { value: 3n },
+  Integer { value: 7n },
+  Integer { value: 7n } ]
+Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()
+[ Integer { value: 3n },
+  Integer { value: 7n },
+  Integer { value: 15n },
+  Integer { value: 1n },
+  Integer { value: 292n },
+  Integer { value: 1n },
+  Integer { value: 1n },
+  Integer { value: 1n },
+  Integer { value: 2n },
+  Integer { value: 1n },
+  Integer { value: 3n },
+  Integer { value: 1n },
+  Integer { value: 14n },
+  Integer { value: 2n },
+  Integer { value: 1n },
+  Integer { value: 1n },
+  Integer { value: 2n },
+  Integer { value: 2n },
+  Integer { value: 2n },
+  Integer { value: 2n },
+  Integer { value: 1n },
+  Integer { value: 84n },
+  Integer { value: 2n },
+  Integer { value: 2n },
+  Integer { value: 1n },
+  Integer { value: 4n },
+  Integer { value: 2n },
+  Integer { value: 2n },
+  Integer { value: 6n },
+  Integer { value: 1n },
+  Integer { value: 1n },
+  Integer { value: 3n },
+  Integer { value: 24n },
+  Integer { value: 2n },
+  Integer { value: 1n },
+  Integer { value: 14n },
+  Integer { value: 1n },
+  Integer { value: 8n },
+  Integer { value: 6n },
+  Integer { value: 1n },
+  Integer { value: 1n },
+  Integer { value: 23n },
+  Integer { value: 1n },
+  Integer { value: 2n },
+  Integer { value: 4n },
+  Integer { value: 1n },
+  Integer { value: 37n } ]
+---
+Approximations
+Abacus.Rational.fromString("3.14").approximate(100).toString()
+157/50
+Abacus.Rational.fromString("3.1415926535897932384626433").approximate(100).toString()
+22/7
+Abacus.Rational.fromString("3.1415926535897932384626433").approximate(200).toString()
+355/113
 ---
 (X)GCD, LCM of Rationals
 Abacus.Rational.xgcd(Abacus.Rational.One(), Abacus.Rational(3))
