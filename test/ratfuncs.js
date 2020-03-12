@@ -10,7 +10,7 @@ function check_radical( p, k )
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
 }
 
-var o, pring = Abacus.Ring.C("x", "y"), ring = pring.fieldOfFractions();
+var o, pring = Abacus.Ring.C("x", "y"), ring = pring.associatedField();
 
 echo('Abacus.RationalFuncs (VERSION = '+Abacus.VERSION+')');
 echo('---');

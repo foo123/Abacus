@@ -54,7 +54,7 @@ x^2*y^2+x^2*y+x*y*z+x*y+x+y*z+2
 ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2")
 (2+2*i)*x^2*y^2+(4+2*i)*x^2*y+6*x*y*z+4*x*y+2*x+(2+4*i)*y*z+2
 
-ring = Abacus.Ring.C("x","y").fieldOfFractions()
+ring = Abacus.Ring.C("x","y").associatedField()
 ----
 ring.fromString("(1+xy)/(x-y)")
 (x*y+1)/(x-y)

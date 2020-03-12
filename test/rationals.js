@@ -291,6 +291,12 @@ echo(Abacus.Rational.fromString("3.14").toContFrac());
 echo('Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()');
 echo(Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac());
 
+echo('Abacus.Rational.fromContFrac(Abacus.Rational.fromString("3.14").toContFrac()).toDec()==="3.14"');
+echo(Abacus.Rational.fromContFrac(Abacus.Rational.fromString("3.14").toContFrac()).toDec()==="3.14");
+
+echo('Abacus.Rational.fromContFrac(Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()).toDec()==="3.1415926535897932384626433"');
+echo(Abacus.Rational.fromContFrac(Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()).toDec()==="3.1415926535897932384626433");
+
 echo('---');
 
 // Approximations

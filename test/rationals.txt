@@ -10,17 +10,17 @@ o.toDec()
 
 o=Abacus.Rational.rnd01()
 o.toString()
-125/512
+213/2048
 o.toDec()
-0.244140625
+0.10400390625
 
 o=Abacus.Rational.rnd("0.5","1")
 o.toString()
-983/1024
+7/8
 o.toDec()
-0.9599609375
+0.875
 o.rad(2).toString()
-1889447/1928448
+403201/431040
 
 Abacus.Rational(1).rad(2)
 1
@@ -244,6 +244,10 @@ Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()
   Integer { value: 4n },
   Integer { value: 1n },
   Integer { value: 37n } ]
+Abacus.Rational.fromContFrac(Abacus.Rational.fromString("3.14").toContFrac()).toDec()==="3.14"
+true
+Abacus.Rational.fromContFrac(Abacus.Rational.fromString("3.1415926535897932384626433").toContFrac()).toDec()==="3.1415926535897932384626433"
+true
 ---
 Approximations
 Abacus.Rational.fromString("3.14").approximate(100).toString()

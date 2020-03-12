@@ -66,7 +66,7 @@ echo('ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2")');
 echo(ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2").toString());
 echo();
 
-pring = Abacus.Ring.C("x", "y"); ring = pring.fieldOfFractions();
+pring = Abacus.Ring.C("x", "y"); ring = pring.associatedField();
 echo('ring = Abacus.Ring.'+ring.toString());
 echo('----');
 echo('ring.fromString("(1+xy)/(x-y)")');
