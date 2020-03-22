@@ -104,6 +104,7 @@ echo(m.t().mul(Abacus.Matrix(ring, [[1, -17], [0, 13], [0, 0]])).toString());
 o.dispose();
 echo('---');
 
+/*
 Abacus.Rational.Epsilon(1e-2); // decrease irrational precision
 echo('o=Abacus.Matrix.I(ring, 3)');
 o=Abacus.Matrix.I(ring, 3);
@@ -173,6 +174,7 @@ echo("V:");
 echo(m[2].toString());
 echo('---');
 Abacus.Rational.Epsilon(true); // reset irrational precision to default
+*/
 
 echo('o=Abacus.Matrix(ring, [91, 21])');
 o=Abacus.Matrix(ring, [91, 21]);

@@ -8480,6 +8480,21 @@ SymbolTerm = Class(Symbolic, {
     ,c: function( ) {
         return Complex.One();
     }
+    ,isConst: function( ) {
+        return false;
+    }
+    ,isReal: function( ) {
+        return true;
+    }
+    ,isImag: function( ) {
+        return false;
+    }
+    ,real: function( ) {
+        return this;
+    }
+    ,imag: function( ) {
+        return Expr();
+    }
 
     ,equ: function( a ) {
         var self = this;
@@ -8493,6 +8508,9 @@ SymbolTerm = Class(Symbolic, {
     }
     ,neg: function( ) {
         return MulTerm(this, -1);
+    }
+    ,inv: function( ) {
+        return RationalExpr(1, this);
     }
     ,add: function( a ) {
         return Expr([this, a]);
@@ -8510,7 +8528,9 @@ SymbolTerm = Class(Symbolic, {
             return a.mul(self);
         return self;
     }
-    ,div: NotImplemented
+    ,div: function( a ) {
+        return RationalExpr(this, a);
+    }
     ,pow: function( k ) {
         return PowTerm(this, k);
     }
@@ -8609,6 +8629,26 @@ PowTerm = Class(Symbolic, {
     ,c: function( ) {
         return Complex.One();
     }
+    ,isConst: function( ) {
+        var self = this;
+        return self.base.isConst() && self.exp.isConst();
+    }
+    ,isReal: function( ) {
+        var self = this;
+        return self.base.isReal() && self.exp.isReal();
+    }
+    ,isImag: function( ) {
+        var self = this;
+        return self.base.isImag() && self.exp.isReal();
+    }
+    ,real: function( ) {
+        var self = this;
+        return PowTerm(self.base.real(), self.exp.real());
+    }
+    ,imag: function( ) {
+        var self = this;
+        return PowTerm(self.base.imag(), self.exp.imag());
+    }
 
     ,equ: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -8677,7 +8717,7 @@ PowTerm = Class(Symbolic, {
     }
     ,neg: function( ) {
         var self = this;
-        return is_instance(self.base, SymbolTerm) ? self : PowTerm(self.base.neg(), self.exp);
+        return MulTerm(self, -1);
     }
     ,conj: function( ) {
         var self = this;
@@ -8690,7 +8730,7 @@ PowTerm = Class(Symbolic, {
 
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( is_instance(a, [Numeric, SymbolTerm, PowTerm]) || Arithmetic.isNumber(a) )
+        if ( is_instance(a, [Numeric, SymbolTerm, PowTerm, MulTerm]) || Arithmetic.isNumber(a) )
             return Expr([self, a]);
         else if ( is_instance(a, INumber) )
             return a.add(self);
@@ -8700,8 +8740,8 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return Expr([self, Arithmetic.isNumber(a) ? Arithmetic.neg(a) : a.neg()]);
-        else if ( is_instance(a, [SymbolTerm, PowTerm]) )
-            return Expr([self, MulTerm(a).neg()]);
+        else if ( is_instance(a, [SymbolTerm, PowTerm, MulTerm]) )
+            return Expr([self, a.neg()]);
         else if ( is_instance(a, INumber) )
             return a.neg().add(self);
         return self;
@@ -8804,7 +8844,7 @@ MulTerm = Class(Symbolic, {
             self.factors = Obj(); self.factors['1'] = f;
             if ( !self.factors['1'].equ(Arithmetic.O) ) MulTerm.Merge(s, self);
         }
-        else if ( is_instance(s, Numeric) )
+        else if ( is_instance(s, Numeric)/* || Arithmetic.isNumber(s)*/ )
         {
             self.symbol = '1';
             self.symbolTex = '1';
@@ -8815,7 +8855,7 @@ MulTerm = Class(Symbolic, {
             c = Complex.cast(null == c ? Arithmetic.I : c); // default
             self.factors = Obj(); self.factors['1'] = c;
             if ( !self.factors['1'].equ(Arithmetic.O) ) MulTerm.Merge(s, self);
-            MulTerm.SymbolTerm(self);
+            MulTerm.Symbol(self);
         }
         else if ( is_array(s) )
         {
@@ -8826,20 +8866,20 @@ MulTerm = Class(Symbolic, {
                 for(i=0,l=s.length; i<l; i++)
                     MulTerm.Merge(s[i], self);
             }
-            MulTerm.SymbolTerm(self);
+            MulTerm.Symbol(self);
         }
         else if ( is_obj(s) )
         {
             c = Complex.cast(null == c ? Arithmetic.I : c); // default
             self.factors = Obj(); self.factors['1'] = c;
             if ( !self.factors['1'].equ(Arithmetic.O) ) MulTerm.Merge(s, self);
-            MulTerm.SymbolTerm(self);
+            MulTerm.Symbol(self);
         }
         else
         {
             self.factors = Obj();
             self.factors['1'] = Complex.cast(null == c ? Arithmetic.I : c); // default;
-            MulTerm.SymbolTerm(self);
+            MulTerm.Symbol(self);
         }
     }
 
@@ -8907,7 +8947,7 @@ MulTerm = Class(Symbolic, {
             }
             return T;
         }
-        ,SymbolTerm: function( T ) {
+        ,Symbol: function( T ) {
             var Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, S;
             T._symb = null;
             S = T.symbols().reduce(function(s, f){
@@ -8950,6 +8990,42 @@ MulTerm = Class(Symbolic, {
     }
     ,c: function( ) {
         return this.factors['1'];
+    }
+    ,isConst: function( ) {
+        var self = this;
+        return '1'===self.symbol;
+    }
+    ,isReal: function( ) {
+        var self = this, factors = self.factors, f;
+        for(f in factors)
+        {
+            if ( !HAS.call(factors, f) ) continue;
+            if ( !factors[f].isReal() ) return false;
+        }
+        return true;
+    }
+    ,isImag: function( ) {
+        var self = this, factors = self.factors, f;
+        for(f in factors)
+        {
+            if ( !HAS.call(factors, f) ) continue;
+            if ( !factors[f].isImag() ) return false;
+        }
+        return true;
+    }
+    ,real: function( ) {
+        var self = this;
+        return MulTerm(self.symbols().reduce(function(factors, symbol){
+            if ( '1' !== symbol ) factors[symbol] = self.factors[symbol].real();
+            return factors;
+        }, {}), self.factors['1'].real());
+    }
+    ,imag: function( ) {
+        var self = this;
+        return MulTerm(self.symbols().reduce(function(factors, symbol){
+            if ( '1' !== symbol ) factors[symbol] = self.factors[symbol].imag();
+            return factors;
+        }, {}), self.factors['1'].imag());
     }
     ,equ: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
@@ -9108,7 +9184,7 @@ MulTerm = Class(Symbolic, {
                 MulTerm.Merge(self.factors, T);
                 MulTerm.Merge(a.factors, T);
             }
-            MulTerm.SymbolTerm(T);
+            MulTerm.Symbol(T);
             return T;
         }
         else if ( is_instance(a, [PowTerm, SymbolTerm]) )
@@ -9123,7 +9199,7 @@ MulTerm = Class(Symbolic, {
                 else T.factors[s] = T.factors[s].mul(a);
                 if ( T.factors[s].exp.equ(Arithmetic.O) ) delete T.factors[s];
             }
-            MulTerm.SymbolTerm(T);
+            MulTerm.Symbol(T);
             return T;
         }
         else if ( is_instance(a, [Expr, RationalExpr]) )
@@ -9150,7 +9226,7 @@ MulTerm = Class(Symbolic, {
                 MulTerm.Merge(self.factors, T);
                 MulTerm.Merge(a.factors, T, -1);
             }
-            MulTerm.SymbolTerm(T);
+            MulTerm.Symbol(T);
             return T;
         }
         else if ( is_instance(a, [PowTerm, SymbolTerm]) )
@@ -9165,7 +9241,7 @@ MulTerm = Class(Symbolic, {
                 else T.factors[s] = T.factors[s].div(a);
                 if ( T.factors[s].exp.equ(Arithmetic.O) ) delete T.factors[s];
             }
-            MulTerm.SymbolTerm(T);
+            MulTerm.Symbol(T);
             return T;
         }
         else if ( is_instance(a, [Expr, RationalExpr]) )
@@ -9359,6 +9435,8 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
             }
             return new Expr(terms);
         }
+
+        ,cast: null // added below
     }
 
     ,terms: null
@@ -9399,6 +9477,36 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,c: function( ) {
         return this.terms['1'].c();
+    }
+    ,isConst: function( ) {
+        var self = this;
+        return 1===self.symbols().length;
+    }
+    ,isReal: function( ) {
+        var self = this, terms = self.terms, t;
+        for(t in terms)
+        {
+            if ( !HAS.call(terms, t) ) continue;
+            if ( !terms[t].isReal() ) return false;
+        }
+        return true;
+    }
+    ,isImag: function( ) {
+        var self = this, terms = self.terms, t;
+        for(t in terms)
+        {
+            if ( !HAS.call(terms, t) ) continue;
+            if ( !terms[t].isImag() ) return false;
+        }
+        return true;
+    }
+    ,real: function( ) {
+        var self = this;
+        return Expr(self.args().map(function(t){return t.real();}));
+    }
+    ,imag: function( ) {
+        var self = this;
+        return Expr(self.args().map(function(t){return t.imag();}));
     }
     ,equ: function ( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, l, keys;
@@ -9516,7 +9624,9 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         var self = this;
         return Expr(self.args().map(function(t){return t.conj();}));
     }
-    ,inv: NotImplemented
+    ,inv: function( ) {
+        return RationalExpr(1, this);
+    }
 
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -9582,7 +9692,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return x.inv().mul(self);
         }
-        return self;
+        return RationalExpr(self, x);
     }
     ,mod: NotImplemented
     ,divmod: NotImplemented
@@ -9665,6 +9775,9 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         return self._tex;
     }
 });
+Expr.cast = typecast([Expr], function(a){
+    return is_string(a) ? Expr.fromString(a) : new Expr(a);
+});
 
 // Abacus.Rationalexpr, represents a rational function/fraction of expressions
 RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
@@ -9677,6 +9790,11 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
         {
             den = num.den;
             num = num.num;
+        }
+        else if ( is_instance(num, RationalFunc) )
+        {
+            den = num.den.toExpr();
+            num = num.num.toExpr();
         }
         if ( null == num ) num = Expr();
         else if ( !is_instance(num, Expr) ) num = Expr(num);
@@ -9803,6 +9921,8 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
             if ( '-' === sign ) num = num.neg();
             return new RationalExpr(num, den);
         }
+
+        ,cast: null // added below
     }
 
     ,num: null
@@ -9821,6 +9941,26 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,c: function( ) {
         var self = this;
         return self.num.c().div(self.den.c());
+    }
+    ,isConst: function( ) {
+        var self = this;
+        return self.num.isConst() && self.den.isConst();
+    }
+    ,isReal: function( ) {
+        var self = this;
+        return (self.num.isReal() && self.den.isReal()) || (self.num.isImag() && self.den.isImag());
+    }
+    ,isImag: function( ) {
+        var self = this;
+        return (self.num.isReal() && self.den.isImag()) || (self.num.isImag() && self.den.isReal());
+    }
+    ,real: function( ) {
+        var self = this;
+        return RationalExpr(self.num.real(), self.den.real());
+    }
+    ,imag: function( ) {
+        var self = this;
+        return RationalExpr(self.num.imag(), self.den.imag());
     }
     ,neg: function( ) {
         var self = this;
@@ -9980,6 +10120,9 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
         return self._tex;
     }
 });
+RationalExpr.cast = typecast([RationalExpr], function(a){
+    return is_string(a) ? RationalExpr.fromString(a) : new RationalExpr(a);
+});
 
 // Represents a (univariate) polynomial term with coefficient and exponent in Polynomial non-zero sparse representation
 UniPolyTerm = Class({
@@ -9989,7 +10132,7 @@ UniPolyTerm = Class({
 
         if ( is_instance(c, UniPolyTerm) ){ring = ring || c.ring; e = c.e; c = c.c;}
         self.ring = is_instance(ring, Ring) ? ring : Ring.Q();
-        self.c = is_instance(c, RationalFunc) ? c : self.ring.cast(c||0);
+        self.c = is_instance(c, [RationalFunc, RationalExpr]) ? c : self.ring.cast(c||0);
         self.e = +(e||0);
     }
 
@@ -10007,10 +10150,10 @@ UniPolyTerm = Class({
             return UniPolyTerm.cmp(t2, t1);
         }
         ,gcd: function( t1, t2, full ) {
-            return UniPolyTerm(true===full ? (!(is_instance(t1.c, RationalFunc) || is_instance(t2.c, RationalFunc)) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), stdMath.min(t1.e, t2.e));
+            return UniPolyTerm(true===full ? (!(is_instance(t1.c, [RationalFunc, RationalExpr]) || is_instance(t2.c, [RationalFunc, RationalExpr])) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), stdMath.min(t1.e, t2.e));
         }
         ,lcm: function( t1, t2, full ) {
-            return UniPolyTerm(true===full ? (!(is_instance(t1.c, RationalFunc) || is_instance(t2.c, RationalFunc)) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), stdMath.max(t1.e, t2.e));
+            return UniPolyTerm(true===full ? (!(is_instance(t1.c, [RationalFunc, RationalExpr]) || is_instance(t2.c, [RationalFunc, RationalExpr])) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), stdMath.max(t1.e, t2.e));
         }
     }
 
@@ -10076,19 +10219,19 @@ UniPolyTerm = Class({
         {
             term = 0 < e ? (symbol + (1<e ? '^'+String(e) : '')) : '';
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('('+c.toDec(precision)+')') : (!c.isReal() ? ('('+c.toDec(precision)+')') : c.toDec(precision))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '('+c.toDec(precision)+')' : c.toDec(precision));
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [RationalFunc, RationalExpr]) && !c.isConst(true) ? ('('+c.toDec(precision)+')') : (!c.isReal() ? ('('+c.toDec(precision)+')') : c.toDec(precision))))) + term) : (is_instance(c, [RationalFunc, RationalExpr]) && !c.isConst(true) ? '('+c.toDec(precision)+')' : c.toDec(precision));
         }
         else if ( true===asTex )
         {
             term = 0 < e ? (to_tex(symbol) + (1<e ? '^{'+Tex(e)+'}' : '')) : '';
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '('+c.toTex()+')' : c.toTex());
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [RationalFunc, RationalExpr]) && !c.isConst(true) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : (is_instance(c, [RationalFunc, RationalExpr]) && !c.isConst(true) ? '('+c.toTex()+')' : c.toTex());
         }
         else
         {
             term = 0 < e ? (symbol + (1<e ? '^'+String(e) : '')) : '';
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I)) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '('+c.toString()+')' : c.toString());
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [RationalFunc, RationalExpr]) && (!c.isConst(true) || !c.den.equ(Arithmetic.I)) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : (is_instance(c, [RationalFunc, RationalExpr]) && !c.isConst(true) ? '('+c.toString()+')' : c.toString());
         }
         return term;
     }
@@ -11393,7 +11536,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && ((is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
+                out += (prev && ((is_instance(ti.c, [RationalFunc, RationalExpr]) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
                 prev = true;
             }
             self._str = out.length ? out : '0';
@@ -11408,7 +11551,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && ((is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
+                out += (prev && ((is_instance(ti.c, [RationalFunc, RationalExpr]) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
                 prev = true;
             }
             self._tex = out.length ? out : '0';
@@ -11421,7 +11564,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         for(i=0,l=t.length; i<l; i++)
         {
             ti = t[i];
-            out += (prev && ((is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
+            out += (prev && ((is_instance(ti.c, [RationalFunc, RationalExpr]) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
             prev = true;
         }
         if ( !out.length )
@@ -11473,7 +11616,7 @@ MultiPolyTerm = Class({
         {
                 c = MultiPolynomial(c, c.symbol, self.ring);
         }
-        self.c = is_instance(c, [MultiPolynomial, RationalFunc]) ? c : self.ring.cast(c||0);
+        self.c = is_instance(c, [MultiPolynomial, RationalFunc, RationalExpr]) ? c : self.ring.cast(c||0);
         self.e = is_array(e) ? e : [+(e||0)];
     }
 
@@ -11505,12 +11648,12 @@ MultiPolyTerm = Class({
             return MultiPolyTerm.cmp(t2, t1);
         }
         ,gcd: function( t1, t2, full ) {
-            return MultiPolyTerm(true===full ? (!(is_instance(t1.c, [MultiPolynomial, RationalFunc]) || is_instance(t2.c, [MultiPolynomial, RationalFunc])) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), array(stdMath.max(t1.e.length, t2.e.length), function(i){
+            return MultiPolyTerm(true===full ? (!(is_instance(t1.c, [MultiPolynomial, RationalFunc, RationalExpr]) || is_instance(t2.c, [MultiPolynomial, RationalFunc, RationalExpr])) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), array(stdMath.max(t1.e.length, t2.e.length), function(i){
                 return i<t1.e.length && i<t2.e.length ? stdMath.min(t1.e[i], t2.e[i]) : 0;
             }));
         }
         ,lcm: function( t1, t2, full ) {
-            return MultiPolyTerm(true===full ? (!(is_instance(t1.c, [MultiPolynomial, RationalFunc]) || is_instance(t2.c, [MultiPolynomial, RationalFunc])) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), array(stdMath.max(t1.e.length, t2.e.length), function(i){
+            return MultiPolyTerm(true===full ? (!(is_instance(t1.c, [MultiPolynomial, RationalFunc, RationalExpr]) || is_instance(t2.c, [MultiPolynomial, RationalFunc, RationalExpr])) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), array(stdMath.max(t1.e.length, t2.e.length), function(i){
                 return i<t1.e.length && i<t2.e.length ? stdMath.max(t1.e[i], t2.e[i]) : (i<t1.e.length ? t1.e[i] : t2.e[i]);
             }));
         }
@@ -11600,7 +11743,7 @@ MultiPolyTerm = Class({
                 return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1<e[i] ? '^'+String(e[i]) : '')) : monom;
             }, '');
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('('+c.toDec(precision)+')') : (!c.isReal() ? ('('+c.toDec(precision)+')') : c.toDec(precision))))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '('+c.toDec(precision)+')' : c.toDec(precision));
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc, RationalExpr]) && !c.isConst(true) ? ('('+c.toDec(precision)+')') : (!c.isReal() ? ('('+c.toDec(precision)+')') : c.toDec(precision))))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc, RationalExpr]) && !c.isConst(true) ? '('+c.toDec(precision)+')' : c.toDec(precision));
         }
         else if ( true===asTex )
         {
@@ -11608,7 +11751,7 @@ MultiPolyTerm = Class({
                 return 0 < e[i] ? (monom + to_tex(sym) + (1<e[i] ? '^{'+Tex(e[i])+'}' : '')) : monom;
             }, '');
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '('+c.toTex()+')' : c.toTex());
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc, RationalExpr]) && !c.isConst(true) ? ('('+c.toTex()+')') : (!c.isReal() ? ('('+c.toTex()+')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc, RationalExpr]) && !c.isConst(true) ? '('+c.toTex()+')' : c.toTex());
         }
         else
         {
@@ -11616,7 +11759,7 @@ MultiPolyTerm = Class({
                 return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1<e[i] ? '^'+String(e[i]) : '')) : monom;
             }, '');
             if ( true===monomialOnly ) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? '('+c.toString()+')' : c.toString());
+            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, [RationalFunc, RationalExpr]) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? ('('+c.toString()+')*') : (!c.isReal() ? ('('+c.toString()+')*') : (c.toString(true)+'*'))))) + term) : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, [RationalFunc, RationalExpr]) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? '('+c.toString()+')' : c.toString());
         }
         return term;
     }
@@ -12936,7 +13079,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
+                out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, [RationalFunc, RationalExpr]) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x);
                 prev = true;
             }
             self._str = out.length ? out : '0';
@@ -12951,7 +13094,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             for(i=0,l=t.length; i<l; i++)
             {
                 ti = t[i];
-                out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
+                out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, [RationalFunc, RationalExpr]) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, true);
                 prev = true;
             }
             self._tex = out.length ? out : '0';
@@ -12964,7 +13107,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         for(i=0,l=t.length; i<l; i++)
         {
             ti = t[i];
-            out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
+            out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, [RationalFunc, RationalExpr]) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
             prev = true;
         }
         if ( !out.length )
@@ -13569,6 +13712,7 @@ Ring = Abacus.Ring = Class({
         }
         if ( !is_class(NumberClass, [Numeric, Expr, RationalExpr]) ) NumberClass = Complex;
         self.NumberClass = NumberClass;
+        if ( is_class(self.NumberClass, [Expr, RationalExpr]) ) PolynomialSymbol = null;
 
         if ( is_array(PolynomialSymbol) && PolynomialSymbol.length )
         {
@@ -13717,7 +13861,7 @@ Ring = Abacus.Ring = Class({
 
     ,cast: function( a ) {
         var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.cast(a, self.PolynomialSymbol, self.CoefficientRing) : (self.Modulo ? self.NumberClass.cast(a, self.Modulo) : (is_class(self.NumberClass, [Expr, RationalExpr]) ? new self.NumberClass(a) : self.NumberClass.cast(a)));
+        return self.PolynomialClass ? self.PolynomialClass.cast(a, self.PolynomialSymbol, self.CoefficientRing) : (self.Modulo ? self.NumberClass.cast(a, self.Modulo) : self.NumberClass.cast(a));
     }
     ,create: function( /*args*/ ) {
         var self = this, args = arguments;
@@ -14469,6 +14613,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,charpoly: function( x ) {
         // https://en.wikipedia.org/wiki/Characteristic_polynomial
         // https://en.wikipedia.org/wiki/Faddeev%E2%80%93LeVerrier_algorithm
+        // https://en.wikipedia.org/wiki/Samuelson%E2%80%93Berkowitz_algorithm
         var A = this, rows = A.nr, columns = A.nc, ring, k, n, M, coeff;
         if ( rows !== columns ) return null; // only for square matrices
         if ( null == A._p )
@@ -14830,6 +14975,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         // https://en.wikipedia.org/wiki/Diagonalizable_matrix
         // https://en.wikipedia.org/wiki/Power_iteration
         var self = this, ring = self.ring, m = self.nr, n = self.nc, epsilon, matrixFor1D, e, u, i, j, es, us;
+        return null;
 
         if ( ring.isSymbolic() || (m !== n) || !self.h().equ(self) ) return null; // only for square symmetric/hermitian diagonalisable numeric matrices
 
@@ -14911,6 +15057,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             f, cs, sn, scale, sp, spm1, epm1, sk, ek, b, c, shift, g, MIN_VAL,
             evd, wantu = true, wantv = true, Epsilon, Limit;
 
+        return null;
         // only for real numeric fields (ie Rationals)
         if ( ring.isSymbolic() || !ring.isReal() ) return null;
 
@@ -15577,6 +15724,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         var self = this, ring = self.ring, ref;
         // determinant
         // https://en.wikipedia.org/wiki/Determinant
+        // https://en.wikipedia.org/wiki/Bareiss_algorithm
         if ( null == self._det )
         {
             if ( self.nr !== self.nc )

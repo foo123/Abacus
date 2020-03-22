@@ -65,7 +65,7 @@ o.rewind(-1)
 [ 0, 1, 4, 5, 2, 3 ]
 [ 0, 3, 4, 5, 1, 2 ]
 o.random()
-[ 0, 1, 4, 5, 2, 3 ]
+[ 2, 3, 5, 4, 0, 1 ]
 o.dispose()
 
 o = Abacus.Tensor(7,{type:"partial",data:["{0..4}","[0]+1","[1]+1","[3]-1","[4]-1"],ordering:"<>",position:[0,1,2,4,5]}).completeWith(Abacus.Permutation(7-5))
@@ -96,7 +96,7 @@ o.rewind(-1)
 [ 0, 1, 2, 6, 5, 4, 3 ]
 [ 0, 1, 2, 5, 4, 3, 6 ]
 o.random()
-[ 4, 5, 6, 2, 1, 0, 3 ]
+[ 4, 5, 6, 3, 2, 1, 0 ]
 o.dispose()
 Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]"},ordering:"<>"}).completeWith(Abacus.Permutation(6-3))
 o.total()
@@ -129,7 +129,7 @@ o.rewind(-1)
 [ 2, 3, 5, 0, 1, 4 ]
 [ 1, 2, 3, 0, 4, 5 ]
 o.random()
-[ 2, 3, 5, 4, 0, 1 ]
+[ 2, 3, 5, 1, 0, 4 ]
 o.dispose()
 Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]",3:"5"},ordering:"<>"}).completeWith(Abacus.Permutation(6-4))
 o.total()

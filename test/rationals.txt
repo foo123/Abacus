@@ -10,17 +10,17 @@ o.toDec()
 
 o=Abacus.Rational.rnd01()
 o.toString()
-213/2048
+9/128
 o.toDec()
-0.10400390625
+0.0703125
 
 o=Abacus.Rational.rnd("0.5","1")
 o.toString()
-7/8
+1323/2048
 o.toDec()
-0.875
+0.64599609375
 o.rad(2).toString()
-403201/431040
+8670507049/10787717120
 
 Abacus.Rational(1).rad(2)
 1
