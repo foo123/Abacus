@@ -134,41 +134,6 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(13,{type:"composition","max=":4})');
-o = Abacus.Partition(13,{type:"composition","max=":4});
-
-echo('o.total()'); 
-echo(o.total());
-
-echo('o.next()'); 
-echo(o.next());
-
-echo('o.hasNext()');
-echo(o.hasNext());
-echo('o.next()');
-echo(o.next());
-
-echo('default order is "lex", lexicographic-order');
-echo('o.rewind()');
-print_all( o.rewind() );
-
-echo('backwards');
-echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
-
-echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
-
-echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
-
-echo('o.random()');
-echo(o.random());
-
-// dispose
-echo('o.dispose()');
-o.dispose();
-
 echo('o = Abacus.Partition(7,{type:"composition","parts=":4})');
 o = Abacus.Partition(7,{type:"composition","parts=":4});
 
@@ -215,6 +180,76 @@ o.dispose();
 
 echo('o = Abacus.Partition(8,{type:"composition","parts=":4})');
 o = Abacus.Partition(8,{type:"composition","parts=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(10,{type:"composition","max=":3,"parts=":4})');
+o = Abacus.Partition(10,{type:"composition","max=":3,"parts=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(20,{type:"composition","max=":5,"parts=":5})');
+o = Abacus.Partition(20,{type:"composition","max=":5,"parts=":5});
 
 echo('o.total()'); 
 echo(o.total());

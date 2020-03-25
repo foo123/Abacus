@@ -37,21 +37,31 @@ print_all( o.rewind(-1), -1 );
 o.dispose();
 
 // Restricted Compositions to fixed Max value M by filtering
-echo('o = Abacus.Partition(6,{type:"composition"}).filterBy(Abacus.Filter.MAX(2))');
-o = Abacus.Partition(6,{type:"composition"}).filterBy(Abacus.Filter.MAX(2));
+echo('o = Abacus.Partition(7,{type:"composition"}).filterBy(Abacus.Filter.MAX(4))');
+o = Abacus.Partition(7,{type:"composition"}).filterBy(Abacus.Filter.MAX(4));
 echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
-echo(Abacus.Partition(6,{type:"composition","max=":2}).total());
+echo(Abacus.Partition(7,{type:"composition","max=":4}).total());
 echo('default order is "lex", lexicographic-order');
 print_all( o );
 o.dispose();
 
 // Restricted Compositions to fixed Max value M by filtering
-echo('o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.MAX(2))');
-o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.MAX(2));
+echo('o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(4))');
+o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(4));
 echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
-echo(Abacus.Partition(10,{type:"composition","max=":2}).total());
+echo(Abacus.Partition(8,{type:"composition","max=":4}).total());
+echo('default order is "lex", lexicographic-order');
+print_all( o );
+o.dispose();
+
+// Restricted Compositions to fixed Max value M by filtering
+echo('o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(3))');
+o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(3));
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo(o.total());
+echo(Abacus.Partition(8,{type:"composition","max=":3}).total());
 echo('default order is "lex", lexicographic-order');
 print_all( o );
 o.dispose();

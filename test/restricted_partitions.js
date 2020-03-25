@@ -166,8 +166,8 @@ echo('o.dispose()');
 o.dispose();
 
 
-echo('o = Abacus.Partition(7,{"parts=":4,output:"conjugate"})');
-o = Abacus.Partition(7,{/*"parts="*/"max=":4,output:"conjugate"});
+echo('o = Abacus.Partition(7,{"parts=":4})');
+o = Abacus.Partition(7,{"parts=":4});
 
 echo('o.total()'); 
 echo(o.total());
@@ -192,8 +192,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(8,{"parts=":4,output:"conjugate"})');
-o = Abacus.Partition(8,{/*"parts="*/"max=":4,output:"conjugate"});
+echo('o = Abacus.Partition(8,{"parts=":4})');
+o = Abacus.Partition(8,{"parts=":4});
 
 echo('o.total()'); 
 echo(o.total());
@@ -218,8 +218,34 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(11,{"parts=":5,output:"conjugate"})');
-o = Abacus.Partition(11,{/*"parts="*/"max=":5,output:"conjugate"});
+echo('o = Abacus.Partition(10,{"parts=":4})');
+o = Abacus.Partition(10,{"parts=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(11,{"parts=":5})');
+o = Abacus.Partition(11,{"parts=":5});
 
 echo('o.total()'); 
 echo(o.total());
@@ -245,8 +271,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(12,{"parts=":4,output:"conjugate"})');
-o = Abacus.Partition(12,{/*"parts="*/"max=":4,output:"conjugate"});
+echo('o = Abacus.Partition(12,{"parts=":4})');
+o = Abacus.Partition(12,{"parts=":4});
 
 echo('o.total()'); 
 echo(o.total());
@@ -271,8 +297,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(20,{"parts=":4,output:"conjugate"})');
-o = Abacus.Partition(20,{/*"parts="*/"max=":4,output:"conjugate"});
+echo('o = Abacus.Partition(20,{"parts=":4,"max=":6})');
+o = Abacus.Partition(20,{"parts=":4,"max=":6});
 
 echo('o.total()'); 
 echo(o.total());
@@ -297,8 +323,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(12,{"parts=":4,"max=":4})');
-o = Abacus.Partition(12,{"parts=":4,"max=":4});
+echo('o = Abacus.Partition(10,{"parts=":4,"max=":3})');
+o = Abacus.Partition(10,{"parts=":4,"max=":3});
 
 echo('o.total()'); 
 echo(o.total());
@@ -317,8 +343,8 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.Partition(20,{"parts=":4,"max=":7})');
-o = Abacus.Partition(20,{"parts=":4,"max=":7});
+echo('o = Abacus.Partition(20,{"parts=":5,"max=":5})');
+o = Abacus.Partition(20,{"parts=":5,"max=":5});
 
 echo('o.total()'); 
 echo(o.total());
