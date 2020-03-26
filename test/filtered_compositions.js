@@ -127,11 +127,11 @@ print_all( o );
 o.dispose();
 
 // Restricted Compositions to fixed K parts and Max value M by filtering
-echo('o = Abacus.Partition(20,{type:"composition"}).filterBy(Abacus.Filter.LEN(4).AND(Abacus.Filter.MAX(5)))');
-o = Abacus.Partition(20,{type:"composition"}).filterBy(Abacus.Filter.LEN(4).AND(Abacus.Filter.MAX(5)));
+echo('o = Abacus.Partition(23,{type:"composition"}).filterBy(Abacus.Filter.LEN(5).AND(Abacus.Filter.MAX(7)))');
+o = Abacus.Partition(23,{type:"composition"}).filterBy(Abacus.Filter.LEN(5).AND(Abacus.Filter.MAX(7)));
 echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
 echo(o.total());
-echo(Abacus.Partition(20,{type:"composition","max=":5,"parts=":4}).total());
+echo(Abacus.Partition(23,{type:"composition","max=":7,"parts=":5}).total());
 echo('default order is "lex", lexicographic-order');
 print_all( o );
 o.dispose();

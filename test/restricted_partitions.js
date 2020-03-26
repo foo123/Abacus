@@ -359,3 +359,17 @@ print_all( o.rewind(-1), -1 );
 // dispose
 echo('o.dispose()');
 o.dispose();
+
+echo('o = Abacus.Partition(51,{"max=":7,"parts=":8})');
+o = Abacus.Partition(51,{"max=":7,"parts=":8});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
