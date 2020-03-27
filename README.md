@@ -72,6 +72,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `Composition` (`test/compositions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `RestrictedPartition` (`test/restricted_partitions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `RestrictedComposition` (`test/restricted_compositions.js`) **rank/unrank methods missing, partial support for COLEX**
+* `SetPartition` (`test/setpartitions.js`) **rank/unrank methods missing, only LEX/REVLEX order**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
 
@@ -122,10 +123,12 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Permutation Generation Methods, Robert Sedgewick](http://homepage.math.uiowa.edu/~goodman/22m150.dir/2007/Permutation%20Generation%20Methods.pdf)
 * [A Versatile Algorithm to Generate Various Combinatorial Structures, Pramod Ganapathi, Rama B](http://arxiv.org/abs/1009.4214v2)
 * [Generating All and Random Instances of a Combinatorial Object, Ivan Stojmenovic](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.211.6576) including the section on random generation **without large integers** &amp; **with only one `PRNG` call**
+* [Efficient Generation of Set Partitions, Michael Orlov](https://www.informatik.uni-ulm.de/ni/Lehre/WS03/DMM/Software/partitions.pdf)
 * [Algorithms for Unranking Combinations and Other Related Choice Functions, Zbigniew Kokosinski](http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
 * [Analytic Combinatorics, Philippe Flajolet, Robert Sedgewick](http://algo.inria.fr/flajolet/Publications/book.pdf) can also be used to produce combinatorial generation algorithms instead of just generating functions for counting and statistics
 * [Gray Code, wikipedia](https://en.wikipedia.org/wiki/Gray_code)
 * [A Survey of Combinatorial Gray Codes, Carla Savage](http://www4.ncsu.edu/~savage/AVAILABLE_FOR_MAILING/survey.pdf)
+* [A SIMPLE SEQUENCING AND RANKING METHOD THAT WORKS ON ALMOST ALL GRAY CODES, Timothy R. Walsh](http://www.info2.uqam.ca/~walsh_t/papers/sequencing_and_ranking.pdf)
 * [Combinatorial Generation by Fusing Loopless Algorithms, Tadao Takaoka, Stephen Violich](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.490.1604&rep=rep1&type=pdf)
 * [Make good (Pseudo-)Random Number Generators](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)
 * [Handbook of Applied Cryptography, Chapter 4](http://cacr.uwaterloo.ca/hac/)
