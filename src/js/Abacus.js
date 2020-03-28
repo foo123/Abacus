@@ -6182,44 +6182,6 @@ Abacus.Util = {
     ,cycle_detection: floyd_cycle_detection
 };
 
-// combinatorial objects iterator ordering patterns
-// https://oeis.org/wiki/Orderings
-function ORDER( o )
-{
-    if ( !arguments.length || null == o ) return LEX; // default
-    var order = 0;
-    if ( is_string(o) )
-    {
-        o = o.toUpperCase().split(',');
-        for(var i=0,l=o.length; i<l; i++) order |= HAS.call(ORDER,o[i]) ? ORDER[o[i]] : 0;
-        //order = ORDERINGS & order;
-        if ( (0 < order) && !((LEXICAL|RANDOM) & order) ) order |= LEX;
-        if ( 0 >= order ) order = LEX;
-    }
-    else
-    {
-        order = ORDERINGS & o ? (ORDERINGS & o) : LEX;
-    }
-    // only one main ordering
-    if ( (RANDOM & order) && (LEXICAL & order) ) order &= ~LEXICAL;
-    if ( (MINIMAL & order) && ((COLEX|LEX) & order) ) order &= ~(COLEX|LEX);
-    if ( (COLEX & order) && (LEX & order) ) order &= ~LEX;
-    // random has no reverse
-    if ( RANDOM & order ) order &= ~REVERSED;
-    return order;
-}
-ORDER.LEX = ORDER.LEXICOGRAPHIC = LEX;
-ORDER.COLEX = ORDER.COLEXICOGRAPHIC = COLEX;
-ORDER.MINIMAL = ORDER.GRAY = MINIMAL;
-ORDER.RANDOM = RANDOM;
-ORDER.REV = ORDER.ANTI = ORDER.REVERSE = ORDER.REVERSED = REVERSED;
-ORDER.REF = ORDER.REFLECT = ORDER.REFLECTED = REFLECTED;
-ORDER.REVLEX = ORDER.ANTILEX = ORDER.REVERSELEXICOGRAPHIC = ORDER.ANTILEXICOGRAPHIC = LEX | REVERSED;
-ORDER.REFLEX = ORDER.REFLECTEDLEXICOGRAPHIC = LEX | REFLECTED;
-ORDER.REVCOLEX = ORDER.ANTICOLEX = ORDER.REVERSECOLEXICOGRAPHIC = ORDER.ANTICOLEXICOGRAPHIC = COLEX | REVERSED;
-ORDER.REFCOLEX = ORDER.REFLECTEDCOLEXICOGRAPHIC = COLEX | REFLECTED;
-Abacus.ORDER = ORDER;
-
 // Abacus.BitArray, Packed Bit Array Implementation
 Abacus.BitArray = Class({
 
@@ -15901,6 +15863,43 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
 });
 
+// combinatorial objects iterator ordering patterns
+// https://oeis.org/wiki/Orderings
+function ORDER( o )
+{
+    if ( !arguments.length || null == o ) return LEX; // default
+    var order = 0;
+    if ( is_string(o) )
+    {
+        o = o.toUpperCase().split(',');
+        for(var i=0,l=o.length; i<l; i++) order |= HAS.call(ORDER,o[i]) ? ORDER[o[i]] : 0;
+        //order = ORDERINGS & order;
+        if ( (0 < order) && !((LEXICAL|RANDOM) & order) ) order |= LEX;
+        if ( 0 >= order ) order = LEX;
+    }
+    else
+    {
+        order = ORDERINGS & o ? (ORDERINGS & o) : LEX;
+    }
+    // only one main ordering
+    if ( (RANDOM & order) && (LEXICAL & order) ) order &= ~LEXICAL;
+    if ( (MINIMAL & order) && ((COLEX|LEX) & order) ) order &= ~(COLEX|LEX);
+    if ( (COLEX & order) && (LEX & order) ) order &= ~LEX;
+    // random has no reverse
+    if ( RANDOM & order ) order &= ~REVERSED;
+    return order;
+}
+ORDER.LEX = ORDER.LEXICOGRAPHIC = LEX;
+ORDER.COLEX = ORDER.COLEXICOGRAPHIC = COLEX;
+ORDER.MINIMAL = ORDER.GRAY = MINIMAL;
+ORDER.RANDOM = RANDOM;
+ORDER.REV = ORDER.ANTI = ORDER.REVERSE = ORDER.REVERSED = REVERSED;
+ORDER.REF = ORDER.REFLECT = ORDER.REFLECTED = REFLECTED;
+ORDER.REVLEX = ORDER.ANTILEX = ORDER.REVERSELEXICOGRAPHIC = ORDER.ANTILEXICOGRAPHIC = LEX | REVERSED;
+ORDER.REFLEX = ORDER.REFLECTEDLEXICOGRAPHIC = LEX | REFLECTED;
+ORDER.REVCOLEX = ORDER.ANTICOLEX = ORDER.REVERSECOLEXICOGRAPHIC = ORDER.ANTICOLEXICOGRAPHIC = COLEX | REVERSED;
+ORDER.REFCOLEX = ORDER.REFLECTEDCOLEXICOGRAPHIC = COLEX | REFLECTED;
+Abacus.ORDER = ORDER;
 
 // Abacus.Filter, Filter class used to define and combine filters to filter combinatorial object by them
 Filter = Abacus.Filter = Class({
@@ -17180,10 +17179,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
     }
 
     ,_update: function( ) {
+        var self = this;
         // compute and store any extra item information
         // needed between successive runs to run faster, eg cat or loopless, instead of linear
-        this.item__ = null;
-        return this;
+        self.item__ = null;
+        return self;
     }
 
     ,order: function( order, reverse ) {
@@ -17262,13 +17262,17 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,index: function( index, non_recursive ) {
         non_recursive = !!non_recursive;
-        if ( !arguments.length ) return this.$.sub /*&& !non_recursive*/ ? this._subindex : this._index;
-
         var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
             n = self.n, $ = self.$, tot = $.sub && !non_recursive ? $.subcount : $.count,
             curindex = $.sub && !non_recursive ? self._subindex : self._index,
             order = $.order, tot_1/*, dir = REVERSED & order ? -1 : 1*/; // T
+
+        if ( !arguments.length )
+        {
+            index = self.$.sub /*&& !non_recursive*/ ? self._subindex : self._index;
+            return /*Arithmetic.sub(*/index/*, self.hasNext()?1:0)*/;
+        }
 
         index = Arithmetic.wrapR(Arithmetic.num( index ), tot);
 
@@ -19985,7 +19989,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
 
     // extends and implements CombinatorialIterator
     constructor: function Partition( n, $ ) {
-        var self = this, sub = null;
+        var self = this, sub = null, M, K, k1, k0;
         if ( !is_instance(self, Partition) ) return new Partition(n, $);
         $ = $ || {}; $.type = $.type || "partition";
         n = n||1;
@@ -19998,8 +20002,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        var M = $["max="] ? $["max="]|0 : null, K = $["parts="] ? $["parts="]|0 : null,
-            k1 = K ? K : (M ? n-M+1 : n), k0 = K ? K : (M ? stdMath.ceil(n/M) : 1);
+        M = $["max="] ? $["max="]|0 : null;
+        K = $["parts="] ? $["parts="]|0 : null;
+        k1 = K ? K : (M ? n-M+1 : n);
+        k0 = K ? K : (M ? stdMath.ceil(n/M) : 1);
         $.base = n;
         $.dimension = K ? K : (M ? n-M+1 : n);
         $.mindimension = stdMath.min(k0,k1);
@@ -20289,7 +20295,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 order = $ && null!=$.order ? $.order : LEX,
                 M = $ && $["max="] ? $["max="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
-                index = Arithmetic.O, x, j, i;
+                index = Arithmetic.O, x, j, i, total;
+
+            if ( REFLECTED & order ) item = item.slice().reverse();
+
             if ( "composition" === type )
             {
                 if ( K )
@@ -20303,7 +20312,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                         while( 1<K && 0<n )
                         {
                             x = item[K-1];
-                            for(j=1; j<=x; ++j) index = Arithmetic.add(index, compositions(n-j, K-1, null));
+                            for(j=1; j<x; j++) index = Arithmetic.add(index, compositions(n-j, K-1));
                             K--; n-=x;
                         }
                     }
@@ -20317,10 +20326,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     }
                     else
                     {
-                        while( n>K && 0<n )
+                        while( 1<=K && 0<n )
                         {
                             x = item[K-1];
-                            for(j=1; j<=x; ++j) index = Arithmetic.add(index, compositions(n-j, null, null));
+                            for(j=1; j<x; j++) index = Arithmetic.add(index, compositions(n-j));
                             K--; n-=x;
                         }
                     }
@@ -20336,31 +20345,36 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     }
                     else
                     {
-                        while( n>K && 0<n )
+                        while( 1<K && 0<n )
                         {
                             x = item[K-1];
-                            for(j=1; j<=x; ++j) index = Arithmetic.add(index, partitions(n-j, K-1, null));
+                            for(j=1; j<x; j++) index = Arithmetic.add(index, partitions(n-j, K-1));
                             K--; n-=x;
                         }
                     }
                 }
                 else
                 {
-                    K = item.length; i = 0;
+                    K = item.length;
                     if ( M )
                     {
                         //NotImplemented();
                     }
                     else
                     {
-                        while( n>K && 0<n )
+                        while( 1<=K && 0<n )
                         {
                             x = item[K-1];
-                            for(j=1; j<=x; ++j) index = Arithmetic.add(index, partitions(n-j, null, null));
+                            for(j=1; j<x; j++) index = Arithmetic.add(index, partitions(n-j));
                             K--; n-=x;
                         }
                     }
                 }
+            }
+            if ( REVERSED & order )
+            {
+                total = $ && null!=$.count ? $.count : klass.count(n, {type:type,"max=":M,"parts=":K});
+                index = Arithmetic.sub(Arithmetic.sub(total, 1), index);
             }
             return index;
         }
@@ -21114,9 +21128,9 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
 
     // extends and implements CombinatorialIterator
     constructor: function SetPartition( n, $ ) {
-        var self = this, sub = null;
+        var self = this, sub = null, K;
         if ( !is_instance(self, SetPartition) ) return new SetPartition(n, $);
-        $ = $ || {};
+        $ = $ || {}; $.type = "partition";
         n = n||1;
         if ( is_instance(n, CombinatorialIterator) )
         {
@@ -21127,11 +21141,12 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
+        K = $["parts="] ? $["parts="]|0 : null;
         $.base = n;
-        $.dimension = n;
-        $.mindimension = 1;
-        $.maxdimension = n;
-        $.rand = $.rand || {};
+        $.dimension = K ? K : n;
+        $.mindimension = K ? K : 1;
+        $.maxdimension = K ? K : n;
+        $.rand = $.rand || {}; $.rand["partition"] = 1;
         CombinatorialIterator.call(self, "SetPartition", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
 
@@ -21143,108 +21158,151 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             return item;
         }
         ,count: function( n, $ ) {
-            return 0<n ? bell(n) : Abacus.Arithmetic.O;
+            var K = $ && $["parts="] ? $["parts="]|0 : null;
+            return 0<n ? (K ? stirling(n, K, 2) : bell(n)) : Abacus.Arithmetic.O;
         }
         ,initial: function( n, $, dir ) {
-            // last (0>dir) is C-symmetric of first (0<dir)
-            var klass = this, item, order = $ && null!=$.order ? $.order : LEX;
+            var klass = this, item, order = $ && null!=$.order ? $.order : LEX,
+                K = $ && $["parts="] ? $["parts="]|0 : null;
 
-            if ( (0 >= n) ) return null;
+            if ( (0 >= n) || ( K && K > n) ) return null;
 
             dir = -1 === dir ? -1 : 1;
 
-            if ( (!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)) )
-                dir = -dir;
+            if ( (REVERSED&order) ) dir = -dir;
 
             // O(n)
             item = new Array(n+1); item[n] = [n, new Array(n)];
-            // unrestricted setpartition
-            item = operate(function(item,ai,i){
-                if ( 0 > dir )
-                {
-                    item[i] = 0;
-                    item[n][1][i] = 0;
-                }
-                else
-                {
-                    item[i] = i;
-                    item[n][1][i] = i;
-                }
-                return item;
-            }, item, null, 0, n-1, 1);
+            if ( K )
+            {
+                // restricted setpartition to exactly K parts
+                item[n].push(array(K, 0));
+                item = operate(function(item,ai,i){
+                    if ( 0 > dir )
+                    {
+                        ai = i <= n-K ? 0 : K-n+i;
+                        item[i] = ai;
+                        item[n][1][i] = ai;
+                        item[n][2][ai]++;
+                    }
+                    else
+                    {
+                        ai = i < K ? i : K-1;
+                        item[i] = ai;
+                        item[n][1][i] = ai;
+                        item[n][2][ai]++;
+                    }
+                    return item;
+                }, item, null, 0, n-1, 1);
+            }
+            else
+            {
+                // unrestricted setpartition
+                item = operate(function(item,ai,i){
+                    if ( 0 > dir )
+                    {
+                        item[i] = 0;
+                        item[n][1][i] = 0;
+                    }
+                    else
+                    {
+                        item[i] = i;
+                        item[n][1][i] = i;
+                    }
+                    return item;
+                }, item, null, 0, n-1, 1);
+            }
 
             return item;
         }
         ,succ: function( item, index, n, $, dir ) {
             if ( (null == n) || (null == item) || (0 >= n) ) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_setpartition(item, n, dir, $ && null!=$.order ? $.order : LEX);
+            return next_setpartition(item, n, $ && $["parts="] ? $["parts="]|0 : null, dir, $ && null!=$.order ? $.order : LEX);
         }
         ,rand: function( n, $ ) {
-            var klass = this, rnd = Abacus.Math.rnd, Arithmetic = Abacus.Arithmetic, q, m, l, i, k, rho, sum;
-            if ( 0 >= n ) return null;
+            var klass = this, K = $ && $["parts="] ? $["parts="]|0 : null,
+                rnd = Abacus.Math.rnd, Arithmetic = Abacus.Arithmetic, q, m, l, i, k, prob, cdf;
+            if ( 0 >= n || (K && K > n) ) return null;
             q = array(n, 0); m = n; l = 0;
             while(0 < m)
             {
-                sum = Rational.Zero();
-                rho = Rational.fromDec(rnd());
+                cdf = Rational.Zero();
+                prob = Rational.fromDec(rnd());
                 k = 1;
                 while(k <= m)
                 {
-                    sum = sum.add(Rational(Arithmetic.mul(factorial(m-1,k-1), bell(m-k)), bell(m)));
-                    if ( sum.gte(rho) ) break
+                    cdf = cdf.add(Rational(Arithmetic.mul(factorial(m-1,k-1), klass.count(m-k, {"parts=":K})), klass.count(m, {"parts=":K})));
+                    if ( cdf.gte(prob) ) break;
                     k++;
                 }
-                for(i=m-k; i<m; i++) q[i] = l
-                l++;
+                for(i=m-k; i<m; i++)
+                {
+                    q[i] = l;
+                    if ( K ) l = (l+1) % K;
+                }
+                l++; if ( K && l>=K ) l = 0;
                 m -= k;
             }
-            shuffle(q);
+            q = shuffle(q);
             return operate(function(partition, i){
                 partition[q[i]].push(i);
                 return partition;
-            }, array(stdMath.max.apply(null, q)+1, function(){return [];}), null, 0, n-1, 1);
+            }, array(stdMath.max.apply(null, q)+1, function(){return [];}), null, 0, n-1, 1).sort(function(a,b){return a[0]-b[0];});
         }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
     }
-    ,_update: function( ) {
-        return this;
-    }
     ,output: function( item ) {
         if ( null == item ) return null;
         var self = this, $ = self.$, n = self.n,
             order = null!=$.order ? $.order : LEX,
-            is_reflected = REFLECTED & order, partition;
+            K = $ && $["parts="] ? $["parts="]|0 : null,
+            is_reflected = REFLECTED & order;
         if ( n+1===item.length )
         {
             item = operate(function(partition, i){
                 partition[item[i]].push(i);
                 return partition;
             }, array(stdMath.max.apply(null, item.slice(0, n))+1, function(){return [];}), null, 0, n-1, 1);
+            if ( is_reflected ) item = item.reverse();
         }
         return CombinatorialIterator[PROTO].output.call(self, item);
     }
 });
-function next_setpartition( item, n, dir, order )
+function next_setpartition( item, n, K, dir, order )
 {
-    var i, j, m, found;
+    var i, j, m, found, pos, matchesK;
     if ( !(LEX & order) ) return null; // only LEX supported
     if ( REVERSED & order ) dir = -dir;
-
+    
     // adapted from Efficient Generation of Set Partitions, Michael Orlov (https://www.informatik.uni-ulm.de/ni/Lehre/WS03/DMM/Software/partitions.pdf)
-    m = item[n][1]; found = false;
+    m = item[n][1];
+    pos = K ? item[n][2] : null;
     if ( 0 > dir )
     {
+        do{
+        matchesK = true;
+        found = false;
         for(i=n-1; i>0; i--)
         {
             if ( item[i]<=m[i-1] )
             {
                 item[i]++; m[i] = stdMath.max(item[i], m[i]);
+                if ( K )
+                {
+                    if ( item[i]-1<K ) pos[item[i]-1]--;
+                    if ( item[i]<K ) pos[item[i]]++; else matchesK = false;
+                }
                 for(j=i+1; j<n; j++)
                 {
+                    if ( K )
+                    {
+                        if ( item[j]<K ) pos[item[j]]--;
+                        if ( item[0]<K ) pos[item[0]]++; else matchesK = false;
+                    }
                     item[j] = item[0];
                     m[j] = m[i];
                 }
@@ -21253,17 +21311,36 @@ function next_setpartition( item, n, dir, order )
             }
         }
         if ( !found ) item = null; // last
+        else if ( K )
+        {
+            if ( matchesK ) for(j=0; j<K; j++) if ( !pos[j] ) { matchesK = false; break; }
+            if ( matchesK ) for(j=i-1; j>=0; j--) if ( item[j]>=K ) { matchesK = false; break; }
+        }
+        }while(item && K && !matchesK); // use rejection method, slow, maybe implemenet direct generation in future
     }
     else
     {
+        do{
+        matchesK = true;
+        found = false;
         for(i=n-1; i>0; i--)
         {
             if ( item[i]>item[0] )
             {
                 item[i]--; m[i] = m[i-1];
+                if ( K )
+                {
+                    if ( item[i]+1<K ) pos[item[i]+1]--;
+                    if ( item[i]<K ) pos[item[i]]++; else matchesK = false;
+                }
                 for(j=i+1; j<n; j++)
                 {
                     m[j] = m[i]+j-i;
+                    if ( K )
+                    {
+                        if ( item[j]<K ) pos[item[j]]--;
+                        if ( m[j]<K ) pos[m[j]]++; else matchesK = false;
+                    }
                     item[j] = m[j];
                 }
                 found = true;
@@ -21271,6 +21348,12 @@ function next_setpartition( item, n, dir, order )
             }
         }
         if ( !found ) item = null; // last
+        else if ( K )
+        {
+            if ( matchesK ) for(j=0; j<K; j++) if ( !pos[j] ) { matchesK = false; break; }
+            if ( matchesK ) for(j=i-1; j>=0; j--) if ( item[j]>=K ) { matchesK = false; break; }
+        }
+        }while(item && K && !matchesK); // use rejection method, slow, maybe implemenet direct generation in future
     }
     return item;
 }

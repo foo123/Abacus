@@ -43,6 +43,12 @@ echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
 echo('o.random()');
 echo(o.random());
 
@@ -71,6 +77,99 @@ print_all( o.rewind() );
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.SetPartition(4, {"parts=":2})');
+o = Abacus.SetPartition(4, {"parts=":2});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.SetPartition(4, {"parts=":3})');
+o = Abacus.SetPartition(4, {"parts=":3});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.random()');
+echo(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.SetPartition(6, {"parts=":5})');
+o = Abacus.SetPartition(6, {"parts=":5});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('o.next()'); 
+echo(o.next());
+
+echo('o.hasNext()');
+echo(o.hasNext());
+echo('o.next()');
+echo(o.next());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+//echo('backwards');
+//echo('o.rewind(-1)');
+//print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
 echo(o.random());
@@ -101,6 +200,12 @@ echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
+
 echo('o.random()');
 echo(o.random());
 
@@ -129,6 +234,12 @@ print_all( o.rewind() );
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("lex,reversed")');
+print_all( o.order("lex,reversed") );
 
 echo('o.random()');
 echo(o.random());

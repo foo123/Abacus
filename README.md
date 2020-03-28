@@ -73,6 +73,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `RestrictedPartition` (`test/restricted_partitions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `RestrictedComposition` (`test/restricted_compositions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `SetPartition` (`test/setpartitions.js`) **rank/unrank methods missing, only LEX/REVLEX order**
+* `RestrictedSetPartition` (`test/setpartitions.js`) **exactly K #parts (slow implementation)**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
 
@@ -120,6 +121,7 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Combinatorial Algorithms, Albert Nijenhuis, Herbert Wilf](https://www.math.upenn.edu/~wilf/website/CombAlgDownld.html)
 * [Combinatorial Generation, Frank Ruskey](http://www.1stworks.com/ref/ruskeycombgen.pdf)
 * [Generating Functionology, Herbert Wilf](http://www.math.upenn.edu/%7Ewilf/gfologyLinked2.pdf)
+* [A unified setting for sequencing, ranking, and selection algorithms for combinatorial objects, Herbert Wilf](https://www.sciencedirect.com/science/article/pii/S0001870877800467)
 * [Permutation Generation Methods, Robert Sedgewick](http://homepage.math.uiowa.edu/~goodman/22m150.dir/2007/Permutation%20Generation%20Methods.pdf)
 * [A Versatile Algorithm to Generate Various Combinatorial Structures, Pramod Ganapathi, Rama B](http://arxiv.org/abs/1009.4214v2)
 * [Generating All and Random Instances of a Combinatorial Object, Ivan Stojmenovic](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.211.6576) including the section on random generation **without large integers** &amp; **with only one `PRNG` call**
