@@ -38,6 +38,7 @@ call node compositions.js > compositions.txt
 call node restricted_partitions.js > restricted_partitions.txt
 call node restricted_compositions.js > restricted_compositions.txt
 call node setpartitions.js > setpartitions.txt
+call node paren.js > paren.txt
 call node filtered_partitions.js > filtered_partitions.txt
 call node filtered_compositions.js > filtered_compositions.txt
 call node k-derangements.js > k-derangements.txt

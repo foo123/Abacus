@@ -67,7 +67,7 @@ var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,Ring, Matrix
     ,Iterator, CombinatorialIterator, Filter
     ,Progression, HashSieve, PrimeSieve, Diophantine
-    ,Tensor, Permutation, Combination, Subset, Partition, SetPartition
+    ,Tensor, Permutation, Combination, Subset, Partition, SetPartition, CatalanWord
     ,LatinSquare, MagicSquare
 ;
 
@@ -21274,86 +21274,298 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
 });
 function next_setpartition( item, n, K, dir, order )
 {
-    var i, j, m, found, pos, matchesK;
+    var i, j, k, l, m, found, pos;
     if ( !(LEX & order) ) return null; // only LEX supported
     if ( REVERSED & order ) dir = -dir;
-    
-    // adapted from Efficient Generation of Set Partitions, Michael Orlov (https://www.informatik.uni-ulm.de/ni/Lehre/WS03/DMM/Software/partitions.pdf)
+
     m = item[n][1];
-    pos = K ? item[n][2] : null;
-    if ( 0 > dir )
+    found = false;
+
+    if ( K )
     {
-        do{
-        matchesK = true;
-        found = false;
-        for(i=n-1; i>0; i--)
+        if ( (1 === K) || (n ===K) ) return null // last
+
+        pos = item[n][2];
+
+        if ( 0 > dir )
         {
-            if ( item[i]<=m[i-1] )
+            for(i=n-1; i>0; i--)
             {
-                item[i]++; m[i] = stdMath.max(item[i], m[i]);
-                if ( K )
+                if ( item[i]<=m[i-1] && (item[i]!==(i<K?i:K-1)) )
                 {
-                    if ( item[i]-1<K ) pos[item[i]-1]--;
-                    if ( item[i]<K ) pos[item[i]]++; else matchesK = false;
-                }
-                for(j=i+1; j<n; j++)
-                {
-                    if ( K )
+                    pos[item[i]]--;
+                    item[i] = stdMath.min(K-1, item[i]+1);
+                    m[i] = stdMath.max(item[i], m[i]);
+                    pos[item[i]]++;
+                    for(j=i+1; j<n; j++)
                     {
-                        if ( item[j]<K ) pos[item[j]]--;
-                        if ( item[0]<K ) pos[item[0]]++; else matchesK = false;
+                        pos[item[j]]--;
+                        item[j] = item[0];
+                        pos[item[j]]++;
+                        m[j] = m[i];
                     }
-                    item[j] = item[0];
-                    m[j] = m[i];
+                    for(l=n-1,k=K-1; k>0; k--)
+                    {
+                        if ( !pos[k] )
+                        {
+                            pos[item[l]]--; pos[k]++;
+                            item[l] = k; l--;
+                        }
+                    }
+                    found = true;
+                    break;
                 }
-                found = true;
-                break;
             }
+            if ( !found ) item = null; // last
         }
-        if ( !found ) item = null; // last
-        else if ( K )
+        else
         {
-            if ( matchesK ) for(j=0; j<K; j++) if ( !pos[j] ) { matchesK = false; break; }
-            if ( matchesK ) for(j=i-1; j>=0; j--) if ( item[j]>=K ) { matchesK = false; break; }
+            for(i=n-1; i>0; i--)
+            {
+                if ( item[i]>item[0] && (K-n+i<item[i] || 1<pos[item[i]]) )
+                {
+                    pos[item[i]]--;
+                    item[i]--; m[i] = m[i-1];
+                    pos[item[i]]++;
+                    for(j=i+1; j<n; j++)
+                    {
+                        if ( 1<pos[item[j]] )
+                        {
+                            pos[item[j]]--;
+                            m[j] = stdMath.min(K-1, m[i]+j-i);
+                            item[j] = m[j];
+                            pos[item[j]]++;
+                        }
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) item = null; // last
         }
-        }while(item && K && !matchesK); // use rejection method, slow, maybe implemenet direct generation in future
     }
     else
     {
-        do{
-        matchesK = true;
-        found = false;
-        for(i=n-1; i>0; i--)
+        // adapted from Efficient Generation of Set Partitions, Michael Orlov (https://www.informatik.uni-ulm.de/ni/Lehre/WS03/DMM/Software/partitions.pdf)
+        if ( 0 > dir )
         {
-            if ( item[i]>item[0] )
+            for(i=n-1; i>0; i--)
             {
-                item[i]--; m[i] = m[i-1];
-                if ( K )
+                if ( item[i]<=m[i-1] )
                 {
-                    if ( item[i]+1<K ) pos[item[i]+1]--;
-                    if ( item[i]<K ) pos[item[i]]++; else matchesK = false;
-                }
-                for(j=i+1; j<n; j++)
-                {
-                    m[j] = m[i]+j-i;
-                    if ( K )
+                    item[i]++; m[i] = stdMath.max(item[i], m[i]);
+                    for(j=i+1; j<n; j++)
                     {
-                        if ( item[j]<K ) pos[item[j]]--;
-                        if ( m[j]<K ) pos[m[j]]++; else matchesK = false;
+                        item[j] = item[0];
+                        m[j] = m[i];
                     }
-                    item[j] = m[j];
+                    found = true;
+                    break;
                 }
-                found = true;
-                break;
+            }
+            if ( !found ) item = null; // last
+        }
+        else
+        {
+            for(i=n-1; i>0; i--)
+            {
+                if ( item[i]>item[0] )
+                {
+                    item[i]--; m[i] = m[i-1];
+                    for(j=i+1; j<n; j++)
+                    {
+                        m[j] = m[i]+j-i;
+                        item[j] = m[j];
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) item = null; // last
+        }
+    }
+    return item;
+}
+
+// https://en.wikipedia.org/wiki/Catalan_number
+CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
+
+    // extends and implements CombinatorialIterator
+    constructor: function CatalanWord( n, $ ) {
+        var self = this, sub = null, K;
+        if ( !is_instance(self, CatalanWord) ) return new CatalanWord(n, $);
+        $ = $ || {}; $.type = "catalan";
+        n = n||1;
+        if ( is_instance(n, CombinatorialIterator) )
+        {
+            sub = n;
+            n = sub.base();
+        }
+        else
+        {
+            sub = $.sub;
+        }
+        $.base = n;
+        $.dimension = 2*n;
+        $.mindimension = 2*n;
+        $.maxdimension = 2*n;
+        $.rand = $.rand || {}; $.rand["catalan"] = 1;
+        CombinatorialIterator.call(self, "CatalanWord", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
+    }
+
+    ,__static__: {
+         C: CombinatorialIterator.C
+        ,P: CombinatorialIterator.P
+        ,T: CombinatorialIterator.T
+        ,DUAL: function( item, n, $, dir ) {
+            return item;
+        }
+        ,count: function( n, $ ) {
+            return 0<n ? catalan(n) : Abacus.Arithmetic.O;
+        }
+        ,initial: function( n, $, dir ) {
+            var klass = this, order = $ && null!=$.order ? $.order : LEX;
+
+            if ( (0 >= n) ) return null;
+
+            dir = -1 === dir ? -1 : 1;
+
+            if ( (REVERSED&order) ) dir = -dir;
+
+            // O(n)
+            return array(n, function(i){return 0 > dir ? 2*i : i;});
+        }
+        ,succ: function( item, index, n, $, dir ) {
+            if ( (null == n) || (null == item) || (0 >= n) ) return null;
+            dir = -1 === dir ? -1 : 1;
+            return next_catalan(item, n, dir, $ && null!=$.order ? $.order : LEX);
+        }
+        ,rand: NotImplemented
+        // random unranking, another method for unbiased random sampling
+        ,randu: CombinatorialIterator.rand
+        ,rank: NotImplemented
+        ,unrank: NotImplemented
+    }
+    ,output: function( item ) {
+        if ( null == item ) return null;
+        var self = this, $ = self.$, n = self.n,
+            order = null!=$.order ? $.order : LEX,
+            is_reflected = REFLECTED & order, word, j = 0;
+        word = array(2*n, function(i){
+            if ( j<item.length && i === item[j] ) { j++; return '('; }
+            return ')';
+        });
+        //if ( is_reflected ) word = word.reverse();
+        return CombinatorialIterator[PROTO].output.call(self, word);
+    }
+});
+function next_catalan( item, n, dir, order )
+{
+    var i, j, z, m, t, y, d, nn = n<<1;
+
+    if ( n<=1 ) return null;
+    if ( REVERSED & order ) dir = -dir;
+
+    // adapted from FXT lib
+    if ( 0 > dir )
+    {
+        if ( COLEX & order )
+        {
+            j = 0;
+            while( j<n && item[j]===j ) ++j;
+            if ( n<=j )
+            {
+                item = null;
+            }
+            else
+            {
+                if ( 0<j && 2===item[j]-item[j-1] )
+                {
+                    --item[j];
+                }
+                else
+                {
+                    i = --item[j]; --j; --i;
+                    for(; 0<j && 2*i>j;  --i,--j) item[j] = i;
+                    for(; 0<i; --i) item[i] = 2*i;
+                    item[0] = 0;
+                }
             }
         }
-        if ( !found ) item = null; // last
-        else if ( K )
+        else
         {
-            if ( matchesK ) for(j=0; j<K; j++) if ( !pos[j] ) { matchesK = false; break; }
-            if ( matchesK ) for(j=i-1; j>=0; j--) if ( item[j]>=K ) { matchesK = false; break; }
+            m = nn;
+            j = n-1;
+            z = item[j];
+            y = 0<j ? item[j-1] : 1;
+            d = z - y;
+            while(true)
+            {
+                if ( 1 !== d )
+                {
+                    if ( 0>=j )
+                    {
+                        item = null;
+                        break;
+                    }
+                    else
+                    {
+                        item[j] = z - 1;
+                        break;
+                    }
+                }
+                m -= 2;
+                item[j] = m;
+                z = y;
+                --j;
+                y = 0<j ? item[j-1] : 1;
+                d = z - y;
+            }
         }
-        }while(item && K && !matchesK); // use rejection method, slow, maybe implemenet direct generation in future
+    }
+    else
+    {
+        if ( COLEX & order )
+        {
+            j = 0;
+            if ( 2===item[1] )
+            {
+                j = 2;
+                while( j<n && item[j]===2*j ) ++j;
+                if ( n<=j ) item = null;
+            }
+            if ( item )
+            {
+                while( j+1<n && 1===(item[j+1]-item[j]) ) ++j;
+                ++item[j];
+                for(i=0; i<j; ++i) item[i] = i;
+            }
+        }
+        else
+        {
+            j = n-1; z = item[j]; m = nn-2;
+            if ( z < m )
+            {
+                item[j] = z+1;
+            }
+            else
+            {
+                do{
+                    --j; m -= 2;
+                }while(0<=j && m===item[j]);
+                if ( 0 > j )
+                {
+                    item = null;
+                }
+                else
+                {
+                    t = item[j]; i = j;
+                    do{
+                        item[i++] = ++t;
+                    }while(i<n);
+                }
+            }
+        }
     }
     return item;
 }

@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 281kB minified, ~ 69kB zipped)
+**version 1.0.0** (~ 286kB minified, ~ 74kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -73,7 +73,8 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `RestrictedPartition` (`test/restricted_partitions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `RestrictedComposition` (`test/restricted_compositions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `SetPartition` (`test/setpartitions.js`) **rank/unrank methods missing, only LEX/REVLEX order**
-* `RestrictedSetPartition` (`test/setpartitions.js`) **exactly K #parts (slow implementation)**
+* `RestrictedSetPartition` (`test/setpartitions.js`) **exactly K #parts, rank/unrank methods missing, only LEX/REVLEX order**
+* `CatalanWord` (eg balanced parentheses) (`test/paren.js`) **rank/unrank/random methods missing**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
 
