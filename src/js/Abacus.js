@@ -16480,6 +16480,12 @@ Iterator = Abacus.Iterator = Class({
         }
         return list;
     }
+    ,storeState: function( raw ) {
+        return null;
+    }
+    ,resumeState: function( state ) {
+        return this;
+    }
     // javascript @@iterator/@@iterable interface, if supported
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
     ,__iter__: function( ) {
@@ -17709,22 +17715,23 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         }
         return range;
     }
-    ,storeState: function( ) {
-        var self = this;
-        return JSON.stringify([
+    ,storeState: function( raw ) {
+        var self = this, state;
+        state = [
              self.$.order
-            ,self.__index.toString()
-            ,self._index.toString()
+            ,null == self.__index ? null : self.__index.toString()
+            ,null == self._index ? null : self._index.toString()
             ,self.__item
             ,self._item
-            ,self.__subindex.toString()
-            ,self._subindex.toString()
+            ,null == self.__subindex ? null : self.__subindex.toString()
+            ,null == self._subindex ? null : self._subindex.toString()
             ,self.__subitem
             ,self._subitem
             ,self._prev
             ,self._next
-            ,self.$.sub ? self.$.sub.storeState() : null
-        ]);
+            ,self.$.sub ? self.$.sub.storeState(true) : null
+        ];
+        return raw ? state : JSON.stringify(state);
     }
     ,resumeState: function( state ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -17732,12 +17739,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         {
             state = is_string(state) ? JSON.parse(state) : state;
             self.$.order = state[0];
-            self.__index = Arithmetic.num(state[1]);
-            self._index = Arithmetic.num(state[2]);
+            self.__index = null == state[1] ? null : Arithmetic.num(state[1]);
+            self._index = null == state[2] ? null : Arithmetic.num(state[2]);
             self.__item = state[3];
             self._item = state[4];
-            self.__subindex = Arithmetic.num(state[5]);
-            self._subindex = Arithmetic.num(state[6]);
+            self.__subindex = null == state[5] ? null : Arithmetic.num(state[5]);
+            self._subindex = null == state[6] ? null : Arithmetic.num(state[6]);
             self.__subitem = state[7];
             self._subitem = state[8];
             self._prev = state[9];
@@ -17908,6 +17915,36 @@ Progression = Abacus.Progression = Class(Iterator, {
         }while($.filter && (null!=current) && !$.filter.apply(current, self));
 
         return current;
+    }
+    ,storeState: function( raw ) {
+        var self = this, state;
+        state = [
+             self._min.toString()
+            ,self._step.toString()
+            ,self._max.toString()
+            ,null == self.__item ? null : self.__item.toString()
+            ,null == self._item ? null : self._item.toString()
+            ,null == self.__subitem ? null : self.__subitem.toString()
+            ,null == self._subitem ? null : self._subitem.toString()
+            ,self.$.sub ? self.$.sub.storeState(true) : null
+        ];
+        return raw ? state : JSON.stringify(state);
+    }
+    ,resumeState: function( state ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null != state )
+        {
+            state = is_string(state) ? JSON.parse(state) : state;
+            self._min = "-Infinity" === state[0] ? Arithmetic.NINF : ("Infinity" === state[0] ? Arithmetic.INF : Arithmetic.num(state[0]));
+            self._step = "-Infinity" === state[1] ? Arithmetic.NINF : ("Infinity" === state[1] ? Arithmetic.INF : Arithmetic.num(state[1]));
+            self._max = "-Infinity" === state[2] ? Arithmetic.NINF : ("Infinity" === state[2] ? Arithmetic.INF : Arithmetic.num(state[2]));
+            self.__item = null == state[3] ? null : Arithmetic.num(state[3]);
+            self._item = null == state[4] ? null : Arithmetic.num(state[4])
+            self.__subitem = null == state[5] ? null : Arithmetic.num(state[5])
+            self._subitem = null == state[6] ? null : Arithmetic.num(state[6])
+            if ( self.$.sub && state[7] ) self.$.sub.resumeState(state[7]);
+        }
+        return self;
     }
 });
 
@@ -18414,7 +18451,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         }
         ,conditional: conditional_combinatorial_tensor
         ,generate: gen_combinatorial_data
-        //,parse: parse_combinatorial_tpl
     }
 });
 function next_tensor( item, N, dir, type, order, TI )
