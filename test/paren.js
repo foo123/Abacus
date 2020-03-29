@@ -37,6 +37,9 @@ echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
 echo('o.order("colex")');
 print_all( o.order("colex") );
 
@@ -61,6 +64,9 @@ echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
 echo('o.order("colex")');
 print_all( o.order("colex") );
 
@@ -84,6 +90,9 @@ print_all( o.rewind() );
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
 
 echo('o.order("colex")');
 print_all( o.order("colex") );

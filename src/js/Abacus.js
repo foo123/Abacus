@@ -17709,6 +17709,43 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         }
         return range;
     }
+    ,storeState: function( ) {
+        var self = this;
+        return JSON.stringify([
+             self.$.order
+            ,self.__index.toString()
+            ,self._index.toString()
+            ,self.__item
+            ,self._item
+            ,self.__subindex.toString()
+            ,self._subindex.toString()
+            ,self.__subitem
+            ,self._subitem
+            ,self._prev
+            ,self._next
+            ,self.$.sub ? self.$.sub.storeState() : null
+        ]);
+    }
+    ,resumeState: function( state ) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if ( null != state )
+        {
+            state = is_string(state) ? JSON.parse(state) : state;
+            self.$.order = state[0];
+            self.__index = Arithmetic.num(state[1]);
+            self._index = Arithmetic.num(state[2]);
+            self.__item = state[3];
+            self._item = state[4];
+            self.__subindex = Arithmetic.num(state[5]);
+            self._subindex = Arithmetic.num(state[6]);
+            self.__subitem = state[7];
+            self._subitem = state[8];
+            self._prev = state[9];
+            self._next = state[10];
+            if ( self.$.sub && state[11] ) self.$.sub.resumeState(state[11]);
+        }
+        return self;
+    }
 });
 
 // a iterator for arithmetic progressions from MIN up to MAX, by step=STEP
@@ -20198,7 +20235,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 M = $ && $["max="] ? $["max="]|0 : null, MM = M,
                 K = $ && $["parts="] ? $["parts="]|0 : null, KK = K,
                 list, item, m, x, y, y1 = 0, yn = 0,
-                itemlen, LEN = K ? K : (M ? n-M+1 : n), MAX = LEN+1,
+                itemlen, LEN = K ? K : (M ? n-M+1 : n),
                 is_composition = "composition" === type, conj = false;
 
             if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
@@ -20390,42 +20427,49 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
     }
     ,_update: function( ) {
-        var self = this;
-        self.item__ = part_item_(self.__item, self.n, self.$.order, self.$.type, self.$);
+        var self = this, $ = self.$, n = self.n, item = self.__item,
+            type = $ && $.type ? $.type : "partition",
+            order = $ && null!=$.order ? $.order : LEX,
+            M = $ && $["max="] ? $["max="]|0 : null,
+            K = $ && $["parts="] ? $["parts="]|0 : null,
+            LEN = K ? K : (M ? n-M+1 : n), itemlen, x, y;
+        if ( (null != item) && (LEN+1 !== item.length) )
+        {
+            itemlen = item.length;
+            if ( M )
+            {
+                for(x=0,y=0; x<itemlen; x++)
+                    if ( M === item[x] ) y++;
+            }
+            else
+            {
+                y = 0;
+            }
+            if ( itemlen<LEN )
+            {
+                if ( REFLECTED & order ) item.unshift.apply(item, new Array(LEN-itemlen));
+                else item.push.apply(item, new Array(LEN-itemlen));
+            }
+            item.push([itemlen, y]);
+            self.__item = item;
+        }
         return self;
     }
     ,output: function( item ) {
         if ( null == item ) return null;
-        var $ = this.$, n = this.n, M = $["max="] ? $["max="]|0 : null,
+        var self = this, $ = self.$, n = self.n, M = $["max="] ? $["max="]|0 : null,
             K = $["parts="] ? $["parts="]|0 : null,
             order = null!=$.order ? $.order : LEX,
-            LEN = K ? K : (M ? n-M+1 : n),
-            is_reflected = REFLECTED & order, is_colex = COLEX & order;
+            LEN = K ? K : (M ? n-M+1 : n);
         if ( LEN+1===item.length )
         {
-            item = is_reflected ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+            item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
         }
-        return CombinatorialIterator[PROTO].output.call(this, item);
+        return CombinatorialIterator[PROTO].output.call(self, item);
     }
 });
 // aliases
 Partition.transpose = Partition.conjugate;
-function part_item_(item, n, order, type, $)
-{
-    return null;
-    /*if ( null == item ) return null;
-    var PI = null;
-    if ( "composition" === type )
-    {
-        if ( $ && null!=$['max='] )
-        {
-            PI = [0];
-            var i, l = item.length, M = $['max='];
-            for(i=0; i<l; i++) if ( M === item[i] ) PI[0]++;
-        }
-    }
-    return PI;*/
-}
 function next_partition( item, N, dir, K, M, order, PI )
 {
     //maybe "use asm"
@@ -21410,6 +21454,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         $.mindimension = 2*n;
         $.maxdimension = 2*n;
         $.rand = $.rand || {}; $.rand["catalan"] = 1;
+        $.symbols = $.symbols || ['(',')']; if ( is_string($.symbols) ) $.symbols = $.symbols.split('');
         CombinatorialIterator.call(self, "CatalanWord", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
 
@@ -21450,12 +21495,12 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         if ( null == item ) return null;
         var self = this, $ = self.$, n = self.n,
             order = null!=$.order ? $.order : LEX,
-            is_reflected = REFLECTED & order, word, j = 0;
+            symbols = $.symbols, is_reflected = REFLECTED & order, word, j = 0;
         word = array(2*n, function(i){
-            if ( j<item.length && i === item[j] ) { j++; return '('; }
-            return ')';
+            if ( j<item.length && i === item[j] ) { j++; return symbols[0]; }
+            return symbols[symbols.length-1];
         });
-        //if ( is_reflected ) word = word.reverse();
+        if ( is_reflected ) word = array(word.length, function(i){return symbols[0]===word[word.length-1-i] ? symbols[symbols.length-1] : symbols[0];});
         return CombinatorialIterator[PROTO].output.call(self, word);
     }
 });
