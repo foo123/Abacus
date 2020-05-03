@@ -4218,10 +4218,23 @@ function factorial( n, m )
             {
                 // recursive and memoized
                 // binomial = C(n,m) = C(n-1,m-1)+C(n-1,m) = n!/m!(n-m)!
-                res = Arithmetic.isDefault() ? stdMath.round(operate(function(Cnm,i){
-                    // this is faster and will not overflow unnecesarily for default arithmetic
-                    return Cnm*(1+n/i);
-                }, (n=n-m)+1, null, 2, m)) : add(factorial(sub(n, I), sub(m, I)), factorial(sub(n, I), m))/*div(factorial(n,-m), factorial(m))*/;
+                if ( Arithmetic.lte(n, 10) )
+                {
+                    res = add(factorial(sub(n, I), sub(m, I)), factorial(sub(n, I), m));/*div(factorial(n,-m), factorial(m))*/
+                }
+                else if ( Arithmetic.isDefault() )
+                {
+                    res = stdMath.round(operate(function(Cnm,i){
+                        // this is faster and will not overflow unnecesarily for default arithmetic
+                        return Cnm*(1+n/i);
+                    }, (n=n-m)+1, null, 2, m));
+                }
+                else
+                {
+                    i = add(sub(n, m), I); res = i;
+                    while( Arithmetic.lt(i, n) ) { i = add(i, I); res = mul(res, i); }
+                    res = div(res, factorial(m));
+                }
                 // memoize only up to MAXMEM results
                 if ( Arithmetic.lt(n, MAXMEM) )
                     factorial.mem3[key] = res;
