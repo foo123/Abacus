@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.0** (~ 287kB minified, ~ 74kB zipped)
+**version 1.0.5** (~ 287kB minified, ~ 74kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -630,11 +630,15 @@ o.dispose()
 * support efficient primality tests and prime sieves **[DONE]**
 * support efficient integer factorization algorithms **[DONE PARTIALY]**
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
+* add Rank Factorisation **[DONE]**
+* fix `ginv` (Moore-Penrose Inverse) computation **[DONE]**
+* support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
+* exact/symbolic `SVD` computation, faster numeric `SVD` computation (TODO)
 * implement `LLL` algorithm (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**

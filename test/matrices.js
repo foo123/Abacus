@@ -306,6 +306,48 @@ echo(o.charpoly().toString());
 o.dispose();
 echo('---');
 
+echo('o=Abacus.Matrix(ring, [[1, 3, 1, 4],[2, 7, 3, 9],[1, 5, 3, 1],[1, 2, 0, 8]])');
+o=Abacus.Matrix(ring, [[1, 3, 1, 4],[2, 7, 3, 9],[1, 5, 3, 1],[1, 2, 0, 8]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.rankf()');
+m = o.rankf();
+echo(m[0].toString());
+echo(m[1].toString());
+echo(m[0].mul(m[1]).equ(Abacus.Matrix(ring.associatedField(), o)))
+o.dispose();
+echo('---');
+
+echo('o=Abacus.Matrix(ring, [[0, 0],[0, 0]])');
+o=Abacus.Matrix(ring, [[0, 0],[0, 0]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.ginv().toString()');
+echo(o.ginv().toString(), o.mul(o.ginv()).mul(o).equ(o), o.ginv().mul(o).mul(o.ginv()).equ(o.ginv()));
+o.dispose();
+echo('o=Abacus.Matrix(ring.associatedField(), [[1, 0],[1, 0]])');
+o=Abacus.Matrix(ring.associatedField(), [[1, 0],[1, 0]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.ginv().toString()');
+echo(o.ginv().toString(), o.mul(o.ginv()).mul(o).equ(o), o.ginv().mul(o).mul(o.ginv()).equ(o.ginv()));
+o.dispose();
+echo('o=Abacus.Matrix(ring.associatedField(), [[1, 0],[2, 0]])');
+o=Abacus.Matrix(ring.associatedField(), [[1, 0],[2, 0]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.ginv().toString()');
+echo(o.ginv().toString(), o.mul(o.ginv()).mul(o).equ(o), o.ginv().mul(o).mul(o.ginv()).equ(o.ginv()));
+o.dispose();
+echo('o=Abacus.Matrix(ring.associatedField(), [[1, 0],[0, 1],[0, 1]])');
+o=Abacus.Matrix(ring.associatedField(), [[1, 0],[0, 1],[0, 1]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.ginv().toString()');
+echo(o.ginv().toString(), o.mul(o.ginv()).mul(o).equ(o), o.ginv().mul(o).mul(o.ginv()).equ(o.ginv()));
+o.dispose();
+echo('---');
+
 echo('o=Abacus.Matrix(ring, 3, 3)');
 o=Abacus.Matrix(ring, 3, 3);
 echo('o.toString()');

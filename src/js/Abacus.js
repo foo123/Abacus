@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for Node.js/Browser/XPCOM Javascript, Python, Java
-*   @version: 1.0.0
+*   @version: 1.0.5
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -20,7 +20,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "1.0.0"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "1.0.5"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array[PROTO].slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -3892,6 +3892,39 @@ function solvecongrs( a, b, m, with_param, with_free_vars )
 
     return null==solution ? null : (with_free_vars ? [solution, free_vars] : solution);
 }
+function solvelinears( a, b, with_param )
+{
+    // solve general arbitrary system of m linear equations in k variables
+    // a11 x_1 + a12 x_2 + a13 x_3 + .. + a1k x_k = b1, a21 x_1 + a22 x_2 + a23 x_3 + .. + a2k x_k = b2,..
+    // where a is m x k-matrix of coefficients: [[a11, a12, a13, .. , a1k],..,[am1, am2, am3, .. , amk]]
+    // and b is m-array right hand side factor (default [0,..,0])
+    // can also produce least-squares solution to given system
+    // https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse#Applications
+    var symbol = is_string(with_param) && with_param.length ? with_param : 'z', apinv, bp, ns;
+
+    if ( !is_instance(a, Matrix) ) a = Matrix(Ring.Q(), a);
+    else a = Matrix(a.ring.associatedField(), a);
+    if ( !a.nr || !a.nc ) return null;
+    b = Matrix(a.ring, b);
+    apinv = a.ginv(); bp = apinv.mul(b);
+    if ( true===with_param ) return bp.col(0); // least squares solution
+    else if ( !a.mul(bp).equ(b) ) return null; // no solutions exist
+    if ( false===with_param )
+    {
+        // particular least-norm solution
+        return bp.col(0);
+    }
+    else
+    {
+        // general solution(s)
+        ns = Matrix.I(a.ring, bp.nr).sub(apinv.mul(a));
+        return array(bp.nr, function(i){
+            return Expr(array(ns.nc, function(j){
+                return MulTerm(SymbolTerm(with_param+'_'+(j+1)), ns.val[i][j]);
+            })).add(bp.val[j][0]);
+        });
+    }
+}
 function sign( x )
 {
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
@@ -6154,6 +6187,9 @@ Abacus.Math = {
         var Arithmetic = Abacus.Arithmetic;
         if ( (!is_array(a) && !is_args(a)) || !a.length ) return null;
         return solvepythag(Arithmetic.nums(a), with_param)
+    }
+    ,linears: function( a, b, with_param ) {
+        return solvelinears( a, b, with_param );
     }
 
     ,groebner: buchberger_groebner
@@ -14198,13 +14234,14 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,_a: null
     ,_i: null
     ,_ir: null
-    ,_pi: null
+    ,_gi: null
     ,_p: null
     ,_snf: null
     ,_lu: null
     ,_qr: null
     ,_ref: null
     ,_rref: null
+    ,_rf: null
     ,_evd: null
     ,_svd: null
     ,_rn: null
@@ -14223,8 +14260,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
         if ( self._t && (self === self._t._t) )
         {
             self._t._t = null;
-            self._t._tr = null;
-            self._t._det = null;
+            /*self._t._tr = null;
+            self._t._det = null;*/
         }
         if ( self._h && (self === self._h._h) )
         {
@@ -14233,6 +14270,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
         if ( self._i && (self === self._i._i) )
         {
             self._i._i = null;
+        }
+        if ( self._gi && (self === self._gi._gi) )
+        {
+            self._gi._gi = null;
         }
         self.nr = null;
         self.nc = null;
@@ -14246,13 +14287,14 @@ Matrix = Abacus.Matrix = Class(INumber, {
         self._a = null;
         self._i = null;
         self._ir = null;
-        self._pi = null;
+        self._gi = null;
         self._p = null;
         self._snf = null;
         self._lu = null;
         self._qr = null;
         self._ref = null;
         self._rref = null;
+        self._rf = null;
         self._evd = null;
         self._svd = null;
         self._rn = null;
@@ -14329,6 +14371,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 {
                     self._i._i = null;
                 }
+                if ( self._gi && (self === self._gi._gi) )
+                {
+                    self._gi._gi = null;
+                }
                 self._str = null;
                 self._tex = null;
                 self._n = null;
@@ -14337,13 +14383,14 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._a = null;
                 self._i = null;
                 self._ir = null;
-                self._pi = null;
+                self._gi = null;
                 self._p = null;
                 self._snf = null;
                 self._lu = null;
                 self._qr = null;
                 self._ref = null;
                 self._rref = null;
+                self._rf = null;
                 self._evd = null;
                 self._svd = null;
                 self._rn = null;
@@ -14504,13 +14551,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._h;
     }
     ,inv: function( ) {
-        var self = this, rows = self.nr, columns = self.nc, ring, field, Arithmetic = Abacus.Arithmetic;
+        var self = this, rows = self.nr, columns = self.nc, ring = self.ring, field;
         if ( rows !== columns ) return null; // only for square matrices
         if ( (null == self._i) && (null == self._ir) )
         {
             // compute inverse through augmented rref (Gauss-Jordan method)
             self._ir = self.concat(Matrix.I(ring, columns)).rref(false, [rows, columns]);
-            if ( self._ir.val[rows-1][columns-1].equ(Arithmetic.O) )
+            if ( self._ir.val[rows-1][columns-1].equ(ring.Zero()) )
             {
                 // not full-rank, no inverse
                 self._i = null;
@@ -14518,7 +14565,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             else
             {
                 // full-rank, has inverse, generaly in the field of fractions
-                ring = self.ring; field = ring.associatedField();
+                field = ring.associatedField();
                 self._i = Matrix(field, self._ir.slice(0, columns, rows-1, 2*columns-1).map(function(rref_ij, ij){
                     return field.cast(rref_ij).div(field.cast(self._ir.val[ij[0]][ij[0]]));
                 }, true));
@@ -14527,30 +14574,62 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return self._i;
     }
-    ,pinv: function( left_else_right ) {
-        // left or right pseudo-inverse
+    ,ginv: function( ) {
+        // generalised inverse / Moore-Penrose Inverse
         // https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse
-        var A = this, A_H, AA, AAi, rows = A.nr, columns = A.nc;
-        if ( null == A._pi )
+        var A = this, ring, field, rows, columns, rank, rf, C, F;
+        if ( null == A._gi )
         {
-            A._pi = [null, null];
-            A_H = A.h();
-
-            // left pseudo-inverse
-            if ( columns <= rows )
+            rows = A.nr; columns = A.nc;
+            ring = A.ring;
+            field = ring.associatedField();
+            if ( A.equ(ring.Zero(), true) )
             {
-                AA = A_H.mul(A);
-                if ( (AAi=AA.inv()) ) A._pi[0] = AAi.mul(A_H);
+                // zero matrix, ginv is transpose
+                A._gi = A.t();
             }
-
-            // right pseudo-inverse
-            if ( rows <= columns )
+            else if ( 1===rows && 1===columns )
             {
-                AA = A.mul(A_H);
-                if ( (AAi=AA.inv()) ) A._pi[1] = A_H.mul(AAi);
+                // scalar, ginv is inverse
+                A._gi = Matrix(field, [[field.cast(A.val[0][0]).inv()]]);
             }
+            else if ( 1===rows || 1===columns )
+            {
+                // vector, ginv is transpose divided by square norm
+                C = field.cast(A.array().reduce(function(s, ai){
+                    return s.add(ai.mul(ai.conj()));
+                }, ring.Zero()));
+                A._gi = Matrix(field, A.h().map(function(aij, ij){
+                    return field.cast(aij).div(C);
+                }, true));
+            }
+            else
+            {
+                rank = A.rank();
+                if ( rank === columns )
+                {
+                    // linearly independent columns
+                    // A+ = inv(Ah * A) * Ah
+                    A._gi = A.h().mul(A).inv().mul(A.h());
+                }
+                else if ( rank === rows )
+                {
+                    // linearly independent rows
+                    // A+ = Ah * inv(A * Ah)
+                    A._gi = A.h().mul(A.mul(A.h()).inv());
+                }
+                else
+                {
+                    // general matrix, through rank factorisation
+                    // A = C F <=> A+ = F+ C+
+                    // where F+ = Fh * inv(F * Fh) and C+ = inv(Ch * C) * Ch
+                    rf = A.rankf(); C = rf[0]; F = rf[1];
+                    A._gi = F.h().mul(F.mul(F.h()).inv()).mul(C.h().mul(C).inv().mul(C.h()));
+                }
+            }
+            A._gi._gi = ring.isField() ? A : Matrix(field, A);
         }
-        return A._pi[left_else_right ? 0 : 1];
+        return A._gi;
     }
     ,minor: function( ai, aj, cofactor ) {
         // https://en.wikipedia.org/wiki/Minor_(linear_algebra)
@@ -15540,7 +15619,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
     ,ref: function( with_pivots, odim ) {
         var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
-            rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, imin, im, min, a, z, m, find_dupl;
+            rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min, a, z, m, find_dupl;
         // fraction-free/integer row echelon form (ref) (also known as Hermite normal form), using fraction-free/integer row reduction or fraction-free gaussian elimination
         // https://en.wikipedia.org/wiki/Row_echelon_form
         // https://en.wikipedia.org/wiki/Gaussian_elimination
@@ -15553,7 +15632,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             if ( is_array(odim) ) dim = stdMath.min(dim, odim[1]);
             m = self.clone(true);
             pivots = new Array(dim);
-            lead = 0; det = I;
+            lead = 0; leadc = 0; det = I;
             find_dupl = function find_dupl( k0, k ) {
                 k = k || 0;
                 for(var p=pl-1; p>=0; p--)
@@ -15566,6 +15645,15 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 if ( dim <= lead ) break;
 
                 i = r;
+                /*while ( 0<=leadc && leadc<dim && m[i][leadc].equ(O) )
+                {
+                    leadc++;
+                    if ( dim <= leadc )
+                    {
+                        leadc = -1;
+                        break;
+                    }
+                }*/
                 while ( m[i][lead].equ(O) )
                 {
                     i++;
@@ -15609,7 +15697,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                         }
                         i = imin; i0 = r;
                         while ( (0<=i) && (-1!==(p0=find_dupl(i))) ){ i0 -= pl-p0; i = i0; }
-                        pivots[pl++] = [i, lead]; // row/column of pivot
+                        pivots[pl++] = [i, lead/*, leadc*/]; // row/column/original column of pivot
                         // update determinant
                         det = r<dim ? det.mul(m[r][r/*lead*/]) : O;
                         break;
@@ -15632,7 +15720,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     }
                 }while(true);
 
-                lead++;
+                lead++; //leadc++;
             }
             if ( pl<dim ) det = O;
 
@@ -15678,17 +15766,41 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return with_pivots ? self._rref.slice() : self._rref[0];
     }
+    ,rankf: function( ) {
+        // https://en.wikipedia.org/wiki/Rank_factorization
+        var self = this, ring, field, rows, columns, rref, pivots, rank, F, C;
+        if ( null == self._rf )
+        {
+            rows = self.nr; columns = self.nc;
+            ring = self.ring;
+            rref = self.rref(true);
+            pivots = rref[1];
+            rank = pivots.length;
+            field = ring.associatedField();
+            C = Matrix(field, self.slice(array(rows, 0, 1), array(rank, function(j){
+                return pivots[j][1];
+            })));
+            F = Matrix(field, rref[0].slice(0, 0, rank-1, columns-1).map(function(rref_ij, ij){
+                var i = ij[0], j = i;
+                while(j+1<columns && rref[0].val[i][j].equ(0)) j++;
+                return field.cast(rref_ij).div(field.cast(rref[0].val[i][j]));
+            }));
+            self._rf = [C, F];
+        }
+        return self._rf.slice();
+    }
     ,rank: function( ) {
         // https://en.wikipedia.org/wiki/Rank_(linear_algebra)
         var pivots = this.ref(true);
         return pivots[1].length;
     }
     ,tr: function( ) {
-        var self = this, ring = self.ring, n, i;
+        var self = this, ring, n, i;
         // trace
         // https://en.wikipedia.org/wiki/Trace_(linear_algebra)
         if ( null == self._tr )
         {
+            ring = self.ring;
             n = stdMath.min(self.nr, self.nc);
             self._tr = ring.Zero();
             for(i=0; i<n; i++) self._tr = self._tr.add(self.val[i][i]);
@@ -15696,12 +15808,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._tr;
     }
     ,det: function( ) {
-        var self = this, ring = self.ring, ref;
+        var self = this, ring, ref;
         // determinant
         // https://en.wikipedia.org/wiki/Determinant
         // https://en.wikipedia.org/wiki/Bareiss_algorithm
         if ( null == self._det )
         {
+            ring = self.ring;
             if ( self.nr !== self.nc )
             {
                 self._det = ring.Zero();
@@ -15715,11 +15828,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._det;
     }
     ,rowspace: function( ) {
-        var self = this, ring = self.ring, pivots;
+        var self = this, ring, pivots;
         // row space
         // https://en.wikipedia.org/wiki/Row_and_column_spaces
         if ( null == self._rs )
         {
+            ring = self.ring;
             pivots = self.ref(true);
             // produce orthogonal basis via gramschmidt
             self._rs = /*gramschmidt(*/pivots[1].map(function(p){
@@ -15731,11 +15845,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._rs.slice();
     }
     ,colspace: function( ) {
-        var self = this, ring = self.ring, pivots;
+        var self = this, ring, pivots;
         // column space
         // https://en.wikipedia.org/wiki/Row_and_column_spaces
         if ( null == self._cs )
         {
+            ring = self.ring;
             pivots = self.ref(true);
             // produce orthogonal basis via gramschmidt
             self._cs = /*gramschmidt(*/pivots[1].map(function(p){
@@ -15801,23 +15916,36 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,slice: function( r1, c1, r2, c2 ) {
         var self = this, ring = self.ring, rows = self.nr, columns = self.nc;
         if ( !rows || !columns ) return Matrix(ring);
-        if ( null == r1 ) r1 = 0;
-        if ( null == c1 ) c1 = 0;
-        if ( null == r2 ) r2 = rows-1;
-        if ( null == c2 ) c2 = columns-1;
-        if ( 0 > r1 ) r1 += rows;
-        if ( 0 > c1 ) c1 += columns;
-        if ( 0 > r2 ) r2 += rows;
-        if ( 0 > c2 ) c2 += columns;
-        r1 = stdMath.max(0, stdMath.min(rows-1, r1));
-        r2 = stdMath.max(0, stdMath.min(rows-1, r2));
-        c1 = stdMath.max(0, stdMath.min(columns-1, c1));
-        c2 = stdMath.max(0, stdMath.min(columns-1, c2));
-        return r1<=r2 && c1<=c2 ? Matrix(ring, array(r2-r1+1, function(i){
-            return array(c2-c1+1, function(j){
-                return self.val[r1+i][c1+j];
-            });
-        })) : Matrix(ring);
+        if ( is_array(r1) && is_array(c1) )
+        {
+            r1 = r1.filter(function(i){return 0<=i && i<rows;});
+            c1 = c1.filter(function(j){return 0<=j && j<columns;});
+            return Matrix(ring, array(r1.length, function(i){
+                return array(c1.length, function(j){
+                    return self.val[r1[i]][c1[j]];
+                });
+            }));
+        }
+        else
+        {
+            if ( null == r1 ) r1 = 0;
+            if ( null == c1 ) c1 = 0;
+            if ( null == r2 ) r2 = rows-1;
+            if ( null == c2 ) c2 = columns-1;
+            if ( 0 > r1 ) r1 += rows;
+            if ( 0 > c1 ) c1 += columns;
+            if ( 0 > r2 ) r2 += rows;
+            if ( 0 > c2 ) c2 += columns;
+            r1 = stdMath.max(0, stdMath.min(rows-1, r1));
+            r2 = stdMath.max(0, stdMath.min(rows-1, r2));
+            c1 = stdMath.max(0, stdMath.min(columns-1, c1));
+            c2 = stdMath.max(0, stdMath.min(columns-1, c2));
+            return r1<=r2 && c1<=c2 ? Matrix(ring, array(r2-r1+1, function(i){
+                return array(c2-c1+1, function(j){
+                    return self.val[r1+i][c1+j];
+                });
+            })) : Matrix(ring);
+        }
     }
     ,concat: function( a, axis ) {
         var self = this, ring = self.ring, O = ring.Zero();
