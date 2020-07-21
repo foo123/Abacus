@@ -217,7 +217,22 @@ R:
 |0 12 -12|
 |0  0   1|
 ---
-o=Abacus.Matrix.I(ring, 3)
+o=Abacus.Matrix(field, [[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
+o.toString()
+| 2 -1  0|
+|-1  2 -1|
+| 0 -1  1|
+o.ldl()
+L:
+|   1    0 0|
+|-1/2    1 0|
+|   0 -2/3 1|
+D:
+|2   0   0|
+|0 3/2   0|
+|0   0 1/3| true
+---
+o=Abacus.Matrix.I(field, 3)
 o.toString()
 |1 0 0|
 |0 1 0|
@@ -233,7 +248,7 @@ o.adj().toString()
 o.charpoly().toString()
 x^3-3*x^2+3*x-1
 
-o=Abacus.Matrix(ring, [[4,7],[2,6]])
+o=Abacus.Matrix(field, [[4,7],[2,6]])
 o.toString()
 |4 7|
 |2 6|
@@ -258,7 +273,7 @@ o.adj().toString()
 o.charpoly().toString()
 x^3+2*x^2+6*x+6
 ---
-o=Abacus.Matrix(ring, [[1, 3, 1, 4],[2, 7, 3, 9],[1, 5, 3, 1],[1, 2, 0, 8]])
+o=Abacus.Matrix(field, [[1, 3, 1, 4],[2, 7, 3, 9],[1, 5, 3, 1],[1, 2, 0, 8]])
 o.toString()
 |1 3 1 4|
 |2 7 3 9|
@@ -274,28 +289,28 @@ o.rankf()
 |0 0  0 1|
 true
 ---
-o=Abacus.Matrix(ring, [[0, 0],[0, 0]])
+o=Abacus.Matrix(field, [[0, 0],[0, 0]])
 o.toString()
 |0 0|
 |0 0|
 o.ginv().toString()
 |0 0|
 |0 0| true true
-o=Abacus.Matrix(ring.associatedField(), [[1, 0],[1, 0]])
+o=Abacus.Matrix(field, [[1, 0],[1, 0]])
 o.toString()
 |1 0|
 |1 0|
 o.ginv().toString()
 |1/2 1/2|
 |  0   0| true true
-o=Abacus.Matrix(ring.associatedField(), [[1, 0],[2, 0]])
+o=Abacus.Matrix(field, [[1, 0],[2, 0]])
 o.toString()
 |1 0|
 |2 0|
 o.ginv().toString()
 |1/5 2/5|
 |  0   0| true true
-o=Abacus.Matrix(ring.associatedField(), [[1, 0],[0, 1],[0, 1]])
+o=Abacus.Matrix(field, [[1, 0],[0, 1],[0, 1]])
 o.toString()
 |1 0|
 |0 1|
@@ -494,7 +509,7 @@ Vector 1(true):
 ---
 ring = Abacus.Ring.Q("x") (\mathbb{Q}[x]) /* ring of polynomials */
 ---
-o=Abacus.Matrix.I(ring, 3)
+o=Abacus.Matrix.I(field, 3)
 o.toString()
 |1 0 0|
 |0 1 0|
@@ -506,7 +521,7 @@ o.inv().toString()
 o.charpoly("y").toString()
 y^3-3*y^2+3*y-1
 
-o=Abacus.Matrix(ring, [[ring.fromString("x-1"),ring.fromString("x^2-1")],[ring.fromString("x^2-1"),ring.fromString("x-1")]])
+o=Abacus.Matrix(field, [[field.fromString("x-1"),field.fromString("x^2-1")],[field.fromString("x^2-1"),field.fromString("x-1")]])
 o.toString()
 |  x-1 x^2-1|
 |x^2-1   x-1|

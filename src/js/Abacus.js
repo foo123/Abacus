@@ -14233,12 +14233,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,_h: null
     ,_a: null
     ,_i: null
-    ,_ir: null
     ,_gi: null
     ,_p: null
     ,_snf: null
     ,_lu: null
     ,_qr: null
+    ,_ldl: null
     ,_ref: null
     ,_rref: null
     ,_rf: null
@@ -14286,12 +14286,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
         self._h = null;
         self._a = null;
         self._i = null;
-        self._ir = null;
         self._gi = null;
         self._p = null;
         self._snf = null;
         self._lu = null;
         self._qr = null;
+        self._ldl = null;
         self._ref = null;
         self._rref = null;
         self._rf = null;
@@ -14360,8 +14360,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 if ( self._t && (self === self._t._t) )
                 {
                     self._t._t = null;
-                    self._t._tr = null;
-                    self._t._det = null;
+                    //self._t._tr = null;
+                    //self._t._det = null;
                 }
                 if ( self._h && (self === self._h._h) )
                 {
@@ -14382,12 +14382,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._h = null;
                 self._a = null;
                 self._i = null;
-                self._ir = null;
                 self._gi = null;
                 self._p = null;
                 self._snf = null;
                 self._lu = null;
                 self._qr = null;
+                self._ldl = null;
                 self._ref = null;
                 self._rref = null;
                 self._rf = null;
@@ -14502,15 +14502,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return false;
     }
 
-    ,neg: function( ) {
-        var self = this;
-        if ( null == self._n )
-        {
-            self._n = self.map(function(vij){return vij.neg();});
-            self._n._n = self;
-        }
-        return self._n;
-    }
     ,real: function( ) {
         var self = this, ring = self.ring;
         if ( is_class(ring.NumberClass, Complex) )
@@ -14522,6 +14513,15 @@ Matrix = Abacus.Matrix = Class(INumber, {
         if ( is_class(ring.NumberClass, Complex) )
             return self.map(function(vij){return vij.imag();});
         return Matrix.Zero(ring, self.nr, self.nc);
+    }
+    ,neg: function( ) {
+        var self = this;
+        if ( null == self._n )
+        {
+            self._n = self.map(function(vij){return vij.neg();});
+            self._n._n = self;
+        }
+        return self._n;
     }
     ,t: function( ) {
         // transpose
@@ -14536,11 +14536,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._t;
     }
     ,h: function( ) {
-        // hermitian
-        var self = this, ring = self.ring, rows = self.nr, columns = self.nc;
-        if ( ring.NumberClass!==Complex ) return self.t();
+        // hermitian transpose
+        var self = this, ring, rows, columns;
+        if ( self.ring.NumberClass!==Complex ) return self.t();
         if ( null == self._h )
         {
+            ring = self.ring; rows = self.nr; columns = self.nc;
             self._h = Matrix(ring, array(columns, function(j){
                 return array(rows, function(i){
                     return self.val[i][j].conj();
@@ -14551,25 +14552,34 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._h;
     }
     ,inv: function( ) {
-        var self = this, rows = self.nr, columns = self.nc, ring = self.ring, field;
-        if ( rows !== columns ) return null; // only for square matrices
-        if ( (null == self._i) && (null == self._ir) )
+        var self = this, rows, columns, ring, field, rref;
+        if ( null == self._i )
         {
-            // compute inverse through augmented rref (Gauss-Jordan method)
-            self._ir = self.concat(Matrix.I(ring, columns)).rref(false, [rows, columns]);
-            if ( self._ir.val[rows-1][columns-1].equ(ring.Zero()) )
+            rows = self.nr; columns = self.nc;
+            if ( rows !== columns )
             {
-                // not full-rank, no inverse
-                self._i = null;
+                // only for square matrices
+                self._i = false;
             }
             else
             {
-                // full-rank, has inverse, generaly in the field of fractions
-                field = ring.associatedField();
-                self._i = Matrix(field, self._ir.slice(0, columns, rows-1, 2*columns-1).map(function(rref_ij, ij){
-                    return field.cast(rref_ij).div(field.cast(self._ir.val[ij[0]][ij[0]]));
-                }, true));
-                self._i._i = ring.isField() ? self : Matrix(field, self);
+                ring = self.ring;
+                // compute inverse through augmented rref (Gauss-Jordan method)
+                rref = self.concat(Matrix.I(ring, columns)).rref(false, [rows, columns]);
+                if ( rref.val[rows-1][columns-1].equ(ring.Zero()) )
+                {
+                    // not full-rank, no inverse
+                    self._i = false;
+                }
+                else
+                {
+                    // full-rank, has inverse, generaly in the field of fractions
+                    field = ring.associatedField();
+                    self._i = Matrix(field, rref.slice(0, columns, rows-1, 2*columns-1).map(function(rref_ij, ij){
+                        return field.cast(rref_ij).div(field.cast(rref.val[ij[0]][ij[0]]));
+                    }, true));
+                    self._i._i = ring.isField() ? self : Matrix(field, self);
+                }
             }
         }
         return self._i;
@@ -14609,8 +14619,16 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 if ( rank === columns )
                 {
                     // linearly independent columns
-                    // A+ = inv(Ah * A) * Ah
-                    A._gi = A.h().mul(A).inv().mul(A.h());
+                    if ( rows === columns )
+                    {
+                        // invertible, ginv is inverse
+                        A._gi = A.inv();
+                    }
+                    else
+                    {
+                        // A+ = inv(Ah * A) * Ah
+                        A._gi = A.h().mul(A).inv().mul(A.h());
+                    }
                 }
                 else if ( rank === rows )
                 {
@@ -14652,15 +14670,23 @@ Matrix = Abacus.Matrix = Class(INumber, {
         // https://en.wikipedia.org/wiki/Adjugate_matrix
         // https://en.wikipedia.org/wiki/Minor_(linear_algebra)#Inverse_of_a_matrix
         // https://en.wikipedia.org/wiki/Cramer%27s_rule
-        var self = this, rows = self.nr, columns = self.nc, ring = self.ring;
-        if ( rows !== columns ) return null;
+        var self = this, rows, columns, ring;
         if ( null == self._a )
         {
-            self._a = Matrix(ring, array(columns, function(j){
-                return array(rows, function(i){
-                    return self.minor(i, j, true);
-                });
-            }));
+            rows = self.nr; columns = self.nc;
+            if ( rows !== columns )
+            {
+                self._a = false;
+            }
+            else
+            {
+                ring = self.ring;
+                self._a = Matrix(ring, array(columns, function(j){
+                    return array(rows, function(i){
+                        return self.minor(i, j, true);
+                    });
+                }));
+            }
         }
         return self._a;
     }
@@ -14920,107 +14946,117 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return x;
     }
     ,snf: function( ) {
-        if ( !this.ring.hasGCD() ) return null;
-
-        var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
-            rows = self.nr, columns = self.nc, dim, m, left, right, last_j,
-            i, j, upd, ii, jj, non_zero, i1, i0, g, coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
+        var self = this, ring, O, I, J, rows, columns, dim, m, left, right,
+            last_j, i, j, upd, ii, jj, non_zero, i1, i0, g,
+            coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
         // smith normal form
         // https://en.wikipedia.org/wiki/Smith_normal_form
         // adapted from Smith Normal Form with sympy (https://gist.github.com/qnighy/ec08799484080343a2da297657ccba65)
         if ( null == self._snf )
         {
-            dim = stdMath.min(rows, columns);
-            m = self.clone(); left = Matrix.I(ring, rows); right = Matrix.I(ring, columns)
-            last_j = -1;
-            for(i=0; i<rows; i++)
+            ring = self.ring;
+            if ( !ring.hasGCD() )
             {
-                non_zero = false;
-                for(j=last_j+1; j<columns; j++)
+                self._snf = false;
+            }
+            else
+            {
+                O = ring.Zero();
+                I = ring.One();
+                J = ring.MinusOne();
+                rows = self.nr; columns = self.nc;
+                dim = stdMath.min(rows, columns);
+                m = self.clone(); left = Matrix.I(ring, rows); right = Matrix.I(ring, columns)
+                last_j = -1;
+                for(i=0; i<rows; i++)
                 {
-                    for(i0=0; i0<rows; i0++)
-                        if ( !m.val[i0][j].equ(O) )
-                            break;
-                    if ( i0 < rows )
+                    non_zero = false;
+                    for(j=last_j+1; j<columns; j++)
                     {
-                        non_zero = true;
-                        break;
+                        for(i0=0; i0<rows; i0++)
+                            if ( !m.val[i0][j].equ(O) )
+                                break;
+                        if ( i0 < rows )
+                        {
+                            non_zero = true;
+                            break;
+                        }
                     }
-                }
-                if ( !non_zero ) break;
+                    if ( !non_zero ) break;
 
-                if ( m.val[i][j].equ(O)  )
-                {
-                    for(ii=0; ii<rows; ii++)
-                        if ( !m.val[ii][j].equ(O) )
-                            break;
-                    Matrix.MULR(ring, m.val, i, ii, O, I, I, O);
-                    Matrix.MULC(ring, left.val, i, ii, O, I, I, O);
-                }
-                Matrix.MULC(ring, m.val, j, i, O, I, I, O);
-                Matrix.MULR(ring, right.val, j, i, O, I, I, O);
-                j = i;
-                upd = true;
-                while ( upd )
-                {
-                    upd = false;
-                    for(ii=i+1; ii<rows; ii++)
+                    if ( m.val[i][j].equ(O)  )
                     {
-                        if ( m.val[ii][j].equ(O) ) continue;
-                        upd = true;
-                        if ( !m.val[i][j].divides(m.val[ii][j]) )
-                        {
-                            g = ring.xgcd(m.val[i][j], m.val[ii][j]);
-                            coef1 = g[1]; coef2 = g[2];
-                            coef3 = m.val[ii][j].div(g[0]);
-                            coef4 = m.val[i][j].div(g[0]);
-                            Matrix.MULR(ring, m.val, i, ii, coef1, coef2, coef3.neg(), coef4);
-                            Matrix.MULC(ring, left.val, i, ii, coef4, coef2.neg(), coef3, coef1);
-                        }
-                        coef5 = m.val[ii][j].div(m.val[i][j]);
-                        Matrix.MULR(ring, m.val, i, ii, I, O, coef5.neg(), I);
-                        Matrix.MULC(ring, left.val, i, ii, I, O, coef5, I);
+                        for(ii=0; ii<rows; ii++)
+                            if ( !m.val[ii][j].equ(O) )
+                                break;
+                        Matrix.MULR(ring, m.val, i, ii, O, I, I, O);
+                        Matrix.MULC(ring, left.val, i, ii, O, I, I, O);
                     }
-                    for(jj=j+1; jj<columns; jj++)
+                    Matrix.MULC(ring, m.val, j, i, O, I, I, O);
+                    Matrix.MULR(ring, right.val, j, i, O, I, I, O);
+                    j = i;
+                    upd = true;
+                    while ( upd )
                     {
-                        if ( m.val[i][jj].equ(O) ) continue;
-                        upd = true;
-                        if ( !m.val[i][j].divides(m.val[i][jj]) )
+                        upd = false;
+                        for(ii=i+1; ii<rows; ii++)
                         {
-                            g = ring.xgcd(m.val[i][j], m.val[i][jj]);
-                            coef1 = g[1]; coef2 = g[2];
-                            coef3 = m.val[i][jj].div(g[0]);
-                            coef4 = m.val[i][j].div(g[0]);
-                            Matrix.MULC(ring, m.val, j, jj, coef1, coef3.neg(), coef2, coef4);
-                            Matrix.MULR(ring, right.val, j, jj, coef4, coef3, coef2.neg(), coef1);
+                            if ( m.val[ii][j].equ(O) ) continue;
+                            upd = true;
+                            if ( !m.val[i][j].divides(m.val[ii][j]) )
+                            {
+                                g = ring.xgcd(m.val[i][j], m.val[ii][j]);
+                                coef1 = g[1]; coef2 = g[2];
+                                coef3 = m.val[ii][j].div(g[0]);
+                                coef4 = m.val[i][j].div(g[0]);
+                                Matrix.MULR(ring, m.val, i, ii, coef1, coef2, coef3.neg(), coef4);
+                                Matrix.MULC(ring, left.val, i, ii, coef4, coef2.neg(), coef3, coef1);
+                            }
+                            coef5 = m.val[ii][j].div(m.val[i][j]);
+                            Matrix.MULR(ring, m.val, i, ii, I, O, coef5.neg(), I);
+                            Matrix.MULC(ring, left.val, i, ii, I, O, coef5, I);
                         }
-                        coef5 = m.val[i][jj].div(m.val[i][j]);
-                        Matrix.MULC(ring, m.val, j, jj, I, coef5.neg(), O, I);
-                        Matrix.MULR(ring, right.val, j, jj, I, coef5, O, I);
+                        for(jj=j+1; jj<columns; jj++)
+                        {
+                            if ( m.val[i][jj].equ(O) ) continue;
+                            upd = true;
+                            if ( !m.val[i][j].divides(m.val[i][jj]) )
+                            {
+                                g = ring.xgcd(m.val[i][j], m.val[i][jj]);
+                                coef1 = g[1]; coef2 = g[2];
+                                coef3 = m.val[i][jj].div(g[0]);
+                                coef4 = m.val[i][j].div(g[0]);
+                                Matrix.MULC(ring, m.val, j, jj, coef1, coef3.neg(), coef2, coef4);
+                                Matrix.MULR(ring, right.val, j, jj, coef4, coef3, coef2.neg(), coef1);
+                            }
+                            coef5 = m.val[i][jj].div(m.val[i][j]);
+                            Matrix.MULC(ring, m.val, j, jj, I, coef5.neg(), O, I);
+                            Matrix.MULR(ring, right.val, j, jj, I, coef5, O, I);
+                        }
+                    }
+                    last_j = j;
+                }
+                for(i1=0; i1<dim; i1++)
+                {
+                    for(i0=i1-1; i0>=0; i0--)
+                    {
+                        g = ring.xgcd(m.val[i0][i0], m.val[i1][i1]);
+                        if ( g[0].equ(O) ) continue;
+                        coef1 = g[1]; coef2 = g[2];
+                        coef3 = m.val[i1][i1].div(g[0]);
+                        coef4 = m.val[i0][i0].div(g[0]);
+                        tmp = coef2.mul(coef3);
+                        tmp2 = I.sub(coef1.mul(coef4));
+                        Matrix.MULR(ring, m.val, i0, i1, I, coef2, coef3, tmp.sub(I));
+                        Matrix.MULC(ring, left.val, i0, i1, I.sub(tmp), coef2, coef3, J);
+                        Matrix.MULC(ring, m.val, i0, i1, coef1, tmp2, I, coef4.neg());
+                        Matrix.MULR(ring, right.val, i0, i1, coef4, tmp2, I, coef1.neg());
                     }
                 }
-                last_j = j;
+                self._snf = [m/*diagonal center matrix*/, left/*left matrix*/, right/*right matrix*/];
             }
-            for(i1=0; i1<dim; i1++)
-            {
-                for(i0=i1-1; i0>=0; i0--)
-                {
-                    g = ring.xgcd(m.val[i0][i0], m.val[i1][i1]);
-                    if ( g[0].equ(O) ) continue;
-                    coef1 = g[1]; coef2 = g[2];
-                    coef3 = m.val[i1][i1].div(g[0]);
-                    coef4 = m.val[i0][i0].div(g[0]);
-                    tmp = coef2.mul(coef3);
-                    tmp2 = I.sub(coef1.mul(coef4));
-                    Matrix.MULR(ring, m.val, i0, i1, I, coef2, coef3, tmp.sub(I));
-                    Matrix.MULC(ring, left.val, i0, i1, I.sub(tmp), coef2, coef3, J);
-                    Matrix.MULC(ring, m.val, i0, i1, coef1, tmp2, I, coef4.neg());
-                    Matrix.MULR(ring, right.val, i0, i1, coef4, tmp2, I, coef1.neg());
-                }
-            }
-            self._snf = [m/*diagonal center matrix*/, left/*left matrix*/, right/*right matrix*/];
         }
-        return self._snf.slice();
+        return self._snf ? self._snf.slice() : self._snf;
     }
     ,evd: function( ) {
         // eigendecomposition (using the power method)
@@ -15515,13 +15551,18 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._svd.slice();
     }
     ,lu: function( ) {
-        var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
-            n = self.nr, m = self.nc, dim, P, L, U, DD, oldpivot, k, i, j, kpivot, NotFound, Ukk, Uik, defficient;
+        var self = this, ring, O, I, J, n, m, dim, P, L, U, DD,
+            oldpivot, k, i, j, kpivot, NotFound, Ukk, Uik, defficient;
         // completely fraction-free LU factorisation
         // https://en.wikipedia.org/wiki/LU_decomposition#LDU_decomposition
         // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
         if ( null == self._lu )
         {
+            ring = self.ring;
+            O = ring.Zero();
+            I = ring.One();
+            J = ring.MinusOne();
+            n = self.nr; m = self.nc;
             /*
             Completely Fraction free LU factoring(CFFLU)
             Input: A nxm matrix A, with m >= n.
@@ -15592,12 +15633,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._lu.slice();
     }
     ,qr: function( ) {
-        var self = this, n = self.nr, m = self.nc, lu;
+        var self = this, n, m, lu;
         // fraction-free QR factorisation
         // https://en.wikipedia.org/wiki/QR_decomposition
         // http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf
         if ( null == self._qr )
         {
+            n = self.nr; m = self.nc;
             /*
             Fraction free QR factoring(FFQR) based on completely fraction-free LU factoring (CFFLU)
             Input: A nxm matrix A.
@@ -15617,9 +15659,54 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return self._qr.slice();
     }
+    ,ldl: function( ) {
+        // https://en.wikipedia.org/wiki/Cholesky_decomposition#LDL_decomposition_2
+        var self = this, rows, columns, ring, field, i, j, k, sum, M, D, L;
+        if ( null == self._ldl )
+        {
+            rows = self.nr; columns = self.nc;
+            if ( (rows !== columns) || !self.equ(self.h()) )
+            {
+                self._ldl = false;
+            }
+            else
+            {
+                ring = self.ring; field = ring.associatedField();
+                M = ring.isField() ? self : Matrix(field, self);
+                D = Matrix.Zero(field, rows, rows); // zeroes
+                L = Matrix.I(field, rows); // eye
+
+                for(i=0; i<rows; i++)
+                {
+                    for(j=0; j<i; j++)
+                    {
+                        for(k=0,sum=field.Zero(); k<j; k++)
+                            sum = sum.add(L.val[i][k].mul(L.val[j][k].conj()).mul(D.val[k][k]));
+
+                        L.val[i][j] = M.val[i][j].sub(sum).div(D.val[j][j]);
+                    }
+
+                    for(k=0,sum=field.Zero(); k<i; k++)
+                        sum = sum.add(L.val[i][k].mul(L.val[i][k].conj()).mul(D.val[k][k]));
+
+                    D.val[i][i] = M.val[i][i].sub(sum);
+
+                    if ( D.val[i][i].lte(0) )
+                    {
+                        // not positive-definite
+                        self._ldl = false;
+                        break;
+                    }
+                }
+                if ( false !== self._ldl ) self._ldl = [L, D];
+            }
+        }
+        return self._ldl ? self._ldl.slice() : self._ldl;
+    }
     ,ref: function( with_pivots, odim ) {
-        var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
-            rows = self.nr, columns = self.nc, dim, pivots, det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min, a, z, m, find_dupl;
+        var self = this, ring, O, I, J, rows, columns, dim, pivots,
+            det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min,
+            a, z, m, find_dupl;
         // fraction-free/integer row echelon form (ref) (also known as Hermite normal form), using fraction-free/integer row reduction or fraction-free gaussian elimination
         // https://en.wikipedia.org/wiki/Row_echelon_form
         // https://en.wikipedia.org/wiki/Gaussian_elimination
@@ -15627,6 +15714,11 @@ Matrix = Abacus.Matrix = Class(INumber, {
         // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
         if ( null == self._ref )
         {
+            ring = self.ring;
+            O = ring.Zero();
+            I = ring.One();
+            J = ring.MinusOne();
+            rows = self.nr; columns = self.nc;
             dim = columns;
             // original dimensions, eg when having augmented matrix
             if ( is_array(odim) ) dim = stdMath.min(dim, odim[1]);
@@ -15733,13 +15825,17 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return with_pivots ? self._ref.slice() : self._ref[0];
     }
     ,rref: function( with_pivots, odim ) {
-        var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(), J = ring.MinusOne(),
-            rows = self.nr, columns = self.nc, dim, pivots, det, pl,
-            lead, r, i, j, a, g, ref;
+        var self = this, ring, O, I, J, rows, columns, dim,
+            pivots, det, pl, lead, r, i, j, a, g, ref;
         // fraction-free/integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from fraction-free row echelon form (gauss elimination)
         // https://en.wikipedia.org/wiki/Row_echelon_form
         if ( null == self._rref )
         {
+            ring = self.ring;
+            O = ring.Zero();
+            I = ring.One();
+            J = ring.MinusOne();
+            rows = self.nr; columns = self.nc;
             // build rref incrementaly from ref
             ref = self.ref(true, odim);
             a = ref[0].clone();
@@ -15862,8 +15958,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._cs.slice();
     }
     ,nullspace: function( left_else_right ) {
-        var self = this, ring = self.ring, O = ring.Zero(), I = ring.One(),
-            columns = self.nc, rref, pivots, free_vars, pl, tmp, LCM;
+        var self = this, ring, O, I, columns, rref, pivots,
+            free_vars, pl, tmp, LCM;
 
         // https://en.wikipedia.org/wiki/Kernel_(linear_algebra)
         if ( left_else_right )
@@ -15881,6 +15977,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             // right nullspace (default)
             if ( null == self._rn )
             {
+                ring = self.ring;
+                O = ring.Zero();
+                I = ring.One();
+                columns = self.nc;
                 tmp = self.rref(true); rref = tmp[0]; pivots = tmp[1];
                 pl = pivots.length;
                 free_vars = complement(columns, pivots.map(function(p){return p[1];}));
