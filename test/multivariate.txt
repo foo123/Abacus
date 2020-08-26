@@ -1,4 +1,4 @@
-Abacus.MultiPolynomials (VERSION = 1.0.0)
+Abacus.MultiPolynomials (VERSION = 1.0.5)
 ---
 Multivariate Polynomials and Polynomial operations
 ring = Abacus.Ring.Q("x","y") (\mathbb{Q}[x,y])

@@ -1,4 +1,4 @@
-Abacus.Diophantine (VERSION = 1.0.0)
+Abacus.Diophantine (VERSION = 1.0.5)
 ---
 Solve a1x1 + a2x2 + a3x3 + .. = c
 4x = 7

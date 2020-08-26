@@ -642,7 +642,7 @@ o.dispose()
 * support multivariate polynomial, multivariate operations **[DONE]**
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
-* exact/symbolic `SVD` computation, faster numeric `SVD` computation (TODO)
+* faster numeric `SVD` computation (TODO)
 * implement `LLL` algorithm (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation`, `ConnectedPermutation`, `Composition` &amp; `Partition` (TODO)
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**

@@ -3903,7 +3903,7 @@ function solvelinears( a, b, with_param )
     var symbol = is_string(with_param) && with_param.length ? with_param : 'z', apinv, bp, ns;
 
     if ( !is_instance(a, Matrix) ) a = Matrix(Ring.Q(), a);
-    else a = Matrix(a.ring.associatedField(), a);
+    else if ( !a.ring.isField() ) a = Matrix(a.ring.associatedField(), a);
     if ( !a.nr || !a.nc ) return null;
     b = Matrix(a.ring, b);
     apinv = a.ginv(); bp = apinv.mul(b);
@@ -3911,7 +3911,7 @@ function solvelinears( a, b, with_param )
     else if ( !a.mul(bp).equ(b) ) return null; // no solutions exist
     if ( false===with_param )
     {
-        // particular least-norm solution
+        // particular solution
         return bp.col(0);
     }
     else
@@ -3920,8 +3920,8 @@ function solvelinears( a, b, with_param )
         ns = Matrix.I(a.ring, bp.nr).sub(apinv.mul(a));
         return array(bp.nr, function(i){
             return Expr(array(ns.nc, function(j){
-                return MulTerm(SymbolTerm(with_param+'_'+(j+1)), ns.val[i][j]);
-            })).add(bp.val[j][0]);
+                return MulTerm(SymbolTerm(symbol+'_'+(j+1)), ns.val[i][j]);
+            })).add(bp.val[i][0]);
         });
     }
 }
@@ -6189,6 +6189,13 @@ Abacus.Math = {
         return solvepythag(Arithmetic.nums(a), with_param)
     }
     ,linears: function( a, b, with_param ) {
+        var ring = Ring.Q();
+        if ( !is_instance(a, Matrix) && !is_array(a) && !is_args(a) ) return null;
+        if ( is_instance(a, Matrix) && (!a.nr || !a.nc) ) return null;
+        if ( !is_instance(a, Matrix) && !a.length ) return null;
+        //a = is_instance(a, Matrix) ? a : a;
+        if ( !is_instance(b, Matrix) && !is_array(b) && !is_args(b) ) b = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return b||0;});
+        b = is_instance(b, Matrix) ? b : ring.cast(b);
         return solvelinears( a, b, with_param );
     }
 

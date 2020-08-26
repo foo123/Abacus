@@ -1,4 +1,4 @@
-Abacus.Primes (VERSION = 1.0.0)
+Abacus.Primes (VERSION = 1.0.5)
 ---
 Division Wheels
 Abacus.Util.wheel(2)
@@ -6,8 +6,16 @@ Abacus.Util.wheel(2)
 Abacus.Util.wheel(2,3)
 [ [ 5, 7 ], [ 2, 4 ] ]
 Abacus.Util.wheel(2,3,5)
-[ [ 7, 11, 13, 17, 19, 23, 29, 31 ],
-  [ 4, 2, 4, 2, 4, 6, 2, 6 ] ]
+[
+  [
+     7, 11, 13, 17,
+    19, 23, 29, 31
+  ],
+  [
+    4, 2, 4, 2,
+    4, 6, 2, 6
+  ]
+]
 ---
 Primality Tests
 2 Probable Prime (Prime)

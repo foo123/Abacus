@@ -15,6 +15,7 @@ call node matrices.js > matrices.txt
 call node expressions.js > expressions.txt
 call node primes.js > primes.txt
 call node diophantine.js > diophantine.txt
+call node linears.js > linears.txt
 call node tensors.js > tensors.txt
 call node tuples.js > tuples.txt
 call node permutations.js > permutations.txt

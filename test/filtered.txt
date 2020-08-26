@@ -1,4 +1,4 @@
-Abacus.Combinatorics Filtered Combinatorial Objects (VERSION = 1.0.0)
+Abacus.Combinatorics Filtered Combinatorial Objects (VERSION = 1.0.5)
 ---
 Get all Permutations filtered from all possible Tuples (an inefficient way to generate permutations)
 o = Abacus.Tensor(3,3,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE())

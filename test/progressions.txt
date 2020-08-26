@@ -1,4 +1,4 @@
-Abacus.Progressions (VERSION = 1.0.0)
+Abacus.Progressions (VERSION = 1.0.5)
 ---
 o=Abacus.Progression(1,1,10)
 o.total()

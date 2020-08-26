@@ -1,4 +1,4 @@
-Abacus.Compositions Filtered (VERSION = 1.0.0)
+Abacus.Compositions Filtered (VERSION = 1.0.5)
 ---
 o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.UNIQUE())
 o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */

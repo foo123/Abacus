@@ -1,0 +1,21 @@
+Abacus Linear Systems (VERSION = 1.0.5)
+---
+Solve system AX = B
+4x + 5y = 7
+o=Abacus.Math.linears([[4,5]], [7])
+x = 28/41+(25/41)*z_1-(20/41)*z_2, y = 35/41-(20/41)*z_1+(16/41)*z_2
+x = \frac{28}{41}+\frac{25}{41}z_{1}-\frac{20}{41}z_{2}, y = \frac{35}{41}-\frac{20}{41}z_{1}+\frac{16}{41}z_{2}
+[ 7 ] [ 7 ]
+---
+x - y = 6, -2x + 2y = 1
+o=Abacus.Math.linears([[1,-1],[-2,2]], [6,1])
+No solution
+No solution
+No solution [ 6, 1 ]
+---
+2x + 5y = -1, -10x - 25y = 5
+o=Abacus.Math.linears([[2,5],[-10,-25]], [-1,5])
+x = -2/29+(25/29)*z_1-(10/29)*z_2, y = -5/29-(10/29)*z_1+(4/29)*z_2
+x = -\frac{2}{29}+\frac{25}{29}z_{1}-\frac{10}{29}z_{2}, y = -\frac{5}{29}-\frac{10}{29}z_{1}+\frac{4}{29}z_{2}
+[ -1, 5 ] [ -1, 5 ]
+---

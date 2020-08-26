@@ -1,4 +1,4 @@
-Abacus.RationalFuncs (VERSION = 1.0.0)
+Abacus.RationalFuncs (VERSION = 1.0.5)
 ---
 Rational Functions and Operations
 pring = Abacus.Ring.C("x","y"), ring = Abacus.Ring.C("x","y").associatedField()

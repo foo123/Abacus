@@ -1,4 +1,4 @@
-Abacus.CatalanWords (VERSION = 1.0.0)
+Abacus.CatalanWords (VERSION = 1.0.5)
 ---
 o = Abacus.CatalanWord(1)
 o.total()
