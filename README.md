@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
 
 
-**version 1.0.5** (~ 287kB minified, ~ 74kB zipped)
+**version 1.0.6** (~ 287kB minified, ~ 74kB zipped)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -145,6 +145,11 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Solving a System of Linear Diophantine Equations with Lower and Upper Bounds on the Variables, K. Aardal, C.A.J. Hurkens, A.K. Lenstra](https://www.jstor.org/stable/3690477?seq=1#page_scan_tab_contents)
 * [Integer Programming with a Fixed Number of Variables, H.W. Lenstra](https://people.csail.mit.edu/rrw/presentations/Lenstra81.pdf)
 * [Integer Programming with 2-Variable Equations and 1-Variable Inequalities, Bodirsky, Nordh, Von Oertzen](http://www.lix.polytechnique.fr/~bodirsky/publications/2var.pdf)
+* [Fourier-Motzkin Elimination, wikipedia](https://en.wikipedia.org/wiki/Fourier%E2%80%93Motzkin_elimination)
+* [Fourier's Elimination: Which to Choose?, Jean-Louis Imbert](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.51.493&rep=rep1&type=pdf)
+* [Complexity Estimates for Fourier-Motzkin Elimination, Rui-Juan Jing, Marc Moreno-Maza, Delaram Talaashrafi](https://arxiv.org/abs/1811.01510v2)
+* [Fourier-Motzkin Elimination Extension to Integer Programming Problems , H.P. Williams](https://core.ac.uk/download/pdf/82527959.pdf)
+* [Affine Monoids, Hilbert Bases and Hilbert Functions, Robert Koch (PhD thesis)](https://pdfs.semanticscholar.org/ed79/7e8d8a3316f227cb9f180538d3d2150a900d.pdf)
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
 * [Fraction-Free Methods for Determinants, Deanna Richelle Leggett (MSc thesis)](https://pdfs.semanticscholar.org/4188/73bbcad4e7bcdcf14475b4616febbdc729f2.pdf)

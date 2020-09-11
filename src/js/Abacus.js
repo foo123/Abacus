@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for Node.js/Browser/XPCOM Javascript, Python, Java
-*   @version: 1.0.5
+*   @version: 1.0.6
 *   https://github.com/foo123/Abacus
 **/
 !function( root, name, factory ){
@@ -20,7 +20,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus( undef ){
 "use strict";
 
-var  Abacus = {VERSION: "1.0.5"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "1.0.6"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array[PROTO].slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -64,7 +64,7 @@ var  Abacus = {VERSION: "1.0.5"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,DefaultArithmetic, INUMBER, INumber, Numeric, Integer, IntegerMod, Rational, Complex
     ,Symbolic, SymbolTerm, PowTerm, MulTerm, AddTerm, Expr, RationalExpr
     ,UniPolyTerm, MultiPolyTerm, Poly, PiecewisePolynomial, Polynomial, MultiPolynomial, RationalFunc
-    ,Ring, Matrix
+    ,Ring, Matrix, Op, RelOp, Func
     ,Iterator, CombinatorialIterator, Filter
     ,Progression, HashSieve, PrimeSieve, Diophantine
     ,Tensor, Permutation, Combination, Subset, Partition, SetPartition, CatalanWord
@@ -3892,7 +3892,7 @@ function solvecongrs( a, b, m, with_param, with_free_vars )
 
     return null==solution ? null : (with_free_vars ? [solution, free_vars] : solution);
 }
-function solvelinears( a, b, with_param )
+function solvelinears( a, b, x )
 {
     // solve general arbitrary system of m linear equations in k variables
     // a11 x_1 + a12 x_2 + a13 x_3 + .. + a1k x_k = b1, a21 x_1 + a22 x_2 + a23 x_3 + .. + a2k x_k = b2,..
@@ -3900,16 +3900,16 @@ function solvelinears( a, b, with_param )
     // and b is m-array right hand side factor (default [0,..,0])
     // can also produce least-squares solution to given system
     // https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse#Applications
-    var symbol = is_string(with_param) && with_param.length ? with_param : 'z', apinv, bp, ns;
+    var apinv, bp, ns;
 
     if ( !is_instance(a, Matrix) ) a = Matrix(Ring.Q(), a);
     else if ( !a.ring.isField() ) a = Matrix(a.ring.associatedField(), a);
     if ( !a.nr || !a.nc ) return null;
     b = Matrix(a.ring, b);
     apinv = a.ginv(); bp = apinv.mul(b);
-    if ( true===with_param ) return bp.col(0); // least squares solution
+    if ( true===x ) return bp.col(0); // least squares solution
     else if ( !a.mul(bp).equ(b) ) return null; // no solutions exist
-    if ( false===with_param )
+    if ( false===x )
     {
         // particular solution
         return bp.col(0);
@@ -3918,12 +3918,97 @@ function solvelinears( a, b, with_param )
     {
         // general solution(s)
         ns = Matrix.I(a.ring, bp.nr).sub(apinv.mul(a));
+        if ( is_string(x) ) x = array(ns.nc, function(i){return x+'_'+(i+1);});
+        else if ( is_array(x) && ns.nc>x.length ) x = x.concat(array(ns.nc-x.length, function(i){return x[x.length-1].split('_')[0]+'_'+(x.length+i+1);}));
         return array(bp.nr, function(i){
             return Expr(array(ns.nc, function(j){
-                return MulTerm(SymbolTerm(symbol+'_'+(j+1)), ns.val[i][j]);
+                return MulTerm(SymbolTerm(x[j]), ns.val[i][j]);
             })).add(bp.val[i][0]);
         });
     }
+}
+function solvelineqs( a, b, x )
+{
+    // solve general arbitrary system of m linear inequalities in k variables
+    // a11 x_1 + a12 x_2 + a13 x_3 + .. + a1k x_k <= b1, a21 x_1 + a22 x_2 + a23 x_3 + .. + a2k x_k <= b2,..
+    // where a is m x k-matrix of coefficients: [[a11, a12, a13, .. , a1k],..,[am1, am2, am3, .. , amk]]
+    // and b is m-array right hand side factor (default [0,..,0])
+    // https://en.wikipedia.org/wiki/Fourier%E2%80%93Motzkin_elimination
+    var sol0, sol, sols, k, m, i, j, l, p, n, z, pi, ni;
+
+    if ( !is_instance(a, Matrix) ) a = Matrix(Ring.Q(), a);
+    if ( !a.nr || !a.nc || a.ring !== Ring.Q() ) return null;
+    b = Matrix(a.ring, b).col(0);
+    k = a.nc; m = a.nr;
+
+    if ( !x ) x = 'x';
+    if ( is_string(x) ) x = array(k, function(i){return x+'_'+(i+1);});
+    else if ( is_array(x) && k>x.length ) x = x.concat(array(k-x.length, function(i){return x[x.length-1].split('_')[0]+'_'+(x.length+i+1);}));
+
+    sol0 = array(m, function(j){
+        return RelOp.LTE(Expr(a.row(j).map(function(v, i){return MulTerm(SymbolTerm(x[i]), v);})), Expr(b[j]));
+    });
+
+    sols = [];
+    sol = sol0.slice();
+    for(i=k-1; i>=0; i--)
+    {
+        p = []; n = [], z = [];
+        sol.forEach(function(s){
+            var f = s.lhs.term(x[i]).c().sub(s.rhs.term(x[i]).c()),
+                e = s.rhs.sub(s.rhs.term(x[i])).sub(s.lhs.sub(s.lhs.term(x[i])));
+            if ( f.gt(0) ) p.push(e.div(f));
+            else if ( f.lt(0) ) n.push(e.div(f));
+            else z.push(e);
+        });
+        if ( !p.length || !n.length )
+        {
+            l = z.length;
+            sol = new Array(l);
+            for(j=0; j<l; j++)
+            {
+                if ( z[j].isConst() && z[j].lt(0) ) return null; // no solution
+                sol[j] = RelOp.LTE(Expr(), z[j]);
+            }
+            if ( p.length || n.length )
+            {
+                sols.unshift(p.length ? [RelOp.LTE(Expr(SymbolTerm(x[i])), p.length>1?Func('min', p):p[0])] : (n.length ? [RelOp.LTE(n.length>1?Func('max', n):n[0], Expr(SymbolTerm(x[i])))] : []));
+            }
+        }
+        else
+        {
+            l = p.length*n.length+z.length;
+            sol = new Array(l);
+            for(j=0; j<l; j++)
+            {
+                if ( j < z.length )
+                {
+                    if ( z[j].isConst() && z[j].lt(0) ) return null; // no solution
+                    sol[j] = RelOp.LTE(Expr(), z[j]);
+                }
+                /*else if ( !p.length )
+                {
+                    sol[j] = RelOp.LTE(n[j-z.length], Expr(SymbolTerm(x[i])));
+                }
+                else if ( !n.length )
+                {
+                    sol[j] = RelOp.LTE(Expr(SymbolTerm(x[i])), p[j-z.length]);
+                }*/
+                else
+                {
+                    pi = stdMath.floor((j-z.length)/n.length);
+                    ni = (j-z.length) % n.length;
+                    if ( p[pi].isConst() && n[ni].isConst() && p[pi].lt(n[ni]) ) return null; // no solution
+                    sol[j] = RelOp.LTE(n[ni], p[pi]);
+                }
+            }
+            sols.unshift([
+                RelOp.LTE(n.length>1?Func('max', n):n[0], Expr(SymbolTerm(x[i]))),
+                RelOp.LTE(Expr(SymbolTerm(x[i])), p.length>1?Func('min', p):p[0])
+            ]);
+        }
+    }
+    return sols;
 }
 function sign( x )
 {
@@ -6198,7 +6283,16 @@ Abacus.Math = {
         b = is_instance(b, Matrix) ? b : ring.cast(b);
         return solvelinears( a, b, with_param );
     }
-
+    ,lineqs: function( a, b, param ) {
+        var ring = Ring.Q();
+        if ( !is_instance(a, Matrix) && !is_array(a) && !is_args(a) ) return null;
+        if ( is_instance(a, Matrix) && (!a.nr || !a.nc) ) return null;
+        if ( !is_instance(a, Matrix) && !a.length ) return null;
+        //a = is_instance(a, Matrix) ? a : a;
+        if ( !is_instance(b, Matrix) && !is_array(b) && !is_args(b) ) b = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return b||0;});
+        b = is_instance(b, Matrix) ? b : ring.cast(b);
+        return solvelineqs( a, b, param );
+    }
     ,groebner: buchberger_groebner
 
     ,dotp: function( a, b ) {
@@ -9493,6 +9587,11 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         var self = this;
         return self.symbols().map(function(t){return self.terms[t];});
     }
+    ,term: function( t ) {
+        var self = this;
+        t = String(t);
+        return HAS.call(self.terms, t) ? self.terms[t] : MulTerm('1', Complex.Zero());
+    }
     ,c: function( ) {
         return this.terms['1'].c();
     }
@@ -9959,6 +10058,10 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,c: function( ) {
         var self = this;
         return self.num.c().div(self.den.c());
+    }
+    ,term: function( t ) {
+        var self = this;
+        return self.num.term(t);
     }
     ,isConst: function( ) {
         var self = this;
@@ -13927,6 +14030,242 @@ Ring = Abacus.Ring = Class({
             if ( is_class(self.PolynomialClass, RationalFunc) ) self._tex = '\\mathbf{Fr}['+self._tex+']';
         }
         return self._tex;
+    }
+});
+
+// Abacus.Op, represents an abstract mathematical operator
+Op = Abacus.Op = Class({
+    constructor: function Op( op ) {
+        var self = this;
+        if ( !is_instance(self, Op) ) return new Op(op);
+        if ( is_instance(op, Op) ) op = op.op;
+        self.op = String(op);
+    }
+    ,op: ''
+    ,dispose: function( ) {
+        var self = this;
+        self.op = null;
+        return self;
+    }
+    ,clone: function( ) {
+        var self = this;
+        return new self[CLASS](self.op);
+    }
+    ,evaluate: function( ) {
+        return null;
+    }
+    ,toString: function( ) {
+        return self.op;
+    }
+    ,toTex: function( ) {
+        return this.toString();
+    }
+});
+// Abacus.RelOp, represents a relational operator, eg =, <, >, <=, >=, <>
+RelOp = Abacus.RelOp = Class(Op, {
+    constructor: function RelOp( lhs, op, rhs ) {
+        var self = this;
+        if ( !is_instance(self, RelOp) ) return new RelOp(lhs, op, rhs);
+        if ( is_instance(lhs, RelOp) )
+        {
+            self.lhs = lhs.lhs;
+            self.op = lhs.op;
+            self.rhs = lhs.rhs;
+        }
+        else
+        {
+            op = String(op||'=').toLowerCase();
+            if ( null == lhs ) lhs = RationalExpr();
+            if ( null == rhs ) rhs = RationalExpr();
+            if ( !is_instance(lhs, [Expr, RationalExpr, Func]) ) lhs = RationalExpr(lhs);
+            if ( !is_instance(rhs, [Expr, RationalExpr, Func]) ) rhs = RationalExpr(rhs);
+            self.lhs = lhs;
+            self.rhs = rhs;
+            if ( '<' === op || '\\lt' ===op ) self.op = '<';
+            else if ( '>' === op || '\\gt' ===op ) self.op = '>';
+            else if ( '>=' === op || '=>' === op || '\\le' ===op ) self.op = '>=';
+            else if ( '<=' === op || '=<' === op || '\\ge' ===op ) self.op = '<=';
+            else if ( '<>' === op || '!=' === op || '\\ne' ===op ) self.op = '<>';
+            else if ( '~' === op || '\\sim' ===op ) self.op = '~';
+            else self.op = '=';
+        }
+    }
+
+    ,__static__: {
+        EQU: function( lhs, rhs ) {
+            return new RelOp(lhs, '=', rhs);
+        }
+        ,NEQ: function( lhs, rhs ) {
+            return new RelOp(lhs, '<>', rhs);
+        }
+        ,LT: function( lhs, rhs ) {
+            return new RelOp(lhs, '<', rhs);
+        }
+        ,LTE: function( lhs, rhs ) {
+            return new RelOp(lhs, '<=', rhs);
+        }
+        ,GT: function( lhs, rhs ) {
+            return new RelOp(lhs, '>', rhs);
+        }
+        ,GTE: function( lhs, rhs ) {
+            return new RelOp(lhs, '>=', rhs);
+        }
+        ,SIM: function( lhs, rhs ) {
+            return new RelOp(lhs, '~', rhs);
+        }
+        ,fromString: function( s ) {
+            var args = String(s).split(/\\sim|\\lt|\\gt|\\le|\\ge|\\ne|\\eq|=<|<=|>=|=>|<>|!=|<|>|=|~/gm),
+                op = ['\\sim','\\lt','\\gt','\\le','\\ge','\\ne','\\eq','=<','<=','>=','=>','<>','!=','<','>','=','~'].reduce(function(op, opp){
+                    var p = s.indexOf(opp);
+                    if ( -1 < p && p < op[1] ) op = [opp, p];
+                    return op;
+                }, ['=',Infinity])[0];
+            return new RelOp(RationalExpr.fromString(args[0]), op, args.length>1?RationalExpr.fromString(args[1]):RationalExpr());
+        }
+    }
+
+    ,lhs: null
+    ,rhs: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.lhs = null;
+        self.rhs = null;
+        self.op = null;
+        return self;
+    }
+    ,clone: function( ) {
+        var self = this;
+        return new self[CLASS](self.lhs, self.op, self.rhs);
+    }
+    ,neg: function( ) {
+        var self = this, op = self.op;
+        if ( '>=' === op ) op = '<=';
+        else if ( '<=' === op ) op = '>=';
+        else if ( '<' === op ) op = '>';
+        else if ( '>' === op ) op = '<';
+        return new RelOp(self.lhs.neg(), op, self.rhs.neg());
+    }
+    ,add: function( term ) {
+        var self = this, op = self.op;
+        return new RelOp(self.lhs.add(term), op, self.rhs.add(term));
+    }
+    ,sub: function( term ) {
+        var self = this, op = self.op;
+        return new RelOp(self.lhs.sub(term), op, self.rhs.sub(term));
+    }
+    ,mul: function( term ) {
+        var self = this, op = self.op, Arithmetic = Abacus.Arithmetic;
+        if ( (Arithmetic.isNumber(term) && Arithmetic.lt(term, 0)) || (is_instance(term, Numeric) && term.lt(0)) )
+        {
+            if ( '>=' === op ) op = '<=';
+            else if ( '<=' === op ) op = '>=';
+            else if ( '<' === op ) op = '>';
+            else if ( '>' === op ) op = '<';
+        }
+        return new RelOp(self.lhs.mul(term), op, self.rhs.mul(term));
+    }
+    ,div: function( term ) {
+        var self = this, op = self.op, Arithmetic = Abacus.Arithmetic;
+        if ( (Arithmetic.isNumber(term) && Arithmetic.lt(term, 0)) || (is_instance(term, Numeric) && term.lt(0)) )
+        {
+            if ( '>=' === op ) op = '<=';
+            else if ( '<=' === op ) op = '>=';
+            else if ( '<' === op ) op = '>';
+            else if ( '>' === op ) op = '<';
+        }
+        return new RelOp(self.lhs.div(term), op, self.rhs.div(term));
+    }
+    ,evaluate: function( symbolValues ) {
+        var self = this, op = self.op, res = false,
+            lhs = self.lhs.evaluate(symbolValues), rhs = self.rhs.evaluate(symbolValues);
+        if ( '>' === op ) res = lhs.gt(rhs);
+        else if ( '<' === op ) res = lhs.lt(rhs);
+        else if ( '>=' === op ) res = lhs.gte(rhs);
+        else if ( '<=' === op ) res = lhs.lte(rhs);
+        else if ( '<>' === op ) res = !lhs.equ(rhs);
+        else if ( '~' === op ) res = true;
+        else /*if ( '=' === op )*/ res = lhs.equ(rhs);
+        return res;
+    }
+    ,toString: function( ) {
+        var self = this, op = self.op;
+        return self.lhs.toString()+' '+op+' '+self.rhs.toString();
+    }
+    ,toTex: function( ) {
+        var self = this, op = self.op;
+        if ( '>=' === op ) op = '\\ge';
+        else if ( '<=' === op ) self.op = '\\le';
+        else if ( '<>' === op ) self.op = '\\ne';
+        else if ( '~' === op ) op = '\\sim';
+        return self.lhs.toTex()+' '+op+' '+self.rhs.toTex();
+    }
+});
+// Abacus.Func, represents a functional operator, eg min, max, exp, log, sin, cos, ..
+Func = Abacus.Func = Class(Op, {
+    constructor: function Func( func, args ) {
+        var self = this;
+        if ( !is_instance(self, Func) ) return new Func(func, args);
+        if ( is_instance(func, Func) )
+        {
+            self.func = func.op;
+            self.args = func.args;
+        }
+        else
+        {
+            func = String(func||'').toLowerCase();
+            if ( null == args || !args.length ) args = [RationalExpr()];
+            self.op = func;
+            self.args = args.map(function(arg){
+                if ( !is_instance(arg, [Expr, RationalExpr]) ) arg = RationalExpr(arg);
+                return arg;
+            });
+        }
+    }
+
+    ,__static__: {
+    }
+
+    ,args: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.args = null;
+        self.op = null;
+        return self;
+    }
+    ,clone: function( ) {
+        var self = this;
+        return new self[CLASS](self.op, self.args);
+    }
+    ,neg: function( ) {
+        return this;
+    }
+    ,add: function( term ) {
+        return this;
+    }
+    ,sub: function( term ) {
+        return this;
+    }
+    ,mul: function( term ) {
+        return this;
+    }
+    ,div: function( term ) {
+        return this;
+    }
+    ,d: function( n, x ) {
+        return this;
+    }
+    ,evaluate: function( symbolValues ) {
+        return null;
+    }
+    ,toString: function( ) {
+        var self = this;
+        return self.op+'('+self.args.map(String).join(',')+')';
+    }
+    ,toTex: function( ) {
+        var self = this;
+        return Tex(self.op)+'('+self.args.map(Tex).join(',')+')';
     }
 });
 
