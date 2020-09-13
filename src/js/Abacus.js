@@ -43,10 +43,11 @@ var  Abacus = {VERSION: "1.0.6"}, stdMath = Math, PROTO = 'prototype', CLASS = '
         return a;
     }
     ,Class = function Class(s, c) {
-        if ( 1 === arguments.length ) { c = s; s = Object; }
+        if ( 1 === arguments.length ) { c = s; s = null;/*Object;*/ }
+        s = s || null;
         var ctor = c[CLASS] || function(){};
         if ( HAS.call(c,'__static__') ) { ctor = Merge(ctor, c.__static__); delete c.__static__; }
-        ctor[PROTO] = Merge(Extend(s[PROTO]), c);
+        ctor[PROTO] = s ? Merge(Extend(s[PROTO]), c) : c;
         return ctor;
     }
 
@@ -62,9 +63,9 @@ var  Abacus = {VERSION: "1.0.6"}, stdMath = Math, PROTO = 'prototype', CLASS = '
 
     ,Node, Heap
     ,DefaultArithmetic, INUMBER, INumber, Numeric, Integer, IntegerMod, Rational, Complex
-    ,Symbolic, SymbolTerm, PowTerm, MulTerm, AddTerm, Expr, RationalExpr
+    ,Symbolic, SymbolTerm, PowTerm, MulTerm, AddTerm, Expr, RationalExpr, Op, RelOp, Func
     ,UniPolyTerm, MultiPolyTerm, Poly, PiecewisePolynomial, Polynomial, MultiPolynomial, RationalFunc
-    ,Ring, Matrix, Op, RelOp, Func
+    ,Ring, Matrix
     ,Iterator, CombinatorialIterator, Filter
     ,Progression, HashSieve, PrimeSieve, Diophantine
     ,Tensor, Permutation, Combination, Subset, Partition, SetPartition, CatalanWord
@@ -3934,7 +3935,7 @@ function solvelineqs( a, b, x )
     // where a is m x k-matrix of coefficients: [[a11, a12, a13, .. , a1k],..,[am1, am2, am3, .. , amk]]
     // and b is m-array right hand side factor (default [0,..,0])
     // https://en.wikipedia.org/wiki/Fourier%E2%80%93Motzkin_elimination
-    var sol0, sol, sols, k, m, i, j, l, p, n, z, pi, ni;
+    var rel0, rel, sol, k, m, i, j, l, p, n, z, pi, ni;
 
     if ( !is_instance(a, Matrix) ) a = Matrix(Ring.Q(), a);
     if ( !a.nr || !a.nc || a.ring !== Ring.Q() ) return null;
@@ -3945,16 +3946,16 @@ function solvelineqs( a, b, x )
     if ( is_string(x) ) x = array(k, function(i){return x+'_'+(i+1);});
     else if ( is_array(x) && k>x.length ) x = x.concat(array(k-x.length, function(i){return x[x.length-1].split('_')[0]+'_'+(x.length+i+1);}));
 
-    sol0 = array(m, function(j){
+    rel0 = array(m, function(j){
         return RelOp.LTE(Expr(a.row(j).map(function(v, i){return MulTerm(SymbolTerm(x[i]), v);})), Expr(b[j]));
     });
 
-    sols = [];
-    sol = sol0.slice();
+    sol = [];
+    rel = rel0.slice();
     for(i=k-1; i>=0; i--)
     {
         p = []; n = [], z = [];
-        sol.forEach(function(s){
+        rel.forEach(function(s){
             var f = s.lhs.term(x[i]).c().sub(s.rhs.term(x[i]).c()),
                 e = s.rhs.sub(s.rhs.term(x[i])).sub(s.lhs.sub(s.lhs.term(x[i])));
             if ( f.gt(0) ) p.push(e.div(f));
@@ -3964,51 +3965,51 @@ function solvelineqs( a, b, x )
         if ( !p.length || !n.length )
         {
             l = z.length;
-            sol = new Array(l);
+            rel = new Array(l);
             for(j=0; j<l; j++)
             {
                 if ( z[j].isConst() && z[j].lt(0) ) return null; // no solution
-                sol[j] = RelOp.LTE(Expr(), z[j]);
+                rel[j] = RelOp.LTE(Expr(), z[j]);
             }
             if ( p.length || n.length )
             {
-                sols.unshift(p.length ? [RelOp.LTE(Expr(SymbolTerm(x[i])), p.length>1?Func('min', p):p[0])] : (n.length ? [RelOp.LTE(n.length>1?Func('max', n):n[0], Expr(SymbolTerm(x[i])))] : []));
+                sol.unshift(p.length ? [RelOp.LTE(Expr(SymbolTerm(x[i])), Func.MIN(p))] : (n.length ? [RelOp.LTE(Func.MAX(n), Expr(SymbolTerm(x[i])))] : []));
             }
         }
         else
         {
             l = p.length*n.length+z.length;
-            sol = new Array(l);
+            rel = new Array(l);
             for(j=0; j<l; j++)
             {
                 if ( j < z.length )
                 {
                     if ( z[j].isConst() && z[j].lt(0) ) return null; // no solution
-                    sol[j] = RelOp.LTE(Expr(), z[j]);
+                    rel[j] = RelOp.LTE(Expr(), z[j]);
                 }
                 /*else if ( !p.length )
                 {
-                    sol[j] = RelOp.LTE(n[j-z.length], Expr(SymbolTerm(x[i])));
+                    rel[j] = RelOp.LTE(n[j-z.length], Expr(SymbolTerm(x[i])));
                 }
                 else if ( !n.length )
                 {
-                    sol[j] = RelOp.LTE(Expr(SymbolTerm(x[i])), p[j-z.length]);
+                    rel[j] = RelOp.LTE(Expr(SymbolTerm(x[i])), p[j-z.length]);
                 }*/
                 else
                 {
                     pi = stdMath.floor((j-z.length)/n.length);
                     ni = (j-z.length) % n.length;
                     if ( p[pi].isConst() && n[ni].isConst() && p[pi].lt(n[ni]) ) return null; // no solution
-                    sol[j] = RelOp.LTE(n[ni], p[pi]);
+                    rel[j] = RelOp.LTE(n[ni], p[pi]);
                 }
             }
-            sols.unshift([
-                RelOp.LTE(n.length>1?Func('max', n):n[0], Expr(SymbolTerm(x[i]))),
-                RelOp.LTE(Expr(SymbolTerm(x[i])), p.length>1?Func('min', p):p[0])
+            sol.unshift([
+                RelOp.LTE(Func.MAX(n), Expr(SymbolTerm(x[i]))),
+                RelOp.LTE(Expr(SymbolTerm(x[i])), Func.MIN(p))
             ]);
         }
     }
-    return sols;
+    return sol;
 }
 function sign( x )
 {
@@ -8684,10 +8685,10 @@ PowTerm = Class(Symbolic, {
             self.base = base.base;
             self.exp = base.exp;
         }
-        else if ( is_instance(base, INumber) )
+        else if ( is_instance(base, [INumber, Func]) )
         {
             self.base = base;
-            self.exp = is_instance(exp, INumber) ? exp : Rational.cast(null == exp ? 1 : exp);
+            self.exp = is_instance(exp, [INumber, Func]) ? exp : Rational.cast(null == exp ? 1 : exp);
         }
         else if ( is_string(base) )
         {
@@ -8766,7 +8767,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return self.base.equ(a.base) && self.exp.equ(a.exp);
-        else if ( is_instance(a, [SymbolTerm, Numeric]) || Arithmetic.isNumber(a) )
+        else if ( is_instance(a, [Func, SymbolTerm, Numeric]) || Arithmetic.isNumber(a) )
             return self.base.equ(a) && self.exp.equ(Arithmetic.I);
         else if ( is_instance(a, INumber) )
             return a.equ(self);
@@ -8778,7 +8779,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return (self.exp.equ(a.exp) && self.base.gt(a.base)) || (self.base.equ(a.base) && self.exp.gt(a.exp));
-        else if ( is_instance(a, SymbolTerm) )
+        else if ( is_instance(a, [Func, SymbolTerm]) )
             return self.base.equ(a) && self.exp.gt(Arithmetic.I);
         else if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return (self.exp.equ(Arithmetic.I) && self.base.gt(a)) || (self.base.equ(a) && self.exp.gt(Arithmetic.I));
@@ -8790,7 +8791,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return (self.exp.equ(a.exp) && self.base.gte(a.base)) || (self.base.equ(a.base) && self.exp.gte(a.exp));
-        else if ( is_instance(a, SymbolTerm) )
+        else if ( is_instance(a, [Func, SymbolTerm]) )
             return self.base.equ(a) && self.exp.gte(Arithmetic.I);
         else if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return (self.exp.equ(Arithmetic.I) && self.base.gte(a)) || (self.base.equ(a) && self.exp.gte(Arithmetic.I));
@@ -8802,7 +8803,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return (self.exp.equ(a.exp) && self.base.lt(a.base)) || (self.base.equ(a.base) && self.exp.lt(a.exp));
-        else if ( is_instance(a, SymbolTerm) )
+        else if ( is_instance(a, [Func, SymbolTerm]) )
             return self.base.equ(a) && self.exp.lt(Arithmetic.I);
         else if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return (self.exp.equ(Arithmetic.I) && self.base.lt(a)) || (self.base.equ(a) && self.exp.lt(Arithmetic.I));
@@ -8814,7 +8815,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return (self.exp.equ(a.exp) && self.base.lte(a.base)) || (self.base.equ(a.base) && self.exp.lte(a.exp));
-        else if ( is_instance(a, SymbolTerm) )
+        else if ( is_instance(a, [Func, SymbolTerm]) )
             return self.base.equ(a) && self.exp.lte(Arithmetic.I);
         else if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return (self.exp.equ(Arithmetic.I) && self.base.lte(a)) || (self.base.equ(a) && self.exp.lte(Arithmetic.I));
@@ -8842,7 +8843,7 @@ PowTerm = Class(Symbolic, {
 
     ,add: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( is_instance(a, [Numeric, SymbolTerm, PowTerm, MulTerm]) || Arithmetic.isNumber(a) )
+        if ( is_instance(a, [Numeric, SymbolTerm, PowTerm, MulTerm, Func]) || Arithmetic.isNumber(a) )
             return Expr([self, a]);
         else if ( is_instance(a, INumber) )
             return a.add(self);
@@ -8852,7 +8853,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return Expr([self, Arithmetic.isNumber(a) ? Arithmetic.neg(a) : a.neg()]);
-        else if ( is_instance(a, [SymbolTerm, PowTerm, MulTerm]) )
+        else if ( is_instance(a, [SymbolTerm, PowTerm, MulTerm, Func]) )
             return Expr([self, a.neg()]);
         else if ( is_instance(a, INumber) )
             return a.neg().add(self);
@@ -8862,7 +8863,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return self.base.equ(a.base) ? PowTerm(self.base, self.exp.add(a.exp)) : MulTerm([self, a]);
-        else if ( is_instance(a, SymbolTerm) )
+        else if ( is_instance(a, [Func, SymbolTerm]) )
             return self.base.equ(a) ? PowTerm(self.base, self.exp.add(Arithmetic.I)) : MulTerm([self, a]);
         else if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return MulTerm(self, a);
@@ -8874,7 +8875,7 @@ PowTerm = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(a, PowTerm) )
             return self.base.equ(a.base) ? PowTerm(self.base, self.exp.sub(a.exp)) : MulTerm([self, a.inv()]);
-        else if ( is_instance(a, SymbolTerm) )
+        else if ( is_instance(a, [Func, SymbolTerm]) )
             return self.base.equ(a) ? PowTerm(self.base, self.exp.sub(Arithmetic.I)) : MulTerm([self, PowTerm(a, Rational.MinusOne())]);
         else if ( is_instance(a, Numeric) || Arithmetic.isNumber(a) )
             return MulTerm(self, Arithmetic.isNumber(a) ? Rational(Arithmetic.I, a) : a.inv());
@@ -8947,9 +8948,9 @@ MulTerm = Class(Symbolic, {
             self.factors = Obj(); self.factors['1'] = f;
             if ( !self.factors['1'].equ(Arithmetic.O) ) MulTerm.Merge(s, self);
         }
-        else if ( is_instance(s, [SymbolTerm, PowTerm]) )
+        else if ( is_instance(s, [SymbolTerm, Func, PowTerm]) )
         {
-            if ( is_instance(s, SymbolTerm) ) s = PowTerm(s, Arithmetic.I);
+            if ( is_instance(s, [SymbolTerm, Func]) ) s = PowTerm(s, Arithmetic.I);
             f = Complex.cast(null == c ? Arithmetic.I : c); // default
             self.symbol = s.toString();
             self.symbolTex = s.toTex();
@@ -9033,7 +9034,7 @@ MulTerm = Class(Symbolic, {
                 // skip, handled elsewhere
                 //merge_factor(String(factors));
             }
-            else if ( is_instance(factors, SymbolTerm) )
+            else if ( is_instance(factors, [SymbolTerm, Func]) )
             {
                 merge_factor(PowTerm(factors, I));
             }
@@ -9147,7 +9148,7 @@ MulTerm = Class(Symbolic, {
             return Arithmetic.equ(O, a) ? self.factors['1'].equ(O) : (('1' === self.symbol) && self.factors['1'].equ(a));
         else if ( is_instance(a, Numeric) )
             return a.equ(O) ? self.factors['1'].equ(O) : (('1' === self.symbol) && self.factors['1'].equ(a));
-        else if ( is_instance(a, PowTerm) )
+        else if ( is_instance(a, [PowTerm, Func]) )
             return (a.equ(O) && self.equ(O)) || ((self.symbol === a.toString()) && self.factors['1'].equ(Arithmetic.I));
         else if ( is_instance(a, MulTerm) )
             return (a.equ(O) && self.equ(O)) || ((self.symbol === a.symbol) && self.factors['1'].equ(a.factors['1']));
@@ -9159,7 +9160,7 @@ MulTerm = Class(Symbolic, {
     }
     ,gt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( is_instance(a, [SymbolTerm, PowTerm]) ) a = MulTerm(a);
+        if ( is_instance(a, [SymbolTerm, PowTerm, Func]) ) a = MulTerm(a);
         if ( is_instance(a, Expr) )
         {
             return a.lt(self);
@@ -9176,7 +9177,7 @@ MulTerm = Class(Symbolic, {
     }
     ,gte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( is_instance(a, [SymbolTerm, PowTerm]) ) a = MulTerm(a);
+        if ( is_instance(a, [SymbolTerm, PowTerm, Func]) ) a = MulTerm(a);
         if ( is_instance(a, Expr) )
         {
             return a.lte(self);
@@ -9193,7 +9194,7 @@ MulTerm = Class(Symbolic, {
     }
     ,lt: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( is_instance(a, [SymbolTerm, PowTerm]) ) a = MulTerm(a);
+        if ( is_instance(a, [SymbolTerm, PowTerm, Func]) ) a = MulTerm(a);
         if ( is_instance(a, Expr) )
         {
             return a.gt(self);
@@ -9210,7 +9211,7 @@ MulTerm = Class(Symbolic, {
     }
     ,lte: function( a ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if ( is_instance(a, [SymbolTerm, PowTerm]) ) a = MulTerm(a);
+        if ( is_instance(a, [SymbolTerm, PowTerm, Func]) ) a = MulTerm(a);
         if ( is_instance(a, Expr) )
         {
             return a.gte(self);
@@ -9258,7 +9259,7 @@ MulTerm = Class(Symbolic, {
             return MulTerm(self.factors, self.factors['1'].add(a));
         else if ( is_instance(a, MulTerm) )
             return self.symbol===a.symbol ? MulTerm(self.factors, self.factors['1'].add(a.factors['1'])) : Expr([self, a]);
-        else if ( is_instance(a, [PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Func, PowTerm, SymbolTerm]) )
             return self.symbol===a.toString() ? MulTerm(self.factors, self.factors['1'].add(Arithmetic.I)) : Expr([self, MulTerm(a)]);
         else if ( is_instance(a, [Expr, RationalExpr]) )
             return a.add(self);
@@ -9272,7 +9273,7 @@ MulTerm = Class(Symbolic, {
             return MulTerm(self.factors, self.factors['1'].sub(a));
         else if ( is_instance(a, MulTerm) )
             return self.symbol===a.symbol ? MulTerm(self.factors, self.factors['1'].sub(a.factors['1'])) : Expr([self, a.neg()]);
-        else if ( is_instance(a, [PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Func, PowTerm, SymbolTerm]) )
             return self.symbol===a.toString() ? MulTerm(self.factors, self.factors['1'].sub(Arithmetic.I)) : Expr([self, Multerm(a).neg()]);
         else if ( is_instance(a, Expr) )
             return Expr([self, a.neg()]);
@@ -9299,7 +9300,7 @@ MulTerm = Class(Symbolic, {
             MulTerm.Symbol(T);
             return T;
         }
-        else if ( is_instance(a, [PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Func, PowTerm, SymbolTerm]) )
         {
             T = MulTerm({},  self.factors['1']);
             if ( !T.factors['1'].equ(O) )
@@ -9341,7 +9342,7 @@ MulTerm = Class(Symbolic, {
             MulTerm.Symbol(T);
             return T;
         }
-        else if ( is_instance(a, [PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Func, PowTerm, SymbolTerm]) )
         {
             T = MulTerm({},  self.factors['1']);
             if ( !T.factors['1'].equ(O) )
@@ -9496,6 +9497,12 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
                 else if ( ('1' === x.symbol) || !x.factors['1'].equ(O) ) E.terms[x.symbol] = x;
                 if ( '1' !== x.symbol && E.terms[x.symbol] && E.terms[x.symbol].factors['1'].equ(O) ) delete E.terms[x.symbol];
             }
+            else if ( is_instance(x, [Func]) )
+            {
+                x = MulTerm(x, Arithmetic.I);
+                if ( E.terms[x.symbol] ) E.terms[x.symbol] = E.terms[x.symbol].add(x);
+                if ( '1' !== x.symbol && E.terms[x.symbol] && E.terms[x.symbol].factors['1'].equ(O) ) delete E.terms[x.symbol];
+            }
             else if ( is_instance(x, [Expr, Poly]) )
             {
                 if ( is_instance(x, Poly) ) x = x.toExpr();
@@ -9631,9 +9638,9 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return (1 === self.symbols().length) && self.terms['1'].equ(a);
         }
-        else if ( is_instance(a, [SymbolTerm, PowTerm, MulTerm]) )
+        else if ( is_instance(a, [SymbolTerm, PowTerm, MulTerm, Func]) )
         {
-            if ( is_instance(a, [SymbolTerm, PowTerm]) ) a = MulTerm(a, Arithmetic.I);
+            if ( is_instance(a, [SymbolTerm, PowTerm, Func]) ) a = MulTerm(a, Arithmetic.I);
             return '1' === a.symbol ? ((1 === self.symbols().length) && self.terms['1'].equ(a)) : (HAS.call(self.terms, a.symbol) && (2 === self.symbols().length) && self.terms['1'].equ(O) && self.terms[a.symbol].equ(a));
         }
         else if ( is_instance(a, [Expr, Poly]) )
@@ -9663,7 +9670,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return a.lt(self);
         }
-        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Expr, Func, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().gt(Arithmetic.O) : false;
@@ -9681,7 +9688,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return a.lte(self);
         }
-        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Expr, Func, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().gte(Arithmetic.O) : false;
@@ -9699,7 +9706,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return a.gt(self);
         }
-        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Expr, Func, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().lt(Arithmetic.O) : false;
@@ -9717,7 +9724,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return a.gte(self);
         }
-        else if ( is_instance(a, [Expr, MulTerm, PowTerm, SymbolTerm]) )
+        else if ( is_instance(a, [Expr, Func, MulTerm, PowTerm, SymbolTerm]) )
         {
             r = self.sub(a);
             return 1 === r.symbols().length ? r.c().lte(Arithmetic.O) : false;
@@ -9748,7 +9755,7 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
     ,add: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, RationalExpr) ) return x.add(self);
-        return Arithmetic.isNumber(x) || is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm, Expr, Poly]) ? Expr([self, x]) : self;
+        return Arithmetic.isNumber(x) || is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm, Func, Expr, Poly]) ? Expr([self, x]) : self;
     }
     ,sub: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -9756,9 +9763,9 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
         {
             return self.add(Arithmetic.neg(x));
         }
-        else if ( is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm, Expr, Poly]) )
+        else if ( is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm, Func, Expr, Poly]) )
         {
-            if ( is_instance(x, [SymbolTerm, PowTerm]) ) x = MulTerm(x, Arithmetic.I);
+            if ( is_instance(x, [SymbolTerm, PowTerm, Func]) ) x = MulTerm(x, Arithmetic.I);
             return self.add(x.neg());
         }
         else if ( is_instance(x, RationalExpr) )
@@ -9770,9 +9777,9 @@ AddTerm = Expr = Abacus.Expr = Class(Symbolic, {
     ,mul: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             symbols, symbols2;
-        if ( Arithmetic.isNumber(x) || is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm]) )
+        if ( Arithmetic.isNumber(x) || is_instance(x, [Numeric, SymbolTerm, PowTerm, MulTerm, Func]) )
         {
-            if ( is_instance(x, [SymbolTerm, PowTerm]) ) x = MulTerm(x, Arithmetic.I);
+            if ( is_instance(x, [SymbolTerm, PowTerm, Func]) ) x = MulTerm(x, Arithmetic.I);
             if ( self.equ(O) || ((is_instance(x, [Numeric, MulTerm])) && x.equ(O)) || (Arithmetic.isNumber(x) && Arithmetic.equ(O, x)) ) return Expr();
             symbols = self.symbols();
             return Expr(array(symbols.length, function(i){
@@ -10098,7 +10105,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,equ: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
-        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr, Func]) || Arithmetic.isNumber(x) )
             return self.num.equ(self.den.mul(x));
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return self.num.mul(x.den).equ(self.den.mul(x.num));
@@ -10109,7 +10116,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,gt: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
-        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr, Func]) || Arithmetic.isNumber(x) )
             return self.num.gt(self.den.mul(x));
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return self.num.mul(x.den).gt(self.den.mul(x.num));
@@ -10118,7 +10125,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,gte: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
-        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr, Func]) || Arithmetic.isNumber(x) )
             return self.num.gte(self.den.mul(x));
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return self.num.mul(x.den).gte(self.den.mul(x.num));
@@ -10127,7 +10134,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,lt: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
-        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr, Func]) || Arithmetic.isNumber(x) )
             return self.num.lt(self.den.mul(x));
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return self.num.mul(x.den).lt(self.den.mul(x.num));
@@ -10136,7 +10143,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
     ,lte: function( x ) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
-        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr]) || Arithmetic.isNumber(x) )
+        if ( is_instance(x, [Integer, IntegerMod, Complex, Poly, PowTerm, MulTerm, Expr, Func]) || Arithmetic.isNumber(x) )
             return self.num.lte(self.den.mul(x));
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return self.num.mul(x.den).lte(self.den.mul(x.num));
@@ -10147,7 +10154,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
         else if ( is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x) ) x = Rational(x);
-        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr, Func]) )
             return RationalExpr(self.num.add(self.den.mul(x)), self.den);
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return RationalExpr(self.num.mul(x.den).add(self.den.mul(x.num)), self.den.mul(x.den));
@@ -10157,7 +10164,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
         else if ( is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x) ) x = Rational(x);
-        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr, Func]) )
             return RationalExpr(self.num.sub(self.den.mul(x)), self.den);
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return RationalExpr(self.num.mul(x.den).sub(self.den.mul(x.num)), self.den.mul(x.den));
@@ -10167,7 +10174,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
         else if ( is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x) ) x = Rational(x);
-        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr, Func]) )
             return RationalExpr(self.num.mul(x), self.den);
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return RationalExpr(self.num.mul(x.num), self.den.mul(x.den));
@@ -10177,7 +10184,7 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if ( is_instance(x, Complex) && x.isReal() ) x = x.real();
         else if ( is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x) ) x = Rational(x);
-        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr]) )
+        if ( is_instance(x, [Complex, Poly, PowTerm, MulTerm, Expr, Func]) )
             return RationalExpr(self.num, self.den.mul(x));
         else if ( is_instance(x, [Rational, RationalFunc, RationalExpr]) )
             return RationalExpr(self.num.mul(x.den), self.den.mul(x.num));
@@ -10243,6 +10250,328 @@ RationalExpr = Abacus.RationalExpr = Class(Symbolic, {
 });
 RationalExpr.cast = typecast([RationalExpr], function(a){
     return is_string(a) ? RationalExpr.fromString(a) : new RationalExpr(a);
+});
+
+// Abacus.Op, represents an abstract mathematical operator
+Op = Abacus.Op = Class({
+    constructor: function Op( op ) {
+        var self = this;
+        if ( !is_instance(self, Op) ) return new Op(op);
+        if ( is_instance(op, Op) ) op = op.op;
+        self.op = String(op);
+    }
+    ,op: ''
+    ,dispose: function( ) {
+        var self = this;
+        self.op = null;
+        return self;
+    }
+    ,clone: function( ) {
+        var self = this;
+        return new self[CLASS](self.op);
+    }
+    ,evaluate: function( ) {
+        return null;
+    }
+    ,toString: function( ) {
+        return self.op;
+    }
+    ,toTex: function( ) {
+        return this.toString();
+    }
+});
+
+// Abacus.RelOp, represents a relational operator, eg =, <, >, <=, >=, <>
+RelOp = Abacus.RelOp = Class(Op, {
+    constructor: function RelOp( lhs, op, rhs ) {
+        var self = this;
+        if ( !is_instance(self, RelOp) ) return new RelOp(lhs, op, rhs);
+        if ( is_instance(lhs, RelOp) )
+        {
+            self.lhs = lhs.lhs;
+            self.op = lhs.op;
+            self.rhs = lhs.rhs;
+        }
+        else
+        {
+            op = String(op||'=').toLowerCase();
+            if ( null == lhs ) lhs = RationalExpr();
+            if ( null == rhs ) rhs = RationalExpr();
+            if ( !is_instance(lhs, [Expr, RationalExpr, Func]) ) lhs = RationalExpr(lhs);
+            if ( !is_instance(rhs, [Expr, RationalExpr, Func]) ) rhs = RationalExpr(rhs);
+            self.lhs = lhs;
+            self.rhs = rhs;
+            self.op = RelOp.OP(op)
+        }
+    }
+
+    ,__static__: {
+        OP: function( op ) {
+            op = String(op).toLowerCase();
+            if ( '<' === op || '\\lt' ===op ) op = '<';
+            else if ( '>' === op || '\\gt' ===op ) op = '>';
+            else if ( '>=' === op || '=>' === op || '\\le' ===op ) op = '>=';
+            else if ( '<=' === op || '=<' === op || '\\ge' ===op ) op = '<=';
+            else if ( '<>' === op || '!=' === op || '\\ne' ===op ) op = '<>';
+            else if ( '~' === op || '\\sim' ===op ) op = '~';
+            else op = '=';
+            return op;
+        }
+        ,DUAL: function( op ) {
+            op = RelOp.OP(op);
+            if ( '<' === op ) return '>';
+            else if ( '>' === op ) return '<';
+            else if ( '>=' === op ) return '<=';
+            else if ( '<=' === op ) return '>=';
+            return op;
+        }
+        ,EQU: function( lhs, rhs ) {
+            return new RelOp(lhs, '=', rhs);
+        }
+        ,NEQ: function( lhs, rhs ) {
+            return new RelOp(lhs, '<>', rhs);
+        }
+        ,LT: function( lhs, rhs ) {
+            return new RelOp(lhs, '<', rhs);
+        }
+        ,LTE: function( lhs, rhs ) {
+            return new RelOp(lhs, '<=', rhs);
+        }
+        ,GT: function( lhs, rhs ) {
+            return new RelOp(lhs, '>', rhs);
+        }
+        ,GTE: function( lhs, rhs ) {
+            return new RelOp(lhs, '>=', rhs);
+        }
+        ,SIM: function( lhs, rhs ) {
+            return new RelOp(lhs, '~', rhs);
+        }
+        ,fromString: function( s ) {
+            var args = String(s).split(/\\sim|\\lt|\\gt|\\le|\\ge|\\ne|\\eq|=<|<=|>=|=>|<>|!=|<|>|=|~/gm),
+                op = ['\\sim','\\lt','\\gt','\\le','\\ge','\\ne','\\eq','=<','<=','>=','=>','<>','!=','<','>','=','~'].reduce(function(op, opp){
+                    var p = s.indexOf(opp);
+                    if ( -1 < p && p < op[1] ) op = [opp, p];
+                    return op;
+                }, ['=',Infinity])[0];
+            return new RelOp(RationalExpr.fromString(args[0]), op, args.length>1?RationalExpr.fromString(args[1]):RationalExpr());
+        }
+    }
+
+    ,lhs: null
+    ,rhs: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self.lhs = null;
+        self.rhs = null;
+        self.op = null;
+        return self;
+    }
+    ,clone: function( ) {
+        var self = this;
+        return new self[CLASS](self.lhs, self.op, self.rhs);
+    }
+    ,equ: function( rop ) {
+        var self = this;
+        if ( is_instance(rop, RelOp) )
+        {
+            if ( self.op===rop.op && self.lhs.equ(rop.lhs) && self.rhs.equ(rop.rhs) )
+                return true;
+            else if ( self.op===RelOp.DUAL(rop.op) && self.lhs.equ(rop.rhs) && self.rhs.equ(rop.lhs) )
+                return true;
+        }
+        return false;
+    }
+    ,neg: function( ) {
+        var self = this;
+        return new RelOp(self.lhs.neg(), RelOp.DUAL(self.op), self.rhs.neg());
+    }
+    ,add: function( term ) {
+        var self = this, op = self.op;
+        return new RelOp(self.lhs.add(term), op, self.rhs.add(term));
+    }
+    ,sub: function( term ) {
+        var self = this, op = self.op;
+        return new RelOp(self.lhs.sub(term), op, self.rhs.sub(term));
+    }
+    ,mul: function( term ) {
+        var self = this, op = self.op, Arithmetic = Abacus.Arithmetic;
+        if ( (Arithmetic.isNumber(term) && Arithmetic.lt(term, 0)) || (is_instance(term, Numeric) && term.lt(0)) )
+            op = RelOp.DUAL(op);
+        return new RelOp(self.lhs.mul(term), op, self.rhs.mul(term));
+    }
+    ,div: function( term ) {
+        var self = this, op = self.op, Arithmetic = Abacus.Arithmetic;
+        if ( (Arithmetic.isNumber(term) && Arithmetic.lt(term, 0)) || (is_instance(term, Numeric) && term.lt(0)) )
+            op = RelOp.DUAL(op);
+        return new RelOp(self.lhs.div(term), op, self.rhs.div(term));
+    }
+    ,evaluate: function( symbolValues ) {
+        symbolValues = symbolValues || {};
+        var self = this, op = self.op, res = false,
+            lhs = self.lhs.evaluate(symbolValues), rhs = self.rhs.evaluate(symbolValues);
+        if ( '>' === op ) res = lhs.gt(rhs);
+        else if ( '<' === op ) res = lhs.lt(rhs);
+        else if ( '>=' === op ) res = lhs.gte(rhs);
+        else if ( '<=' === op ) res = lhs.lte(rhs);
+        else if ( '<>' === op ) res = !lhs.equ(rhs);
+        else if ( '~' === op ) res = true;
+        else /*if ( '=' === op )*/ res = lhs.equ(rhs);
+        return res;
+    }
+    ,toString: function( ) {
+        var self = this, op = self.op;
+        return self.lhs.toString()+' '+op+' '+self.rhs.toString();
+    }
+    ,toTex: function( ) {
+        var self = this, op = self.op;
+        if ( '>=' === op ) op = '\\ge';
+        else if ( '<=' === op ) self.op = '\\le';
+        else if ( '<>' === op ) self.op = '\\ne';
+        else if ( '~' === op ) op = '\\sim';
+        return self.lhs.toTex()+' '+op+' '+self.rhs.toTex();
+    }
+});
+
+// Abacus.Func, represents a functional operator, eg min, max, exp, log, sin, cos, ..
+Func = Abacus.Func = Class(Op, {
+    constructor: function Func( func, args, evaluator, derivative ) {
+        var self = this;
+        if ( !is_instance(self, Func) ) return new Func(func, args, evaluator, derivative);
+        if ( is_instance(func, Func) )
+        {
+            self.func = func.op;
+            self.args = func.args;
+            self._eval = evaluator || func._eval;
+            self._deriv = derivative || func._deriv;
+        }
+        else
+        {
+            func = String(func||'').toLowerCase();
+            if ( null == args || !args.length ) args = [];
+            self.op = func;
+            self.args = args.map(function(arg){
+                if ( !is_instance(arg, [Expr, RationalExpr, Func]) ) arg = RationalExpr(arg);
+                return arg;
+            });
+            self._eval = evaluator || null;
+            self._deriv = derivative || null
+        }
+    }
+
+    ,__static__: {
+        MIN: function( args ) {
+            return Func('min', args, nmin);
+        }
+        ,MAX: function( args ) {
+            return Func('max', args, nmax);
+        }
+    }
+
+    ,args: null
+    ,_eval: null
+    ,_deriv: null
+
+    ,dispose: function( ) {
+        var self = this;
+        self._eval = null;
+        self._deriv = null;
+        self.args = null;
+        self.op = null;
+        return self;
+    }
+    ,clone: function( ) {
+        var self = this;
+        return new self[CLASS](self.op, self.args, self._eval, self._deriv);
+    }
+    ,isReal: function( ) {
+        var args = self.args;
+        return args.filter(function(arg){return arg.isReal();}).length===args.length;
+    }
+    ,isImag: function( ) {
+        var args = self.args;
+        return args.filter(function(arg){return arg.isImag();}).length===args.length;
+    }
+    ,real: function( ) {
+        var self = this;
+        return Func(self.op, self.args.map(function(arg){return arg.real();}), self._eval, self._deriv);
+    }
+    ,imag: function( ) {
+        var self = this;
+        return Func(self.op, self.args.map(function(arg){return arg.imag();}), self._eval, self._deriv);
+    }
+    ,equ: function( term ) {
+        var self = this;
+        if ( is_instance(term, Func) )
+        {
+            return self.op === term.op && self.args.filter(function(arg, i){
+                return i<terms.args.length && arg.equ(term.args[i]);
+            }).length === term.args.length;
+        }
+        return term.equ(self);
+    }
+    ,gt: function( term ) {
+        return false;
+    }
+    ,gte: function( term ) {
+        return false;
+    }
+    ,lt: function( term ) {
+        return false;
+    }
+    ,lte: function( term ) {
+        return false;
+    }
+    ,neg: function( ) {
+        return Expr([MulTerm(this, -1)]);
+    }
+    ,add: function( term ) {
+        return Expr([this, term]);
+    }
+    ,sub: function( term ) {
+        return Expr([this, term.neg()]);
+    }
+    ,mul: function( term ) {
+        return Expr([MulTerm([this, term])]);
+    }
+    ,div: function( term ) {
+        return RationalExpr(this, term);
+    }
+    ,pow: function( n ) {
+        return Expr([PowTerm(this, n)]);
+    }
+    ,rad: function( n ) {
+        return Expr([PowTerm(this, Rational(n).inv())]);
+    }
+    ,d: function( x, n ) {
+        var self = this, derivative = self._deriv, i, d;
+        // nth order formal derivative with respect to symbol x
+        if ( null == n ) n = 1;
+        n = +n;
+        x = String(x || 'x');
+        if ( 0 > n && is_callable(derivative) )
+        {
+            d = derivative.apply(self, self.args);
+            if ( 1 < n ) d = d.d(x, n-1);
+            return d;
+        }
+        return self;
+    }
+    ,evaluate: function( symbolValues ) {
+        symbolValues = symbolValues || {};
+        var self = this, args = self.args, evaluator = self._eval;
+        return is_callable(evaluator) ? evaluator.apply(self, args.map(function(arg){return arg.evaluate(symbolValues);})) : Complex.Zero();
+    }
+    ,toString: function( ) {
+        var self = this, args = self.args, op = self.op;
+        if ( ('min' === op || 'max' === op) && 1 === args.length )  return String(args[0]);
+        return op+'('+args.map(String).join(',')+')';
+    }
+    ,toTex: function( ) {
+        var self = this, args = self.args, op = self.op;
+        if ( ('min' === op || 'max' === op) && 1 === args.length )  return Tex(args[0]);
+        return '\\'+op+'('+args.map(Tex).join(',')+')';
+    }
 });
 
 // Represents a (univariate) polynomial term with coefficient and exponent in Polynomial non-zero sparse representation
@@ -14030,242 +14359,6 @@ Ring = Abacus.Ring = Class({
             if ( is_class(self.PolynomialClass, RationalFunc) ) self._tex = '\\mathbf{Fr}['+self._tex+']';
         }
         return self._tex;
-    }
-});
-
-// Abacus.Op, represents an abstract mathematical operator
-Op = Abacus.Op = Class({
-    constructor: function Op( op ) {
-        var self = this;
-        if ( !is_instance(self, Op) ) return new Op(op);
-        if ( is_instance(op, Op) ) op = op.op;
-        self.op = String(op);
-    }
-    ,op: ''
-    ,dispose: function( ) {
-        var self = this;
-        self.op = null;
-        return self;
-    }
-    ,clone: function( ) {
-        var self = this;
-        return new self[CLASS](self.op);
-    }
-    ,evaluate: function( ) {
-        return null;
-    }
-    ,toString: function( ) {
-        return self.op;
-    }
-    ,toTex: function( ) {
-        return this.toString();
-    }
-});
-// Abacus.RelOp, represents a relational operator, eg =, <, >, <=, >=, <>
-RelOp = Abacus.RelOp = Class(Op, {
-    constructor: function RelOp( lhs, op, rhs ) {
-        var self = this;
-        if ( !is_instance(self, RelOp) ) return new RelOp(lhs, op, rhs);
-        if ( is_instance(lhs, RelOp) )
-        {
-            self.lhs = lhs.lhs;
-            self.op = lhs.op;
-            self.rhs = lhs.rhs;
-        }
-        else
-        {
-            op = String(op||'=').toLowerCase();
-            if ( null == lhs ) lhs = RationalExpr();
-            if ( null == rhs ) rhs = RationalExpr();
-            if ( !is_instance(lhs, [Expr, RationalExpr, Func]) ) lhs = RationalExpr(lhs);
-            if ( !is_instance(rhs, [Expr, RationalExpr, Func]) ) rhs = RationalExpr(rhs);
-            self.lhs = lhs;
-            self.rhs = rhs;
-            if ( '<' === op || '\\lt' ===op ) self.op = '<';
-            else if ( '>' === op || '\\gt' ===op ) self.op = '>';
-            else if ( '>=' === op || '=>' === op || '\\le' ===op ) self.op = '>=';
-            else if ( '<=' === op || '=<' === op || '\\ge' ===op ) self.op = '<=';
-            else if ( '<>' === op || '!=' === op || '\\ne' ===op ) self.op = '<>';
-            else if ( '~' === op || '\\sim' ===op ) self.op = '~';
-            else self.op = '=';
-        }
-    }
-
-    ,__static__: {
-        EQU: function( lhs, rhs ) {
-            return new RelOp(lhs, '=', rhs);
-        }
-        ,NEQ: function( lhs, rhs ) {
-            return new RelOp(lhs, '<>', rhs);
-        }
-        ,LT: function( lhs, rhs ) {
-            return new RelOp(lhs, '<', rhs);
-        }
-        ,LTE: function( lhs, rhs ) {
-            return new RelOp(lhs, '<=', rhs);
-        }
-        ,GT: function( lhs, rhs ) {
-            return new RelOp(lhs, '>', rhs);
-        }
-        ,GTE: function( lhs, rhs ) {
-            return new RelOp(lhs, '>=', rhs);
-        }
-        ,SIM: function( lhs, rhs ) {
-            return new RelOp(lhs, '~', rhs);
-        }
-        ,fromString: function( s ) {
-            var args = String(s).split(/\\sim|\\lt|\\gt|\\le|\\ge|\\ne|\\eq|=<|<=|>=|=>|<>|!=|<|>|=|~/gm),
-                op = ['\\sim','\\lt','\\gt','\\le','\\ge','\\ne','\\eq','=<','<=','>=','=>','<>','!=','<','>','=','~'].reduce(function(op, opp){
-                    var p = s.indexOf(opp);
-                    if ( -1 < p && p < op[1] ) op = [opp, p];
-                    return op;
-                }, ['=',Infinity])[0];
-            return new RelOp(RationalExpr.fromString(args[0]), op, args.length>1?RationalExpr.fromString(args[1]):RationalExpr());
-        }
-    }
-
-    ,lhs: null
-    ,rhs: null
-
-    ,dispose: function( ) {
-        var self = this;
-        self.lhs = null;
-        self.rhs = null;
-        self.op = null;
-        return self;
-    }
-    ,clone: function( ) {
-        var self = this;
-        return new self[CLASS](self.lhs, self.op, self.rhs);
-    }
-    ,neg: function( ) {
-        var self = this, op = self.op;
-        if ( '>=' === op ) op = '<=';
-        else if ( '<=' === op ) op = '>=';
-        else if ( '<' === op ) op = '>';
-        else if ( '>' === op ) op = '<';
-        return new RelOp(self.lhs.neg(), op, self.rhs.neg());
-    }
-    ,add: function( term ) {
-        var self = this, op = self.op;
-        return new RelOp(self.lhs.add(term), op, self.rhs.add(term));
-    }
-    ,sub: function( term ) {
-        var self = this, op = self.op;
-        return new RelOp(self.lhs.sub(term), op, self.rhs.sub(term));
-    }
-    ,mul: function( term ) {
-        var self = this, op = self.op, Arithmetic = Abacus.Arithmetic;
-        if ( (Arithmetic.isNumber(term) && Arithmetic.lt(term, 0)) || (is_instance(term, Numeric) && term.lt(0)) )
-        {
-            if ( '>=' === op ) op = '<=';
-            else if ( '<=' === op ) op = '>=';
-            else if ( '<' === op ) op = '>';
-            else if ( '>' === op ) op = '<';
-        }
-        return new RelOp(self.lhs.mul(term), op, self.rhs.mul(term));
-    }
-    ,div: function( term ) {
-        var self = this, op = self.op, Arithmetic = Abacus.Arithmetic;
-        if ( (Arithmetic.isNumber(term) && Arithmetic.lt(term, 0)) || (is_instance(term, Numeric) && term.lt(0)) )
-        {
-            if ( '>=' === op ) op = '<=';
-            else if ( '<=' === op ) op = '>=';
-            else if ( '<' === op ) op = '>';
-            else if ( '>' === op ) op = '<';
-        }
-        return new RelOp(self.lhs.div(term), op, self.rhs.div(term));
-    }
-    ,evaluate: function( symbolValues ) {
-        var self = this, op = self.op, res = false,
-            lhs = self.lhs.evaluate(symbolValues), rhs = self.rhs.evaluate(symbolValues);
-        if ( '>' === op ) res = lhs.gt(rhs);
-        else if ( '<' === op ) res = lhs.lt(rhs);
-        else if ( '>=' === op ) res = lhs.gte(rhs);
-        else if ( '<=' === op ) res = lhs.lte(rhs);
-        else if ( '<>' === op ) res = !lhs.equ(rhs);
-        else if ( '~' === op ) res = true;
-        else /*if ( '=' === op )*/ res = lhs.equ(rhs);
-        return res;
-    }
-    ,toString: function( ) {
-        var self = this, op = self.op;
-        return self.lhs.toString()+' '+op+' '+self.rhs.toString();
-    }
-    ,toTex: function( ) {
-        var self = this, op = self.op;
-        if ( '>=' === op ) op = '\\ge';
-        else if ( '<=' === op ) self.op = '\\le';
-        else if ( '<>' === op ) self.op = '\\ne';
-        else if ( '~' === op ) op = '\\sim';
-        return self.lhs.toTex()+' '+op+' '+self.rhs.toTex();
-    }
-});
-// Abacus.Func, represents a functional operator, eg min, max, exp, log, sin, cos, ..
-Func = Abacus.Func = Class(Op, {
-    constructor: function Func( func, args ) {
-        var self = this;
-        if ( !is_instance(self, Func) ) return new Func(func, args);
-        if ( is_instance(func, Func) )
-        {
-            self.func = func.op;
-            self.args = func.args;
-        }
-        else
-        {
-            func = String(func||'').toLowerCase();
-            if ( null == args || !args.length ) args = [RationalExpr()];
-            self.op = func;
-            self.args = args.map(function(arg){
-                if ( !is_instance(arg, [Expr, RationalExpr]) ) arg = RationalExpr(arg);
-                return arg;
-            });
-        }
-    }
-
-    ,__static__: {
-    }
-
-    ,args: null
-
-    ,dispose: function( ) {
-        var self = this;
-        self.args = null;
-        self.op = null;
-        return self;
-    }
-    ,clone: function( ) {
-        var self = this;
-        return new self[CLASS](self.op, self.args);
-    }
-    ,neg: function( ) {
-        return this;
-    }
-    ,add: function( term ) {
-        return this;
-    }
-    ,sub: function( term ) {
-        return this;
-    }
-    ,mul: function( term ) {
-        return this;
-    }
-    ,div: function( term ) {
-        return this;
-    }
-    ,d: function( n, x ) {
-        return this;
-    }
-    ,evaluate: function( symbolValues ) {
-        return null;
-    }
-    ,toString: function( ) {
-        var self = this;
-        return self.op+'('+self.args.map(String).join(',')+')';
-    }
-    ,toTex: function( ) {
-        var self = this;
-        return Tex(self.op)+'('+self.args.map(Tex).join(',')+')';
     }
 });
 
