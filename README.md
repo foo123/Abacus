@@ -20,21 +20,21 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 
 **see also:**
 
-* [Contemplate](https://github.com/foo123/Contemplate) a fast and light-weight object-oriented Template Engine for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [HtmlWidget](https://github.com/foo123/HtmlWidget) html widgets used as (template) plugins and/or standalone for Node.js / Browser / XPCOM Javascript, PHP, Python both client and server-side
+* [Contemplate](https://github.com/foo123/Contemplate) a fast and light-weight object-oriented Template Engine for JavaScript, PHP, Python
+* [HtmlWidget](https://github.com/foo123/HtmlWidget) html widgets used as (template) plugins and/or standalone for JavaScript, PHP, Python
 * [Tao](https://github.com/foo123/Tao.js) A simple, tiny, isomorphic, precise and fast template engine for handling both string and live dom based templates
 * [ModelView](https://github.com/foo123/modelview.js) a light-weight and flexible MVVM framework for JavaScript/HTML5
 * [ModelView MVC jQueryUI Widgets](https://github.com/foo123/modelview-widgets) plug-n-play, state-full, full-MVC widgets for jQueryUI using modelview.js (e.g calendars, datepickers, colorpickers, tables/grids, etc..) (in progress)
-* [Importer](https://github.com/foo123/Importer) simple class &amp; dependency manager and loader for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [PublishSubscribe](https://github.com/foo123/PublishSubscribe) a simple and flexible publish-subscribe pattern implementation for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [Dromeo](https://github.com/foo123/Dromeo) a flexible, agnostic router for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [Dialect](https://github.com/foo123/Dialect) a simple cross-vendor &amp; cross-platform object-oriented SQL Query Builder for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [Xpresion](https://github.com/foo123/Xpresion) a simple and flexible eXpression parser engine (with custom functions and variables support) for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [GrammarTemplate](https://github.com/foo123/GrammarTemplate) versatile and intuitive grammar-based templating for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [GrammarPattern](https://github.com/foo123/GrammarPattern) versatile grammar-based pattern-matching for Node.js / Browser / XPCOM Javascript (IN PROGRESS)
-* [Regex Analyzer/Composer](https://github.com/foo123/RegexAnalyzer) Regular Expression Analyzer and Composer for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [DateX](https://github.com/foo123/DateX) eXtended &amp; localised Date parsing, diffing, formatting and validation for Node.js / Browser / XPCOM Javascript, PHP, Python
-* [RT](https://github.com/foo123/RT) client-side real-time communication for Node/XPCOM/JS with support for Poll / BOSH / WebSockets
+* [Importer](https://github.com/foo123/Importer) simple class &amp; dependency manager and loader for JavaScript, PHP, Python
+* [PublishSubscribe](https://github.com/foo123/PublishSubscribe) a simple and flexible publish-subscribe pattern implementation for JavaScript, PHP, Python
+* [Dromeo](https://github.com/foo123/Dromeo) a flexible, agnostic router for JavaScript, PHP, Python
+* [Dialect](https://github.com/foo123/Dialect) a simple and flexible cross-vendor &amp; cross-platform SQL Query Builder for JavaScript, PHP, Python
+* [DialectORM](https://github.com/foo123/DialectORM) a simple and versatile Object-Relational-Mapper (ORM) for JavaScript, PHP, Python
+* [Xpresion](https://github.com/foo123/Xpresion) a simple and flexible eXpression parser engine (with custom functions and variables support) for JavaScript, PHP, Python
+* [GrammarTemplate](https://github.com/foo123/GrammarTemplate) versatile and intuitive grammar-based templating for JavaScript, PHP, Python
+* [Regex Analyzer/Composer](https://github.com/foo123/RegexAnalyzer) Regular Expression Analyzer and Composer for JavaScript, PHP, Python
+* [DateX](https://github.com/foo123/DateX) eXtended &amp; localised Date parsing, diffing, formatting and validation for JavaScript, PHP, Python
+* [RT](https://github.com/foo123/RT) client-side real-time communication for JavaScript with support for Poll / BOSH / WebSockets
 * [Asynchronous](https://github.com/foo123/asynchronous.js) a simple manager for async, linearised, parallelised, interleaved and sequential tasks for JavaScript
 * [Simulacra](https://github.com/foo123/Simulacra) a simulation, algebraic, probability and combinatorics PHP package for scientific computations (DEPRECATED)
 
@@ -115,8 +115,6 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 
 See the comments in the code for algorithms and references used.
 
-A variety of combinatorial algorithms, algebraic number theory algorithms &amp; statistics are given, for example, in:
-
 * [The Art of Computer Programming, Donald Knuth](http://www-cs-faculty.stanford.edu/~uno/taocp.html)
 * [FXT library, Joerg Arndt](http://www.jjj.de/fxt/) and his [PhD thesis](https://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf)
 * [Combinatorial Algorithms, Albert Nijenhuis, Herbert Wilf](https://www.math.upenn.edu/~wilf/website/CombAlgDownld.html)
@@ -151,6 +149,7 @@ A variety of combinatorial algorithms, algebraic number theory algorithms &amp; 
 * [Fourier-Motzkin Elimination Extension to Integer Programming Problems , H.P. Williams](https://core.ac.uk/download/pdf/82527959.pdf)
 * [Affine Monoids, Hilbert Bases and Hilbert Functions, Robert Koch (PhD thesis)](https://pdfs.semanticscholar.org/ed79/7e8d8a3316f227cb9f180538d3d2150a900d.pdf)
 * [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
+* [Computational solutions of matrix problems over an integral domain, Erwin H. Bareiss](http://citeseerx.ist.psu.edu/viewdoc/citations;jsessionid=E96A31F468282BD6A13CF5BBE30060DB?doi=10.1.1.909.6404)
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
 * [Fraction-Free Methods for Determinants, Deanna Richelle Leggett (MSc thesis)](https://pdfs.semanticscholar.org/4188/73bbcad4e7bcdcf14475b4616febbdc729f2.pdf)
 * [Moore-Penrose Generalised Inverse, wikipedia](https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse)
