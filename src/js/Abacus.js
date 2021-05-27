@@ -590,7 +590,7 @@ function merge/*union*/( union, a, b, dir, a0, a1, b0, b1, indices, unique, inpl
         return union;
     }
 }
-function sortedrun( a, a0, a1, index, indices )
+function sortedrun( a, a0, a1, index, indices, dir )
 {
     // findout already sorted chunks either ascending or descending
     var ap, ai, i, i0, i1, d0, i2, i3, d1;
@@ -613,7 +613,7 @@ function sortedrun( a, a0, a1, index, indices )
         }
         ap = ai;
     }
-    if ( 0 === d0 ) d0 = 1;
+    if ( 0 === d0 ) d0 = dir;
     if ( -1 === i1 )
     {
         i1 = a1; index[0] = i0; index[1] = i1; index[2] = d0;
@@ -637,7 +637,7 @@ function sortedrun( a, a0, a1, index, indices )
             ap = ai;
         }
         if ( -1 === i3 ) i3 = a1;
-        if ( 0 === d1 ) d1 = 1;
+        if ( 0 === d1 ) d1 = dir;
         index[0] = i0; index[1] = i1; index[2] = d0;
         index[3] = i2; index[4] = i3; index[5] = d1;
     }
@@ -667,12 +667,12 @@ function mergesort( a, dir, natural, indices, a0, a1 )
         do{
             // find already sorted chunks
             // O(n)
-            sortedrun(a, a0, a1, index, indices);
+            sortedrun(a, a0, a1, index, indices, dir);
             if ( -1 === index[3] )
             {
                 // already sorted, reflect if sorted reversely
                 // O(n)
-                if ( dir !== index[2] && a0 < a1 ) reflection(a, a, a0, a1);
+                if ( dir !== index[2] && a0 < a1 ) reflection(a, a, 0/*dummy*/, a0, a1);
                 i0 = a0; i1 = a1;
             }
             else
