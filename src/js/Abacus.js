@@ -22201,7 +22201,47 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
             dir = -1 === dir ? -1 : 1;
             return next_catalan(item, n, dir, $ && null!=$.order ? $.order : LEX);
         }
-        ,rand: NotImplemented
+        ,rand: function( n, $ ) {
+            var klass = this, seq, prefix, suffix, word, partial_sum, i, s, nn;
+            if ( 0 >= n ) return null;
+
+            // "Generating binary trees at random", Atkinson & Sack, 1992
+            // adapted from https://gist.github.com/rygorous/d57941fa5ae6beb59f17bc30793d3d75
+            nn = 2*n;
+            seq = shuffle(array(nn, function(i){return i < n ? 1 : -1;}));
+            prefix = [];
+            suffix = [];
+            word = [];
+            partial_sum = 0;
+            for(i=0; i<nn; i++)
+            {
+                s = seq[i];
+                word.push(s)
+                partial_sum += s;
+                if (0 === partial_sum) // at the end of an irreducible balanced word
+                {
+                    if (-1 === s)
+                    {
+                        // it was well-formed! append it.
+                        prefix = prefix.concat(word);
+                    }
+                    else
+                    {
+                        // it was not well-formed! fix it.
+                        prefix.push(1);
+                        suffix = [-1].concat(word.slice(1,-1).map(function(x){return -x;})).concat(suffix);
+                    }
+                    word = [];
+                }
+            }
+            seq = prefix.concat(suffix);
+
+            // convert in FXT format
+            return seq.reduce(function(item, x, i){
+                if (0 < x) item.push(i);
+                return item;
+            }, []);
+        }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented

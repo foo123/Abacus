@@ -74,7 +74,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `RestrictedComposition` (`test/restricted_compositions.js`) **rank/unrank methods missing, partial support for COLEX**
 * `SetPartition` (`test/setpartitions.js`) **rank/unrank methods missing, only LEX/REVLEX order**
 * `RestrictedSetPartition` (`test/setpartitions.js`) **exactly K #parts, rank/unrank methods missing, only LEX/REVLEX order**
-* `CatalanWord` (eg balanced parentheses) (`test/paren.js`) **rank/unrank/random methods missing**
+* `CatalanWord` (eg balanced parentheses) (`test/paren.js`) **rank/unrank methods missing**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
 

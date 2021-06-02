@@ -10,7 +10,6 @@ function print_all( o, prev, f )
         //while ( o.hasNext() ) echo( o.next() );
         // iterator/iterable are supported
         for(let item of o) {count++; echo( f ? f(item) : item.join('') );}
-    echo(count);
 }
 
 // Note: Due to the large number of combinatorial samples,
@@ -21,7 +20,7 @@ var o;
 echo('Abacus.CatalanWords (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// SetPartitions
+// Binary Trees / Balanced Parentheses / Cataln Words
 
 echo('o = Abacus.CatalanWord(1)');
 o = Abacus.CatalanWord(1);
@@ -45,6 +44,12 @@ print_all( o.order("colex") );
 
 echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
+
+echo('o.order("random")');
+print_all( o.order("random") );
+
+echo('o.random()');
+echo(o.random().join(''));
 
 // dispose
 echo('o.dispose()');
@@ -73,6 +78,12 @@ print_all( o.order("colex") );
 echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
 
+echo('o.order("random")');
+print_all( o.order("random") );
+
+echo('o.random()');
+echo(o.random().join(''));
+
 // dispose
 echo('o.dispose()');
 o.dispose();
@@ -100,6 +111,12 @@ print_all( o.order("colex") );
 echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
 
+echo('o.order("random")');
+print_all( o.order("random") );
+
+echo('o.random()');
+echo(o.random().join(''));
+
 // dispose
 echo('o.dispose()');
 o.dispose();
@@ -123,6 +140,12 @@ print_all( o.order("colex") );
 
 echo('o.order("colex,reversed")');
 print_all( o.order("colex,reversed") );
+
+echo('o.order("random")');
+print_all( o.order("random") );
+
+echo('o.random()');
+echo(o.random().join(''));
 
 // dispose
 echo('o.dispose()');
