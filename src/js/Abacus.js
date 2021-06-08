@@ -4601,7 +4601,7 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
         O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         add = Arithmetic.add, sub = Arithmetic.sub,
         mul = Arithmetic.mul, div = Arithmetic.div, mod = Arithmetic.mod,
-        c = O, j, k, m, w, kk, nm, mm, key;
+        c = O, j, i, k, l, r, m, w, kk, nm, mm, key;
 
     if ( is_instance(K, Integer) ) K = K.num;
     if ( is_instance(M, Integer) ) M = M.num;
@@ -4632,8 +4632,30 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
             }
             else
             {
-                nm = sub(n, add(M, W));
-                c = Arithmetic.equ(O, nm) ? two : mul(c_nkab(nm, sub(K, two), W, M), mul(K, sub(K, I)));
+                m = Arithmetic.max(I, div(n, M));
+                w = Arithmetic.max(I, div(n, W));
+                l = add(W, I); r = sub(M, I);
+                j = I;
+                while(Arithmetic.lte(j, m))
+                {
+                    i = I;
+                    while(Arithmetic.lte(i, w))
+                    {
+                        k = sub(K, add(j, i));
+                        nm = sub(n, add(mul(j, M), mul(i, W)));
+                        if (Arithmetic.equ(O, nm))
+                        {
+                            c = add(c, factorial(K, [j, i]));
+                        }
+                        else if (Arithmetic.gt(k, O) && Arithmetic.gt(nm, O))
+                        {
+                            kk = c_nkab(nm, k, l, r);
+                            if (!Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, [j, i])));
+                        }
+                        i = add(i, I);
+                    }
+                    j = add(j, I);
+                }
             }
         }
         else if ( null!=W && null!=M )
@@ -4644,15 +4666,33 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
             }
             else
             {
-                nm = add(M, W);
-                if ( Arithmetic.equ(n, nm) ) c = two;
-                K = sub(n, nm); k = I;
-                while( Arithmetic.lte(k, K) )
+                m = Arithmetic.max(I, div(n, M));
+                w = Arithmetic.max(I, div(n, W));
+                l = add(W, I); r = sub(M, I);
+                j = I;
+                while(Arithmetic.lte(j, m))
                 {
-                    j = add(k, two);
-                    kk = c_nkab(K, k, W, M);
-                    if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, mul(j, sub(j, I))));
-                    k = add(k, I);
+                    i = I;
+                    while(Arithmetic.lte(i, w))
+                    {
+                        nm = sub(n, add(mul(j, M), mul(i, W)));
+                        if (Arithmetic.equ(O, nm))
+                        {
+                            c = add(c, factorial(add(j, i), [j, i]));
+                        }
+                        else if (Arithmetic.gt(nm, O))
+                        {
+                            k = I;
+                            while(Arithmetic.lte(k, nm))
+                            {
+                                kk = c_nkab(nm, k, l, r);
+                                if (!Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, add(j, i)), [j, i])));
+                                k = add(k, I);
+                            }
+                        }
+                        i = add(i, I);
+                    }
+                    j = add(j, I);
                 }
             }
         }
