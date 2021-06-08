@@ -36,9 +36,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -66,6 +64,150 @@ echo(o.random());
 echo('o.dispose()');
 o.dispose();
 
+echo('o = Abacus.Partition(7,{type:"composition","min=":3})');
+o = Abacus.Partition(7,{type:"composition","min=":3});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(7,{type:"composition","min=":3,"max=":4})');
+o = Abacus.Partition(7,{type:"composition","min=":3,"max=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(7,{type:"composition","min=":3,"parts=":2})');
+o = Abacus.Partition(7,{type:"composition","min=":3,"parts=":2});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(7,{type:"composition","min=":3,"max=":4,"parts=":2})');
+o = Abacus.Partition(7,{type:"composition","min=":3,"max=":4,"parts=":2});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(14,{type:"composition","min=":3})');
+o = Abacus.Partition(14,{type:"composition","min=":3});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(14,{type:"composition","min=":3,"max=":4})');
+o = Abacus.Partition(14,{type:"composition","min=":3,"max=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(14,{type:"composition","min=":3,"parts=":4})');
+o = Abacus.Partition(14,{type:"composition","min=":3,"parts=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.Partition(14,{type:"composition","min=":3,"max=":4,"parts=":4})');
+o = Abacus.Partition(14,{type:"composition","min=":3,"max=":4,"parts=":4});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
 echo('o = Abacus.Partition(8,{type:"composition","max=":4})');
 o = Abacus.Partition(8,{type:"composition","max=":4});
 
@@ -82,9 +224,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -119,9 +259,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -156,9 +294,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -202,9 +338,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -239,9 +373,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -276,9 +408,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -313,9 +443,7 @@ echo(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -342,9 +470,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
-    return [item.slice(), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$)];
-});
+print_all( o.rewind() );
 
 echo('backwards');
 echo('o.rewind(-1)');

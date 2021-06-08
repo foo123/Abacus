@@ -4443,7 +4443,6 @@ function p_nkab( n, k, a, b )
     // recursively compute the partition count using the recursive relation:
     // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
     // http://www.programminglogic.com/integer-partition-algorithm/
-    // CLOSED FORM FORMULA FOR THE NUMBER OF RESTRICTED COMPOSITIONS (http://www.fmf.uni-lj.si/~jaklicg/papers/compositions_revision.pdf)
     // compute number of integer partitions of n
     // into exactly k parts having summands between a and b (inclusive)
     // a + k-1 <= n <= k*b
@@ -4452,7 +4451,13 @@ function p_nkab( n, k, a, b )
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         p = O, key, key2, j0, j1;
 
-    if ( Arithmetic.lt(n, O) || Arithmetic.lte(k, O) || Arithmetic.gt(a, b) || Arithmetic.gt(add(a, k), add(n, I)) || Arithmetic.lt(mul(k, b), n) ) return p;
+    if (
+        Arithmetic.lt(n, O)
+        || Arithmetic.lte(k, O)
+        || Arithmetic.gt(a, b)
+        || Arithmetic.gt(add(a, k), add(n, I))
+        || Arithmetic.lt(mul(k, b), n)
+    ) return p;
     if ( (Arithmetic.equ(b, n) && Arithmetic.equ(k, I)) || (Arithmetic.equ(k, n) && Arithmetic.equ(b, I)) ) return I;
     //if ( a === b ) return k*a === n ? Arithmetic.I : p;
     key = String(n)+','+String(k)+','+String(a)+','+String(b);
@@ -4478,9 +4483,9 @@ function p_nkab( n, k, a, b )
     return p_nkab.mem[key];
 }
 p_nkab.mem = Obj();
-function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null*/ )
+function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/ )
 {
-    if ( is_instance(n, Integer) ) return new n[CLASS](partitions(n.num, K, M));
+    if ( is_instance(n, Integer) ) return new n[CLASS](partitions(n.num, K, M, W));
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
         O = Arithmetic.O, I = Arithmetic.I,
@@ -4489,19 +4494,50 @@ function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null
 
     if ( is_instance(K, Integer) ) K = K.num;
     if ( is_instance(M, Integer) ) M = M.num;
+    if ( is_instance(W, Integer) ) W = W.num;
     K = null == K ? null : Arithmetic.abs(N(K));
     M = null == M ? null : Arithmetic.abs(N(M));
+    W = null == W ? null : Arithmetic.abs(N(W));
     n = N(n);
     m0 = null!=M /*&& !Arithmetic.equ(M, O)*/ ? M : O;
     m1 = null!=M /*&& !Arithmetic.equ(M, O)*/ ? M : I;
     k0 = null!=K /*&& !Arithmetic.equ(K, O)*/ ? K : I;
     k1 = null!=K /*&& !Arithmetic.equ(K, O)*/ ? K : n;
 
-    if ( Arithmetic.lt(n, O) || (null!=K && null!=M && (Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n))) || (null!=M && Arithmetic.gt(M, n)) || (null!=K && Arithmetic.gt(K, n)) ) return p;
-    if ( null!=M && null==K ) { m0 = O; m1 = I; k0 = M; k1 = M; K = M; M = null; } // count the conjugates, same
-    key = String(n)+'|'+String(K)+'|'+String(M);
+    if (
+        Arithmetic.lt(n, O)
+        || (null!=K && null!=M && null!=W && (Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || (null!=M && null!=W && (Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (!Arithmetic.equ(M, W) && Arithmetic.gt(add(M, W), n))))
+        || (null!=K && null!=W && Arithmetic.gt(mul(K, W), n))
+        || (null!=K && null!=M && (Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || (null!=M && Arithmetic.gt(M, n))
+        || (null!=W && Arithmetic.gt(W, n))
+        || (null!=K && Arithmetic.gt(K, n))
+    ) return p;
+    if ( null!=M && null==K && null==W ) { m0 = O; m1 = I; k0 = M; k1 = M; K = M; M = null; } // count the conjugates, same
+    key = String(n)+'|'+String(K)+'|'+String(M)+'|'+String(W);
     if ( null == partitions.mem[key] )
     {
+        if ( null == W )
+        {
+            W = I;
+        }
+        else
+        {
+            n = sub(n, W);
+            k1 = sub(k1, I);
+            if (null != K) k0 = sub(k0, I);
+            if (null == M)
+            {
+                m1 = W;
+            }
+            /*else
+            {
+                n = sub(n, M);
+                k1 = sub(k1, I);
+                if (null != K) k0 = sub(k0, I);
+            }*/
+        }
         k = k0;
         while( Arithmetic.lte(k, k1) )
         {
@@ -4509,7 +4545,7 @@ function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null
             m = m1;
             while( Arithmetic.lte(m, m0) )
             {
-                p = add(p, p_nkab(n, k, I, m));
+                p = add(p, p_nkab(n, k, W, m));
                 m = add(m, I);
             }
             k = add(k, I);
@@ -4528,7 +4564,13 @@ function c_nkab( n, k, a, b )
     var Arithmetic = Abacus.Arithmetic,
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         O = Arithmetic.O, I = Arithmetic.I, c = O, m, m1, key;
-    if ( Arithmetic.lt(n, O) || Arithmetic.lte(k, O) || Arithmetic.gt(a, b) || Arithmetic.gt(mul(a, k), n) || Arithmetic.lt(mul(k, b), n) ) return c;
+    if (
+        Arithmetic.lt(n, O)
+        || Arithmetic.lte(k, O)
+        || Arithmetic.gt(a, b)
+        || Arithmetic.gt(mul(a, k), n)
+        || Arithmetic.lt(mul(k, b), n)
+    ) return c;
     if ( Arithmetic.equ(k, I) ) return Arithmetic.lte(a, n) && Arithmetic.lte(n, b) ? I : c;
     if ( Arithmetic.equ(n, k) ) return Arithmetic.lte(a, I) && Arithmetic.lte(I, b) ? I : c;
     if ( Arithmetic.equ(a, b) ) return Arithmetic.equ(mul(k, a), n) ? I : c;
@@ -4551,27 +4593,87 @@ function c_nkab( n, k, a, b )
     return c_nkab.mem[key];
 }
 c_nkab.mem = Obj();
-function compositions( n, K /*exactly K parts or null*/, M /*max part is M or null*/ )
+function compositions( n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/ )
 {
-    if ( is_instance(n, Integer) ) return new n[CLASS](compositions(n.num, K, M));
+    if ( is_instance(n, Integer) ) return new n[CLASS](compositions(n.num, K, M, W));
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         add = Arithmetic.add, sub = Arithmetic.sub,
         mul = Arithmetic.mul, div = Arithmetic.div, mod = Arithmetic.mod,
-        c = O, j, k, m, kk, nm, key;
+        c = O, j, k, m, w, kk, nm, mm, key;
 
     if ( is_instance(K, Integer) ) K = K.num;
     if ( is_instance(M, Integer) ) M = M.num;
+    if ( is_instance(W, Integer) ) W = W.num;
     K = null == K ? null : Arithmetic.abs(N(K));
     M = null == M ? null : Arithmetic.abs(N(M));
+    W = null == W ? null : Arithmetic.abs(N(W));
     n = N(n);
 
-    if ( Arithmetic.lt(n, O) || (null!=K && null!=M && (Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n))) || (null!=M && Arithmetic.gt(M, n)) || (null!=K && Arithmetic.gt(K, n)) ) return c;
-    key = String(n)+'|'+String(K)+'|'+String(M);
+    if (
+        Arithmetic.lt(n, O)
+        || (null!=K && null!=M && null!=W && (Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || (null!=M && null!=W && (Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (!Arithmetic.equ(M, W) && Arithmetic.gt(add(M, W), n))))
+        || (null!=K && null!=W && Arithmetic.gt(mul(K, W), n))
+        || (null!=K && null!=M && (Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || (null!=M && Arithmetic.gt(M, n))
+        || (null!=W && Arithmetic.gt(W, n))
+        || (null!=K && Arithmetic.gt(K, n))
+    ) return c;
+    key = String(n)+'|'+String(K)+'|'+String(M)+'|'+String(W);
     if ( null == compositions.mem[key] )
     {
-        if ( null!=K && null!=M )
+        if ( null!=K && null!=M && null!=W )
+        {
+            if ( Arithmetic.equ(M, W) )
+            {
+                c = Arithmetic.equ(mul(K, M), n) ? I : O;
+            }
+            else
+            {
+                nm = sub(n, add(M, W));
+                c = Arithmetic.equ(O, nm) ? two : mul(c_nkab(nm, sub(K, two), W, M), mul(K, sub(K, I)));
+            }
+        }
+        else if ( null!=W && null!=M )
+        {
+            if ( Arithmetic.equ(M, W) )
+            {
+                c = Arithmetic.equ(O, mod(n, M)) ? I : O;
+            }
+            else
+            {
+                nm = add(M, W);
+                if ( Arithmetic.equ(n, nm) ) c = two;
+                K = sub(n, nm); k = I;
+                while( Arithmetic.lte(k, K) )
+                {
+                    j = add(k, two);
+                    kk = c_nkab(K, k, W, M);
+                    if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, mul(j, sub(j, I))));
+                    k = add(k, I);
+                }
+            }
+        }
+        else if ( null!=K && null!=W )
+        {
+            if ( Arithmetic.equ(mul(K, W), n) )
+            {
+                c = I;
+            }
+            else
+            {
+                j = I; nm = W; w = add(W, I);
+                while( Arithmetic.lte(nm, n) && Arithmetic.lte(j, K) )
+                {
+                    kk = c_nkab(sub(n, nm), sub(K, j), w, n);
+                    if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(K, j)));
+                    nm = add(nm, W); j = add(j, I);
+                }
+            }
+        }
+        else if ( null!=K && null!=M )
         {
             if ( Arithmetic.equ(mul(K, M), n) )
             {
@@ -4580,7 +4682,7 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
             else
             {
                 j = I; nm = M; m = sub(M, I);
-                while( Arithmetic.lte(nm, n) )
+                while( Arithmetic.lte(nm, n) && Arithmetic.lte(j, K) )
                 {
                     kk = c_nkab(sub(n, nm), sub(K, j), I, m);
                     if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(K, j)));
@@ -4591,6 +4693,29 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
         else if ( null!=K )
         {
             c = c_nkab(n, K, I, n);
+        }
+        else if ( null!=W )
+        {
+            if ( Arithmetic.equ(W, n) )
+            {
+                c = I;
+            }
+            else
+            {
+                if ( Arithmetic.equ(O, mod(n, W)) ) c = I;
+                j = I; nm = W; w = add(W, I);
+                while( Arithmetic.lte(nm, n) )
+                {
+                    k = I; K = sub(n, nm);
+                    while( Arithmetic.lte(k, K) )
+                    {
+                        kk = c_nkab(K, k, w, n);
+                        if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(add(k, j), j)));
+                        k = add(k, I);
+                    }
+                    nm = add(nm, W); j = add(j, I);
+                }
+            }
         }
         else if ( null!=M )
         {
@@ -4605,10 +4730,10 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
                 j = I; nm = M; m = sub(M, I);
                 while( Arithmetic.lte(nm, n) )
                 {
-                    k = I; K = sub(n, j);
+                    k = I; K = sub(n, nm);
                     while( Arithmetic.lte(k, K) )
                     {
-                        kk = c_nkab(sub(n, nm), k, I, m);
+                        kk = c_nkab(K, k, I, m);
                         if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(add(k, j), j)));
                         k = add(k, I);
                     }
@@ -4618,7 +4743,7 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
         }
         else
         {
-            c = Arithmetic.gte(n, I) ? pow2(sub(n, I)) : I;
+            c = Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I;
         }
         compositions.mem[key] = c;
     }
@@ -20493,8 +20618,10 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         $.type = $.type || "subset";
         $.rand = $.rand || {};
         $.rand["subset"] = 1;
-        $.base = n; $.dimension = n;
-        $.mindimension = 0; $.maxdimension = n;
+        $.base = n;
+        $.mindimension = 0;
+        $.maxdimension = n;
+        $.dimension = $.maxdimension;
         if ( "binary"===$.output ) $.output = function(item,n){ return Subset.binary(item,n,1); };
         CombinatorialIterator.call(self, "Subset", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
@@ -20627,6 +20754,26 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         }
     }
 
+    ,_update: function( ) {
+        var self = this, $ = self.$, n = self.n, item = self.__item, itemlen,
+            order = $.order || LEX, is_binary = "binary"===$.type,
+            is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order));
+        if ( (null != item) && (n+1 !== item.length) )
+        {
+            itemlen = item.length;
+            item = item.slice();
+            if ( itemlen<n )
+            {
+                if ((is_binary && !is_reflected) || (is_reflected && !is_binary))
+                    item.unshift.apply(item, new Array(n-itemlen));
+                else
+                    item.push.apply(item, new Array(n-itemlen));
+            }
+            item.push(itemlen);
+            self.__item = item;
+        }
+        return self;
+    }
     ,output: function( item ) {
         if ( null == item ) return null;
         var n = this.n;
@@ -20742,7 +20889,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
 
     // extends and implements CombinatorialIterator
     constructor: function Partition( n, $ ) {
-        var self = this, sub = null, M, K, k1, k0;
+        var self = this, sub = null, M, W, K, k1, k0;
         if ( !is_instance(self, Partition) ) return new Partition(n, $);
         $ = $ || {}; $.type = $.type || "partition";
         n = n||1;
@@ -20756,13 +20903,14 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             sub = $.sub;
         }
         M = $["max="] ? $["max="]|0 : null;
+        W = $["min="] ? $["min="]|0 : null;
         K = $["parts="] ? $["parts="]|0 : null;
-        k1 = K ? K : (M ? n-M+1 : n);
-        k0 = K ? K : (M ? stdMath.ceil(n/M) : 1);
+        k1 = K ? K : (W && M ? (M===W ? stdMath.ceil(n/W) : stdMath.max(1, stdMath.ceil((n-M)/W))+1) : (W ? stdMath.ceil(n/W) : (M ? stdMath.max(0, n-M)+1 : n)));
+        k0 = K ? K : (W && M ? (M===W ? stdMath.ceil(n/M) : stdMath.max(1, stdMath.ceil((n-W)/M))+1) : (W ? 2 : (M ? stdMath.ceil(n/M) : 1)));
         $.base = n;
-        $.dimension = K ? K : (M ? n-M+1 : n);
-        $.mindimension = stdMath.min(k0,k1);
-        $.maxdimension = stdMath.max(k0,k1);
+        $.mindimension = stdMath.max(1, stdMath.min(k0, k1));
+        $.maxdimension = stdMath.max(1, stdMath.max(k0, k1));
+        $.dimension = $.maxdimension;
         $.rand = $.rand || {};
         $.rand["partition"] = 1; $.rand["composition"] = 1;
         if ( "conjugate"===$.output ) $.output = function(item,n){
@@ -20777,15 +20925,18 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
          C: function( item, N, LEN, $, dir ) {
             // C process / symmetry, ie Rotation/Complementation/Conjugation, CC = I
             var klass = this, is_composition = "composition" === ($ && $.type ? $.type : "partition"),
-                M = $ && $["max="] ? $["max="]|0 : null, K = $ && $["parts="] ? $["parts="]|0 : null, reflected = -1===dir, itemlen;
-            if ( K || M ) return item;
+                M = $ && $["max="] ? $["max="]|0 : null,
+                W = $ && $["min="] ? $["min="]|0 : null,
+                K = $ && $["parts="] ? $["parts="]|0 : null,
+                reflected = -1===dir, itemlen;
+            if ( K || M || W ) return item; // TODO
             if ( LEN+1===item.length )
             {
                 item = reflected ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
                 item = conjugatepartition(is_composition, item, dir);
                 itemlen = item.length;
                 if ( itemlen<LEN ) item[reflected?"unshift":"push"].apply(item, new Array(LEN-itemlen));
-                item.push([itemlen,0]);
+                item.push([itemlen,0,0]);
             }
             else
             {
@@ -20810,22 +20961,33 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
         ,count: function( n, $ ) {
             var M = $ && $["max="] ? $["max="]|0 : null,
+                W = $ && $["min="] ? $["min="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 type = $ && $.type ? $.type : "partition";
-            return "composition"===type ? compositions(n, K, M) : partitions(n, K, M);
+            return "composition"===type ? compositions(n, K, M, W) : partitions(n, K, M, W);
         }
         ,initial: function( n, $, dir ) {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
-            var klass = this, item, k, m,
+            var klass = this, item, i, k, l, m,
                 type = $ && $.type ? $.type : "partition",
                 M = $ && $["max="] ? $["max="]|0 : null,
+                W = $ && $["min="] ? $["min="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 order = $ && null!=$.order ? $.order : LEX,
-                LEN = K ? K : (M ? n-M+1 : n),
+                LEN = $ && $.dimension ? $.dimension : 1,
                 is_composition = "composition" === type, conj = false;
 
-            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
+            if (
+                (0 >= n)
+                || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || (M && W && ((W > M) || (M > n) || (W > n) || (M !== W && M+W > n)))
+                || (K && W && (K*W > n))
+                || (K && M && ((K+M > n+1) || (K*M < n)))
+                || (W && (W > n))
+                || (M && (M > n))
+                || (K && (K > n))
+            ) return null;
 
             dir = -1 === dir ? -1 : 1;
 
@@ -20833,8 +20995,184 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 dir = -dir;
 
             // O(n)
-            item = new Array(LEN+1); item[LEN] = [0,0];
-            if ( K && M )
+            item = new Array(LEN+1); item[LEN] = [0,0,0];
+            if ( K && M && W )
+            {
+                // restricted partition n into exactly K parts with min part=W and max part=M
+                item[LEN][0] = K;
+
+                if ( M === W )
+                {
+                    return K*M === n ? operate(function(item,ai,i){
+                        item[i] = M; item[LEN][1]++; item[LEN][2]++;
+                        return item;
+                    }, item, null, 0,K-1,1) : null;
+                }
+
+                if (1 >= K || n < W+M) return null;
+
+                if ( is_composition )
+                {
+                    m = n-W-M;
+                    item[K-1] = M; item[LEN][1]++;
+                    item = operate(function(item,ai,i){
+                        var index = K-1-i;
+                        item[index] = stdMath.max(W, stdMath.min(M, m-index));
+                        m -= item[index];
+                        if ( M === item[index] ) item[LEN][1]++;
+                        if ( W === item[index] ) item[LEN][2]++;
+                        return item;
+                    }, item, null, 1,K-2,1);
+                    item[0] = W; item[LEN][2]++;
+                    if ( 0 > dir ) reflection(item,item,K,0,K-1);
+                }
+                else if ( 0 > dir )
+                {
+                    m = n-W-M;
+                    item[0] = M; item[LEN][1]++;
+                    item = operate(function(item,ai,i){
+                        item[i] = stdMath.max(W, stdMath.min(M, m-(K-i-1)));
+                        if ( M === item[i] ) item[LEN][1]++;
+                        if ( W === item[i] ) item[LEN][2]++;
+                        m -= item[i];
+                        return item;
+                    }, item, null, 1,K-2,1);
+                    item[K-1] = W; item[LEN][2]++;
+                }
+                else
+                {
+                    m = stdMath.max(W, stdMath.min(M, stdMath.floor((n-M-W)/(K-2)))); k = (n-M-W)%(K-2);
+                    item = operate(function(item,ai,i){
+                        item[i] = 0===i ? M : (K-1===i ? W : (i-1<k?m+1:m));
+                        if ( M === item[i] ) item[LEN][1]++;
+                        if ( W === item[i] ) item[LEN][2]++;
+                        return item;
+                    }, item, null, 0,K-1,1);
+                }
+            }
+            else if ( M && W )
+            {
+                // restricted partition n with min part=W and max part=M
+                if ( M === W )
+                {
+                    if (0 !== (n%M)) return null;
+
+                    item[LEN][0] = stdMath.ceil(n/M);
+                    item = operate(function(item,ai,i){
+                        item[i] = M; item[LEN][1]++; item[LEN][2]++;
+                        return item;
+                    }, item, null, 0,item[LEN][0]-1,1);
+                }
+                else
+                {
+                    if ( 0 > dir )
+                    {
+                        k = stdMath.floor((n-W)/M);
+                        if (0 >= k) return null;
+                        m = n-W-k*M;
+                        if ( 0 < m && m < W )
+                        {
+                            k--;
+                            m += M-W;
+                            item[LEN][0] = k+1+(0 < m ? 1 : 0);
+                        }
+                        else
+                        {
+                            item[LEN][0] = k+1+(0 < m ? 1 : 0);
+                        }
+                        item = operate(function(item,ai,i){
+                            if (i < k)
+                            {
+                                item[i] = M;
+                                item[LEN][1]++;
+                            }
+                            else if (i === k && 0 < m)
+                            {
+                                item[i] = m;
+                                if (m === M) item[LEN][1]++;
+                                if (m === W) item[LEN][2]++;
+                            }
+                            else
+                            {
+                                item[i] = W;
+                                item[LEN][2]++;
+                            }
+                            return item;
+                        }, item, null, 0,item[LEN][0]-1,1);
+                    }
+                    else
+                    {
+                        k = stdMath.floor((n-M)/W);
+                        if (0 >= k) return null;
+                        m = n-M-k*W;
+                        l = stdMath.max(1, stdMath.floor(m/k));
+                        item[LEN][0] = k+1;
+                        item = operate(function(item,ai,i){
+                            if (0 === i)
+                            {
+                                item[i] = M;
+                                item[LEN][1]++;
+                            }
+                            else if (0 < m)
+                            {
+                                item[i] = W+l;
+                                if (item[i] === M) item[LEN][1]++;
+                                if (item[i] === W) item[LEN][2]++;
+                                m -= l;
+                            }
+                            else
+                            {
+                                item[i] = W;
+                                item[LEN][2]++;
+                            }
+                            return item;
+                        }, item, null, 0,item[LEN][0]-1,1);
+                        if (is_composition) reflection(item,item,item[LEN][0],0,item[LEN][0]-1);
+                    }
+                }
+            }
+            else if ( K && W )
+            {
+                item[LEN][0] = K;
+                // restricted partition n into exactly K parts with min part=W
+                if ( 1 === K )
+                {
+                    item[0] = W;
+                    item[LEN][2] = 1;
+                }
+                if ( is_composition )
+                {
+                    k = K-1; m = n-k*W;
+                    item = operate(function(item,ai,i){
+                        item[i] = W;
+                        item[LEN][2]++;
+                        return item;
+                    }, item, null, 1,K-1,1);
+                    item[0] = m; if (W === m) item[LEN][2]++;
+                    if ( 0 < dir ) reflection(item,item,K,0,K-1);
+                }
+                else if ( 0 > dir )
+                {
+                    k = K-1; m = n-k*W;
+                    item = operate(function(item,ai,i){
+                        item[i] = W;
+                        item[LEN][2]++;
+                        return item;
+                    }, item, null, 1,K-1,1);
+                    item[0] = m; if (W === m) item[LEN][2]++;
+                }
+                else
+                {
+                    m = stdMath.max(W, stdMath.floor((n-W)/(K-1))); k = (n-W)%(K-1);
+                    item = operate(function(item,ai,i){
+                        item[i] = i<k?m+1:m;
+                        if (W === item[i]) item[LEN][2]++;
+                        return item;
+                    }, item, null, 0,K-2,1);
+                    item[K-1] = W; item[LEN][2]++;
+                }
+            }
+            else if ( K && M )
             {
                 item[LEN][0] = K;
                 // restricted partition n into exactly K parts with largest part=M
@@ -20900,6 +21238,86 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                         }, item, null, 0,K-1,1/*0 > dir ? [n-K+1].concat(array(K-1, 1, 0)) : array(K, function(i){return m+(i<k);})*/);
                     }
                 }
+                else if ( W )
+                {
+                    // restricted partition n into parts with min part=W
+                    if (W === n)
+                    {
+                        item[LEN][0] = 1;
+                        item[0] = n;
+                        item[LEN][2] = 1;
+                    }
+                    else if (0 > dir)
+                    {
+                        item[LEN][0] = 2;
+                        item[0] = n-W; item[1] = W;
+                        item[LEN][2] = 1 + (W===item[0] ? 1 : 0);
+                    }
+                    else if (is_composition)
+                    {
+                        k = stdMath.floor(n/W);
+                        m = n-k*W;
+                        if (0 < m && W > m)
+                        {
+                            k--;
+                            m += W;
+                            item[LEN][0] = k+1;
+                        }
+                        else
+                        {
+                            item[LEN][0] = k+(0 < m);
+                        }
+                        item = operate(function(item,ai,j){
+                            if (j < k)
+                            {
+                                item[j] = W;
+                                item[LEN][2]++;
+                            }
+                            else
+                            {
+                                item[j] = m;
+                                if (W === m) item[LEN][2]++;
+                            }
+                            return item;
+                        }, item, null, 0,item[LEN][0]-1,1);
+                    }
+                    else
+                    {
+                        k = stdMath.floor(n/W);
+                        m = n-k*W;
+                        if (1 < k)
+                        {
+                            l = stdMath.floor(m/(k-1));
+                            i = m%(k-1);
+                        }
+                        else
+                        {
+                            l = 0;
+                            i = 0;
+                        }
+                        item[LEN][0] = k;
+                        item = operate(function(item,ai,j){
+                            if (0 < m)
+                            {
+                                item[j] = W+l;
+                                m -= l;
+                                if (0 < i)
+                                {
+                                    item[j]++;
+                                    i--;
+                                    m--;
+                                }
+                                if (W === item[j]) item[LEN][2]++;
+                            }
+                            else
+                            {
+                                item[j] = W;
+                                item[LEN][2]++;
+                            }
+                            return item;
+                        }, item, null, 0,item[LEN][0]-1,1);
+                    }
+                }
                 else if ( M )
                 {
                     // restricted partition n into parts with largest part=M
@@ -20939,27 +21357,51 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             if ( (null == n) || (null == item) ) return null;
             var type = $ && $.type ? $.type : "partition",
                 M = $ && $["max="] ? $["max="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null;
-            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
+                W = $ && $["min="] ? $["min="]|0 : null,
+                K = $ && $["parts="] ? $["parts="]|0 : null,
+                dim = $ && $.dimension ? $.dimension : 1,
+                order = $ && null!=$.order ? $.order : LEX;
+
+            if (
+                (0 >= n)
+                || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || (M && W && ((W > M) || (M > n) || (W > n) || (M !== W && M+W > n)))
+                || (K && W && (K*W > n))
+                || (K && M && ((K+M > n+1) || (K*M < n)))
+                || (W && (W > n))
+                || (M && (M > n))
+                || (K && (K > n))
+            ) return null;
+
             dir = -1 === dir ? -1 : 1;
-            return "composition"===type ? next_composition(item, n, dir, K, M, $ && null!=$.order ? $.order : LEX, PI) : next_partition(item, n, dir, K, M, $ && null!=$.order ? $.order : LEX, PI);
+            return "composition"===type ? next_composition(item, n, dir, K, M, W, dim, order, PI) : next_partition(item, n, dir, K, M, W, dim, order, PI);
         }
         ,rand: function( n, $ ) {
             var klass = this, rndInt = Abacus.Math.rndInt,
                 type = $ && $.type ? $.type : "partition",
                 order = $ && null!=$.order ? $.order : LEX,
                 M = $ && $["max="] ? $["max="]|0 : null, MM = M,
+                W = $ && $["min="] ? $["min="]|0 : null, WW = W,
                 K = $ && $["parts="] ? $["parts="]|0 : null, KK = K,
                 list, item, m, x, y, y1 = 0, yn = 0,
-                itemlen, LEN = K ? K : (M ? n-M+1 : n),
+                itemlen, LEN = $ && $.dimension ? $.dimension : 1,
                 is_composition = "composition" === type, conj = false;
 
-            if ( (0 >= n) || (K && M && ((K+M > n+1) || (K*M < n))) || (K && K > n) || (M && M > n) ) return null;
+            if (
+                (0 >= n)
+                || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || (M && W && ((W > M) || (M > n) || (W > n) || (M !== W && M+W > n)))
+                || (K && W && (K*W > n))
+                || (K && M && ((K+M > n+1) || (K*M < n)))
+                || (W && (W > n))
+                || (M && (M > n))
+                || (K && (K > n))
+            ) return null;
 
             do{
-                K = KK; M = MM; conj = false;
+                K = KK; M = MM; W = WW; conj = false;
                 if ( M && K ) K = null;
-                if ( M && !K ) { K=M; M=null; conj=true; }
+                if ( M && !K && !W ) { K=M; M=null; conj=true; }
 
                 // generate random (k-)composition (resp. diff of (k-)subset)
                 // transform to partition (resp. composition) by sorting (resp. shuffling)
@@ -21047,6 +21489,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 type = $ && $.type ? $.type : "partition",
                 order = $ && null!=$.order ? $.order : LEX,
                 M = $ && $["max="] ? $["max="]|0 : null,
+                W = $ && $["min="] ? $["min="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 index = Arithmetic.O, x, j, i, total;
 
@@ -21056,7 +21499,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             {
                 if ( K )
                 {
-                    if ( M )
+                    if ( M || W )
                     {
                         //NotImplemented();
                     }
@@ -21073,7 +21516,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 else
                 {
                     K = item.length;
-                    if ( M )
+                    if ( M || W )
                     {
                         //NotImplemented();
                     }
@@ -21092,7 +21535,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             {
                 if ( K )
                 {
-                    if ( M )
+                    if ( M || W )
                     {
                         //NotImplemented();
                     }
@@ -21109,7 +21552,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 else
                 {
                     K = item.length;
-                    if ( M )
+                    if ( M || W )
                     {
                         //NotImplemented();
                     }
@@ -21126,7 +21569,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             }
             if ( REVERSED & order )
             {
-                total = $ && null!=$.count ? $.count : klass.count(n, {type:type,"max=":M,"parts=":K});
+                total = $ && null!=$.count ? $.count : klass.count(n, {type:type,"max=":M,"min=":W,"parts=":K});
                 index = Arithmetic.sub(Arithmetic.sub(total, 1), index);
             }
             return index;
@@ -21147,36 +21590,38 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             type = $ && $.type ? $.type : "partition",
             order = $ && null!=$.order ? $.order : LEX,
             M = $ && $["max="] ? $["max="]|0 : null,
+            W = $ && $["min="] ? $["min="]|0 : null,
             K = $ && $["parts="] ? $["parts="]|0 : null,
-            LEN = K ? K : (M ? n-M+1 : n), itemlen, x, y;
+            LEN = $.dimension, itemlen, x, y = 0, z = 0;
         if ( (null != item) && (LEN+1 !== item.length) )
         {
             itemlen = item.length;
-            if ( M )
+            item = item.slice();
+            if ( M || W )
             {
-                for(x=0,y=0; x<itemlen; x++)
+                for(x=0,y=0,z=0; x<itemlen; x++)
+                {
                     if ( M === item[x] ) y++;
-            }
-            else
-            {
-                y = 0;
+                    if ( W === item[x] ) z++;
+                }
             }
             if ( itemlen<LEN )
             {
                 if ( REFLECTED & order ) item.unshift.apply(item, new Array(LEN-itemlen));
                 else item.push.apply(item, new Array(LEN-itemlen));
             }
-            item.push([itemlen, y]);
+            item.push([itemlen, y, z]);
             self.__item = item;
         }
         return self;
     }
     ,output: function( item ) {
         if ( null == item ) return null;
-        var self = this, $ = self.$, n = self.n, M = $["max="] ? $["max="]|0 : null,
+        var self = this, $ = self.$, n = self.n,
+            M = $["max="] ? $["max="]|0 : null,
+            W = $["min="] ? $["min="]|0 : null,
             K = $["parts="] ? $["parts="]|0 : null,
-            order = null!=$.order ? $.order : LEX,
-            LEN = K ? K : (M ? n-M+1 : n);
+            order = null!=$.order ? $.order : LEX, LEN = $.dimension;
         if ( LEN+1===item.length )
         {
             item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
@@ -21186,10 +21631,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
 });
 // aliases
 Partition.transpose = Partition.conjugate;
-function next_partition( item, N, dir, K, M, order, PI )
+function next_partition( item, N, dir, K, M, W, LN, order, PI )
 {
     //maybe "use asm"
-    var n = N, LN = K ? K : (M ? n-M+1 : n),
+    var n = N, /*LN = K ? K : (M ? n-M+1 : n),*/
         INFO = LN, LEN = 0, NMAX = 1,
         i, j, i0, i1, k, m, d, l, rem, DI, MIN, MAX;
     // some C-P-T dualities, symmetries & processes at play here
@@ -21231,7 +21676,16 @@ function next_partition( item, N, dir, K, M, order, PI )
         // compute prev partition
         if ( K )
         {
-            if ( M )
+            if ( M && W )
+            {
+                if ( M === W ) return null; // there is only one, if any
+                return null;
+            }
+            else if ( W )
+            {
+                return null;
+            }
+            else if ( M )
             {
                 rem = n-M; m = rem % (K-1); d = stdMath.min(M, stdMath.floor(rem/(K-1))); k = 0; i = -1;
                 for(j=i0+DI; MIN<j && j<=MAX; j+=DI)
@@ -21283,6 +21737,8 @@ function next_partition( item, N, dir, K, M, order, PI )
         }
         else
         {
+            if ( W ) return null;
+
             j = M ? i0+DI : i0;
             if ( (MIN<=j && j<=MAX) && (item[j] > 1) )
             {
@@ -21334,7 +21790,16 @@ function next_partition( item, N, dir, K, M, order, PI )
         // compute next partition
         if ( K )
         {
-            if ( M )
+            if ( M && W )
+            {
+                if ( M === W ) return null; // there is only one, if any
+                return null;
+            }
+            else if ( W )
+            {
+                return null;
+            }
+            else if ( M )
             {
                 i = i1;
                 while(MIN<=i && i<=MAX && 1===item[i]) i -= DI;
@@ -21410,6 +21875,7 @@ function next_partition( item, N, dir, K, M, order, PI )
         }
         else
         {
+            if ( W ) return null;
             if ( M )
             {
                 m = stdMath.min(M,n-M);
@@ -21460,10 +21926,10 @@ function next_partition( item, N, dir, K, M, order, PI )
     }
     return item;
 }
-function next_composition( item, N, dir, K, M, order, PI )
+function next_composition( item, N, dir, K, M, W, LN, order, PI )
 {
     //maybe "use asm"
-    var n = N, LN = K ? K : (M ? n-M+1 : n),
+    var n = N, /*LN = K ? K : (M ? n-M+1 : n),*/
         INFO = LN, LEN = 0, NMAX = 1,
         i, j, i0, i1, k, m, d, l, rem, DI, MIN, MAX;
     // some C-P-T dualities, symmetries & processes at play here
@@ -21500,7 +21966,16 @@ function next_composition( item, N, dir, K, M, order, PI )
         // compute prev composition
         if ( K )
         {
-            if ( M )
+            if ( M && W )
+            {
+                if ( M === W ) return null; // there is only one, if any
+                return null;
+            }
+            else if ( W )
+            {
+                return null;
+            }
+            else if ( M )
             {
                 if ( COLEX & order )
                 {
@@ -21590,6 +22065,15 @@ function next_composition( item, N, dir, K, M, order, PI )
             if ( COLEX & order )
             {
                 item = null;
+            }
+            else if ( M && W )
+            {
+                if ( M === W ) return null; // there is only one, if any
+                return null;
+            }
+            else if ( W )
+            {
+                return null;
             }
             else if ( M )
             {
@@ -21714,7 +22198,16 @@ function next_composition( item, N, dir, K, M, order, PI )
         // compute next composition
         if ( K )
         {
-            if ( M )
+            if ( M && W )
+            {
+                if ( M === W ) return null; // there is only one, if any
+                return null;
+            }
+            else if ( W )
+            {
+                return null;
+            }
+            else if ( M )
             {
                 if ( COLEX & order )
                 {
@@ -21801,6 +22294,15 @@ function next_composition( item, N, dir, K, M, order, PI )
             if ( COLEX & order )
             {
                 item = null;
+            }
+            else if ( M && W )
+            {
+                if ( M === W ) return null; // there is only one, if any
+                return null;
+            }
+            else if ( W )
+            {
+                return null;
             }
             else if ( M )
             {
@@ -22234,10 +22736,9 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
                     word = [];
                 }
             }
-            seq = prefix.concat(suffix);
 
-            // convert in FXT format
-            return seq.reduce(function(item, x, i){
+            // convert to FXT format
+            return prefix.concat(suffix).reduce(function(item, x, i){
                 if (0 < x) item.push(i);
                 return item;
             }, []);
