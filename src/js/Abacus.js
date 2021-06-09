@@ -4093,9 +4093,9 @@ function solvepythag( a, with_param )
 }
 function pow2( n )
 {
-    if ( is_instance(n, Integer) )
+    if (is_instance(n, Integer))
         return new n[CLASS](pow2(n.num));
-    else if ( is_instance(n, Rational) )
+    else if (is_instance(n, Rational))
         return new n[CLASS](pow2(n.num), pow2(n.den));
     var Arithmetic = Abacus.Arithmetic;
     return Arithmetic.shl(Arithmetic.I, Arithmetic.num(n));
@@ -4104,9 +4104,9 @@ function exp( n, k )
 {
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num;
     k = is_instance(k, Integer) ? k.num : N(k);
-    if ( is_instance(n, Integer) )
+    if (is_instance(n, Integer))
         return new n[CLASS](exp(n.num, k));
-    else if ( is_instance(n, Rational) )
+    else if (is_instance(n, Rational))
         return new n[CLASS](exp(n.num, k), exp(n.den, k));
     return Arithmetic.pow(N(n), k);
 }
@@ -4156,7 +4156,7 @@ function dsc_factorial( n )
 
     swing = function swing( m, primes ) {
         var s, d, e, g, factors, prime, p, q, i;
-        if ( Arithmetic.lt(m, 4) ) return ([I,I,I,three])[Arithmetic.val(m)];
+        if (Arithmetic.lt(m, 4)) return ([I,I,I,three])[Arithmetic.val(m)];
         s = bisect(primes, Arithmetic.add(I, isqrt(m)), -1, null, null, Arithmetic.lt);
         d = bisect(primes, Arithmetic.add(I, Arithmetic.div(m, three)), -1, null, null, Arithmetic.lt);
         e = bisect(primes, Arithmetic.add(I, Arithmetic.div(m, two)), -1, null, null, Arithmetic.lt);
@@ -4169,21 +4169,21 @@ function dsc_factorial( n )
             while (true)
             {
                 q = Arithmetic.div(q, prime);
-                if ( Arithmetic.equ(O, q) ) break;
-                if ( !Arithmetic.equ(O, Arithmetic.mod(q, two)) ) p = Arithmetic.mul(p, prime);
+                if (Arithmetic.equ(O, q)) break;
+                if (! Arithmetic.equ(O, Arithmetic.mod(q, two))) p = Arithmetic.mul(p, prime);
             }
-            if ( Arithmetic.gt(p, I) ) factors.push(p);
+            if (Arithmetic.gt(p, I)) factors.push(p);
         }
         return split_product(factors, 0, factors.length-1);
     };
 
     odd_factorial = function odd_factorial( n, primes ) {
-        if ( Arithmetic.lt(n, two) ) return I;
+        if (Arithmetic.lt(n, two)) return I;
         var f = odd_factorial(Arithmetic.div(n, two), primes);
         return Arithmetic.mul(Arithmetic.mul(f, f), swing(n, primes));
     };
 
-    if ( Arithmetic.lt(n, two) ) return I;
+    if (Arithmetic.lt(n, two)) return I;
     bits = Arithmetic.sub(n, Arithmetic.digits(n, 2).split('').reduce(function(s, d){return Arithmetic.add(s, '1'===d?I:O);}, O));
     sieve = PrimeSieve();
     primes = sieve.get(function(p){return Arithmetic.lte(p, n);});
@@ -4199,22 +4199,22 @@ function factorial( n, m )
         div = Arithmetic.div, mul = Arithmetic.mul, mod = Arithmetic.mod,
         key, res = O, i, MAXMEM = Abacus.Options.MAXMEM;
 
-    if ( is_instance(n, Integer) ) return new n[CLASS](factorial(n.num, m));
+    if (is_instance(n, Integer)) return new n[CLASS](factorial(n.num, m));
 
     n = NUM(n);
 
-    if ( null == m )
+    if (null == m)
     {
         // http://www.luschny.de/math/factorial/index.html
         // https://en.wikipedia.org/wiki/Factorial
         // simple factorial = F(n) = n F(n-1) = n!
-        if ( Arithmetic.lte(n, 12) ) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600 /*MAX: 2147483647*/])[VAL(n)]);
+        if (Arithmetic.lte(n, 12)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600 /*MAX: 2147483647*/])[VAL(n)]);
 
         // for large factorials, use the swinging factorial or the prime factorisation of n!
-        if ( Arithmetic.gte(n, 100) ) return dsc_factorial(n); //prime_factorial(n);
+        if (Arithmetic.gte(n, 100)) return dsc_factorial(n); //prime_factorial(n);
 
         key = String(n)/*+'!'*/;
-        if ( null == factorial.mem1[key] )
+        if (null == factorial.mem1[key])
         {
             // iterative
             //res = operate(mul, I, null, 2, n);
@@ -4223,7 +4223,7 @@ function factorial( n, m )
             res = mul(factorial(sub(n, I)), n);
             //res = fproduct(n, 1);
             // memoize only up to MAXMEM results
-            if ( Arithmetic.lt(n, MAXMEM) )
+            if (Arithmetic.lt(n, MAXMEM))
                 factorial.mem1[key] = res;
         }
         else
@@ -4231,16 +4231,16 @@ function factorial( n, m )
             res = factorial.mem1[key];
         }
     }
-    else if ( false === m )
+    else if (false === m)
     {
         // http://mathworld.wolfram.com/Subfactorial.html
         // https://en.wikipedia.org/wiki/Derangement
         // https://en.wikipedia.org/wiki/Rencontres_numbers
         // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = !n = [(n!+1)/e]
         // for given number of fixed points k > 0: D(n,k) = C(n,k) D(n-k)
-        if ( Arithmetic.lte(n, 12) ) return Arithmetic.lt(n, two) ? O : NUM(([1,2,9,44,265,1854,14833,133496,1334961,14684570,176214841])[VAL(sub(n, two))]);
+        if (Arithmetic.lte(n, 12)) return Arithmetic.lt(n, two) ? O : NUM(([1,2,9,44,265,1854,14833,133496,1334961,14684570,176214841])[VAL(sub(n, two))]);
         key = '!'+String(n);
-        if ( null == factorial.mem2[key] )
+        if (null == factorial.mem2[key])
         {
             //factorial.mem2[key] = Math.floor((factorial(n)+1)/Math.E);
             /*factorial.mem2[key] = operate(function(N, n){
@@ -4250,7 +4250,7 @@ function factorial( n, m )
             // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = !n = [(n!+1)/e]
             res = add(Arithmetic.equ(O, mod(n, two)) ? I : J, mul(factorial(sub(n, I), false), n));
             // memoize only up to MAXMEM results
-            if ( Arithmetic.lt(n, MAXMEM) )
+            if (Arithmetic.lt(n, MAXMEM))
                 factorial.mem2[key] = res;
         }
         else
@@ -4258,18 +4258,18 @@ function factorial( n, m )
             res = factorial.mem2[key];
         }
     }
-    else if ( true === m )
+    else if (true === m)
     {
         // involution factorial = I(n) = I(n-1) + (n-1) I(n-2)
-        if ( Arithmetic.lte(n, 18) ) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,4,10,26,76,232,764,2620,9496,35696,140152,568504,2390480,10349536,46206736,211799312,997313824])[VAL(n)]);
+        if (Arithmetic.lte(n, 18)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,4,10,26,76,232,764,2620,9496,35696,140152,568504,2390480,10349536,46206736,211799312,997313824])[VAL(n)]);
         key = 'I'+String(n);
-        if ( null == factorial.mem2[key] )
+        if (null == factorial.mem2[key])
         {
             // recursive and memoized
             // involution factorial = I(n) = I(n-1) + (n-1) I(n-2)
             res = add(factorial(sub(n, I), true), mul(factorial(sub(n, two), true), sub(n, I)));
             // memoize only up to MAXMEM results
-            if ( Arithmetic.lt(n, MAXMEM) )
+            if (Arithmetic.lt(n, MAXMEM))
                 factorial.mem2[key] = res;
         }
         else
@@ -4277,20 +4277,18 @@ function factorial( n, m )
             res = factorial.mem2[key];
         }
     }
-    else if ( is_array(m) )
+    else if (is_array(m))
     {
         // https://en.wikipedia.org/wiki/Multinomial_theorem
         // multinomial = n!/m1!..mk!
-        if ( !m.length ) return Arithmetic.lt(n, O) ? O : factorial(n);
-        else if ( Arithmetic.lt(n, O) ) return O;
+        if (!m.length) return Arithmetic.lt(n, O) ? O : factorial(n);
+        else if (Arithmetic.lt(n, O)) return O;
         key = String(n)+'@'+mergesort(m.map(String),1,true).join(',');
-        if ( null == factorial.mem3[key] )
+        if (null == factorial.mem3[key])
         {
-            res = div(factorial(n), operate(function(N,mk){
-                return mul(N, factorial(mk));
-            }, factorial(m[m.length-1]), m, m.length-2, 0));
+            res = operate(function(N, mk){return div(N, factorial(mk));}, factorial(n), m);
             // memoize only up to MAXMEM results
-            if ( Arithmetic.lt(n, MAXMEM) )
+            if (Arithmetic.lt(n, MAXMEM))
                 factorial.mem3[key] = res;
         }
         else
@@ -4298,25 +4296,25 @@ function factorial( n, m )
             res = factorial.mem3[key];
         }
     }
-    else if ( Arithmetic.isNumber(m) || is_instance(m, Integer) )
+    else if (Arithmetic.isNumber(m) || is_instance(m, Integer))
     {
         m = is_instance(m, Integer) ? m.num : NUM(m);
 
-        if ( Arithmetic.lt(m, O) )
+        if (Arithmetic.lt(m, O))
         {
             // selections, ie m!C(n,m) = n!/(n-m)! = (n-m+1)*..(n-1)*n
-            if ( Arithmetic.lte(n, Arithmetic.neg(m)) ) return Arithmetic.equ(n, Arithmetic.neg(m)) ? factorial(n) : O;
+            if (Arithmetic.lte(n, Arithmetic.neg(m))) return Arithmetic.equ(n, Arithmetic.neg(m)) ? factorial(n) : O;
             key = String(n)+'@'+String(m);
-            if ( null == factorial.mem3[key] )
+            if (null == factorial.mem3[key])
             {
                 i = add(add(n, m), I); res = i;
-                while( Arithmetic.lt(i, n) )
+                while (Arithmetic.lt(i, n))
                 {
                     i = add(i, I);
                     res = mul(res, i);
                 }
                 // memoize only up to MAXMEM results
-                if ( Arithmetic.lt(n, MAXMEM) )
+                if (Arithmetic.lt(n, MAXMEM))
                     factorial.mem3[key] = res;
             }
             else
@@ -4328,20 +4326,20 @@ function factorial( n, m )
         {
             // https://en.wikipedia.org/wiki/Binomial_coefficient
             // binomial = C(n,m) = C(n-1,m-1)+C(n-1,m) = n!/m!(n-m)!
-            if ( Arithmetic.lt(m, O) || Arithmetic.lt(n, I) || Arithmetic.gt(m, n) ) return O;
-            if ( Arithmetic.lt(n, mul(m, two))  ) m = sub(n, m); // take advantage of symmetry
-            if ( Arithmetic.equ(m, O) || Arithmetic.equ(n, I) ) return I;
-            else if ( Arithmetic.equ(m, I) ) return n;
+            if (Arithmetic.lt(m, O) || Arithmetic.lt(n, I) || Arithmetic.gt(m, n)) return O;
+            if (Arithmetic.lt(n, mul(m, two))) m = sub(n, m); // take advantage of symmetry
+            if (Arithmetic.equ(m, O) || Arithmetic.equ(n, I)) return I;
+            else if (Arithmetic.equ(m, I)) return n;
             key = String(n)+'@'+String(m);
-            if ( null == factorial.mem3[key] )
+            if (null == factorial.mem3[key])
             {
                 // recursive and memoized
                 // binomial = C(n,m) = C(n-1,m-1)+C(n-1,m) = n!/m!(n-m)!
-                if ( Arithmetic.lte(n, 10) )
+                if (Arithmetic.lte(n, 10))
                 {
                     res = add(factorial(sub(n, I), sub(m, I)), factorial(sub(n, I), m));/*div(factorial(n,-m), factorial(m))*/
                 }
-                else if ( Arithmetic.isDefault() )
+                else if (Arithmetic.isDefault())
                 {
                     res = stdMath.round(operate(function(Cnm,i){
                         // this is faster and will not overflow unnecesarily for default arithmetic
@@ -4351,11 +4349,15 @@ function factorial( n, m )
                 else
                 {
                     i = add(sub(n, m), I); res = i;
-                    while( Arithmetic.lt(i, n) ) { i = add(i, I); res = mul(res, i); }
+                    while (Arithmetic.lt(i, n))
+                    {
+                        i = add(i, I);
+                        res = mul(res, i);
+                    }
                     res = div(res, factorial(m));
                 }
                 // memoize only up to MAXMEM results
-                if ( Arithmetic.lt(n, MAXMEM) )
+                if (Arithmetic.lt(n, MAXMEM))
                     factorial.mem3[key] = res;
             }
             else
@@ -4379,24 +4381,24 @@ function stirling( n, k, s )
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         key, res = O, MAXMEM = Abacus.Options.MAXMEM;
 
-    if ( is_instance(n, Integer) ) return new n[CLASS](stirling(n.num, is_instance(k, Integer) ? k.num : k, s));
+    if (is_instance(n, Integer)) return new n[CLASS](stirling(n.num, is_instance(k, Integer) ? k.num : k, s));
 
-    if ( is_instance(k, Integer) ) k = k.num;
+    if (is_instance(k, Integer)) k = k.num;
 
     n = Arithmetic.num(n); k = Arithmetic.num(k); s = +s;
 
-    if ( Arithmetic.lt(n, O) || Arithmetic.lt(k, O) ) return O;
-    if ( 2 === s )
+    if (Arithmetic.lt(n, O) || Arithmetic.lt(k, O)) return O;
+    if (2 === s)
     {
         // second kind: S{n,k} = k S{n-1,k} + S{n-1,k-1}
-        if ( Arithmetic.equ(n, k) || (Arithmetic.equ(k, I) && Arithmetic.lt(n, O)) ) return I;
-        else if ( Arithmetic.equ(n, O) || Arithmetic.equ(k, O) ) return O;
+        if (Arithmetic.equ(n, k) || (Arithmetic.equ(k, I) && Arithmetic.lt(n, O))) return I;
+        else if (Arithmetic.equ(n, O) || Arithmetic.equ(k, O)) return O;
         key = String(n)+','+String(k);
-        if ( null == stirling.mem2[key] )
+        if (null == stirling.mem2[key])
         {
             res = add(stirling(sub(n, I), sub(k, I), 2), mul(stirling(sub(n, I), k, 2), k));
             // memoize only up to MAXMEM results
-            if ( Arithmetic.lt(n, MAXMEM) )
+            if (Arithmetic.lt(n, MAXMEM))
                 stirling.mem2[key] = res;
         }
         else
@@ -4404,17 +4406,17 @@ function stirling( n, k, s )
             res = stirling.mem2[key];
         }
     }
-    else if ( -1 === s )
+    else if (-1 === s)
     {
         // signed first kind: S[n,k] = -(n-1) S[n-1,k] + S[n-1,k-1]
-        if ( Arithmetic.gt(k, n) || (Arithmetic.equ(k, O) && Arithmetic.lt(n, O)) ) return O;
-        else if ( Arithmetic.equ(n, k) ) return I;
+        if (Arithmetic.gt(k, n) || (Arithmetic.equ(k, O) && Arithmetic.lt(n, O))) return O;
+        else if (Arithmetic.equ(n, k)) return I;
         key = String(n)+','+String(k)+'-';
-        if ( null == stirling.mem1[key] )
+        if (null == stirling.mem1[key])
         {
             res = add(stirling(sub(n, I), sub(k, I), -1), mul(stirling(sub(n, I), k, -1), sub(I, n)));
             // memoize only up to MAXMEM results
-            if ( Arithmetic.lt(n, MAXMEM) )
+            if (Arithmetic.lt(n, MAXMEM))
                 stirling.mem1[key] = res;
         }
         else
@@ -4425,9 +4427,9 @@ function stirling( n, k, s )
     else //if ( 1 === s )
     {
         // unsigned first kind: S[n,k] = (n-1) S[n-1,k] + S[n-1,k-1]
-        if ( Arithmetic.gt(k, n) || (Arithmetic.equ(k, O) && Arithmetic.lt(n, O)) ) return O;
-        else if ( Arithmetic.equ(n, k) ) return I;
-        else if ( Arithmetic.equ(k, I) ) return factorial(sub(n, I));
+        if (Arithmetic.gt(k, n) || (Arithmetic.equ(k, O) && Arithmetic.lt(n, O))) return O;
+        else if (Arithmetic.equ(n, k)) return I;
+        else if (Arithmetic.equ(k, I)) return factorial(sub(n, I));
         /*key = '+'+String(n)+','+String(k);
         if ( null == stirling.mem1[key] )
             stirling.mem1[key] = add(stirling(n-1,k-1,1), mul(stirling(n-1,k,1),n-1));
@@ -4458,20 +4460,20 @@ function p_nkab( n, k, a, b )
         || Arithmetic.gt(add(a, k), add(n, I))
         || Arithmetic.lt(mul(k, b), n)
     ) return p;
-    if ( (Arithmetic.equ(b, n) && Arithmetic.equ(k, I)) || (Arithmetic.equ(k, n) && Arithmetic.equ(b, I)) ) return I;
+    if ((Arithmetic.equ(b, n) && Arithmetic.equ(k, I)) || (Arithmetic.equ(k, n) && Arithmetic.equ(b, I))) return I;
     //if ( a === b ) return k*a === n ? Arithmetic.I : p;
     key = String(n)+','+String(k)+','+String(a)+','+String(b);
-    if ( null == p_nkab.mem[key] )
+    if (null == p_nkab.mem[key])
     {
         // compute it directly
         //p_nkab(n-k*(a-1), k, 1, b-a+1);
         n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I);
         key2 = String(n)+','+String(k)+','+String(a)+','+String(b);
-        if ( null == p_nkab.mem[key2] )
+        if (null == p_nkab.mem[key2])
         {
             j0 = Arithmetic.max(I, Arithmetic.divceil(sub(n, b), sub(k, I)));
             j1 = Arithmetic.min(b, add(sub(sub(n, b), k), two));
-            while( Arithmetic.lte(j0, j1) )
+            while (Arithmetic.lte(j0, j1))
             {
                 p = add(p, p_nkab(sub(n, b), sub(k, I), I, j0));
                 j0 = add(j0, I);
@@ -4485,16 +4487,16 @@ function p_nkab( n, k, a, b )
 p_nkab.mem = Obj();
 function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/ )
 {
-    if ( is_instance(n, Integer) ) return new n[CLASS](partitions(n.num, K, M, W));
+    if (is_instance(n, Integer)) return new n[CLASS](partitions(n.num, K, M, W));
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
         O = Arithmetic.O, I = Arithmetic.I,
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         m0, m1, k0, k1, p = O, k, m, key;
 
-    if ( is_instance(K, Integer) ) K = K.num;
-    if ( is_instance(M, Integer) ) M = M.num;
-    if ( is_instance(W, Integer) ) W = W.num;
+    if (is_instance(K, Integer)) K = K.num;
+    if (is_instance(M, Integer)) M = M.num;
+    if (is_instance(W, Integer)) W = W.num;
     K = null == K ? null : Arithmetic.abs(N(K));
     M = null == M ? null : Arithmetic.abs(N(M));
     W = null == W ? null : Arithmetic.abs(N(W));
@@ -4514,11 +4516,11 @@ function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null
         || (null!=W && Arithmetic.gt(W, n))
         || (null!=K && Arithmetic.gt(K, n))
     ) return p;
-    if ( null!=M && null==K && null==W ) { m0 = O; m1 = I; k0 = M; k1 = M; K = M; M = null; } // count the conjugates, same
+    if (null != M && null == K && null == W) { m0 = O; m1 = I; k0 = M; k1 = M; K = M; M = null; } // count the conjugates, same
     key = String(n)+'|'+String(K)+'|'+String(M)+'|'+String(W);
-    if ( null == partitions.mem[key] )
+    if (null == partitions.mem[key])
     {
-        if ( null == W )
+        if (null == W)
         {
             W = I;
         }
@@ -4539,11 +4541,11 @@ function partitions( n, K /*exactly K parts or null*/, M /*max part is M or null
             }*/
         }
         k = k0;
-        while( Arithmetic.lte(k, k1) )
+        while (Arithmetic.lte(k, k1))
         {
             m0 = Arithmetic.equ(O, m0) ? add(sub(n, k), I) : m0;
             m = m1;
-            while( Arithmetic.lte(m, m0) )
+            while (Arithmetic.lte(m, m0))
             {
                 p = add(p, p_nkab(n, k, W, m));
                 m = add(m, I);
@@ -4571,19 +4573,19 @@ function c_nkab( n, k, a, b )
         || Arithmetic.gt(mul(a, k), n)
         || Arithmetic.lt(mul(k, b), n)
     ) return c;
-    if ( Arithmetic.equ(k, I) ) return Arithmetic.lte(a, n) && Arithmetic.lte(n, b) ? I : c;
-    if ( Arithmetic.equ(n, k) ) return Arithmetic.lte(a, I) && Arithmetic.lte(I, b) ? I : c;
-    if ( Arithmetic.equ(a, b) ) return Arithmetic.equ(mul(k, a), n) ? I : c;
-    if ( Arithmetic.equ(n, b) ) return factorial(add(sub(n, mul(k, a)), sub(k, I)), sub(k, I));
-    if ( Arithmetic.equ(add(a, I), b) ) return factorial(k, sub(n, mul(k, a)));
+    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.lte(n, b) ? I : c;
+    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.lte(I, b) ? I : c;
+    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : c;
+    if (Arithmetic.equ(n, b)) return factorial(add(sub(n, mul(k, a)), sub(k, I)), sub(k, I));
+    if (Arithmetic.equ(add(a, I), b)) return factorial(k, sub(n, mul(k, a)));
     key = String(n)+','+String(k)+','+String(a)+','+String(b);
-    if ( null == c_nkab.mem[key] )
+    if (null == c_nkab.mem[key])
     {
         // compute it directly
         m1 = sub(n, a);
         m = Arithmetic.max(O, sub(n, b));
         k = sub(k, I);
-        while( Arithmetic.lte(m, m1) )
+        while (Arithmetic.lte(m, m1))
         {
             c = add(c, c_nkab(m, k, a, b));
             m = add(m, I);
@@ -4595,7 +4597,7 @@ function c_nkab( n, k, a, b )
 c_nkab.mem = Obj();
 function compositions( n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/ )
 {
-    if ( is_instance(n, Integer) ) return new n[CLASS](compositions(n.num, K, M, W));
+    if (is_instance(n, Integer)) return new n[CLASS](compositions(n.num, K, M, W));
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
         O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
@@ -4603,9 +4605,9 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
         mul = Arithmetic.mul, div = Arithmetic.div, mod = Arithmetic.mod,
         c = O, j, i, k, l, r, m, w, kk, nm, mm, key;
 
-    if ( is_instance(K, Integer) ) K = K.num;
-    if ( is_instance(M, Integer) ) M = M.num;
-    if ( is_instance(W, Integer) ) W = W.num;
+    if (is_instance(K, Integer)) K = K.num;
+    if (is_instance(M, Integer)) M = M.num;
+    if (is_instance(W, Integer)) W = W.num;
     K = null == K ? null : Arithmetic.abs(N(K));
     M = null == M ? null : Arithmetic.abs(N(M));
     W = null == W ? null : Arithmetic.abs(N(W));
@@ -4622,11 +4624,11 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
         || (null!=K && Arithmetic.gt(K, n))
     ) return c;
     key = String(n)+'|'+String(K)+'|'+String(M)+'|'+String(W);
-    if ( null == compositions.mem[key] )
+    if (null == compositions.mem[key])
     {
-        if ( null!=K && null!=M && null!=W )
+        if (null != K && null != M && null != W)
         {
-            if ( Arithmetic.equ(M, W) )
+            if (Arithmetic.equ(M, W))
             {
                 c = Arithmetic.equ(mul(K, M), n) ? I : O;
             }
@@ -4636,21 +4638,21 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
                 w = Arithmetic.max(I, div(n, W));
                 l = add(W, I); r = sub(M, I);
                 j = I;
-                while(Arithmetic.lte(j, m))
+                while (Arithmetic.lte(j, m))
                 {
                     i = I;
-                    while(Arithmetic.lte(i, w))
+                    while (Arithmetic.lte(i, w))
                     {
                         k = sub(K, add(j, i));
                         nm = sub(n, add(mul(j, M), mul(i, W)));
-                        if (Arithmetic.equ(O, nm))
+                        if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k))
                         {
                             c = add(c, factorial(K, [j, i]));
                         }
                         else if (Arithmetic.gt(k, O) && Arithmetic.gt(nm, O))
                         {
                             kk = c_nkab(nm, k, l, r);
-                            if (!Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, [j, i])));
+                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, [j, i])));
                         }
                         i = add(i, I);
                     }
@@ -4658,9 +4660,9 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
                 }
             }
         }
-        else if ( null!=W && null!=M )
+        else if (null != W && null != M)
         {
-            if ( Arithmetic.equ(M, W) )
+            if (Arithmetic.equ(M, W))
             {
                 c = Arithmetic.equ(O, mod(n, M)) ? I : O;
             }
@@ -4670,10 +4672,10 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
                 w = Arithmetic.max(I, div(n, W));
                 l = add(W, I); r = sub(M, I);
                 j = I;
-                while(Arithmetic.lte(j, m))
+                while (Arithmetic.lte(j, m))
                 {
                     i = I;
-                    while(Arithmetic.lte(i, w))
+                    while (Arithmetic.lte(i, w))
                     {
                         nm = sub(n, add(mul(j, M), mul(i, W)));
                         if (Arithmetic.equ(O, nm))
@@ -4682,11 +4684,11 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
                         }
                         else if (Arithmetic.gt(nm, O))
                         {
-                            k = I;
-                            while(Arithmetic.lte(k, nm))
+                            k = I; K = div(nm, W);
+                            while (Arithmetic.lte(k, K))
                             {
                                 kk = c_nkab(nm, k, l, r);
-                                if (!Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, add(j, i)), [j, i])));
+                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, add(j, i)), [j, i])));
                                 k = add(k, I);
                             }
                         }
@@ -4696,85 +4698,85 @@ function compositions( n, K /*exactly K parts or null*/, M /*max part is M or nu
                 }
             }
         }
-        else if ( null!=K && null!=W )
+        else if (null != K && null != W)
         {
-            if ( Arithmetic.equ(mul(K, W), n) )
+            if (Arithmetic.equ(mul(K, W), n))
             {
                 c = I;
             }
             else
             {
                 j = I; nm = W; w = add(W, I);
-                while( Arithmetic.lte(nm, n) && Arithmetic.lte(j, K) )
+                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
                 {
                     kk = c_nkab(sub(n, nm), sub(K, j), w, n);
-                    if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(K, j)));
+                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
                     nm = add(nm, W); j = add(j, I);
                 }
             }
         }
-        else if ( null!=K && null!=M )
+        else if (null != K && null != M)
         {
-            if ( Arithmetic.equ(mul(K, M), n) )
+            if (Arithmetic.equ(mul(K, M), n))
             {
                 c = I;
             }
             else
             {
                 j = I; nm = M; m = sub(M, I);
-                while( Arithmetic.lte(nm, n) && Arithmetic.lte(j, K) )
+                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
                 {
                     kk = c_nkab(sub(n, nm), sub(K, j), I, m);
-                    if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(K, j)));
+                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
                     nm = add(nm, M); j = add(j, I);
                 }
             }
         }
-        else if ( null!=K )
+        else if (null != K)
         {
             c = c_nkab(n, K, I, n);
         }
-        else if ( null!=W )
+        else if (null != W)
         {
-            if ( Arithmetic.equ(W, n) )
+            if (Arithmetic.equ(W, n))
             {
                 c = I;
             }
             else
             {
-                if ( Arithmetic.equ(O, mod(n, W)) ) c = I;
+                if (Arithmetic.equ(O, mod(n, W))) c = I;
                 j = I; nm = W; w = add(W, I);
-                while( Arithmetic.lte(nm, n) )
+                while (Arithmetic.lte(nm, n))
                 {
-                    k = I; K = sub(n, nm);
-                    while( Arithmetic.lte(k, K) )
+                    k = I; l = sub(n, nm); K = div(l, W);
+                    while (Arithmetic.lte(k, K))
                     {
-                        kk = c_nkab(K, k, w, n);
-                        if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(add(k, j), j)));
+                        kk = c_nkab(l, k, w, n);
+                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
                         k = add(k, I);
                     }
                     nm = add(nm, W); j = add(j, I);
                 }
             }
         }
-        else if ( null!=M )
+        else if (null != M)
         {
-            if ( Arithmetic.equ(M, n) )
+            if (Arithmetic.equ(M, n))
             {
                 c = I;
             }
             else
             {
 
-                if ( Arithmetic.equ(O, mod(n, M)) ) c = I;
+                if (Arithmetic.equ(O, mod(n, M))) c = I;
                 j = I; nm = M; m = sub(M, I);
-                while( Arithmetic.lte(nm, n) )
+                while (Arithmetic.lte(nm, n))
                 {
                     k = I; K = sub(n, nm);
-                    while( Arithmetic.lte(k, K) )
+                    while (Arithmetic.lte(k, K))
                     {
                         kk = c_nkab(K, k, I, m);
-                        if ( !Arithmetic.equ(O, kk) ) c = add(c, mul(kk, factorial(add(k, j), j)));
+                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
                         k = add(k, I);
                     }
                     nm = add(nm, M); j = add(j, I);
@@ -4803,15 +4805,15 @@ function catalan( n )
     // https://rosettacode.org/wiki/Catalan_numbers
     // https://anonymouscoders.wordpress.com/2015/07/20/its-all-about-catalan/
     // catalan numbers C(n) = (4n+2)C(n-1)/(n+1)
-    if ( is_instance(n, Integer) ) return new n[CLASS](catalan(n.num));
+    if (is_instance(n, Integer)) return new n[CLASS](catalan(n.num));
 
     n = NUM(n);
-    if ( Arithmetic.lte(n, 17) ) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,5,14,42,132,429,1430,4862,16796,58786,208012,742900,2674440,9694845,35357670,129644790])[VAL(n)]);
+    if (Arithmetic.lte(n, 17)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,5,14,42,132,429,1430,4862,16796,58786,208012,742900,2674440,9694845,35357670,129644790])[VAL(n)]);
     key = String(n);
-    if ( null == catalan.mem[key] )
+    if (null == catalan.mem[key])
     {
         // memoize only up to MAXMEM results
-        if ( Arithmetic.lt(n, MAXMEM) )
+        if (Arithmetic.lt(n, MAXMEM))
         {
             /*res = operate(function(c,i){return add(c,mul(catalan(i),catalan(n-1-i)));},O,null,0,n-1,1);*/
             res = div(mul(catalan(sub(n, I)), sub(mul(n, 4), two)), add(n, I));/* n -> n-1 */
@@ -4841,21 +4843,21 @@ function bell( n )
     // https://en.wikipedia.org/wiki/Bell_triangle
     // http://fredrikj.net/blog/2015/08/computing-bell-numbers/
     // bell numbers B(n) = SUM[k:0->n-1] ( C(n-1,k) B(k) )
-    if ( is_instance(n, Integer) ) return new n[CLASS](bell(n.num));
+    if (is_instance(n, Integer)) return new n[CLASS](bell(n.num));
 
     n = NUM(n);
-    if ( Arithmetic.lte(n, 14) ) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,5,15,52,203,877,4140,21147,115975,678570,4213597,27644437,190899322])[VAL(n)]);
+    if (Arithmetic.lte(n, 14)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,5,15,52,203,877,4140,21147,115975,678570,4213597,27644437,190899322])[VAL(n)]);
     key = String(n);
-    if ( null == bell.mem[key] )
+    if (null == bell.mem[key])
     {
         res = O; i = O; n = sub(n, I);
-        while( Arithmetic.lte(i, n) )
+        while (Arithmetic.lte(i, n))
         {
             res = add(res, mul(factorial(n, i), bell(i)));
             i = add(i, I);
         }
         // memoize only up to MAXMEM results
-        if ( Arithmetic.lt(n, MAXMEM) )
+        if (Arithmetic.lt(n, MAXMEM))
             bell.mem[key] = res;
     }
     else
@@ -4872,12 +4874,12 @@ function fibonacci( n )
         key, res = O, MAXMEM = Abacus.Options.MAXMEM;
     // http://en.wikipedia.org/wiki/Fibonacci_number
     // fibonacci numbers F(n) = F(n-1) + F(n-2)
-    if ( is_instance(n, Integer) ) return new n[CLASS](fibonacci(n.num));
+    if (is_instance(n, Integer)) return new n[CLASS](fibonacci(n.num));
 
     n = NUM(n);
-    if ( Arithmetic.lte(n, 36) ) return Arithmetic.lt(n, O) ? O : NUM(([0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946,17711,28657,46368,75025,121393,196418,317811,514229,832040,1346269,2178309,3524578,5702887,9227465,14930352])[VAL(n)]);
+    if (Arithmetic.lte(n, 36)) return Arithmetic.lt(n, O) ? O : NUM(([0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946,17711,28657,46368,75025,121393,196418,317811,514229,832040,1346269,2178309,3524578,5702887,9227465,14930352])[VAL(n)]);
     key = String(n);
-    if ( null == fibonacci.mem[key] )
+    if (null == fibonacci.mem[key])
     {
         // recursive and memoized
         // fibonacci numbers F(n) = F(n-1) + F(n-2)
@@ -4889,12 +4891,12 @@ function fibonacci( n )
         // fibonacci numbers F(2k) = F(k)(2F(k+1)-F(k)), F(2k+1) = F(k+1)^2 + F(k)^2
         k = Arithmetic.div(n, two);
         f1 = fibonacci(Arithmetic.add(k, I)); f0 = fibonacci(k);
-        if ( Arithmetic.equ(O, Arithmetic.mod(n, two)) ) // 2k
+        if (Arithmetic.equ(O, Arithmetic.mod(n, two))) // 2k
             res = Arithmetic.mul(f0, Arithmetic.sub(Arithmetic.mul(f1, Arithmetic.II), f0));
         else // 2k+1
             res = Arithmetic.add(Arithmetic.mul(f1, f1), Arithmetic.mul(f0, f0));
         // memoize only up to MAXMEM results
-        if ( Arithmetic.lt(n, MAXMEM) )
+        if (Arithmetic.lt(n, MAXMEM))
             fibonacci.mem[key] = res;
     }
     else
@@ -4919,9 +4921,10 @@ function polygonal( n, k )
     var Arithmetic = Abacus.Arithmetic,
         O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         NUM = Arithmetic.num, number;
-    if ( is_instance(k, Integer) ) k = k.num;
-    k = NUM(k); if ( Arithmetic.lt(k, 3) ) return null;
-    if ( is_instance(n, Integer) ) return new n[CLASS](polygonal(n.num, k));
+    if (is_instance(k, Integer)) k = k.num;
+    k = NUM(k);
+    if (Arithmetic.lt(k, 3)) return null;
+    if (is_instance(n, Integer)) return new n[CLASS](polygonal(n.num, k));
     n = NUM(n);
     number = Arithmetic.div(Arithmetic.mul(n, Arithmetic.sub(Arithmetic.mul(n, Arithmetic.sub(k, two)), Arithmetic.sub(k, 4))), two);
     return number;

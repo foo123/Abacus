@@ -70,7 +70,7 @@ o.order("colex,reflected")
 o.order("colex,reversed")
 [ 1, 1, 1, 4 ]
 o.random()
-[ 1, 1, 1, 4 ]
+[ 2, 1, 4 ]
 o.dispose()
 o = Abacus.Partition(7,{type:"composition","min=":3})
 o.total()
@@ -276,7 +276,7 @@ o.order("lex,reversed")
 [ 1, 1, 1, 4, 1 ]
 [ 1, 1, 1, 1, 4 ]
 o.random()
-[ 1, 3, 4 ]
+[ 2, 4, 1, 1 ]
 o.dispose()
 o = Abacus.Partition(8,{type:"composition","max=":3})
 o.total()
@@ -643,7 +643,7 @@ o.order("colex,reversed")
 [ 3, 2, 1, 1 ]
 [ 4, 1, 1, 1 ]
 o.random()
-[ 2, 1, 2, 2 ]
+[ 2, 2, 1, 2 ]
 o.dispose()
 o = Abacus.Partition(8,{type:"composition","parts=":4})
 o.total()
@@ -801,7 +801,7 @@ o.order("lex,reversed")
 [ 1, 1, 2, 4 ]
 [ 1, 1, 1, 5 ]
 o.random()
-[ 2, 1, 3, 2 ]
+[ 3, 2, 1, 2 ]
 o.dispose()
 o = Abacus.Partition(10,{type:"composition","max=":3,"parts=":4})
 o.total()
@@ -859,7 +859,7 @@ o.order("lex,reversed")
 [ 2, 2, 3, 3 ]
 [ 1, 3, 3, 3 ]
 o.random()
-[ 2, 1, 1, 3 ]
+[ 3, 3, 3, 1 ]
 o.dispose()
 o = Abacus.Partition(20,{type:"composition","max=":5,"parts=":5})
 o.total()
@@ -1357,7 +1357,7 @@ o.order("lex,reversed")
 [ 1, 5, 4, 5, 5 ]
 [ 1, 4, 5, 5, 5 ]
 o.random()
-[ 4, 4, 1, 3, 2 ]
+[ 1, 1, 2, 4, 3 ]
 o.dispose()
 o = Abacus.Partition(23,{type:"composition","max=":7,"parts=":5})
 o.total()
@@ -4915,7 +4915,7 @@ o.order("lex,reversed")
 [ 1, 2, 6, 7, 7 ]
 [ 1, 1, 7, 7, 7 ]
 o.random()
-[ 4, 4, 6, 1, 2 ]
+[ 4, 1, 4, 6, 1 ]
 o.dispose()
 o = Abacus.Partition(51,{type:"composition","max=":7,"parts=":8})
 o.total()
