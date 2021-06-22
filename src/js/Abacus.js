@@ -4488,41 +4488,42 @@ function p_nkab(n, k, a, b)
     return p_nkab.mem[key];
 }
 p_nkab.mem = Obj();
-function partitions_limit(n, limit, min, k)
+function part_rank(n, limit, min, max, k)
 {
-    if (is_instance(n, Integer)) return new n[CLASS](partitions_limit(n.num, limit, min, k));
+    if (is_instance(n, Integer)) return new n[CLASS](part_rank(n.num, limit, min, max, k));
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, p = O, key, w = I, m,
+        O = Arithmetic.O, I = Arithmetic.I, p = O, key,
         add = Arithmetic.add, sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod;
 
     if (is_instance(limit, Integer)) limit = limit.num;
+    //if (is_instance(max, Integer)) max = max.num;
     if (is_instance(min, Integer)) min = min.num;
-    limit = N(limit);
-    min = null != min ? N(min) : null;
     n = N(n);
-    if (null != min) w = min;
-    key = String(n)+','+String(limit)+','+String(min)+','+String(k);
-    if (null == partitions_limit.mem[key])
+    limit = sub(N(limit), I);
+    //max = null == max ? n : N(max);
+    min = null == min ? I : N(min);
+    key = String(n)+','+String(limit)+','+String(min)/*+','+String(max)*/+','+String(k);
+    if (null == part_rank.mem[key])
     {
         if (null == k)
         {
             k = I;
             while (Arithmetic.lte(k, n))
             {
-                p = add(p, p_nkab(n, k, w, limit));
+                p = add(p, p_nkab(n, k, min, limit));
                 k = add(k, I);
             }
         }
         else
         {
-            p = p_nkab(n, k, w, limit);
+            p = p_nkab(n, N(k), min, limit);
         }
-        partitions_limit.mem[key] = p;
+        part_rank.mem[key] = p;
     }
-    return partitions_limit.mem[key];
+    return part_rank.mem[key];
 }
-partitions_limit.mem = Obj();
+part_rank.mem = Obj();
 function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
 {
     if (is_instance(n, Integer)) return new n[CLASS](partitions(n.num, K, M, W));
@@ -4644,41 +4645,52 @@ function c_nkab(n, k, a, b)
     return c_nkab.mem[key];
 }
 c_nkab.mem = Obj();
-function compositions_limit(n, limit, min, k)
+function comp_rank(n, limit, min, max, k)
 {
-    if (is_instance(n, Integer)) return new n[CLASS](compositions_limit(n.num, limit, min, k));
+    if (is_instance(n, Integer)) return new n[CLASS](comp_rank(n.num, limit, min, max, k));
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, c = O, key, w = I, m,
+        O = Arithmetic.O, I = Arithmetic.I, c = O, key, m,
         add = Arithmetic.add, sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod;
 
-    if (is_instance(limit, Integer)) limit = limit.num;
     if (is_instance(min, Integer)) min = min.num;
-    limit = N(limit);
-    min = null != min ? N(min) : null;
+    if (is_instance(max, Integer)) max = max.num;
+    if (is_instance(limit, Integer)) limit = limit.num;
     n = N(n);
-    if (null != min) w = min;
-    key = String(n)+','+String(limit)+','+String(min)+','+String(k);
-    if (null == compositions_limit.mem[key])
+    limit = null == limit ? n : N(limit);
+    max = null == max ? n : N(max);
+    min = null == min ? I : N(min);
+    key = String(n)+','+String(limit)+','+String(min)+','+String(max)+','+String(k);
+    if (null == comp_rank.mem[key])
     {
         if (null == k)
         {
-            k = I;
-            while (Arithmetic.lte(k, n))
+            m = min;
+            while (Arithmetic.lt(m, limit))
             {
-                c = add(c, c_nkab(n, k, w, limit));
-                k = add(k, I);
+                k = I;
+                while (Arithmetic.lt(k, n))
+                {
+                    c = add(c, c_nkab(sub(n, m), k, min, max));
+                    k = add(k, I);
+                }
+                m = add(m, I);
             }
         }
         else
         {
-            c = c_nkab(n, k, w, limit);
+            m = min; k = sub(N(k), I);
+            while (Arithmetic.lt(m, limit))
+            {
+                c = add(c, c_nkab(sub(n, m), k, min, max));
+                m = add(m, I);
+            }
         }
-        compositions_limit.mem[key] = c;
+        comp_rank.mem[key] = c;
     }
-    return compositions_limit.mem[key];
+    return comp_rank.mem[key];
 }
-compositions_limit.mem = Obj();
+comp_rank.mem = Obj();
 function compositions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
 {
     if (is_instance(n, Integer)) return new n[CLASS](compositions(n.num, K, M, W));
@@ -17645,11 +17657,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             index = Arithmetic.rnd(O, N);
             item = Arithmetic.equ(O, index) ? (
                 klass.initial(n, $, 1)
-           ) : (Arithmetic.equ(N, index) ? (
+            ) : (Arithmetic.equ(N, index) ? (
                 klass.initial(n, $, -1)
-           ) : (
+            ) : (
                 klass.unrank(index, n, $)
-           ));
+            ));
 
             return item;
         }
@@ -20826,7 +20838,6 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             //item = item.concat(item.length<n?new Array(n-item.length):[]).concat(item.length);
 
             item = klass.DUAL(item, n, $, 1);
-
             return item;
         }
         // random unranking, another method for unbiased random sampling
@@ -21525,15 +21536,15 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return "composition"===type ? next_composition(item, n, dir, K, M, W, dim, order, PI) : next_partition(item, n, dir, K, M, W, dim, order, PI);
         }
         ,rand: function(n, $) {
-            var klass = this, rndInt = Abacus.Math.rndInt,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
                 order = $ && null!=$.order ? $.order : LEX,
-                M = $ && $["max="] ? $["max="]|0 : null, MM = M,
-                W = $ && $["min="] ? $["min="]|0 : null, WW = W,
-                K = $ && $["parts="] ? $["parts="]|0 : null, KK = K,
-                list, item, w, m, k, x, y = 0, z = 0, y1 = 0, yn = 0, sum = 0,
-                itemlen, LEN = $ && $.dimension ? $.dimension : 1,
-                is_composition = "composition" === type, conj = false;
+                M = $ && $["max="] ? $["max="]|0 : null,
+                W = $ && $["min="] ? $["min="]|0 : null,
+                K = $ && $["parts="] ? $["parts="]|0 : null,
+                LEN = $ && $.dimension ? $.dimension : 1,
+                O = Arithmetic.O, I = Arithmetic.I,
+                item = null, index, total, last;
 
             if (
                 (0 >= n)
@@ -21546,170 +21557,21 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 || (K && (K > n))
             ) return null;
 
-            item = klass.randu(n, $);
-            if (REFLECTED & order) item = item.reverse();
+            total = $ && null!=$.count ? $.count : klass.count(n, $);
+            if (Arithmetic.gt(total, O))
+            {
+                last = Arithmetic.sub(total, I);
+                index = Arithmetic.rnd(O, last);
+                item = Arithmetic.equ(O, index) ? (
+                    klass.initial(n, $, 1)
+                ) : (Arithmetic.equ(last, index) ? (
+                    klass.initial(n, $, -1)
+                ) : (
+                    klass.unrank(index, n, $)
+                ));
+            }
+            //if (item && REFLECTED & order) item = item.reverse();
             return klass.DUAL(item, n, $, 1);
-
-            /*
-            // NOT UNIFORM algorithm, but BIASED
-            do {
-            K = KK; sum = 0; item = []; k = 0;
-            if (K)
-            {
-                if (W || M)
-                {
-                    w = W ? W : 1;
-                    m = M ? M : n-w*(K-1);
-                    if (M && W !== M) {sum += M; k++;}
-                    if (W && W !== M) {sum += W; k++;}
-                }
-                else
-                {
-                    w = 1;
-                    m = n-K+1;
-                }
-            }
-            else if (W || M)
-            {
-                K = n;
-                w = W ? W : 1;
-                m = M ? M : n;
-                if (M && W !== M) sum += M;
-                if (W && W !== M) sum += W;
-            }
-            else
-            {
-                K = n;
-                w = 1;
-                m = n;
-            }
-
-            y = stdMath.min(m, n-sum);
-            while(w <= y && k < K)
-            {
-                x = rndInt(w, y);
-                sum += x; k++; item.push(x);
-                y = stdMath.min(m, n-sum);
-            }
-            if (sum < n)
-            {
-                y = n-sum;
-                if (w <= y && m >= y && k < K)
-                {
-                    item.push(y);
-                }
-                else
-                {
-                    for (x=0; 0<y && x<item.length; x++)
-                    {
-                        z = M ? stdMath.min(y, M-item[x]) : y;
-                        item[x] += z; y -= z;
-                    }
-                    if (0 < y) item = null;
-                }
-            }
-
-            if (item)
-            {
-                if (!is_composition) item = mergesort(item, -1);
-
-                if ((W || M) && (M !== W))
-                {
-                    item = (M ? [M] : []).concat(item).concat(W ? [W] : []);
-                    if (is_composition) item = shuffle(item);
-                }
-            }
-            // do trial and rejection until done
-            } while(KK && (!item || KK !== item.length));
-            */
-
-            /*do {
-                K = KK; M = MM; W = WW; conj = false;
-                if (M && K) K = null;
-                if (M && !K && !W) {K=M; M=null; conj=true;}
-
-                // generate random (k-)composition (resp. diff of (k-)subset)
-                // transform to partition (resp. composition) by sorting (resp. shuffling)
-                // partition is a sorted composition, composition is a shuffled partition
-                if (K)
-                {
-                    // random k-composition ~ diff of k-subset
-                    if (1 === K)
-                    {
-                        item = [n]; yn = n;
-                    }
-                    else if (n === K)
-                    {
-                        item = array(K,1,0); yn = n;
-                    }
-                    else
-                    {
-                        list = {}; m = n-2;
-                        item = mergesort(array(K-1, function(){
-                            // select uniformly without repetition
-                            y = rndInt(0, m);
-                            // this is NOT an O(1) look-up operation, in general
-                            while (1 === list[y]) y = (y+1)%(m+1);
-                            list[y] = 1;
-                            return y+1;
-                        }));
-                        array(item, function(i){
-                            y = item[i]; x = y-y1;
-                            y1 = y; yn += x;
-                            return x;
-                        });
-                    }
-                }
-                else
-                {
-                    // random composition ~ diff of subset
-                    for (list=null,y=1; y<n; y++) if (rndInt(0,1)) {
-                        x = y-y1;
-                        if ((W && x < W) || (M && x > M)) continue;
-                        y1 = y; yn += x;
-                        list = {len:list?list.len+1:1, x:x, next:list};
-                    }
-                    item = list ? array(list.len, function(){x = list.x; list = list.next; return x;}) : [];
-                }
-                if (yn < n)
-                {
-                    if (item.length) item.splice(rndInt(0,item.length-1), 0, n-yn);
-                    else item.push(n-yn);
-                }
-
-                if (is_composition)
-                {
-                    // get random conjugate
-                    if (conj) item = shuffle(conjugatepartition(0,mergesort(item,-1)));
-                }
-                else
-                {
-                    // sort it to get associated partition, p ~ 1 / P(n), O(nlgn)
-                    item = mergesort(item,-1);
-                    // get conjugate
-                    if (conj) item = conjugatepartition(0,item);
-                }
-
-                // for both K & M do trial and rejection until done
-            } while (KK && (MM || WW) && item.length!==KK);*/
-
-            if (!item) return null;
-
-            /*itemlen = item.length; y = 0; z = 0;
-            if (MM || WW)
-            {
-                for (x=0; x<itemlen; x++)
-                {
-                    if (MM === item[x]) y++;
-                    if (WW === item[x]) z++;
-                }
-            }
-            if (itemlen<LEN) item.push.apply(item, new Array(LEN-itemlen));
-            item.push([itemlen, y, z]);*/
-
-            item = klass.DUAL(item, n, $, 1);
-
-            return item;
         }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
@@ -21721,12 +21583,11 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 W = $ && $["min="] ? $["min="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
-                index, J = Arithmetic.J, O = Arithmetic.O, total, last,
-                count = "composition" === type ? compositions_limit : partitions_limit;
+                index, J = Arithmetic.J, O = Arithmetic.O,
+                i, x, total, last;
 
             if (
-                !(LEX & order)
-                || !item || !item.length
+                !item || !item.length
                 || (0 >= n)
                 || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (M && W && ((W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
@@ -21741,22 +21602,46 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             {
                 item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
             }
-            if (REFLECTED & order) item = item.slice().reverse();
+            //if (REFLECTED & order) item = item.slice().reverse();
+            item = klass.DUAL(item.slice(), n, $, 1);
 
-            total = $ && null!=$.count ? $.count : klass.count(n, {type:type,"max=":M,"min=":W,"parts=":K});
-            index = last = Arithmetic.sub(total, 1);
-            if (W)
+            total = $ && null!=$.count ? $.count : klass.count(n, $);
+            last = Arithmetic.sub(total, 1);
+
+            if ("composition" === type)
             {
-                if (M === W) return null == K || stdMath.floor(n/M) === K ? O : J;
-                n -= W; if (K) K--;
+                index = O;
+                if (W && M === W)
+                {
+                    return null == K || stdMath.floor(n/M) === K ? O : J;
+                }
+                for (i=0; i<item.length; i++)
+                {
+                    x = item[i];
+                    if (x > n) return J;
+                    index = Arithmetic.add(index, comp_rank(n, x, W, M, K ? K-i : null));
+                    n -= x;
+                }
+                if (REVERSED & order) index = Arithmetic.sub(last, index);
             }
-            index = item.reduce(function(index, x, i){
-                if (W && i+1===item.length) return index;
-                index = Arithmetic.sub(index, M && 0 === i ? O : count(n, x-1, W, K ? K-i : null));
-                n -= x;
-                return index;
-            }, index);
-            if (!(REVERSED & order)) index = Arithmetic.sub(last, index);
+            else
+            {
+                index = last;
+                if (W)
+                {
+                    if (M === W) return null == K || stdMath.floor(n/M) === K ? O : J;
+                    n -= W; if (K) K--;
+                }
+                for (i=0; i<item.length; i++)
+                {
+                    if (W && i+1===item.length) continue;
+                    x = item[i];
+                    if (x > n) return J;
+                    index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
+                    n -= x;
+                }
+                if (!(REVERSED & order)) index = Arithmetic.sub(last, index);
+            }
             return index;
         }
         ,unrank: function(index, n, $) {
@@ -21766,17 +21651,15 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 M = $ && $["max="] ? $["max="]|0 : null,
                 W = $ && $["min="] ? $["min="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
-                item = [], O = Arithmetic.O, x, y, z, i, c, total, last,
-                itemlen, LEN = $ && $.dimension ? $.dimension : 1,
-                count = "composition" === type ? compositions_limit : partitions_limit;
+                item = [], O = Arithmetic.O, i, x, c, total, last,
+                LEN = $ && $.dimension ? $.dimension : 1;
 
             index = Arithmetic.num(index);
-            total = $ && null!=$.count ? $.count : klass.count(n, {type:type,"max=":M,"min=":W,"parts=":K});
+            total = $ && null!=$.count ? $.count : klass.count(n, $);
             last = Arithmetic.sub(total, 1);
 
             if (
-                !(LEX & order)
-                || (0 >= n)
+                (0 >= n)
                 || Arithmetic.lt(index, O) || Arithmetic.gt(index, last)
                 || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (M && W && ((W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
@@ -21788,52 +21671,57 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             ) return null;
 
             if (REVERSED & order) index = Arithmetic.sub(last, index);
-
-            if (W)
+            if ("composition" === type)
             {
-                if (M === W)
+                if (W && M === W)
                 {
                     item = null == K || stdMath.floor(n/M) === K ? array(stdMath.floor(n/M), M) : null;
                 }
-                else
+                if (item && !item.length)
                 {
-                    n -= W; if (K) K--;
-                }
-            }
-            if (M)
-            {
-                n -= M; if (K) K--;
-            }
-            if (item && !item.length)
-            {
-                i = 0;
-                while (0 < n)
-                {
-                    x = M ? stdMath.min(M, n) : n;
-                    while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=count(n, x-1, W, K ? K-i : null), index)) x--;
-                    if (0 >= x || (W && W > x)) break;
-                    item.push(x);
-                    index = Arithmetic.sub(index, c);
-                    n -= x;
-                    i++;
-                }
-                if (W) item.push(W);
-                if (M) item.unshift(M);
-            }
-            /*if (item)
-            {
-                itemlen = item.length; y = 0; z = 0;
-                if (M || W)
-                {
-                    for (x=0; x<itemlen; x++)
+                    for (i=0; 0<n; i++)
                     {
-                        if (M === item[x]) y++;
-                        if (W === item[x]) z++;
+                        x = M ? stdMath.min(M, n) : n;
+                        while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=comp_rank(n, x, W, M, K ? K-i : null), index)) x--;
+                        if (0 >= x || (W && W > x)) break;
+                        item.push(x);
+                        index = Arithmetic.sub(index, c);
+                        n -= x;
                     }
                 }
-                if (itemlen<LEN) item.push.apply(item, new Array(LEN-itemlen));
-                item.push([itemlen, y, z]);
-            }*/
+            }
+            else
+            {
+                if (W)
+                {
+                    if (M === W)
+                    {
+                        item = null == K || stdMath.floor(n/M) === K ? array(stdMath.floor(n/M), M) : null;
+                    }
+                    else
+                    {
+                        n -= W; if (K) K--;
+                    }
+                }
+                if (M)
+                {
+                    n -= M; if (K) K--;
+                }
+                if (item && !item.length)
+                {
+                    for (i=0; 0<n; i++)
+                    {
+                        x = M ? stdMath.min(M, n) : n;
+                        while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=part_rank(n, x, W, M, K ? K-i : null), index)) x--;
+                        if (0 >= x || (W && W > x)) break;
+                        item.push(x);
+                        index = Arithmetic.sub(index, c);
+                        n -= x;
+                    }
+                    if (W) item.push(W);
+                    if (M) item.unshift(M);
+                }
+            }
             item = klass.DUAL(item, n, $, 1);
             return item;
         }
