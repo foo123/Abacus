@@ -4651,7 +4651,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
 
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
         O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II, c = O, key,
-        W, M, i, j, nn, mm, nm, m, w, w0, l, r, k0, kk,
+        W, M, i, j, nn, mm, nm, m, w, l, r, k0, kk,
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         div = Arithmetic.div, divceil = Arithmetic.divceil, mod = Arithmetic.mod;
 
@@ -4756,14 +4756,10 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
         {
             if (null == k)
             {
-                mm = W; w0 = I; w = add(W, I);
+                mm = W; w = add(W, I);
                 while (Arithmetic.lt(mm, limit))
                 {
                     nn = sub(n, mm);
-                    if (Arithmetic.equ(W, mm) && Arithmetic.equ(nn, limit))
-                    {
-                        c = add(c, I);
-                    }
                     if (Arithmetic.equ(W, nn))
                     {
                         c = add(c, I);
@@ -4771,25 +4767,34 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                     else
                     {
                         if (Arithmetic.equ(O, mod(nn, W))) c = add(c, I);
-                        j = I; nm = W;
+                        if (Arithmetic.equ(W, mm))
+                        {
+                            j = O;
+                            nm = O;
+                        }
+                        else
+                        {
+                            j = I;
+                            nm = W;
+                        }
                         while (Arithmetic.lte(nm, nn))
                         {
                             i = I; l = sub(nn, nm); k = div(l, W);
                             while (Arithmetic.lte(i, k))
                             {
                                 kk = c_nkab(l, i, w, M);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, add(j, w0)), add(j, w0))));
+                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
                                 i = add(i, I);
                             }
                             nm = add(nm, W); j = add(j, I);
                         }
                     }
-                    mm = add(mm, I); w0 = O;
+                    mm = add(mm, I);
                 }
             }
             else
             {
-                mm = W; w0 = I; k = sub(N(k), I); w = add(W, I);
+                mm = W; k = sub(N(k), I); w = add(W, I);
                 while (Arithmetic.lt(mm, limit))
                 {
                     nn = sub(n, mm);
@@ -4799,15 +4804,24 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                     }
                     else
                     {
-                        j = I; nm = W;
+                        if (Arithmetic.equ(W, mm))
+                        {
+                            j = O;
+                            nm = O;
+                        }
+                        else
+                        {
+                            j = I;
+                            nm = W;
+                        }
                         while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
                         {
                             kk = c_nkab(sub(nn, nm), sub(k, j), w, M);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, w0), add(j, w0))));
+                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
                             nm = add(nm, W); j = add(j, I);
                         }
                     }
-                    mm = add(mm, I); w0 = O;
+                    mm = add(mm, I);
                 }
             }
         }
@@ -4815,7 +4829,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
         {
             if (null == k)
             {
-                mm = W; w0 = I; l = add(W, I); r = sub(M, I);
+                mm = W; l = add(W, I); r = sub(M, I);
                 while (Arithmetic.lt(mm, limit))
                 {
                     nn = sub(n, mm);
@@ -4830,13 +4844,13 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                         j = I;
                         while (Arithmetic.lte(j, m))
                         {
-                            i = I;
+                            i = Arithmetic.equ(W, mm) ? O : I;
                             while (Arithmetic.lte(i, w))
                             {
                                 nm = sub(nn, add(mul(j, M), mul(i, W)));
                                 if (Arithmetic.equ(O, nm))
                                 {
-                                    c = add(c, factorial(add(j, add(i, w0)), [j, add(i, w0)]));
+                                    c = add(c, factorial(add(j, i), [j, i]));
                                 }
                                 else if (Arithmetic.gt(nm, O))
                                 {
@@ -4844,7 +4858,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                                     while (Arithmetic.lte(k0, k))
                                     {
                                         kk = c_nkab(nm, k0, l, r);
-                                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k0, add(j, add(i, w0))), [j, add(i, w0)])));
+                                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k0, add(j, i)), [j, i])));
                                         k0 = add(k0, I);
                                     }
                                 }
@@ -4857,12 +4871,12 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                             j = add(j, I);
                         }
                     }
-                    mm = add(mm, I); w0 = O;
+                    mm = add(mm, I);
                 }
             }
             else
             {
-                mm = W; w0 = I; k = sub(N(k), I);
+                mm = W; k = sub(N(k), I);
                 l = add(W, I); r = sub(M, I);
                 while (Arithmetic.lt(mm, limit))
                 {
@@ -4878,19 +4892,19 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                         j = I;
                         while (Arithmetic.lte(j, m))
                         {
-                            i = I;
+                            i = Arithmetic.equ(W, mm) ? O : I;
                             while (Arithmetic.lte(i, w))
                             {
                                 k0 = sub(k, add(j, i));
-                                nm = sub(n, add(mul(j, M), mul(i, W)));
+                                nm = sub(nn, add(mul(j, M), mul(i, W)));
                                 if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k0))
                                 {
-                                    c = add(c, factorial(add(k, w0), [j, add(i, w0)]));
+                                    c = add(c, factorial(k, [j, i]));
                                 }
                                 else if (Arithmetic.gt(k0, O) && Arithmetic.gt(nm, O))
                                 {
                                     kk = c_nkab(nm, k0, l, r);
-                                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, w0), [j, add(i, w0)])));
+                                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, [j, i])));
                                 }
                                 else
                                 {
@@ -4901,7 +4915,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                             j = add(j, I);
                         }
                     }
-                    mm = add(mm, I); w0 = O;
+                    mm = add(mm, I);
                 }
             }
         }
@@ -21838,9 +21852,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 {
                     x = item[i];
                     if (x > n) return J;
-                    c = comp_rank(n, x, W, M, K ? K-i : null, w, m);
-                    //console.log(c,x,W,M,w,m);
-                    index = Arithmetic.add(index, c);
+                    index = Arithmetic.add(index, comp_rank(n, x, W, M, K ? K-i : null, w, m));
                     if (W === x) w++;
                     if (M === x) m++;
                     n -= x;

@@ -286,7 +286,7 @@ console.log(m.inv().mul(m).toString());
 * faster numeric `SVD` computation (TODO)
 * implement `LLL` algorithm (TODO)
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
-* add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[ALMOST DONE]**
+* add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
