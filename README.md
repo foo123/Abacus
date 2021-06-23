@@ -181,35 +181,35 @@ See the comments in the code for algorithms and references used.
 let o = Abacus.Permutation(4);
 for(let item of o)
 {
-    console.log(item);
+    console.log(item.join(','));
 }
 ```
 
 ```text
-[ 0, 1, 2, 3 ]
-[ 0, 1, 3, 2 ]
-[ 0, 2, 1, 3 ]
-[ 0, 2, 3, 1 ]
-[ 0, 3, 1, 2 ]
-[ 0, 3, 2, 1 ]
-[ 1, 0, 2, 3 ]
-[ 1, 0, 3, 2 ]
-[ 1, 2, 0, 3 ]
-[ 1, 2, 3, 0 ]
-[ 1, 3, 0, 2 ]
-[ 1, 3, 2, 0 ]
-[ 2, 0, 1, 3 ]
-[ 2, 0, 3, 1 ]
-[ 2, 1, 0, 3 ]
-[ 2, 1, 3, 0 ]
-[ 2, 3, 0, 1 ]
-[ 2, 3, 1, 0 ]
-[ 3, 0, 1, 2 ]
-[ 3, 0, 2, 1 ]
-[ 3, 1, 0, 2 ]
-[ 3, 1, 2, 0 ]
-[ 3, 2, 0, 1 ]
-[ 3, 2, 1, 0 ]
+0,1,2,3
+0,1,3,2
+0,2,1,3
+0,2,3,1
+0,3,1,2
+0,3,2,1
+1,0,2,3
+1,0,3,2
+1,2,0,3
+1,2,3,0
+1,3,0,2
+1,3,2,0
+2,0,1,3
+2,0,3,1
+2,1,0,3
+2,1,3,0
+2,3,0,1
+2,3,1,0
+3,0,1,2
+3,0,2,1
+3,1,0,2
+3,1,2,0
+3,2,0,1
+3,2,1,0
 ```
 
 ```javascript
@@ -234,7 +234,29 @@ for(let item of o)
 6
 ```
 
+```javascript
+let field = Abacus.Ring.Q("x").associatedField();
 
+let m = Abacus.Matrix(field, [
+    [field.fromString("x-1"), field.fromString("x^2-1")],
+    [field.fromString("x^2-1"), field.fromString("x-1")]
+]);
+
+console.log(m.toString());
+console.log(m.inv().toString());
+console.log(m.inv().mul(m).toString());
+```
+
+```text
+|  x-1 x^2-1|
+|x^2-1   x-1|
+
+|   -1/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)|
+|(x+1)/(x^3+x^2-2*x)    -1/(x^3+x^2-2*x)|
+
+|1 0|
+|0 1|
+```
 
 ### Todo
 
