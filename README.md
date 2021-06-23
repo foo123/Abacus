@@ -69,9 +69,9 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `OrderedRepeatedCombination` / `RepeatedVariation` / `kTuple` (`test/ordered_combinations_repeats.js`)
 * `Subset` (`test/subsets.js`)
 * `Partition` (`test/partitions.js`) **partial support for COLEX**
-* `Composition` (`test/compositions.js`) **rank/unrank methods missing, partial support for COLEX**
+* `Composition` (`test/compositions.js`) **partial support for COLEX**
 * `RestrictedPartition` (`test/restricted_partitions.js`) **partial support for COLEX**
-* `RestrictedComposition` (`test/restricted_compositions.js`) **rank/unrank methods missing, partial support for COLEX**
+* `RestrictedComposition` (`test/restricted_compositions.js`) **partial support for COLEX**
 * `SetPartition` (`test/setpartitions.js`) **rank/unrank methods missing, only LEX/REVLEX order**
 * `RestrictedSetPartition` (`test/setpartitions.js`) **exactly K #parts, rank/unrank methods missing, only LEX/REVLEX order**
 * `CatalanWord` (eg balanced parentheses) (`test/paren.js`) **rank/unrank methods missing**
