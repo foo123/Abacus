@@ -4497,15 +4497,16 @@ function part_rank(n, limit, min, max, k)
         add = Arithmetic.add, sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod;
 
     if (is_instance(limit, Integer)) limit = limit.num;
-    //if (is_instance(max, Integer)) max = max.num;
     if (is_instance(min, Integer)) min = min.num;
-    n = N(n);
-    limit = sub(N(limit), I);
-    //max = null == max ? n : N(max);
-    min = null == min ? I : N(min);
+    //if (is_instance(max, Integer)) max = max.num;
     key = String(n)+','+String(limit)+','+String(min)/*+','+String(max)*/+','+String(k);
     if (null == part_rank.mem[key])
     {
+        n = N(n);
+        limit = sub(N(limit), I);
+        //max = null == max ? n : N(max);
+        min = null == min ? I : N(min);
+
         if (null == k)
         {
             k = I;
@@ -4655,19 +4656,42 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         div = Arithmetic.div, divceil = Arithmetic.divceil, mod = Arithmetic.mod;
 
+    if (is_instance(limit, Integer)) limit = limit.num;
     if (is_instance(min, Integer)) min = min.num;
     if (is_instance(max, Integer)) max = max.num;
-    if (is_instance(limit, Integer)) limit = limit.num;
-    n = N(n);
-    limit = N(limit);
-    M = null == max ? n : N(max);
-    W = null == min ? I : N(min);
     key = String(n)+','+String(limit)+','+String(min)+','+String(max)+','+String(k)+','+String(0<nmin)+','+String(0<nmax);
     if (null == comp_rank.mem[key])
     {
-        if (
-            (null == min && null == max)
-            || (0 < nmin && 0 < nmax)
+        n = N(n);
+        limit = N(limit);
+        M = null == max ? n : N(max);
+        W = null == min ? I : N(min);
+
+        if (null == min && null == max)
+        {
+            Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I
+            if (null == k)
+            {
+                mm = W;
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    c = add(c, Arithmetic.gte(nn, I) ? pow2(sub(nn, I)) : O);
+                    mm = add(mm, I);
+                }
+            }
+            else
+            {
+                mm = W; k = sub(N(k), I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    c = add(c, c_nkab(sub(n, mm), k, W, M));
+                    mm = add(mm, I);
+                }
+            }
+        }
+        else if (
+            (0 < nmin && 0 < nmax)
             || (0 < nmin && null == max)
             || (0 < nmax && null == min)
         )
@@ -21852,7 +21876,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 {
                     x = item[i];
                     if (x > n) return J;
-                    index = Arithmetic.add(index, comp_rank(n, x, W, M, K ? K-i : null, w, m));
+                    index = Arithmetic.add(index, W === x ? O : comp_rank(n, x, W, M, K ? K-i : null, w, m));
                     if (W === x) w++;
                     if (M === x) m++;
                     n -= x;
@@ -22062,62 +22086,40 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
         // compute prev partition
         if (K)
         {
-            if (M && W)
+            if (M && W && (M === W)) return null; // there is only one, if any
+
+            l = M ? 1 : 0; r = W ? 1 : 0; w = W ? W : 1;
+            rem = n-(M ? M : 0)-(W ? W : 0);
+            m = 0 < K-l-r ? rem % (K-l-r) : 0;
+            d = stdMath.min(M ? M : rem, 0 < K-l-r ? stdMath.floor(rem/(K-l-r)) : rem);
+            k = 0; i = -1;
+            for (j=i0+l*DI; MIN<=j-l*DI && j+r*DI<=MAX; j+=DI)
             {
-                if (M === W) return null; // there is only one, if any
-                return null;
+                if ((w < item[j]) && (d+(k<m) < item[j] || stdMath.floor(rem/(K-l-r-k))+(0<(rem%(K-l-r-k))) < item[j])) i = j;
+                k++; rem -= item[j];
             }
-            else if (W)
+            if (-1 === i || MAX < i+r*DI || MIN > i-l*DI)
             {
-                return null;
-            }
-            else if (M)
-            {
-                rem = n-M; m = rem % (K-1); d = stdMath.min(M, stdMath.floor(rem/(K-1))); k = 0; i = -1;
-                for (j=i0+DI; MIN<j && j<=MAX; j+=DI)
-                {
-                    if (d+(k<m) < item[j] || stdMath.floor(rem/(K-1-k))+(0<(rem%(K-1-k))) < item[j]) i = j;
-                    k++; rem -= item[j];
-                }
-                if (-1 === i || MAX < i+DI || MIN > i+DI)
-                {
-                    item = null;
-                }
-                else
-                {
-                    if (M === item[i]) item[INFO][NMAX]--;
-                    item[i]--; i += DI;
-                    rem = 1; k = 0; j = i;
-                    while (MIN<j && j<=MAX) {k++; rem += item[j]; j += DI;}
-                    while (MIN<i && i<=MAX)
-                    {
-                        k--;
-                        if (M === item[i]) item[INFO][NMAX]--;
-                        item[i] = stdMath.min(MIN <= i-DI && i-DI <= MAX ? item[i-DI] : n, stdMath.max(1, rem-k));
-                        rem -= item[i];
-                        if (M === item[i]) item[INFO][NMAX]++;
-                        i += DI;
-                    }
-                }
+                item = null;
             }
             else
             {
-                rem = n; m = rem % K; d = stdMath.floor(rem/K); k = 0; i = -1;
-                for (j=i0; MIN<=j && j<=MAX; j+=DI)
+                if (M === item[i]) item[INFO][NMAX]--;
+                item[i]--;
+                if (W === item[i]) item[INFO][NMIN]++;
+                i += DI;
+                rem = 1; k = 0; j = i;
+                while (MIN<=j-l*DI && j+r*DI<=MAX) {k++; rem += item[j]; j += DI;}
+                while (0<k && 0<rem && MIN<=i-l*DI && i+r*DI<=MAX)
                 {
-                    if (d+(k<m) < item[j] || stdMath.floor(rem/(K-k))+(0<(rem%(K-k))) < item[j]) i = j;
-                    k++; rem -= item[j];
-                }
-                if (-1 === i || MAX < i+DI || MIN > i+DI)
-                {
-                    item = null;
-                }
-                else
-                {
-                    item[i]--; i += DI;
-                    rem = 1; k = 0; j = i;
-                    while (MIN<=j && j<=MAX) {k++; rem += item[j]; j += DI;}
-                    while (MIN<=i && i<=MAX) {k--; item[i] = stdMath.min(MIN <= i-DI && i-DI <= MAX ? item[i-DI] : n, stdMath.max(1, rem-k)); rem -= item[i]; i += DI;}
+                    k--;
+                    if (M === item[i]) item[INFO][NMAX]--;
+                    if (W === item[i]) item[INFO][NMIN]--;
+                    item[i] = stdMath.min(MIN <= i-DI && i-DI <= MAX ? item[i-DI] : n, stdMath.max(w, rem-w*k));
+                    rem -= item[i];
+                    if (M === item[i]) item[INFO][NMAX]++;
+                    if (W === item[i]) item[INFO][NMIN]++;
+                    i += DI;
                 }
             }
         }
@@ -22176,7 +22178,7 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
         // compute next partition
         if (K)
         {
-            if (W && (M === W)) return null; // there is only one, if any
+            if (M && W && (M === W)) return null; // there is only one, if any
             if (W)
             {
                 w = W;
@@ -22195,8 +22197,8 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
             }
             else
             {
-                if (M && M === item[i]) item[INFO][NMAX]--;
-                if (W && W === item[i]-1) item[INFO][NMIN]++;
+                if (M === item[i]) item[INFO][NMAX]--;
+                if (W === item[i]-1) item[INFO][NMIN]++;
                 item[i]--; rem += item[i]; k++; i -= DI;
                 if (i < MIN || i > MAX)
                 {
@@ -22212,18 +22214,18 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                     else
                     {
                         item[i]++;
-                        if (M && M === item[i]) item[INFO][NMAX]++;
+                        if (M === item[i]) item[INFO][NMAX]++;
                         m = 0 < k ? rem % k : 0;
                         d = 0 < k ? stdMath.floor(rem/k) : rem;
                         j = 0;
                         while (0 < rem)
                         {
                             i += DI;
-                            if (M && M === item[i]) item[INFO][NMAX]--;
-                            if (W && W === item[i]) item[INFO][NMIN]--;
+                            if (M === item[i]) item[INFO][NMAX]--;
+                            if (W === item[i]) item[INFO][NMIN]--;
                             item[i] = d+(j<m); rem -= item[i];
-                            if (M && M === item[i]) item[INFO][NMAX]++;
-                            if (W && W === item[i]) item[INFO][NMIN]++;
+                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (W === item[i]) item[INFO][NMIN]++;
                             j++;
                         }
                         if (W)
