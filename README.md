@@ -283,13 +283,12 @@ console.log(m.inv().mul(m).toString());
 * support multivariate polynomial, multivariate operations **[DONE]**
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
-* faster numeric `SVD` computation (TODO)
-* implement `LLL` algorithm (TODO)
-* add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
-* add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
-* full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
-* support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
-* use numeric arrays (ie `Uint32`) to store combinatorial items and/or make faster `successor` methods and other numerical routines to `asm.js` (TODO?)
+* full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
+* add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
+* add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
+* support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
+* (faster) numeric `SVD` computation (TODO)
+* implement `LLL` algorithm (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
