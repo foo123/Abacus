@@ -179,7 +179,7 @@ See the comments in the code for algorithms and references used.
 
 ```javascript
 let o = Abacus.Permutation(4);
-for(let item of o)
+for (let item of o)
 {
     console.log(item.join(','));
 }
@@ -214,7 +214,7 @@ for(let item of o)
 
 ```javascript
 let o = Abacus.Partition(6);
-for(let item of o)
+for (let item of o)
 {
     console.log(item.join('+'));
 }

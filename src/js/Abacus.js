@@ -4092,6 +4092,45 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
+function subset_rank(n, x, y)
+{
+    var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
+        O = Arithmetic.O, I = Arithmetic.I,
+        k, j, index = O, key;
+    key = String(n)+','+String(x)+','+String(null == y ? null : x-y);
+    if (null == subset_rank.mem[key])
+    {
+        if (null == y)
+        {
+            for (k = I,j = 0; j < x; j++) k = add(k, pow2(n-j-1));
+            index = add(index, k);
+        }
+        else
+        {
+            if (x > y+1)
+            {
+                for (k = I,j = y+1; j < x; j++) k = add(k, pow2(n-j-1));
+                index = add(index, k);
+            }
+            else
+            {
+                index = add(index, I);
+            }
+        }
+        subset_rank.mem[key] = index;
+    }
+    else
+    {
+        index = subset_rank.mem[key];
+    }
+    return index;
+}
+subset_rank.mem = Obj();
+function subsetb_rank(n, x, y)
+{
+    var Arithmetic = Abacus.Arithmetic, I = Arithmetic.I;
+    return Arithmetic.shl(I, x);
+}
 function pow2(n)
 {
     if (is_instance(n, Integer))
@@ -4288,10 +4327,14 @@ function factorial(n, m)
         {
             m = m[0];
             if (!m.length) return Arithmetic.lt(n, O) ? O : factorial(n);
-            key = String(n)+'@'+mergesort(m.map(String),1,true).join(',')+'@Comb';
+            else if (1 === m.length) return factorial(n, m[0]);
+            res = operate(function(N, mk){return add(N, mk);}, O, m);
+            if (Arithmetic.equ(res, O)) return n;
+            else if (Arithmetic.gt(res, n)) return O;
+            key = String(n)+'@'+mergesort(m.map(String),1,true).join(',')+'@';
             if (null == factorial.mem3[key])
             {
-                i = sub(operate(function(N, mk){return add(N, NUM(mk));}, O, m), I); res = I;
+                i = sub(res, I); res = I;
                 while (Arithmetic.gte(i, O))
                 {
                     res = mul(res, sub(n, i));
@@ -21061,7 +21104,6 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         }
         $.type = $.type || "subset";
         $.rand = $.rand || {};
-        $.rand["subset"] = 1;
         $.base = n;
         $.mindimension = 0;
         $.maxdimension = n;
@@ -21138,13 +21180,12 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: function(item, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
-                O = Arithmetic.O, I = Arithmetic.I,
-                add = Arithmetic.add, shl = Arithmetic.shl,
-                sub = Arithmetic.sub,
+                O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+                add = Arithmetic.add, sub = Arithmetic.sub,
                 order = $ && null!=$.order ? $.order : LEX,
-                index, i, l;
+                index = J, x, y, i, j, k, l, dict;
 
-            if (!$ || "binary"!==$.type) return NotImplemented();
+            if (!$ || !item) return J;
 
             item = klass.DUAL(item, n, $, -1);
             if (n+1===item.length)
@@ -21153,47 +21194,95 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                     is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order));
                 item = (is_binary && !is_reflected) || (is_reflected && !is_binary) ? item.slice(n-item[n],n) : item.slice(0,item[n]);
             }
-
-            // O(n)
-            index = O; i = 0; l = item[n]/*.length*/;
-            while (i < l) index = add(index, shl(I, item[i++]));
-
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),I), index);
-
+            if ("binary" === $.type)
+            {
+                // O(n)
+                l = item/*[n]*/.length;
+                dict = {};
+                for (index = O,i = 0; i < l; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    index = add(index, subsetb_rank(n, x));
+                    dict[x] = 1;
+                }
+                if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+                    index = sub($ && null!=$.last?$.last:sub(klass.count(n, $), I), index);
+            }
+            else
+            {
+                // O(n)
+                l = item/*[n]*/.length;
+                y = null; dict = {};
+                for (index = O,i = 0; i < l; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    index = add(index, subset_rank(n, x, y));
+                    dict[x] = 1; y = x;
+                }
+                if (REVERSED & order)
+                    index = sub($ && null!=$.last?$.last:sub(klass.count(n, $), I), index);
+            }
             return index;
         }
         ,unrank: function(index, n, $) {
-            var klass = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+            var klass = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
                 band = Arithmetic.band, shr = Arithmetic.shr, gt = Arithmetic.gt,
-                sub = Arithmetic.sub,
+                add = Arithmetic.add, sub = Arithmetic.sub, gte = Arithmetic.gte,
                 order = $ && null!=$.order ? $.order : LEX,
-                item, i;
+                count = $ && null!=$.count ? $.count : klass.count(n, $),
+                item, i, j, y, c = O, c0;
 
-            if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
+            if (!$ || 0 >= n || null==index || !Arithmetic.inside(index, Arithmetic.J, count))
                 return null;
 
-            if (!$ || "binary"!==$.type) return NotImplemented();
+            item = new Array(n+1)/*[]*/; item[n] = 0;
 
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                index = sub($ && null!=$.last?$.last:sub(count,Arithmetic.I), index);
-
-            // O(n)
-            item = new Array(n+1)/*[]*/; item[n] = 0; i = 0;
-            while (gt(index, O))
+            if ("binary" === $.type)
             {
-                // loop unrolling
-                if (gt(band(index,1),O)) item[item[n]++] = i;//item.push(i);
-                if (gt(band(index,2),O)) item[item[n]++] = i+1;//item.push(i+1);
-                if (gt(band(index,4),O)) item[item[n]++] = i+2;//item.push(i+2);
-                if (gt(band(index,8),O)) item[item[n]++] = i+3;//item.push(i+3);
-                if (gt(band(index,16),O)) item[item[n]++] = i+4;//item.push(i+4);
-                if (gt(band(index,32),O)) item[item[n]++] = i+5;//item.push(i+5);
-                if (gt(band(index,64),O)) item[item[n]++] = i+6;//item.push(i+6);
-                if (gt(band(index,128),O)) item[item[n]++] = i+7;//item.push(i+7);
-                i+=8; index = shr(index, 8);
-            }
+                if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+                    index = sub($ && null!=$.last?$.last:sub(count, I), index);
 
+                // O(n)
+                i = 0;
+                while (gt(index, O))
+                {
+                    // loop unrolling
+                    if (gt(band(index,1),O)) item[item[n]++] = i;//item.push(i);
+                    if (gt(band(index,2),O)) item[item[n]++] = i+1;//item.push(i+1);
+                    if (gt(band(index,4),O)) item[item[n]++] = i+2;//item.push(i+2);
+                    if (gt(band(index,8),O)) item[item[n]++] = i+3;//item.push(i+3);
+                    if (gt(band(index,16),O)) item[item[n]++] = i+4;//item.push(i+4);
+                    if (gt(band(index,32),O)) item[item[n]++] = i+5;//item.push(i+5);
+                    if (gt(band(index,64),O)) item[item[n]++] = i+6;//item.push(i+6);
+                    if (gt(band(index,128),O)) item[item[n]++] = i+7;//item.push(i+7);
+                    i+=8; index = shr(index, 8);
+                }
+            }
+            else
+            {
+                if (REVERSED&order)
+                    index = sub($ && null!=$.last?$.last:sub(count, I), index);
+
+                // O(n)
+                y = null; i = 0; c = O;
+                while (i<n && gt(index, O))
+                {
+                    // find the largest less than
+                    j = i; c0 = subset_rank(n, i, y);
+                    while (i+1<n && gt(index, c0))
+                    {
+                        j = i; c = c0;
+                        c0 = subset_rank(n, ++i, y);
+                    }
+                    if (gte(index, c0)) { c = c0; j = i; }
+
+                    item[item[n]++] = j;
+                    y = j;
+                    index = sub(index, c);
+                }
+            }
             item = item.slice(0, item[n]);
             item = klass.DUAL(item, n, $, 1);
 
