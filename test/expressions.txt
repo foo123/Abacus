@@ -1,4 +1,4 @@
-Abacus.Expressions (VERSION = 1.0.5)
+Abacus.Expressions (VERSION = 1.0.6)
 ---
 Symbolic Expressions
 ---

@@ -1,4 +1,4 @@
-Abacus.Matrices (VERSION = 1.0.5)
+Abacus.Matrices (VERSION = 1.0.6)
 ---
 Matrices and Matrix operations
 ring = Abacus.Ring.Z() (\mathbb{Z}) /* ring of integers */

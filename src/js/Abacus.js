@@ -22019,7 +22019,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     for (w=0,m=0,i=0; 0<n && i<item.length; i++)
                     {
                         x = item[i];
-                        if (x > n) return J;
+                        if (0 >= x || x > n || (W && x < W) || (M && x > M)) return J;
                         index = Arithmetic.add(index, W === x ? O : comp_rank(n, x, W, M, K ? K-i : null, w, m));
                         if (W === x) w++;
                         if (M === x) m++;
@@ -22040,7 +22040,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     {
                         if (W && i+1===item.length) continue;
                         x = item[i];
-                        if (x > n) return J;
+                        if (0 >= x || x > n || (W && x < W) || (M && x > M)) return J;
                         index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
                         n -= x;
                     }
@@ -22202,9 +22202,9 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
     //maybe "use asm"
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
-    
+
     if (0 === n) return null;
-    
+
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
     /*if (COLEX & order)
@@ -22511,9 +22511,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
     //maybe "use asm"
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
-    
+
     if (0 === n) return null;
-    
+
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
     /*if (COLEX & order)

@@ -1,12 +1,12 @@
-Abacus.Integer (VERSION = 1.0.5)
+Abacus.Integer (VERSION = 1.0.6)
 ---
 o=Abacus.Integer.rnd(1,100)
 o.toString()
-19
+54
 o.rad(2).toString()
-4
+7
 o.rad(2).pow(2).toString()
-16
+49
 
 Abacus.Integer(1).rad(2)
 1

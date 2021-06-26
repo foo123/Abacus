@@ -1,15 +1,19 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
+function print( o )
+{
+    if ( o ) echo(o.map(x=>'{'+x.join(',')+'}').join(','));
+}
 function print_all( o, prev, f )
 {
     var count = 0;
     if ( -1 === prev )
-        while ( o.hasNext(-1) ) {count++; echo( f ? f(o.next(-1)) : o.next(-1) );}
+        while ( o.hasNext(-1) ) {count++; echo( f ? f(o.next(-1)) : o.next(-1).map(x=>'{'+x.join(',')+'}').join(',') );}
     else
         //while ( o.hasNext() ) echo( o.next() );
         // iterator/iterable are supported
-        for(let item of o) {count++; echo( f ? f(item) : item );}
+        for(let item of o) {count++; echo( f ? f(item) : item.map(x=>'{'+x.join(',')+'}').join(',') );}
     echo(count);
 }
 
@@ -30,12 +34,12 @@ echo('o.total()');
 echo(o.total());
 
 echo('o.next()'); 
-echo(o.next());
+print(o.next());
 
 echo('o.hasNext()');
 echo(o.hasNext());
 echo('o.next()');
-echo(o.next());
+print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
@@ -52,7 +56,7 @@ echo('o.order("lex,reversed")');
 print_all( o.order("lex,reversed") );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -79,7 +83,7 @@ echo('o.order("lex,reversed")');
 print_all( o.order("lex,reversed") );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -100,7 +104,7 @@ echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -121,7 +125,7 @@ echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -142,7 +146,7 @@ echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -163,7 +167,7 @@ echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -184,7 +188,7 @@ echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -211,7 +215,7 @@ echo('o.order("lex,reversed")');
 print_all( o.order("lex,reversed") );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -224,12 +228,12 @@ echo('o.total()');
 echo(o.total());
 
 echo('o.next()'); 
-echo(o.next());
+print(o.next());
 
 echo('o.hasNext()');
 echo(o.hasNext());
 echo('o.next()');
-echo(o.next());
+print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
@@ -246,7 +250,7 @@ echo('o.order("lex,reversed")');
 print_all( o.order("lex,reversed") );
 
 echo('o.random()');
-echo(o.random());
+print(o.random());
 
 // dispose
 echo('o.dispose()');

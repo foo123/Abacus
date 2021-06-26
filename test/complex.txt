@@ -1,4 +1,4 @@
-Abacus.Complex (VERSION = 1.0.5)
+Abacus.Complex (VERSION = 1.0.6)
 ---
 o=Abacus.Complex()
 o.toString()
@@ -10,11 +10,11 @@ o.toDec()
 
 o=Abacus.Complex.rnd("0", "1+i")
 o.toString()
-(1/32)*i
+811/1024+(707/8192)*i
 o.toDec()
-0.03125i
+0.7919921875+0.0863037109375i
 o.rad(2).toString()
-1/8+(1/8)*i
+429699534554481/482128333373440+(1265984862001/26147524444160)*i
 
 Abacus.Complex(1).rad(2)
 1

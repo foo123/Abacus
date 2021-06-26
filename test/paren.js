@@ -1,6 +1,10 @@
 var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
 var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
 
+function print( o )
+{
+    if ( o ) echo(o.join(''));
+}
 function print_all( o, prev, f )
 {
     var count = 0;
@@ -49,7 +53,7 @@ echo('o.order("random")');
 print_all( o.order("random") );
 
 echo('o.random()');
-echo(o.random().join(''));
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -82,7 +86,7 @@ echo('o.order("random")');
 print_all( o.order("random") );
 
 echo('o.random()');
-echo(o.random().join(''));
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -115,7 +119,7 @@ echo('o.order("random")');
 print_all( o.order("random") );
 
 echo('o.random()');
-echo(o.random().join(''));
+print(o.random());
 
 // dispose
 echo('o.dispose()');
@@ -145,7 +149,7 @@ echo('o.order("random")');
 print_all( o.order("random") );
 
 echo('o.random()');
-echo(o.random().join(''));
+print(o.random());
 
 // dispose
 echo('o.dispose()');

@@ -1,30 +1,30 @@
-Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 1.0.5)
+Abacus Algebraic Composition: Permutations OF Permutations (VERSION = 1.0.6)
 ---
 o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2))
 o.total()
 4
 o.next()
-[ 0, 1, 2, 3 ]
+0,1,2,3
 o.hasNext()
 true
 o.next()
-[ 1, 0, 3, 2 ]
+1,0,3,2
 default order is "lex", lexicographic-order
 o.rewind()
-[ 0, 1, 2, 3 ]
-[ 1, 0, 3, 2 ]
-[ 2, 3, 0, 1 ]
-[ 3, 2, 1, 0 ]
+0,1,2,3
+1,0,3,2
+2,3,0,1
+3,2,1,0
 backwards
 o.rewind(-1)
-[ 3, 2, 1, 0 ]
-[ 2, 3, 0, 1 ]
-[ 1, 0, 3, 2 ]
-[ 0, 1, 2, 3 ]
+3,2,1,0
+2,3,0,1
+1,0,3,2
+0,1,2,3
 o.random()
-[ 1, 0, 3, 2 ]
+2,3,0,1
 o.order("lex|lex").range(1,-1)
-[ 1, 0, 3, 2 ]
-[ 0, 1, 2, 3 ]
-[ 1, 0, 3, 2 ]
+1,0,3,2
+0,1,2,3
+1,0,3,2
 o.dispose()
