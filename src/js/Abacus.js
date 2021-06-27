@@ -21540,7 +21540,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         var self = this, sub = null, M, W, K, k1, k0;
         if (!is_instance(self, Partition)) return new Partition(n, $);
         $ = $ || {}; $.type = $.type || "partition";
-        n = n||1;
+        n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
             sub = n;
@@ -21550,9 +21550,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        M = $["max="] ? $["max="]|0 : null;
-        W = $["min="] ? $["min="]|0 : null;
-        K = $["parts="] ? $["parts="]|0 : null;
+        M = null!=$["max="] ? $["max="]|0 : null;
+        W = null!=$["min="] ? $["min="]|0 : null;
+        K = null!=$["parts="] ? $["parts="]|0 : null;
         k1 = K ? K : (W && M ? (M===W ? stdMath.ceil(n/W) : stdMath.max(1, stdMath.ceil((n-M)/W))+1) : (W ? stdMath.ceil(n/W) : (M ? stdMath.max(0, n-M)+1 : n)));
         k0 = K ? K : (W && M ? (M===W ? stdMath.ceil(n/M) : stdMath.max(1, stdMath.ceil((n-W)/M))+1) : (W ? 2 : (M ? stdMath.ceil(n/M) : 1)));
         $.base = n;
@@ -21572,11 +21572,11 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
          C: function(item, N, LEN, $, dir) {
             // C process / symmetry, ie Rotation/Complementation/Conjugation, CC = I
             var klass = this, is_composition = "composition" === ($ && $.type ? $.type : "partition"),
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 reflected = -1===dir, itemlen;
-            if (K || M || W) return item; // TODO
+            if (null != K || null != M || null != W) return item; // TODO
             if (LEN+1===item.length)
             {
                 item = reflected ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
@@ -21608,9 +21608,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
         ,count: function(n, $) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 type = $ && $.type ? $.type : "partition";
             if (0 > n)
             {
@@ -21630,14 +21630,18 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             // last (0>dir) is C-symmetric of first (0<dir)
             var klass = this, item, i, k, l, r, w, m,
                 type = $ && $.type ? $.type : "partition",
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 order = $ && null!=$.order ? $.order : LEX,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 is_composition = "composition" === type, conj = false;
 
-            if (
+            if (0 === n)
+            {
+                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+            }
+            else if (
                 (0 > n)
                 || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (M && W && ((W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
@@ -21646,11 +21650,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 || (W && ((W > n) || (W < n && W+W > n)))
                 || (M && (M > n))
                 || (K && (K > n))
-            ) return null;
-
-            if (0 === n)
+            )
             {
-                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                return null;
             }
             else
             {
@@ -22024,9 +22026,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,succ: function(item, index, n, $, dir, PI) {
             if ((null == n) || (null == item)) return null;
             var type = $ && $.type ? $.type : "partition",
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 dim = $ && $.dimension ? $.dimension : 1,
                 order = $ && null!=$.order ? $.order : LEX;
 
@@ -22048,14 +22050,18 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
                 order = $ && null!=$.order ? $.order : LEX,
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 O = Arithmetic.O, I = Arithmetic.I,
                 item = null, index, total, last;
 
-            if (
+            if (0 === n)
+            {
+                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+            }
+            else if (
                 (0 > n)
                 || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (M && W && ((W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
@@ -22064,11 +22070,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 || (W && ((W > n) || (W < n && W+W > n)))
                 || (M && (M > n))
                 || (K && (K > n))
-            ) return null;
-
-            if (0 === n)
+            )
             {
-                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                return null;
             }
             else
             {
@@ -22095,14 +22099,25 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
                 order = $ && null!=$.order ? $.order : LEX,
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 index, J = Arithmetic.J, O = Arithmetic.O,
                 i, x, w, m, c, total, last;
 
-            if (
+            if (itam && (0 === n))
+            {
+                if (LEN+1===item.length)
+                {
+                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+                }
+                //if (REFLECTED & order) item = item.slice().reverse();
+                item = klass.DUAL(item.slice(), n, $, -1);
+
+                index = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) && (K||1)===item.length && item.length===item.filter(function(x){return 0===x;}).length ? O : J;
+            }
+            else if (
                 !item || !item.length
                 || (0 > n)
                 || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
@@ -22112,21 +22127,19 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 || (W && ((W > n) || (W < n && W+W > n)))
                 || (M && (M > n))
                 || (K && (K > n))
-            ) return J;
-
-            if (LEN+1===item.length)
+            )
             {
-                item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
-            }
-            //if (REFLECTED & order) item = item.slice().reverse();
-            item = klass.DUAL(item.slice(), n, $, -1);
-
-            if (0 === n)
-            {
-                index = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) && (K||1)===item.length && item.length===item.filter(function(x){return 0===x;}).length ? O : J;
+                return J;
             }
             else
             {
+                if (LEN+1===item.length)
+                {
+                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+                }
+                //if (REFLECTED & order) item = item.slice().reverse();
+                item = klass.DUAL(item.slice(), n, $, -1);
+
                 total = $ && null!=$.count ? $.count : klass.count(n, $);
                 last = Arithmetic.sub(total, 1);
 
@@ -22175,9 +22188,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
                 order = $ && null!=$.order ? $.order : LEX,
-                M = $ && $["max="] ? $["max="]|0 : null,
-                W = $ && $["min="] ? $["min="]|0 : null,
-                K = $ && $["parts="] ? $["parts="]|0 : null,
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 item = [], O = Arithmetic.O, i, x, w, m, c, total, last,
                 LEN = $ && $.dimension ? $.dimension : 1;
 
@@ -22185,7 +22198,11 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             total = $ && null!=$.count ? $.count : klass.count(n, $);
             last = Arithmetic.sub(total, 1);
 
-            if (
+            if ((0 === n) && (null != index))
+            {
+                item = Arithmetic.equ(O, index) && (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+            }
+            else if (
                 (0 > n)
                 || (null == index)
                 || Arithmetic.lt(index, O) || Arithmetic.gt(index, last)
@@ -22196,11 +22213,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 || (W && ((W > n) || (W < n && W+W > n)))
                 || (M && (M > n))
                 || (K && (K > n))
-            ) return null;
-
-            if (0 === n)
+            )
             {
-                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                return null;
             }
             else
             {
@@ -22277,9 +22292,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         var self = this, $ = self.$, n = self.n, item = self.__item,
             type = $ && $.type ? $.type : "partition",
             order = $ && null!=$.order ? $.order : LEX,
-            M = $ && $["max="] ? $["max="]|0 : null,
-            W = $ && $["min="] ? $["min="]|0 : null,
-            K = $ && $["parts="] ? $["parts="]|0 : null,
+            M = $ && null!=$["max="] ? $["max="]|0 : null,
+            W = $ && null!=$["min="] ? $["min="]|0 : null,
+            K = $ && null!=$["parts="] ? $["parts="]|0 : null,
             LEN = $.dimension, itemlen, x, y = 0, z = 0;
         if ((null != item) && (LEN+1 !== item.length))
         {
@@ -22306,9 +22321,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,output: function(item) {
         if (null == item) return null;
         var self = this, $ = self.$, n = self.n,
-            M = $["max="] ? $["max="]|0 : null,
-            W = $["min="] ? $["min="]|0 : null,
-            K = $["parts="] ? $["parts="]|0 : null,
+            M = null!=$["max="] ? $["max="]|0 : null,
+            W = null!=$["min="] ? $["min="]|0 : null,
+            K = null!=$["parts="] ? $["parts="]|0 : null,
             order = null!=$.order ? $.order : LEX, LEN = $.dimension;
         if (LEN+1===item.length)
         {
@@ -22325,7 +22340,7 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
 
-    if (0 === n) return null;
+    if (0 >= n) return null;
 
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
@@ -22634,7 +22649,7 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
 
-    if (0 === n) return null;
+    if (0 >= n) return null;
 
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
