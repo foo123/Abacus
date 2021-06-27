@@ -274,6 +274,26 @@ function gray(b, a, n, a0, a1)
         b[i] = (ai + s) % n; s += n-b[i]; return b;
     }, b, a, a0, a1);
 }
+function grayn(n)
+{
+    // adapted from https://www.geeksforgeeks.org/decimal-equivalent-gray-code-inverse/
+    var Arithmetic = Abacus.Arithmetic;
+    n = Arithmetic.num(n);
+    return Arithmetic.xor(n, Arithmetic.shr(n, Arithmetic.I));
+}
+function igrayn(n)
+{
+    // adapted from https://www.geeksforgeeks.org/decimal-equivalent-gray-code-inverse/
+    var Arithmetic = Abacus.Arithmetic, inv = Arithmetic.O;
+    n = Arithmetic.num(n);
+    // Taking xor until n becomes zero
+    while (Arithmetic.gt(n, Arithmetic.O))
+    {
+        inv = Arithmetic.xor(inv, n);
+        n = Arithmetic.shr(n, Arithmetic.I);
+    }
+    return inv;
+}
 function shift(b, a, k, a0, a1)
 {
     if (null == a) return b;
@@ -4092,44 +4112,46 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
-function subset_rank(n, x, y)
+function subset_lex_rank(n, x, y)
 {
     var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
         O = Arithmetic.O, I = Arithmetic.I,
         k, j, index = O, key;
     key = String(n)+','+String(x)+','+String(null == y ? null : x-y);
-    if (null == subset_rank.mem[key])
+    if (null == subset_lex_rank.mem[key])
     {
         if (null == y)
         {
             for (k = I,j = 0; j < x; j++) k = add(k, pow2(n-j-1));
             index = add(index, k);
+            subset_lex_rank.mem[key] = index;
         }
         else
         {
-            if (x > y+1)
+            if (x === y+1)
+            {
+                index = add(index, I);
+                subset_lex_rank.mem[key] = index;
+            }
+            else if (x > y+1)
             {
                 for (k = I,j = y+1; j < x; j++) k = add(k, pow2(n-j-1));
                 index = add(index, k);
-            }
-            else
-            {
-                index = add(index, I);
+                subset_lex_rank.mem[key] = index;
             }
         }
-        subset_rank.mem[key] = index;
     }
     else
     {
-        index = subset_rank.mem[key];
+        index = subset_lex_rank.mem[key];
     }
     return index;
 }
-subset_rank.mem = Obj();
-function subsetb_rank(n, x, y)
+subset_lex_rank.mem = Obj();
+function subset_bin_rank(n, x, y)
 {
-    var Arithmetic = Abacus.Arithmetic, I = Arithmetic.I;
-    return Arithmetic.shl(I, x);
+    var Arithmetic = Abacus.Arithmetic;
+    return n > x && 0 <= x ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
 }
 function pow2(n)
 {
@@ -17150,8 +17172,8 @@ function ORDER(o)
     var order = 0;
     if (is_string(o))
     {
-        o = o.toUpperCase().split(',');
-        for (var i=0,l=o.length; i<l; i++) order |= HAS.call(ORDER,o[i]) ? ORDER[o[i]] : 0;
+        o = o.toUpperCase().split(',').map(trim);
+        for (var i=0,l=o.length; i<l; i++) order |= o[i].length && HAS.call(ORDER,o[i]) ? ORDER[o[i]] : 0;
         //order = ORDERINGS & order;
         if ((0 < order) && !((LEXICAL|RANDOM) & order)) order |= LEX;
         if (0 >= order) order = LEX;
@@ -17474,12 +17496,21 @@ Iterator = Abacus.Iterator = Class({
         if ((is_array(name) || is_args(name)) && (is_instance(name[0], Iterator) || is_instance(name[name.length-1],  Iterator)))
         {
             // sequence of iterators
-            self.name = "Iterator";
+            self.name = "Sequence";
             self.$ = $ || {};
-            self.$.seq = is_args(name) ? slice.call(name) : name;
+            self.$.seq = slice.call(name);
             self.$.count = operate(function(count, iter){
                 return Arithmetic.add(count, iter.total());
             }, Arithmetic.O, self.$.seq);
+            self.rewind();
+        }
+        else if ((is_array(name) || is_args(name)))
+        {
+            // list of items
+            self.name = "List";
+            self.$ = $ || {};
+            self.$.seq = slice.call(name);
+            self.$.count = self.$.seq.length;
             self.rewind();
         }
         else if (is_callable(name))
@@ -17528,7 +17559,7 @@ Iterator = Abacus.Iterator = Class({
         var self = this;
         if (self.$.seq && self.$.seq.length)
         {
-            operate(function(_,iter){iter.dispose();}, null, self.$.seq);
+            operate(function(_,iter){if (iter instanceof Iterator) iter.dispose();}, null, self.$.seq);
             self.$.seq = null;
         }
         self.$ = null;
@@ -17648,11 +17679,11 @@ Iterator = Abacus.Iterator = Class({
         dir = -1===dir ? -1 : 1;
         if (is_array($.seq))
         {
-            for (i=0,l=$.seq.length; i<l; i++) $.seq[i].rewind(dir);
+            for (i=0,l=$.seq.length; i<l; i++) if ($.seq[i] instanceof Iterator) $.seq[i].rewind(dir);
             $.seqindex = 0 > dir ? l-1 : 0;
             do{
-                item = $.seq[$.seqindex].next(dir);
-                if (null == item) $.seqindex += dir;
+                item = 0<=$.seqindex && $.seqindex<l ? ("List" === self.name ? $.seq[$.seqindex] : $.seq[$.seqindex].next(dir)) : null;
+                if ((0<=$.seqindex && $.seqindex<l) && ("List" === self.name || null == item)) $.seqindex += dir;
             }while ((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length));
             self.__item = item;
             self._item = self.output(self.__item);
@@ -17701,14 +17732,15 @@ Iterator = Abacus.Iterator = Class({
         dir = -1===dir ? -1 : 1;
         if (is_array($.seq))
         {
-            do{
+            do {
                 curr = self.__item;
                 next = $.sub ? self._subitem : self._item;
                 item = null;
+                //if ("List" === self.name) $.seqindex += dir;
                 while ((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length))
                 {
-                    item = $.seq[$.seqindex].hasNext(dir) ? $.seq[$.seqindex].next(dir) : null;
-                    if (null == item) $.seqindex += dir;
+                    item = "List" === self.name ? $.seq[$.seqindex] : ($.seq[$.seqindex].hasNext(dir) ? $.seq[$.seqindex].next(dir) : null);
+                    if ("List" === self.name || null == item) $.seqindex += dir;
                 }
                 if ((null == item) && (0>$.seqindex || $.seqindex>=$.seq.length) && $.sub && $.sub.hasNext(dir))
                 {
@@ -17718,12 +17750,12 @@ Iterator = Abacus.Iterator = Class({
                 self.__item = item;
                 self._item = self.output(self.__item);
                 self._subitem = $.sub && (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
-            }while ($.filter && (null!=next) && !$.filter.apply(next, self));
+            } while ($.filter && (null!=next) && !$.filter.apply(next, self));
             return next;
         }
         else if (is_callable($.generator))
         {
-            do{
+            do {
                 curr = self.__item;
                 next = $.sub ? self._subitem : self._item;
                 // generator should return null as result if finished
@@ -17735,7 +17767,7 @@ Iterator = Abacus.Iterator = Class({
                 }
                 self._item = self.output(self.__item);
                 self._subitem = $.sub && (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
-            }while ($.filter && (null!=next) && !$.filter.apply(next, self));
+            } while ($.filter && (null!=next) && !$.filter.apply(next, self));
             return next;
         }
         else
@@ -18039,6 +18071,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     O = Arithmetic.O, seq = $.seq, i, l;
 
                 if (!seq || !seq.length) return null;
+                index = null == index ? null : Arithmetic.num(index);
                 if (null==index || !Arithmetic.inside(index, Arithmetic.J, null!=$.count ? $.count : klass.count(n, $))) return null;
 
                 l = seq.length; i = 0;
@@ -19670,6 +19703,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 div = Arithmetic.div, val = Arithmetic.val,
                 r, b, i, t, item, nd;
 
+            index = null == index ? null : Arithmetic.num(index);
             if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
                 return null;
 
@@ -20117,6 +20151,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 sub = Arithmetic.sub, val = Arithmetic.val,
                 item, r, i, ii, b, t, N, M;
 
+            index = null == index ? null : Arithmetic.num(index);
             if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
                 return null;
 
@@ -20758,6 +20793,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 order = $ && null!=$.order ? $.order : LEX;
             n = n[0];
 
+            index = null == index ? null : Arithmetic.num(index);
             if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
                 return null;
 
@@ -21131,12 +21167,17 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             return item;
         }
         ,count: function(n, $) {
-             return pow2(n);
+             return 0 > n ? Abacus.Arithmetic.O : pow2(n);
         }
         ,initial: function(n, $, dir) {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
-            var item, klass = this, order = $ && null!=$.order ? $.order : LEX;
+            var item, klass = this,
+                type = $ && $.type ? $.type : "subset",
+                order = $ && null!=$.order ? $.order : LEX;
+
+            if (0 > n) return null;
+
             dir = -1 === dir ? -1 : 1;
             if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
                 dir = -dir;
@@ -21144,14 +21185,17 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             // O(n)
             // fixed-length item, with effective length as extra last pos
             item = [];
-            if ($ && "binary" === $.type)
+            if (0 < n)
             {
-                //item = 0 > dir ? array(n, 0, 1) : [];
-                if (0>dir) item = array(n, 0, 1);
-            }
-            else
-            {
-                if (0>dir) { item = [n-1]; }
+                if (("binary" === type) && !(MINIMAL & order))
+                {
+                    //item = 0 > dir ? array(n, 0, 1) : [];
+                    if (0>dir) item = array(n, 0, 1);
+                }
+                else
+                {
+                    if (0>dir) { item = [n-1]; }
+                }
             }
 
             item = klass.DUAL(item, n, $, 1);
@@ -21160,7 +21204,37 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         }
         ,succ: function(item, index, n, $, dir, SI) {
             if (null == item) return null;
-            return $ && "binary" === $.type ? CombinatorialIterator.succ.call(this, item, index, n, $, dir) : next_subset(item, n, -1 === dir ? -1 : 1, $ && null!=$.order?$.order:LEX);
+            var klass = this, Arithmetic = Abacus.Arithmetic, i, item, count,
+                type = $ && $.type ? $.type : "subset",
+                order = $ && null != $.order ? $.order : LEX;
+            if (0 >= n) return null;
+            if (MINIMAL & order)
+            {
+                if (null != index)
+                {
+                    count = null != $.count ? $.count : klass.count(n, $);
+                    index = Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I);
+                    if (Arithmetic.inside(index, Arithmetic.J, count))
+                    {
+                        if (REVERSED & order) index = Arithmetic.sub(Arithmetic.sub(count, Arithmetic.I), index);
+                        index = grayn(index);
+                        // O(n)
+                        i = 0; item = new Array(n+1); item[n] = 0;
+                        while (i<n && Arithmetic.gt(index, Arithmetic.O))
+                        {
+                            if (Arithmetic.gt(Arithmetic.band(index,1),Arithmetic.O)) item[item[n]++] = i;
+                            i++; index = Arithmetic.shr(index,  1);
+                        }
+                        item = klass.DUAL(item, n, $, 1);
+                        return item;
+                    }
+                }
+                return null;
+            }
+            else
+            {
+                return "binary" === type ? CombinatorialIterator.succ.call(this, item, index, n, $, dir) : next_subset(item, n, -1 === dir ? -1 : 1, order);
+            }
         }
         ,rand: function(n, $) {
             var klass = this, rndInt = Abacus.Math.rndInt, item;
@@ -21182,19 +21256,24 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
                 add = Arithmetic.add, sub = Arithmetic.sub,
+                type = $ && $.type ? $.type : "subset",
                 order = $ && null!=$.order ? $.order : LEX,
+                is_binary = "binary" === type,
+                is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order)),
                 index = J, x, y, i, j, k, l, dict;
 
-            if (!$ || !item || 0>=n) return J;
+            if (!$ || !item || 0>n) return J;
 
             item = klass.DUAL(item, n, $, -1);
             if (n+1===item.length)
             {
-                var $ = this.$, order = $.order || LEX, is_binary = "binary"===$.type,
-                    is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order));
                 item = (is_binary && !is_reflected) || (is_reflected && !is_binary) ? item.slice(n-item[n],n) : item.slice(0,item[n]);
             }
-            if ("binary" === $.type)
+            if (0 === n)
+            {
+                index = O;
+            }
+            else if (MINIMAL & order)
             {
                 // O(n)
                 l = item/*[n]*/.length;
@@ -21203,7 +21282,23 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 {
                     x = item[i];
                     if (0 > x || x >= n || 1 === dict[x]) return J;
-                    index = add(index, subsetb_rank(n, x));
+                    index = add(index, subset_bin_rank(n, x));
+                    dict[x] = 1;
+                }
+                index = igrayn(index);
+                if (REVERSED&order)
+                    index = sub($ && null!=$.last?$.last:sub(klass.count(n, $), I), index);
+            }
+            else if (is_binary)
+            {
+                // O(n)
+                l = item/*[n]*/.length;
+                dict = {};
+                for (index = O,i = 0; i < l; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    index = add(index, subset_bin_rank(n, x));
                     dict[x] = 1;
                 }
                 if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
@@ -21218,7 +21313,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 {
                     x = item[i];
                     if (0 > x || x >= n || 1 === dict[x]) return J;
-                    index = add(index, subset_rank(n, x, y));
+                    index = add(index, subset_lex_rank(n, x, y));
                     dict[x] = 1; y = x;
                 }
                 if (REVERSED & order)
@@ -21230,49 +21325,68 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             var klass = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
                 band = Arithmetic.band, shr = Arithmetic.shr, gt = Arithmetic.gt,
                 add = Arithmetic.add, sub = Arithmetic.sub, gte = Arithmetic.gte,
+                type = $ && $.type ? $.type : "subset",
                 order = $ && null!=$.order ? $.order : LEX,
                 count = $ && null!=$.count ? $.count : klass.count(n, $),
                 item, i, j, y, c = O, c0;
 
-            if (!$ || 0 >= n || null==index || !Arithmetic.inside(index, Arithmetic.J, count))
+            index = null == index ? null : Arithmetic.num(index);
+            if (!$ || 0 > n || null==index || !Arithmetic.inside(index, Arithmetic.J, count))
                 return null;
 
             item = new Array(n+1)/*[]*/; item[n] = 0;
 
-            if ("binary" === $.type)
+            if (0 < n)
             {
-                if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                    index = sub($ && null!=$.last?$.last:sub(count, I), index);
-
-                // O(n)
-                i = 0;
-                while (i<n && gt(index, O))
+                if (MINIMAL & order)
                 {
-                    if (gt(band(index,1),O)) item[item[n]++] = i;//item.push(i);
-                    i++; index = shr(index, 1);
-                }
-            }
-            else
-            {
-                if (REVERSED&order)
-                    index = sub($ && null!=$.last?$.last:sub(count, I), index);
+                    if (REVERSED&order)
+                        index = sub($ && null!=$.last?$.last:sub(count, I), index);
+                    index = grayn(index);
 
-                // O(n)
-                y = null; i = 0; c = O;
-                while (i<n && gt(index, O))
-                {
-                    // find the largest less than
-                    j = i; c = c0 = subset_rank(n, i, y);
-                    while (i+1<n && gt(index, c0))
+                    // O(n)
+                    i = 0;
+                    while (i<n && gt(index, O))
                     {
-                        j = i; c = c0;
-                        c0 = subset_rank(n, ++i, y);
+                        if (gt(band(index,1),O)) item[item[n]++] = i;//item.push(i);
+                        i++; index = shr(index, 1);
                     }
-                    if (gte(index, c0)) { c = c0; j = i; }
+                }
+                else if ("binary" === type)
+                {
+                    if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+                        index = sub($ && null!=$.last?$.last:sub(count, I), index);
 
-                    item[item[n]++] = j;
-                    y = j;
-                    index = sub(index, c);
+                    // O(n)
+                    i = 0;
+                    while (i<n && gt(index, O))
+                    {
+                        if (gt(band(index,1),O)) item[item[n]++] = i;//item.push(i);
+                        i++; index = shr(index, 1);
+                    }
+                }
+                else
+                {
+                    if (REVERSED&order)
+                        index = sub($ && null!=$.last?$.last:sub(count, I), index);
+
+                    // O(n)
+                    y = null; i = 0; c = O;
+                    while (i<n && gt(index, O))
+                    {
+                        // find the largest less than
+                        j = i; c = c0 = subset_lex_rank(n, i, y);
+                        while (i+1<n && gt(index, c0))
+                        {
+                            j = i; c = c0;
+                            c0 = subset_lex_rank(n, ++i, y);
+                        }
+                        if (gte(index, c0)) { c = c0; j = i; }
+
+                        item[item[n]++] = j;
+                        y = j;
+                        index = sub(index, c);
+                    }
                 }
             }
             item = item.slice(0, item[n]);
@@ -21321,6 +21435,9 @@ function next_subset(item, N, dir, order)
 {
     //maybe "use asm"
     var LEN = N, MIN = 0, MAX = N-1, IMIN, IMAX, t, DI, i0, i1, a, b;
+
+    if (0 >= N) return null;
+
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
     DI = 1; a = 1; b = 0;
@@ -21490,14 +21607,18 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return item;
         }
         ,count: function(n, $) {
-            var Arithmetic = Abacus.Arithmetic,
+            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
                 M = $ && $["max="] ? $["max="]|0 : null,
                 W = $ && $["min="] ? $["min="]|0 : null,
                 K = $ && $["parts="] ? $["parts="]|0 : null,
                 type = $ && $.type ? $.type : "partition";
-            if (0 === n)
+            if (0 > n)
             {
-                return (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? Arithmetic.I : Arithmetic.O;
+                return O;
+            }
+            else if (0 === n)
+            {
+                return (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? Arithmetic.I : O;
             }
             else
             {
@@ -22060,12 +22181,13 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 item = [], O = Arithmetic.O, i, x, w, m, c, total, last,
                 LEN = $ && $.dimension ? $.dimension : 1;
 
-            index = Arithmetic.num(index);
+            index = null == index ? null : Arithmetic.num(index);
             total = $ && null!=$.count ? $.count : klass.count(n, $);
             last = Arithmetic.sub(total, 1);
 
             if (
                 (0 > n)
+                || (null == index)
                 || Arithmetic.lt(index, O) || Arithmetic.gt(index, last)
                 || (K && M && W && ((W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (M && W && ((W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
@@ -22163,7 +22285,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         {
             itemlen = item.length;
             item = item.slice();
-            if (M || W)
+            if (null != M || null != W)
             {
                 for (x=0,y=0,z=0; x<itemlen; x++)
                 {
@@ -22550,7 +22672,79 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
             if (M && W)
             {
                 if (M === W) return null; // there is only one, if any
-                return null;
+                if (COLEX & order)
+                {
+                    item = null;
+                }
+                else
+                {
+                    i = i1-DI; j = i1; d = item[i1]-W; rem = item[i1]; k = 1;
+                    while (MIN<=i && i<=MAX && (W===item[i] || M<item[j]+1))
+                    {
+                        rem += item[i];
+                        k++;
+                        j = i;
+                        i -= DI;
+                    }
+                    if (MIN > i || i > MAX)
+                    {
+                        item = null;
+                    }
+                    else
+                    {
+                        if (0 < d)
+                        {
+                            m = rem+1-W*(k-1);
+                            if (1 === item[INFO][NMIN] && W === item[j] && (k-1)*M+W < rem+1)
+                            {
+                                rem += item[i]-W; item[i] = W;
+                                item[INFO][NMIN]++;
+                            }
+                            else if (1 === item[INFO][NMAX] && M === item[i] && M > m)
+                            {
+                                item[i] = stdMath.max(item[j], item[i1]); rem += M-item[i];
+                                if (M !== item[i]) item[INFO][NMAX]--;
+                                if (W === item[i]) item[INFO][NMIN]++;
+                            }
+                            else
+                            {
+                                if (M === item[i]) item[INFO][NMAX]--;
+                                rem++; item[i]--;
+                                if (W === item[i]) item[INFO][NMIN]++;
+                            }
+                            m = rem-W*k;
+                            while (0 < rem && MIN <= j && j <= MAX)
+                            {
+                                if (W === item[j]) item[INFO][NMIN]--;
+                                if (M === item[j]) item[INFO][NMAX]--;
+                                item[j] = stdMath.min(M, W+m);
+                                rem -= item[j]; m -= item[j]-W;
+                                if (M === item[j]) item[INFO][NMAX]++;
+                                if (W === item[j]) item[INFO][NMIN]++;
+                                j += DI;
+                            }
+                        }
+                        else
+                        {
+                            if (1 === item[INFO][NMIN] && W === item[j])
+                            {
+                                item[j] = item[i]; item[i] = W;
+                            }
+                            else if (1 === item[INFO][NMAX] && M === item[i] && M > item[j]+1)
+                            {
+                                item[i] = item[j]; item[j] = M;
+                            }
+                            else
+                            {
+                                if (M === item[i]) item[INFO][NMAX]--;
+                                if (W === item[j]) item[INFO][NMIN]--;
+                                item[i]--; item[j]++;
+                                if (M === item[j]) item[INFO][NMAX]++;
+                                if (W === item[i]) item[INFO][NMIN]++;
+                            }
+                        }
+                    }
+                }
             }
             else if (W)
             {
@@ -22563,18 +22757,19 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     m = item[i1];
                     if (n-W*(K-1) > m)
                     {
-                        if (W === item[i1]) item[INFO][NMIN]--;
-                        item[i1] = W; i = i1;
-                        item[INFO][NMIN]++;
-                        rem = m-W;
+                        i = i1-DI;
                         while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
-                        item[i]--; rem++;
-                        if (W === item[i]) item[INFO][NMIN]++;
-                        if (0 < rem && MIN <= i+DI && i+DI <= MAX)
+                        j = i+DI;
+                        if (1 === item[INFO][NMIN] && W === item[j] && j === i1)
                         {
-                            if (W === item[i+DI]) item[INFO][NMIN]--;
-                            item[i+DI] = W+rem;
-                            if (W === item[i+DI]) item[INFO][NMIN]++;
+                            item[j] = item[i]; item[i] = W;
+                        }
+                        else
+                        {
+                            if (W === item[j]) item[INFO][NMIN]--;
+                            item[i]--; item[i1] = W; item[j] = 1+m;
+                            if (W === item[i]) item[INFO][NMIN]++;
+                            if (item[i1] === W && W !== m) item[INFO][NMIN]++;
                         }
                     }
                     // last
@@ -22590,7 +22785,13 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 else
                 {
                     i = i1-DI; j = i1; d = item[i1]-1; rem = item[i1]; k = 1;
-                    while (MIN<=i && i<=MAX && (1===item[i] || M<item[j]+1)) {rem+=item[i]; k++; j = i; i-=DI;}
+                    while (MIN<=i && i<=MAX && (1===item[i] || M<item[j]+1))
+                    {
+                        rem += item[i];
+                        k++;
+                        j = i;
+                        i -= DI;
+                    }
                     if (MIN > i || i > MAX)
                     {
                         item = null;
@@ -22601,7 +22802,7 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         {
                             if (1 === item[INFO][NMAX] && M === item[i] && M > rem-(k-1)+1)
                             {
-                                item[i] = stdMath.max(item[j], item[i1]); rem+=M-item[i];
+                                item[i] = stdMath.max(item[j], item[i1]); rem += M-item[i];
                                 if (M !== item[i]) item[INFO][NMAX]--;
                             }
                             else
@@ -22808,96 +23009,129 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
             {
                 item = null;
             }
-            else if (M || W)
+            else if (M && W)
             {
-                if (M && W && (M === W)) return null; // there is only one, if any
-
-                if (W && !M)
+                if (M === W) return null; // there is only one, if any
+                j = i1; k = 1;
+                i = j-DI; d = M-item[j]; rem = item[j];
+                while (MIN <= i && i <= MAX && (M < item[i]+1 || W === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
+                if (MIN > i || i > MAX)
                 {
-                    if (n-W*(K-1) > item[i0])
-                    {
-                        i = i1;
-                        while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
-                        rem = m = item[i];
-                        if (W === item[i1]) item[INFO][NMIN]--;
-                        item[i] = W; rem -= W;
-                        rem += item[i1];
-                        item[i1] = m-1;
-                        rem -= item[i1];
-                        if (i !== i1) item[INFO][NMIN]++;
-                        if (W === item[i1]) item[INFO][NMIN]++;
-                        if (0 < rem && MIN <= i-DI && i-DI <= MAX)
-                        {
-                            if (W === item[i-DI]) item[INFO][NMIN]--;
-                            item[i-DI] += rem;
-                        }
-                    }
-                    // last
-                    else item = null;
+                    item = null;
                 }
                 else
                 {
-                    w = W ? W : 1; j = i1; k = 1;
-                    i = j-DI; d = M-item[j]; rem = item[j];
-                    while (MIN <= i && i <= MAX && ((M && M < item[i]+1) || w === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
-                    if (MIN > i || i > MAX)
+                    if (0 < d)
                     {
-                        item = null;
-                    }
-                    else
-                    {
-                        if (0 < d)
+                        m = rem-1-W*(k-1);
+                        if (1 === item[INFO][NMIN] && W === item[i] && k <= m)
                         {
-                            if (M && 1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > rem-w*(k-1)-1)
-                            {
-                                item[j] = item[i]; item[i] = M; rem-=M-item[j];
-                            }
-                            else
-                            {
-                                if (W === item[i]) item[INFO][NMIN]--;
-                                item[i]++; rem--;
-                                if (M === item[i]) item[INFO][NMAX]++;
-                            }
-                            l = 0; i = i1;
-                            while (MIN<=i && i<=MAX && w <= rem)
-                            {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                if (W === item[i]) item[INFO][NMIN]--;
-                                item[i] = stdMath.min(M, stdMath.max(w, rem-w*(k-l-1)));
-                                rem -= item[i];
-                                if (M === item[i]) item[INFO][NMAX]++;
-                                if (W === item[i]) item[INFO][NMIN]++;
-                                i -= DI; l++;
-                            }
-                            if (0 < rem)
-                            {
-                                if (W && 1 === item[INFO][NMIN] && W === item[i1])
-                                {
-                                    item[i1] = item[i1-DI]; item[i1-DI] = W;
-                                }
-                                if (W === item[i1]) item[INFO][NMIN]--;
-                                item[i1] += rem;
-                                rem = 0;
-                            }
+                            item[i] = item[i1]; item[i1] = W; rem -= item[i]-W;
+                        }
+                        else if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > m)
+                        {
+                            item[j] = item[i]; item[i] = M; rem -= M-item[j];
                         }
                         else
                         {
-                            if (W && 1 === item[INFO][NMIN] && W === item[j])
-                            {
-                                item[j] = item[i]; item[i] = W;
-                            }
-                            else if (M && 1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
-                            {
-                                item[j] = item[i]; item[i] = M;
-                            }
-                            else
-                            {
-                                if (M === item[j]) item[INFO][NMAX]--;
-                                if (W === item[i]) item[INFO][NMIN]--;
-                                item[i]++; item[j]--;
-                                if (W === item[j]) item[INFO][NMIN]++;
-                                if (M === item[i]) item[INFO][NMAX]++;
-                            }
+                            if (W === item[i]) item[INFO][NMIN]--;
+                            item[i]++; rem--;
+                            if (M === item[i]) item[INFO][NMAX]++;
+                        }
+                        i = i1; m = rem-W*k;
+                        while (MIN<=i && i<=MAX && 0<rem)
+                        {
+                            if (M === item[i]) item[INFO][NMAX]--;
+                            if (W === item[i]) item[INFO][NMIN]--;
+                            item[i] = stdMath.min(M, W+m);
+                            rem -= item[i]; m -= item[i]-W;
+                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (W === item[i]) item[INFO][NMIN]++;
+                            i -= DI; l++;
+                        }
+                    }
+                    else
+                    {
+                        if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
+                        {
+                            item[j] = item[i]; item[i] = M;
+                        }
+                        else
+                        {
+                            if (M === item[j]) item[INFO][NMAX]--;
+                            if (W === item[i]) item[INFO][NMIN]--;
+                            item[i]++; item[j]--;
+                            if (W === item[j]) item[INFO][NMIN]++;
+                            if (M === item[i]) item[INFO][NMAX]++;
+                        }
+                    }
+                }
+            }
+            else if (W)
+            {
+                if (n-W*(K-1) > item[i0])
+                {
+                    i = i1;
+                    while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
+                    j = i-DI;
+                    if (1 === item[INFO][NMIN] && W === item[j])
+                    {
+                        item[j] = item[i]; item[i] = W;
+                    }
+                    else
+                    {
+                        if (W === item[j]) item[INFO][NMIN]--;
+                        item[i]--; item[j]++;
+                        if (W === item[i]) item[INFO][NMIN]++;
+                        m = item[i]; item[i] = item[i1]; item[i1] = m;
+                    }
+                }
+                // last
+                else item = null;
+            }
+            else if (M)
+            {
+                j = i1; k = 1;
+                i = j-DI; d = M-item[j]; rem = item[j];
+                while (MIN <= i && i <= MAX && ((M && M < item[i]+1) || 1 === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
+                if (MIN > i || i > MAX)
+                {
+                    item = null;
+                }
+                else
+                {
+                    if (0 < d)
+                    {
+                        if (M && 1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > rem-(k-1)-1)
+                        {
+                            item[j] = item[i]; item[i] = M; rem-=M-item[j];
+                        }
+                        else
+                        {
+                            item[i]++; rem--;
+                            if (M === item[i]) item[INFO][NMAX]++;
+                        }
+                        l = 0; i = i1;
+                        while (MIN<=i && i<=MAX && 0<rem)
+                        {
+                            if (M === item[i]) item[INFO][NMAX]--;
+                            item[i] = stdMath.min(M, rem-(k-l-1));
+                            rem -= item[i];
+                            if (M === item[i]) item[INFO][NMAX]++;
+                            i -= DI; l++;
+                        }
+                    }
+                    else
+                    {
+                        if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
+                        {
+                            item[j] = item[i]; item[i] = M;
+                        }
+                        else
+                        {
+                            if (M === item[j]) item[INFO][NMAX]--;
+                            item[i]++; item[j]--;
+                            if (M === item[i]) item[INFO][NMAX]++;
                         }
                     }
                 }

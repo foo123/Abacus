@@ -1,6 +1,6 @@
 # Abacus
 
-A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Node.js / Browser / XPCOM Javascript, Python, Java
+A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Javascript, Python
 
 
 **version 1.0.6** in progress (~ 287kB minified, ~ 74kB zipped)
@@ -166,6 +166,7 @@ See the comments in the code for algorithms and references used.
 * [Buchberger's algorithm, wikipedia](https://en.wikipedia.org/wiki/Buchberger%27s_algorithm)
 * [Faugère's F4 and F5 algorithms, wikipedia](https://en.wikipedia.org/wiki/Faug%C3%A8re%27s_F4_and_F5_algorithms)
 * [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
+* [Roots of multivariate polyomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
 * [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
 * [Fast Methods for Large Scale Singular Value Decomposition, Nela Bosner (PhD thesis)](https://web.math.pmf.unizg.hr/~nela/doktorat.pdf)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
@@ -281,6 +282,7 @@ console.log(m.inv().mul(m).toString());
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
+* support multivariate polynomial GCD, (approximate) root finding (TODO)
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**

@@ -48,6 +48,16 @@ echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
 
+echo('o.order("minimal")');
+print_all( o.order("minimal"), 1, function( item ){
+    return [item.join(','), o.index()-(o.hasNext()?1:0), Abacus.Subset.rank(item, o.n, o.$), Abacus.Subset.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join(',')];
+});
+
+echo('o.order("minimal,reversed")');
+print_all( o.order("minimal,reversed"), 1, function( item ){
+    return [item.join(','), o.index()-(o.hasNext()?1:0), Abacus.Subset.rank(item, o.n, o.$), Abacus.Subset.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join(',')];
+});
+
 echo('o.order("lex,reflected")');
 print_all( o.order("lex,reflected") );
 
@@ -100,6 +110,16 @@ print_all( o.rewind(), 1, function( item ){
 echo('backwards');
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1 );
+
+echo('o.order("minimal")');
+print_all( o.order("minimal"), 1, function( item ){
+    return [item.join(','), o.index()-(o.hasNext()?1:0), Abacus.Subset.rank(item, o.n, o.$), Abacus.Subset.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join(',')];
+});
+
+echo('o.order("minimal,reversed")');
+print_all( o.order("minimal,reversed"), 1, function( item ){
+    return [item.join(','), o.index()-(o.hasNext()?1:0), Abacus.Subset.rank(item, o.n, o.$), Abacus.Subset.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join(',')];
+});
 
 echo('o.order("lex,reflected")');
 print_all( o.order("lex,reflected") );

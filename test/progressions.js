@@ -24,6 +24,18 @@ var o;
 echo('Abacus.Progressions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
+echo('o=Abacus.Iterator([0,1,2,3,4,5,6,7,8,9])');
+o=Abacus.Iterator([0,1,2,3,4,5,6,7,8,9]);
+echo('o.total()');
+echo(o.total());
+echo('o.rewind()');
+print_all(o.rewind());
+echo('o.rewind(-1)');
+print_all(o.rewind(-1), -1);
+echo('o.dispose()');
+o.dispose();
+echo('---');
+
 echo('o=Abacus.Progression(1,1,10)');
 o=Abacus.Progression(1,1,10);
 echo('o.total()');
