@@ -3794,9 +3794,9 @@ function solvediophs(a, b, with_param, with_free_vars)
     // concat with zeroes
     if (m > b.length) b = b.concat(array(m-b.length, function(i){return O;}));
     // A*X = B <=> iref(A.t|I) = R|T <=> iif R.t*P = B has int solutions P => X = T.t*P
-    tmp = a.t().concat(Matrix.I(ring, k)).ref(true, [k, m]);
+    tmp = a.t()/*.concat(Matrix.I(ring, k))*/.ref(true/*, [k, m]*/);
     ref = tmp[0]; adj = tmp[3]; pivots = tmp[1]; rank = pivots.length;
-    Tt = ref.slice(0,m,-1,-1).t(); Rt = ref.slice(0,0,k-1,m-1).t();
+    Tt = adj/*ref.slice(0,m,-1,-1)*/.t(); Rt = ref/*ref.slice(0,0,k-1,m-1)*/.t();
     p = new Array(k); free_vars = new Array(k-rank);
 
     // R.t*P can be easily solved by substitution
@@ -16819,9 +16819,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
             J = ring.MinusOne();
             rows = self.nr; columns = self.nc;
             dim = columns;
-            // original dimensions, eg when having augmented matrix
+            // original dimensions, eg when having augmented/adjoint matrix
             if (is_array(odim)) dim = stdMath.min(dim, odim[1]);
-            m = self.concat(Matrix.I(ring, columns)).val;
+            m = self.concat(Matrix.I(ring, rows)).val;
             pivots = new Array(dim);
             lead = 0; leadc = 0; det = I;
             find_dupl = function find_dupl(k0, k) {
@@ -16916,7 +16916,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             if (pl<dim) det = O;
 
             m = new Matrix(ring, m);
-            adj = m.slice(0, columns, rows-1, 2*columns-1);
+            adj = m.slice(0, columns, rows-1, rows+columns-1);
             m = m.slice(0, 0, rows-1, columns-1);
             // truncate if needed
             if (pivots.length > pl) pivots.length = pl;
@@ -16962,7 +16962,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                         for (j=0,l=a.val[i].length; j<l; j++) a.val[i][j] = a.val[i][j].div(g);
                 }
             }
-            adj = a.slice(0, columns, rows-1, 2*columns-1);
+            adj = a.slice(0, columns, rows-1, rows+columns-1);
             a = a.slice(0, 0, rows-1, columns-1);
             self._rref = [a, pivots, det, adj];
         }
