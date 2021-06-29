@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Javascript, Python
 
 
-**version 1.0.6** in progress (~ 287kB minified, ~ 74kB zipped)
+**version 1.0.6** in progress (~ 317kB minified)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -129,6 +129,7 @@ See the comments in the code for algorithms and references used.
 * [Analytic Combinatorics, Philippe Flajolet, Robert Sedgewick](http://algo.inria.fr/flajolet/Publications/book.pdf) can also be used to produce combinatorial generation algorithms instead of just generating functions for counting and statistics
 * [Gray Code, wikipedia](https://en.wikipedia.org/wiki/Gray_code)
 * [A Survey of Combinatorial Gray Codes, Carla Savage](http://www4.ncsu.edu/~savage/AVAILABLE_FOR_MAILING/survey.pdf)
+* [Generalized  Gray  Codes  with  Applications, DAH-JYH GUAN](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1344&rep=rep1&type=pdf)
 * [A SIMPLE SEQUENCING AND RANKING METHOD THAT WORKS ON ALMOST ALL GRAY CODES, Timothy R. Walsh](http://www.info2.uqam.ca/~walsh_t/papers/sequencing_and_ranking.pdf)
 * [Gray Code Enumeration of Families of Integer Partitions, David Rasmussen, Carla D. Savage, Douglas B. West](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.212.4134&rep=rep1&type=pdf)
 * [A GRAY CODE FOR SET PARTITIONS, Richard KAYE](http://www.kaye.to/rick/A%20Gray%20Code%20For%20Set%20Partitions.pdf)
@@ -183,6 +184,8 @@ See the comments in the code for algorithms and references used.
 
 ```javascript
 let o = Abacus.Permutation(4);
+console.log(String(o.total()));
+console.log('---');
 for (let item of o)
 {
     console.log(item.join(','));
@@ -190,6 +193,8 @@ for (let item of o)
 ```
 
 ```text
+24
+---
 0,1,2,3
 0,1,3,2
 0,2,1,3
@@ -218,6 +223,8 @@ for (let item of o)
 
 ```javascript
 let o = Abacus.Partition(6);
+console.log(String(o.total()));
+console.log('---');
 for (let item of o)
 {
     console.log(item.join('+'));
@@ -225,6 +232,8 @@ for (let item of o)
 ```
 
 ```text
+11
+---
 1+1+1+1+1+1
 2+1+1+1+1
 2+2+1+1
@@ -281,11 +290,14 @@ console.log(m.inv().mul(m).toString());
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * add Rank Factorisation **[DONE]**
 * fix `ginv` (Moore-Penrose Inverse) computation **[DONE]**
+* implement (faster) numeric `EVD/SVD` computation (TODO)
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
 * support multivariate polynomial GCD, (approximate) root finding (TODO)
+* implement `Aberth` polynomial root finding algorithm (TODO)
+* implement `LLL` algorithm (TODO)
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
@@ -293,8 +305,5 @@ console.log(m.inv().mul(m).toString());
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
-* implement (faster) numeric `SVD` computation (TODO)
-* implement `Aberth` algorithm (TODO)
-* implement `LLL` algorithm (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)

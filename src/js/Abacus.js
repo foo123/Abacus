@@ -1,7 +1,7 @@
 /**
 *
 *   Abacus
-*   Combinatorics and Algebraic Number Theory Symbolic Computation library for Node.js/Browser/XPCOM Javascript, Python, Java
+*   Combinatorics and Algebraic Number Theory Symbolic Computation library for Javascript
 *   @version: 1.0.6
 *   https://github.com/foo123/Abacus
 **/
@@ -274,16 +274,48 @@ function gray(b, a, n, a0, a1)
         b[i] = (ai + s) % n; s += n-b[i]; return b;
     }, b, a, a0, a1);
 }
+function igray(b, a, n, a0, a1)
+{
+    if (null == a) return b;
+    var s = 0;
+    return operate(is_array(n) ? function(b, ai, i){
+        b[i] = n[i]>0 ? (ai + s) % n[i] : 0; s += ai; return b;
+    } : function(b, ai, i){
+        b[i] = (ai + s) % n; s += ai; return b;
+    }, b, a, a0, a1);
+}
+/*function ngray(b, a, n, a0, a1)
+{
+    // adapted from https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1344&rep=rep1&type=pdf
+    if (null == a) return b;
+    var s = 0;
+    return operate(is_array(n) ? function(b, ai, i){
+        b[i] = s & 1 ? (0 < n[i] ? n[i]-1-ai : 0) : ai; s += b[i]; return b;
+    } : function(b, ai, i){
+        b[i] = s & 1 ? n-1-ai : ai; s += b[i]; return b;
+    }, b, a, a0, a1);
+}
+function ingray(b, a, n, a0, a1)
+{
+    // adapted from https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1344&rep=rep1&type=pdf
+    if (null == a) return b;
+    var s = 0;
+    return operate(is_array(n) ? function(b, ai, i){
+        b[i] = s & 1 ? (0 < n[i] ? n[i]-1-ai : 0) : ai; s += ai; return b;
+    } : function(b, ai, i){
+        b[i] = s & 1 ? n-1-ai : ai; s += ai; return b;
+    }, b, a, a0, a1);
+}*/
 function grayn(n)
 {
-    // adapted from https://www.geeksforgeeks.org/decimal-equivalent-gray-code-inverse/
+    // adapted from https://en.wikipedia.org/wiki/Gray_code
     var Arithmetic = Abacus.Arithmetic;
     n = Arithmetic.num(n);
     return Arithmetic.xor(n, Arithmetic.shr(n, Arithmetic.I));
 }
 function igrayn(n)
 {
-    // adapted from https://www.geeksforgeeks.org/decimal-equivalent-gray-code-inverse/
+    // adapted from https://en.wikipedia.org/wiki/Gray_code
     var Arithmetic = Abacus.Arithmetic, inv = Arithmetic.O;
     n = Arithmetic.num(n);
     // Taking xor until n becomes zero
@@ -3751,7 +3783,7 @@ function solvediophs(a, b, with_param, with_free_vars)
     // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
     var ring = Ring.Z(), O = ring.Zero(), I = ring.One(),
         m, k, solutions = null, symbol = is_string(with_param) && with_param.length ? with_param : 'i',
-        tmp, ref, pivots, rank, Rt, Tt, i, j, t, p, free_vars;
+        tmp, ref, adj, pivots, rank, Rt, Tt, i, j, t, p, free_vars;
 
     if (!is_instance(a, Matrix)) a = Matrix(ring, a);
     else if (!is_class(a.ring.NumberClass, Integer)) a = Matrix(ring, a);
@@ -3763,7 +3795,7 @@ function solvediophs(a, b, with_param, with_free_vars)
     if (m > b.length) b = b.concat(array(m-b.length, function(i){return O;}));
     // A*X = B <=> iref(A.t|I) = R|T <=> iif R.t*P = B has int solutions P => X = T.t*P
     tmp = a.t().concat(Matrix.I(ring, k)).ref(true, [k, m]);
-    ref = tmp[0]; pivots = tmp[1]; rank = pivots.length;
+    ref = tmp[0]; adj = tmp[3]; pivots = tmp[1]; rank = pivots.length;
     Tt = ref.slice(0,m,-1,-1).t(); Rt = ref.slice(0,0,k-1,m-1).t();
     p = new Array(k); free_vars = new Array(k-rank);
 
@@ -6597,7 +6629,7 @@ Abacus.Class = Class;
 
 // options
 Abacus.Options = {
-    MAXMEM: 100000,
+    MAXMEM: 10000,
     RANDOM: "index"
 };
 
@@ -6945,6 +6977,9 @@ Abacus.Util = {
     ,reflection: reflection
     ,reversion: reversion
     ,gray: gray
+    ,igray: igray
+    ,grayn: grayn
+    ,igrayn: igrayn
     ,finitedifference: fdiff
     ,partialsum: psum
     ,convolution: convolution
@@ -15629,8 +15664,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
             {
                 ring = self.ring;
                 // compute inverse through augmented rref (Gauss-Jordan method)
-                rref = self.concat(Matrix.I(ring, columns)).rref(false, [rows, columns]);
-                if (rref.val[rows-1][columns-1].equ(ring.Zero()))
+                rref = self.rref(true);
+                if (rref[0].val[rows-1][columns-1].equ(ring.Zero()))
                 {
                     // not full-rank, no inverse
                     self._i = false;
@@ -15639,8 +15674,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 {
                     // full-rank, has inverse, generaly in the field of fractions
                     field = ring.associatedField();
-                    self._i = Matrix(field, rref.slice(0, columns, rows-1, 2*columns-1).map(function(rref_ij, ij){
-                        return field.cast(rref_ij).div(field.cast(rref.val[ij[0]][ij[0]]));
+                    self._i = Matrix(field, rref[3].map(function(adj_ij, ij){
+                        return field.cast(adj_ij).div(field.cast(rref[0].val[ij[0]][ij[0]]));
                     }, true));
                     self._i._i = ring.isField() ? self : Matrix(field, self);
                 }
@@ -16770,7 +16805,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,ref: function(with_pivots, odim) {
         var self = this, ring, O, I, J, rows, columns, dim, pivots,
             det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min,
-            a, z, m, find_dupl;
+            a, z, m, adj, find_dupl;
         // fraction-free/integer row echelon form (ref) (also known as Hermite normal form), using fraction-free/integer row reduction or fraction-free gaussian elimination
         // https://en.wikipedia.org/wiki/Row_echelon_form
         // https://en.wikipedia.org/wiki/Gaussian_elimination
@@ -16786,7 +16821,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             dim = columns;
             // original dimensions, eg when having augmented matrix
             if (is_array(odim)) dim = stdMath.min(dim, odim[1]);
-            m = self.clone(true);
+            m = self.concat(Matrix.I(ring, columns)).val;
             pivots = new Array(dim);
             lead = 0; leadc = 0; det = I;
             find_dupl = function find_dupl(k0, k) {
@@ -16881,16 +16916,18 @@ Matrix = Abacus.Matrix = Class(INumber, {
             if (pl<dim) det = O;
 
             m = new Matrix(ring, m);
+            adj = m.slice(0, columns, rows-1, 2*columns-1);
+            m = m.slice(0, 0, rows-1, columns-1);
             // truncate if needed
             if (pivots.length > pl) pivots.length = pl;
 
-            self._ref = [m, pivots, det];
+            self._ref = [m, pivots, det, adj];
         }
         return with_pivots ? self._ref.slice() : self._ref[0];
     }
     ,rref: function(with_pivots, odim) {
         var self = this, ring, O, I, J, rows, columns, dim,
-            pivots, det, pl, lead, r, i, j, a, g, ref;
+            pivots, det, pl, lead, r, i, j, l, a, g, ref, adj;
         // fraction-free/integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from fraction-free row echelon form (gauss elimination)
         // https://en.wikipedia.org/wiki/Row_echelon_form
         if (null == self._rref)
@@ -16900,9 +16937,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
             I = ring.One();
             J = ring.MinusOne();
             rows = self.nr; columns = self.nc;
+            dim = columns;
+            // original dimensions, eg when having augmented matrix
+            if (is_array(odim)) dim = stdMath.min(dim, odim[1]);
             // build rref incrementaly from ref
             ref = self.ref(true, odim);
-            a = ref[0].clone();
+            a = ref[0].concat(ref[3]);
             pivots = ref[1]; det = ref[2];
             pl = pivots.length;
             for (r=0; r<pl; r++)
@@ -16918,11 +16958,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     if (a.val[i][pivots[i][1]].lt(O))
                         Matrix.ADDR(ring, a.val, i, i, O, J, pivots[i][1]);
                     // 2. remove any common factor, simplify
-                    if (ring.hasGCD() && !O.equ(g=ring.gcd(a.val[i])) && !I.equ(g))
-                        for (j=0; j<columns; j++) a.val[i][j] = a.val[i][j].div(g);
+                    if (ring.hasGCD() && !O.equ(g=ring.gcd(a.val[i].slice(0, dim))) && !I.equ(g))
+                        for (j=0,l=a.val[i].length; j<l; j++) a.val[i][j] = a.val[i][j].div(g);
                 }
             }
-            self._rref = [a, pivots, det];
+            adj = a.slice(0, columns, rows-1, 2*columns-1);
+            a = a.slice(0, 0, rows-1, columns-1);
+            self._rref = [a, pivots, det, adj];
         }
         return with_pivots ? self._rref.slice() : self._rref[0];
     }
@@ -17844,11 +17886,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             $.rand["sequence"] = 1;
             var minbase=Infinity, maxbase=-Infinity, mindim=Infinity, maxdim=-Infinity;
             operate(function(_,iter){
-                var b = iter.base(), d = iter.dimension();
-                if (b > maxbase) maxbase = b;
-                if (b < minbase) minbase = b;
-                if (d > maxdim) maxdim = d;
-                if (d < mindim) mindim = d;
+                var bmin = iter.base(true, "min"), bmax = iter.base(true, "max"),
+                    dmin = iter.dimension(true, "min"), dmax = iter.dimension(true, "max");
+                if (bmax > maxbase) maxbase = bax;
+                if (bmin < minbase) minbase = bmin;
+                if (dmax > maxdim) maxdim = dmax;
+                if (dmin < mindim) mindim = dmin;
             }, null, $.seq);
             $.base = $.maxbase = maxbase; $.minbase = minbase;
             $.dimension = $.maxdimension = maxdim; $.mindimension = mindim;
@@ -18251,9 +18294,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         $.base = $.base || 0;
         $.minbase = null != $.minbase ? $.minbase : $.base;
         $.maxbase = null != $.maxbase ? $.maxbase : $.base;
-        $.dimension = $.dimension || 0;
-        $.mindimension = null != $.mindimension ? $.mindimension : $.dimension;
-        $.maxdimension = null != $.maxdimension ? $.maxdimension : $.dimension;
+        $.dimension = stdMath.max(0, $.dimension || 0);
+        $.mindimension = stdMath.max(0, null != $.mindimension ? $.mindimension : $.dimension);
+        $.maxdimension = stdMath.max(0, null != $.maxdimension ? $.maxdimension : $.dimension);
         $.count = klass.count(n, $);
         $.first = Arithmetic.O;
         $.last = Arithmetic.gt($.count, Arithmetic.O) ? Arithmetic.sub($.count, Arithmetic.I) : Arithmetic.J;
@@ -18266,7 +18309,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         {
             // un-fuse
             $.subpos = null;
+            $.subbase = null;
+            $.subminbase = null;
+            $.submaxbase = null;
             $.subdimension = null;
+            $.submindimension = null;
+            $.submaxdimension = null;
             $.subposition = null;
             $super.call(self, false);
         }
@@ -18274,6 +18322,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         {
             if (-1 === pos || 1 === pos){ dir = pos; pos = null; }
             $.subpos = pos || self.position();
+            $.subminbase = stdMath.min($.minbase, combIter.base(false, "min"));
+            $.subbase = $.submaxbase = stdMath.max($.maxbase, combIter.base(false, "max"));
             $super.call(self, method, combIter, dir);
         }
         return self;
@@ -18284,6 +18334,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator))
         {
             $.subdimension = $.dimension*combIter.dimension();
+            $.submindimension = $.mindimension*combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension*combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("multiply", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18296,6 +18348,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("add", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18308,6 +18362,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("connect", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18320,6 +18376,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("concat", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18332,6 +18390,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator))
         {
             $.subdimension = 1 + (combIter.$.subdimension || 1);
+            $.submindimension = 1 + (combIter.$.submindimension || 1);
+            $.submaxdimension = 1 + (combIter.$.submaxdimension || 1);
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("juxtapose", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18344,6 +18404,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("complete", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18356,6 +18418,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("interleave", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18368,6 +18432,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("join", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18380,6 +18446,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
         {
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("combine", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18395,6 +18463,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             if (-1 === pos || 1 === pos){ dir = pos; pos = null; }
             pos = pos || (1===self.dimension() ? [self.base()-1] : array(self.dimension(), 0, 1));
             $.subdimension = $.dimension+combIter.dimension();
+            $.submindimension = $.mindimension+combIter.dimension(false, "min");
+            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("intersperse", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18407,6 +18477,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         if (is_instance(combIter, CombinatorialIterator))
         {
             $.subdimension = $.dimension;
+            $.submindimension = $.mindimension;
+            $.submaxdimension = $.maxdimension;
             self.fuse(function(item, subitem, DIM, BASE, POS){
                 return CombinatorialIterator.connect("project", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
@@ -18414,13 +18486,17 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         return self;
     }
 
-    ,base: function(non_recursive) {
+    ,base: function(non_recursive, type) {
         var $ = this.$;
+        if ("min" === type) return ($.sub && !non_recursive ? ($.subminbase || $.minbase) : $.minbase) || 0;
+        if ("max" === type) return ($.sub && !non_recursive ? ($.submaxbase || $.maxbase) : $.maxbase) || 0;
         return ($.sub && !non_recursive ? ($.subbase || $.base) : $.base) || 0;
     }
 
-    ,dimension: function(non_recursive) {
+    ,dimension: function(non_recursive, type) {
         var $ = this.$;
+        if ("min" === type) return ($.sub && !non_recursive ? ($.submindimension || $.mindimension) : $.mindimension) || 0;
+        if ("max" === type) return ($.sub && !non_recursive ? ($.submaxdimension || $.maxdimension) : $.maxdimension) || 0;
         return ($.sub && !non_recursive ? ($.subdimension || $.dimension) : $.dimension) || 0;
     }
 
@@ -18649,9 +18725,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         return self;
     }
 
-    ,item0: function(dir) {
-        var self = this;
-        return self[CLASS].initial(self.n, self.$, -1===dir?-1:1);
+    ,item0: function(dir, raw) {
+        var self = this, item;
+        item = self[CLASS].initial(self.n, self.$, -1===dir?-1:1);
+        return true === raw ? item : self.output(item);
     }
 
     ,item: function(index, order) {
@@ -19108,7 +19185,7 @@ Progression = Abacus.Progression = Class(Iterator, {
         self._step = is_instance(step, Integer) ?  step.num : N(null==step?1:step);
         self._max = null==max ? Arithmetic.INF : (Arithmetic.INF===max ? max : (is_instance(max, Integer) ?  max.num : N(max)));
 
-        if (!$.NumberClass  && is_instance(min, Integer)) $.NumberClass = min[CLASS];
+        if (!$.NumberClass && is_instance(min, Integer)) $.NumberClass = min[CLASS];
 
         if ("geometric" === $.type)
         {
@@ -19548,7 +19625,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                     sub = $.sub;
                 }
                 $.base = n[1];
-                $.dimension = n[0];
+                $.dimension = stdMath.max(0, n[0]);
                 if ("gray" === $.output) $.output = function(item, n){ return Tensor.gray(item,n[1]); };
             }
             else
@@ -19612,7 +19689,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 ) : (
                     !n.length ? [] : (0 > dir ? array(n.length, function(i){return n[i]-1;}): array(n.length, 0, 0))
                 );
-
                 item = klass.DUAL(item, n, $);
             }
 
@@ -19656,7 +19732,6 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                     // p ~ 1 / n1*n2*..nk, O(n)
                     !n.length ? [] : array(n.length, function(i){return rndInt(0, n[i]-1);})
                 );
-
                 item = klass.DUAL(item, n, $);
             }
 
@@ -19751,8 +19826,9 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,gray: function(item, n) {
-            return gray(new Array(item.length), item, n);
+        ,gray: function(item, n, dir) {
+            dir = -1 === dir ? -1 : 1;
+            return 0 > dir ? igray(new Array(item.length), item, n) : gray(new Array(item.length), item, n);
         }
         ,inversion: function(inv) {
             // assume inv is tensor component of dimensions: (1,2,..,n-1,n) in this order
@@ -19866,7 +19942,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         var self = this, sub = null;
         if (!is_instance(self, Permutation)) return new Permutation(n, $);
         $ = $ || {}; $.type = String($.type || "permutation").toLowerCase();
-        n = stdMath.max(0, n||0);
+        n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
             sub = n;
@@ -19876,17 +19952,18 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        $.base = $.dimension = n;
+        $.base = n;
+        $.dimension = stdMath.max(0, n);
         // random ordering for derangements / involutions / connecteds
         // is based on random generation, instead of random unranking
         $.rand = $.rand || {};
         $.rand["derangement"] = 1; $.rand["involution"] = 1; $.rand["connected"] = 1;
         if ("multiset" === $.type)
         {
-            $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array(n, 1, 0);
-            $.multiplicity = $.multiplicity.concat(array(n-operate(addn, 0, $.multiplicity), 1, 0));
+            $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array($.dimension, 1, 0);
+            $.multiplicity = $.multiplicity.concat(array($.dimension-operate(addn, 0, $.multiplicity), 1, 0));
             $.base = $.multiplicity.length;
-            $.multiset = multiset($.multiplicity, n);
+            $.multiset = multiset($.multiplicity, $.dimension);
         }
         CombinatorialIterator.call(self, "Permutation", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
@@ -20582,14 +20659,14 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         if (is_array(n) || is_args(n))
         {
             $ = k || {};
-            k = stdMath.max(0, n[1]||0);
-            n = stdMath.max(0, n[0]||0);
+            k = n[1]||0;
+            n = n[0]||0;
         }
         else
         {
             $ = $ || {};
-            n = stdMath.max(0, n||0);
-            k = stdMath.max(0, k||0);
+            n = n||0;
+            k = k||0;
         }
         $.type = String($.type || "combination").toLowerCase();
         if (-1 < $.type.indexOf('+'))
@@ -20612,7 +20689,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        $.base = n; $.dimension = k;
+        $.base = n; $.dimension = stdMath.max(0, k);
         if ("binary"===$.output) $.output = function(item,n){ return Combination.binary(item,n[0],1); };
         else if ("conjugate"===$.output) $.output = function(item,n){ return Combination.complement(item,n[0]); };
         CombinatorialIterator.call(self, "Combination", [n, k], $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
@@ -20625,7 +20702,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         ,DUAL: CombinatorialIterator.DUAL
         ,count: function(n, $) {
             var type = $ && $.type ? $.type : "combination"/*"unordered"*/;
-            return ("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type) ? (
+            return 0>n[0] || 0>n[1] ? Abacus.Arithmetic.O : (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type) ? (
                 exp(n[0], n[1])
             ) : (("repeated" === type) || ("combination+repeated" === type) ? (
                 factorial(n[0]+n[1]-1, n[1])
@@ -20633,7 +20710,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 factorial(n[0], -n[1])
             ) : (
                 factorial(n[0], n[1])
-            )));
+            ))));
         }
         ,initial: function(n, $, dir) {
             // some C-P-T dualities, symmetries & processes at play here
@@ -20661,7 +20738,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return item;
         }
         ,succ: function(item, index, n, $, dir, CI) {
-            if (!n || !n[0] || (0 >= n[0]) || (0===n[1]) || (null == item)) return null;
+            if (!n || !n[0] || (0 >= n[0]) || (0>=n[1]) || (null == item)) return null;
             dir = -1 === dir ? -1 : 1;
             return next_combination(item, n, dir, $ && $.type ? $.type : "combination"/*"unordered"*/, $ && null!=$.order ? $.order : LEX, CI);
         }
@@ -21142,7 +21219,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
     constructor: function Subset(n, $) {
         var self = this, sub = null;
         if (!is_instance(self, Subset)) return new Subset(n, $);
-        $ = $ || {}; n = stdMath.max(0, n||0);
+        $ = $ || {}; n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
             sub = n;
@@ -21156,7 +21233,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         $.rand = $.rand || {};
         $.base = n;
         $.mindimension = 0;
-        $.maxdimension = n;
+        $.maxdimension = stdMath.max(0, n);
         $.dimension = $.maxdimension;
         if ("binary"===$.output) $.output = function(item,n){ return Subset.binary(item,n,1); };
         CombinatorialIterator.call(self, "Subset", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
@@ -21211,7 +21288,6 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                     if (0>dir) { item = [n-1]; }
                 }
             }
-
             item = klass.DUAL(item, n, $, 1);
 
             return item;
@@ -21555,7 +21631,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         var self = this, sub = null, M, W, K, k1, k0;
         if (!is_instance(self, Partition)) return new Partition(n, $);
         $ = $ || {}; $.type = $.type || "partition";
-        n = stdMath.max(0, n||0);
+        n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
             sub = n;
@@ -21660,7 +21736,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 (0 > n)
                 || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
+                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || /*(W+(K-1)*(n-W) < n) ||*/ (K*W > n)))
                 || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
                 || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
                 || (null!=M && (0 >= M || M > n))
@@ -21693,7 +21769,6 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     else
                     {
                         if (1 >= K || n < W+M) return null;
-
                         if (is_composition)
                         {
                             m = n-W-M-(2 < K ? W*(K-2) : 0);
@@ -21739,7 +21814,6 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     if (M === W)
                     {
                         if (0 !== (n%M)) return null;
-
                         item[LEN][0] = stdMath.ceil(n/M);
                         item = operate(function(item,ai,i){
                             item[i] = M; item[LEN][1]++; item[LEN][2]++;
@@ -21820,6 +21894,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     // restricted partition n into exactly K parts with min part=W
                     if (1 === K)
                     {
+                        if (n !== W) return null;
                         item[0] = W;
                         item[LEN][2] = 1;
                     }
@@ -21862,6 +21937,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     // equivalent to partition n-M into K-1 parts with largest part<=M
                     if (1 === K)
                     {
+                        if (n !== M) return null;
                         item[0] = M;
                         item[LEN][1] = 1;
                     }
@@ -23438,7 +23514,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         var self = this, sub = null, K;
         if (!is_instance(self, SetPartition)) return new SetPartition(n, $);
         $ = $ || {}; $.type = "partition";
-        n = stdMath.max(0, n||0);
+        n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
             sub = n;
@@ -23450,8 +23526,8 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         }
         K = null != $["parts="] ? $["parts="]|0 : null;
         $.base = n;
-        $.mindimension = stdMath.max(1, null != K ? K : 1);
-        $.maxdimension = stdMath.max(1, null != K ? K : n);
+        $.mindimension = stdMath.max(0, null != K ? K : 1);
+        $.maxdimension = stdMath.max(0, null != K ? K : n);
         $.dimension = $.maxdimension;
         $.rand = $.rand || {}; $.rand["partition"] = 1;
         CombinatorialIterator.call(self, "SetPartition", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
@@ -23466,7 +23542,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         }
         ,count: function(n, $) {
             var K = $ && null!=$["parts="] ? $["parts="]|0 : null;
-            return 0<n ? (K ? stirling(n, K, 2) : bell(n)) : Abacus.Arithmetic.O;
+            return 0<n ? (null == K ? bell(n) : (0 >= K ? Abacus.Arithmetic.O : stirling(n, K, 2))) : Abacus.Arithmetic.O;
         }
         ,initial: function(n, $, dir) {
             var klass = this, item, order = $ && null!=$.order ? $.order : LEX,
@@ -23934,6 +24010,7 @@ LatinSquare = Abacus.LatinSquare = Class({
             // O(n x n)
             var i, j, k=1, s = new Array(n), a, b, a2, b2, diag, Nn,
                 val = Abacus.Arithmetic.val, N = Abacus.Arithmetic.num;
+            if (0 >= n) return null;
             // try to construct a (pan-)diagonal latin square first
             diag = 0;
             if ((n&1) /* odd */ && (n%3) /* not divisable by 3 */)
