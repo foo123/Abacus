@@ -717,7 +717,7 @@ function mergesort(a, dir, natural, indices, a0, a1)
         // O(N) average, O(NlgN) worst case
         i0p = a0; i1p = -1;
         index = [-1,-1,0,-1,-1,0];
-        do{
+        do {
             // find already sorted chunks
             // O(n)
             sortedrun(a, a0, a1, index, indices, dir);
@@ -741,7 +741,7 @@ function mergesort(a, dir, natural, indices, a0, a1)
             if (-1 !== i1p) merge(aux, a, a, dir, i0p, i1p, i0, i1, indices, false, true);
             // update starting point for next chunk
             i1p = i1; a0 = i1+1;
-        }while (a0 <= a1);
+        } while (a0 <= a1);
     }
     else
     {
@@ -3783,7 +3783,7 @@ function solvediophs(a, b, with_param, with_free_vars)
     // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
     var ring = Ring.Z(), O = ring.Zero(), I = ring.One(),
         m, k, solutions = null, symbol = is_string(with_param) && with_param.length ? with_param : 'i',
-        tmp, ref, adj, pivots, rank, Rt, Tt, i, j, t, p, free_vars;
+        tmp, ref, aug, pivots, rank, Rt, Tt, i, j, t, p, free_vars;
 
     if (!is_instance(a, Matrix)) a = Matrix(ring, a);
     else if (!is_class(a.ring.NumberClass, Integer)) a = Matrix(ring, a);
@@ -3795,8 +3795,8 @@ function solvediophs(a, b, with_param, with_free_vars)
     if (m > b.length) b = b.concat(array(m-b.length, function(i){return O;}));
     // A*X = B <=> iref(A.t|I) = R|T <=> iif R.t*P = B has int solutions P => X = T.t*P
     tmp = a.t()/*.concat(Matrix.I(ring, k))*/.ref(true/*, [k, m]*/);
-    ref = tmp[0]; adj = tmp[3]; pivots = tmp[1]; rank = pivots.length;
-    Tt = adj/*ref.slice(0,m,-1,-1)*/.t(); Rt = ref/*ref.slice(0,0,k-1,m-1)*/.t();
+    ref = tmp[0]; aug = tmp[3]; pivots = tmp[1]; rank = pivots.length;
+    Tt = aug/*ref.slice(0,m,-1,-1)*/.t(); Rt = ref/*ref.slice(0,0,k-1,m-1)*/.t();
     p = new Array(k); free_vars = new Array(k-rank);
 
     // R.t*P can be easily solved by substitution
@@ -15674,8 +15674,8 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 {
                     // full-rank, has inverse, generaly in the field of fractions
                     field = ring.associatedField();
-                    self._i = Matrix(field, rref[3].map(function(adj_ij, ij){
-                        return field.cast(adj_ij).div(field.cast(rref[0].val[ij[0]][ij[0]]));
+                    self._i = Matrix(field, rref[3].map(function(aug_ij, ij){
+                        return field.cast(aug_ij).div(field.cast(rref[0].val[ij[0]][ij[0]]));
                     }, true));
                     self._i._i = ring.isField() ? self : Matrix(field, self);
                 }
@@ -16166,7 +16166,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         var self = this, ring = self.ring, m = self.nr, n = self.nc, epsilon, matrixFor1D, e, u, i, j, es, us;
         return null;
 
-        if (ring.isSymbolic() || (m !== n) || !self.h().equ(self)) return null; // only for square symmetric/hermitian diagonalisable numeric matrices
+        /*if (ring.isSymbolic() || (m !== n) || !self.h().equ(self)) return null; // only for square symmetric/hermitian diagonalisable numeric matrices
 
         function pow1(A, x, eps, max_iter) {
             var x0 = null, iter = 0, norm;
@@ -16232,10 +16232,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     es.push(e); us.push(u);
                     matrixFor1D = matrixFor1D.sub(u.mul(u.h()).mul(e));
                 }
-                if (false!==self._evd) self._evd = [Matrix(ring, es), Matrix(ring, Matrix.T(us.map(function(u){return u.col(0);})))/*, Matrix(ring, us).inv||.h()*/];
+                if (false!==self._evd) self._evd = [Matrix(ring, es), Matrix(ring, Matrix.T(us.map(function(u){return u.col(0);})))/*, Matrix(ring, us).inv||.h()* /];
             }
         }
-        return false===self._evd ? null : self._evd.slice();
+        return false===self._evd ? null : self._evd.slice();*/
     }
     ,svd: function() {
         // singular value decomposition
@@ -16246,7 +16246,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             f, cs, sn, scale, sp, spm1, epm1, sk, ek, b, c, shift, g, MIN_VAL,
             evd, wantu = true, wantv = true, Epsilon, Limit;
 
-        return null;
+        return null;/*
         // only for real numeric fields (ie Rationals)
         if (ring.isSymbolic() || !ring.isReal()) return null;
 
@@ -16450,7 +16450,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     {
                         if (k === -1) break;
                         alpha = MIN_VAL.add(eps.mul(s[k].add(s[k + 1].abs()).abs()));
-                        if (e[k].abs().lte(alpha) /*|| Number.isNaN(e[k].valueOf())*/)
+                        if (e[k].abs().lte(alpha) /*|| Number.isNaN(e[k].valueOf())* /)
                         {
                             e[k] = ring.Zero();
                             break;
@@ -16647,7 +16647,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self._svd = [Matrix(ring, s), U, V];
             }
         }
-        return self._svd.slice();
+        return self._svd.slice();*/
     }
     ,lu: function() {
         var self = this, ring, O, I, J, n, m, dim, P, L, U, DD,
@@ -16726,10 +16726,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             }
             else
             {
-                self._lu = [];
+                self._lu = false;
             }
         }
-        return self._lu.slice();
+        return self._lu ? self._lu.slice() : self._lu;
     }
     ,qr: function() {
         var self = this, n, m, lu;
@@ -16751,12 +16751,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 use CFFLU([A.t*A | A.t]) and extract appropriate factors
             */
             lu = self.t().mul(self).concat(self.t()).lu();
-            if (!lu.length)
-                self._qr = [];
-            else
+            if (lu)
                 self._qr = [lu[3].slice(0, m, -1, -1).t()/*Q*/, lu[2]/*D*/, lu[1].t()/*R*/];
+            else
+                self._qr = false;
         }
-        return self._qr.slice();
+        return self._qr ? self._qr.slice() : self._qr;
     }
     ,ldl: function() {
         // https://en.wikipedia.org/wiki/Cholesky_decomposition#LDL_decomposition_2
@@ -16805,7 +16805,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,ref: function(with_pivots, odim) {
         var self = this, ring, O, I, J, rows, columns, dim, pivots,
             det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min,
-            a, z, m, adj, find_dupl;
+            a, z, m, aug, find_dupl;
         // fraction-free/integer row echelon form (ref) (also known as Hermite normal form), using fraction-free/integer row reduction or fraction-free gaussian elimination
         // https://en.wikipedia.org/wiki/Row_echelon_form
         // https://en.wikipedia.org/wiki/Gaussian_elimination
@@ -16819,7 +16819,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             J = ring.MinusOne();
             rows = self.nr; columns = self.nc;
             dim = columns;
-            // original dimensions, eg when having augmented/adjoint matrix
+            // original dimensions, eg when having augmented matrix
             if (is_array(odim)) dim = stdMath.min(dim, odim[1]);
             m = self.concat(Matrix.I(ring, rows)).val;
             pivots = new Array(dim);
@@ -16869,7 +16869,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     if (a.equ(O)) z++;
                     else if ((null == min) || a.lt(min)) { min = a; imin = i; }
                 }
-                do{
+                do {
                     if (-1 === imin) break; // all zero, nothing else to do
                     if (rows-i0 === z+1)
                     {
@@ -16887,7 +16887,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                             det = det.mul(J);
                         }
                         i = imin; i0 = r;
-                        while ((0<=i) && (-1!==(p0=find_dupl(i)))){ i0 -= pl-p0; i = i0; }
+                        while ((0<=i) && (-1!==(p0=find_dupl(i)))) {i0 -= pl-p0; i = i0;}
                         pivots[pl++] = [i, lead/*, leadc*/]; // row/column/original column of pivot
                         // update determinant
                         det = r<dim ? det.mul(m[r][r/*lead*/]) : O;
@@ -16909,25 +16909,25 @@ Matrix = Abacus.Matrix = Class(INumber, {
                             else if (a.lt(min)) { min = a; imin = i; }
                         }
                     }
-                }while (true);
+                } while (true);
 
                 lead++; //leadc++;
             }
             if (pl<dim) det = O;
 
             m = new Matrix(ring, m);
-            adj = m.slice(0, columns, rows-1, rows+columns-1);
+            aug = m.slice(0, columns, rows-1, rows+columns-1);
             m = m.slice(0, 0, rows-1, columns-1);
             // truncate if needed
             if (pivots.length > pl) pivots.length = pl;
 
-            self._ref = [m, pivots, det, adj];
+            self._ref = [m, pivots, det, aug];
         }
         return with_pivots ? self._ref.slice() : self._ref[0];
     }
     ,rref: function(with_pivots, odim) {
         var self = this, ring, O, I, J, rows, columns, dim,
-            pivots, det, pl, lead, r, i, j, l, a, g, ref, adj;
+            pivots, det, pl, lead, r, i, j, l, a, g, ref, aug;
         // fraction-free/integer reduced row echelon form (rref), using fraction-free gauss-jordan elimination, or incrementaly from fraction-free row echelon form (gauss elimination)
         // https://en.wikipedia.org/wiki/Row_echelon_form
         if (null == self._rref)
@@ -16958,13 +16958,15 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     if (a.val[i][pivots[i][1]].lt(O))
                         Matrix.ADDR(ring, a.val, i, i, O, J, pivots[i][1]);
                     // 2. remove any common factor, simplify
-                    if (ring.hasGCD() && !O.equ(g=ring.gcd(a.val[i].slice(0, dim))) && !I.equ(g))
-                        for (j=0,l=a.val[i].length; j<l; j++) a.val[i][j] = a.val[i][j].div(g);
+                    if (ring.hasGCD() && !O.equ(g=ring.gcd(a.val[i]/*.slice(0, dim)*/)) && !I.equ(g))
+                    {
+                        for (j=0,l=a.val[i].length/*dim*/; j<l; j++) a.val[i][j] = a.val[i][j].div(g);
+                    }
                 }
             }
-            adj = a.slice(0, columns, rows-1, rows+columns-1);
+            aug = a.slice(0, columns, rows-1, rows+columns-1);
             a = a.slice(0, 0, rows-1, columns-1);
-            self._rref = [a, pivots, det, adj];
+            self._rref = [a, pivots, det, aug];
         }
         return with_pivots ? self._rref.slice() : self._rref[0];
     }
@@ -16979,9 +16981,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             pivots = rref[1];
             rank = pivots.length;
             field = ring.associatedField();
-            C = Matrix(field, self.slice(array(rows, 0, 1), array(rank, function(j){
-                return pivots[j][1];
-            })));
+            C = Matrix(field, self.slice(array(rows, 0, 1), array(rank, function(j){return pivots[j][1];})));
             F = Matrix(field, rref[0].slice(0, 0, rank-1, columns-1).map(function(rref_ij, ij){
                 var i = ij[0], j = i;
                 while (j+1<columns && rref[0].val[i][j].equ(0)) j++;
@@ -17727,10 +17727,10 @@ Iterator = Abacus.Iterator = Class({
         {
             for (i=0,l=$.seq.length; i<l; i++) if ($.seq[i] instanceof Iterator) $.seq[i].rewind(dir);
             $.seqindex = 0 > dir ? l-1 : 0;
-            do{
+            do {
                 item = 0<=$.seqindex && $.seqindex<l ? ("List" === self.name ? $.seq[$.seqindex] : $.seq[$.seqindex].next(dir)) : null;
                 if ((0<=$.seqindex && $.seqindex<l) && ("List" === self.name || null == item)) $.seqindex += dir;
-            }while ((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length));
+            } while ((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length));
             self.__item = item;
             self._item = self.output(self.__item);
             if ($.sub && (true !== non_recursive))
@@ -19264,7 +19264,7 @@ Progression = Abacus.Progression = Class(Iterator, {
         dir = -1===dir ? -1 : 1;
         var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic, current, prev;
 
-        do{
+        do {
             prev = self.__item; current = $.sub ? self._subitem : self._item;
 
             if (null != prev)
@@ -19318,7 +19318,7 @@ Progression = Abacus.Progression = Class(Iterator, {
                 self.__subitem = $.sub.next(dir);
                 self._subitem = null != self._item && null != self.__subitem ? self.fusion(self._item, self.__subitem) : null;
             }
-        }while ($.filter && (null!=current) && !$.filter.apply(current, self));
+        } while ($.filter && (null!=current) && !$.filter.apply(current, self));
 
         return current;
     }
@@ -19484,7 +19484,7 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
             Arithmetic = Abacus.Arithmetic, two = Arithmetic.II,
             prime = self.__item, output;
 
-        do{
+        do {
             // Eratosthenes sieve with pre-computed small primes list
             // O(n log(log(n))) for getting all primes up to n
             if (self._p < small_primes.length)
@@ -19520,11 +19520,11 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
                 else
                 {
                     // check candidate primes, using odd increments, ie avoid multiples of two faster
-                    do{
+                    do {
 
                         prime = Arithmetic.add(prime, two);
 
-                    }while (multiples.has(prime));
+                    } while (multiples.has(prime));
                 }
 
                 // add odd multiples of this prime to the list for crossing out later on,
@@ -19536,7 +19536,7 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
             }
 
             output = self.output($.NumBerClass ? new $.NumBerClass(prime) : prime);
-        }while ($.filter && (null!=output) && !$.filter.apply(output, self));
+        } while ($.filter && (null!=output) && !$.filter.apply(output, self));
 
         self.__item = prime;
         self._item = output;
@@ -20082,7 +20082,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 // adapted from http://local.disia.unifi.it/merlini/papers/Derangements.pdf
                 item = new Array(n);
                 var j, t, p, fixed = false;
-                do{
+                do {
                     for (j=0; j<n; j++) item[j] = j;
                     j = n-1; fixed = false;
                     while (0 <= j)
@@ -20102,7 +20102,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                         j--;
                     }
                     fixed = fixed || (0 === item[0]);
-                }while (fixed);
+                } while (fixed);
             }
             else if ("involution" === type)
             {
@@ -23548,7 +23548,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             var klass = this, item, order = $ && null!=$.order ? $.order : LEX,
                 K = $ && null!=$["parts="] ? $["parts="]|0 : null;
 
-            if ((0 >= n) || (null != K && (0 >= K || K > n))) return null;
+            if ((0 > n) || (null != K && (0 >= K || K > n))) return null;
 
             dir = -1 === dir ? -1 : 1;
 
@@ -23606,7 +23606,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,rand: function(n, $) {
             var klass = this, K = $ && null!=$["parts="] ? $["parts="]|0 : null,
                 rnd = Abacus.Math.rnd, Arithmetic = Abacus.Arithmetic, q, m, l, i, k, prob, cdf;
-            if ((0 >= n) || (null != K && (0 >= K || K > n))) return null;
+            if ((0 > n) || (null != K && (0 >= K || K > n))) return null;
             q = array(n, 0); m = n; l = 0;
             while (0 < m)
             {
@@ -23644,7 +23644,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             order = null!=$.order ? $.order : LEX,
             K = $ && null!=$["parts="] ? $["parts="]|0 : null,
             is_reflected = REFLECTED & order;
-        if (n+1===item.length)
+        if (item && n+1===item.length)
         {
             item = operate(function(partition, i){
                 partition[item[i]].push(i);
@@ -23779,7 +23779,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         var self = this, sub = null, K;
         if (!is_instance(self, CatalanWord)) return new CatalanWord(n, $);
         $ = $ || {}; $.type = "catalan";
-        n = stdMath.max(0, n||0);
+        n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
             sub = n;
@@ -23790,9 +23790,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
             sub = $.sub;
         }
         $.base = n;
-        $.mindimension = stdMath.max(1, 2*n);
-        $.maxdimension = stdMath.max(1, 2*n);
-        $.dimension = $.maxdimension;
+        $.dimension = stdMath.max(0, 2*n);
         $.rand = $.rand || {}; $.rand["catalan"] = 1;
         $.symbols = $.symbols || ['(',')']; if (is_string($.symbols)) $.symbols = $.symbols.split('');
         CombinatorialIterator.call(self, "CatalanWord", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
@@ -23806,12 +23804,12 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
             return item;
         }
         ,count: function(n, $) {
-            return 0<n ? catalan(n) : Abacus.Arithmetic.O;
+            return 0>n ? Abacus.Arithmetic.O : catalan(n);
         }
         ,initial: function(n, $, dir) {
             var klass = this, order = $ && null!=$.order ? $.order : LEX;
 
-            if ((0 >= n)) return null;
+            if ((0 > n)) return null;
 
             dir = -1 === dir ? -1 : 1;
 
@@ -23827,7 +23825,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         }
         ,rand: function(n, $) {
             var klass = this, seq, prefix, suffix, word, partial_sum, i, s, nn;
-            if (0 >= n) return null;
+            if (0 > n) return null;
 
             // "Generating binary trees at random", Atkinson & Sack, 1992
             // adapted from https://gist.github.com/rygorous/d57941fa5ae6beb59f17bc30793d3d75
@@ -23974,9 +23972,9 @@ function next_catalan(item, n, dir, order)
             }
             else
             {
-                do{
+                do {
                     --j; m -= 2;
-                }while (0<=j && m===item[j]);
+                } while (0<=j && m===item[j]);
                 if (0 > j)
                 {
                     item = null;
@@ -23984,9 +23982,9 @@ function next_catalan(item, n, dir, order)
                 else
                 {
                     t = item[j]; i = j;
-                    do{
+                    do {
                         item[i++] = ++t;
-                    }while (i<n);
+                    } while (i<n);
                 }
             }
         }
