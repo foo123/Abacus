@@ -20153,7 +20153,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         // random ordering for derangements / involutions / connecteds
         // is based on random generation, instead of random unranking
         $.rand = $.rand || {};
-        $.rand["derangement"] = 1; $.rand["involution"] = 1; $.rand["connected"] = 1;
+        $.rand["involution"] = 1; $.rand["connected"] = 1;
         if ("multiset" === $.type)
         {
             $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array($.dimension, 1, 0);
