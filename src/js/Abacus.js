@@ -4291,7 +4291,7 @@ function factorial(n, m)
         NUM = Arithmetic.num, VAL = Arithmetic.val,
         add = Arithmetic.add, sub = Arithmetic.sub,
         div = Arithmetic.div, mul = Arithmetic.mul, mod = Arithmetic.mod,
-        key, res = O, i, MAXMEM = Abacus.Options.MAXMEM;
+        key, res = O, i, f, MAXMEM = Abacus.Options.MAXMEM;
 
     if (is_instance(n, Integer)) return new n[CLASS](factorial(n.num, m));
 
@@ -4332,7 +4332,7 @@ function factorial(n, m)
         // https://en.wikipedia.org/wiki/Rencontres_numbers
         // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = !n = [(n!+1)/e]
         // for given number of fixed points k > 0: D(n,k) = C(n,k) D(n-k)
-        if (Arithmetic.lte(n, 12)) return Arithmetic.lt(n, two) ? O : NUM(([1,2,9,44,265,1854,14833,133496,1334961,14684570,176214841])[VAL(sub(n, two))]);
+        if (Arithmetic.lte(n, 12)) return Arithmetic.equ(n, O) ? I : (Arithmetic.lte(n, I) ? O : NUM(([1,2,9,44,265,1854,14833,133496,1334961,14684570,176214841])[VAL(sub(n, two))]));
         key = '!'+String(n);
         if (null == factorial.mem2[key])
         {
@@ -4340,9 +4340,20 @@ function factorial(n, m)
             /*factorial.mem2[key] = operate(function(N, n){
                 return add(n&1 ? J : I, mul(N,n));
             }, I, null, 3, n);*/
-            // recursive and memoized
-            // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = !n = [(n!+1)/e]
-            res = add(Arithmetic.equ(O, mod(n, two)) ? I : J, mul(factorial(sub(n, I), false), n));
+            if (Arithmetic.gt(n, 10000))
+            {
+                for (res=O,f=I,i=O; Arithmetic.lte(i, n); i=add(i, I))
+                {
+                    res = add(res, mul(f, mul(factorial(n, i), factorial(sub(n, i)))));
+                    f = Arithmetic.neg(f);
+                }
+            }
+            else
+            {
+                // recursive and memoized
+                // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = (n-1) (D(n-1) + D(n-2)) = !n = [(n!+1)/e]
+                res = add(Arithmetic.equ(O, mod(n, two)) ? I : J, mul(factorial(sub(n, I), false), n));
+            }
             // memoize only up to MAXMEM results
             if (Arithmetic.lt(n, MAXMEM))
                 factorial.mem2[key] = res;
@@ -4431,11 +4442,19 @@ function factorial(n, m)
             key = String(n)+'@'+String(m);
             if (null == factorial.mem3[key])
             {
-                i = add(add(n, m), I); res = i;
-                while (Arithmetic.lt(i, n))
+                i = add(n, m);
+                if (Arithmetic.gt(sub(n, i), 500))
                 {
-                    i = add(i, I);
-                    res = mul(res, i);
+                    res = div(factorial(n), factorial(i));
+                }
+                else
+                {
+                    i = add(i, I); res = i;
+                    while (Arithmetic.lt(i, n))
+                    {
+                        i = add(i, I);
+                        res = mul(res, i);
+                    }
                 }
                 // memoize only up to MAXMEM results
                 if (Arithmetic.lt(n, MAXMEM))
@@ -4450,7 +4469,7 @@ function factorial(n, m)
         {
             // https://en.wikipedia.org/wiki/Binomial_coefficient
             // binomial = C(n,m) = C(n-1,m-1)+C(n-1,m) = n!/m!(n-m)!
-            if (Arithmetic.lt(m, O) || Arithmetic.lt(n, I) || Arithmetic.gt(m, n)) return O;
+            if (Arithmetic.lt(m, O) || Arithmetic.lt(n, O) || Arithmetic.gt(m, n)) return O;
             if (Arithmetic.lt(n, mul(m, two))) m = sub(n, m); // take advantage of symmetry
             if (Arithmetic.equ(m, O) || Arithmetic.equ(n, I)) return I;
             else if (Arithmetic.equ(m, I)) return n;
@@ -4459,7 +4478,7 @@ function factorial(n, m)
             {
                 // recursive and memoized
                 // binomial = C(n,m) = C(n-1,m-1)+C(n-1,m) = n!/m!(n-m)!
-                if (Arithmetic.lte(n, 10))
+                if (Arithmetic.lte(n, 20))
                 {
                     res = add(factorial(sub(n, I), sub(m, I)), factorial(sub(n, I), m));/*div(factorial(n,-m), factorial(m))*/
                 }
@@ -4472,13 +4491,21 @@ function factorial(n, m)
                 }
                 else
                 {
-                    i = add(sub(n, m), I); res = i;
-                    while (Arithmetic.lt(i, n))
+                    i = sub(n, m);
+                    if (Arithmetic.gt(sub(n, i), 500))
                     {
-                        i = add(i, I);
-                        res = mul(res, i);
+                        res = div(factorial(n), mul(factorial(m), factorial(i)));
                     }
-                    res = div(res, factorial(m));
+                    else
+                    {
+                        i = add(i, I); res = i;
+                        while (Arithmetic.lt(i, n))
+                        {
+                            i = add(i, I);
+                            res = mul(res, i);
+                        }
+                        res = div(res, factorial(m));
+                    }
                 }
                 // memoize only up to MAXMEM results
                 if (Arithmetic.lt(n, MAXMEM))
@@ -4495,6 +4522,66 @@ function factorial(n, m)
 factorial.mem1 = Obj();
 factorial.mem2 = Obj();
 factorial.mem3 = Obj();
+function derange_k_of_n(n, k)
+{
+    // https://math.stackexchange.com/questions/4192567/count-permutations-where-some-items-should-be-deranged-while-rest-can-be-placed
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+        NUM = Arithmetic.num, add = Arithmetic.add,
+        sub = Arithmetic.sub, mul = Arithmetic.mul,
+        key, res, i, f, nk, MAXMEM = Abacus.Options.MAXMEM;
+
+    if (is_instance(n, Integer)) return new n[CLASS](derange_k_of_n(n.num, k));
+
+    n = NUM(n);
+    k = is_instance(k, Integer) ? k.num : NUM(k);
+    if (Arithmetic.lt(n, O) || Arithmetic.lt(k, O) || Arithmetic.gt(k, n)) return O;
+    if (Arithmetic.equ(k, O)) return factorial(n);
+    if (Arithmetic.equ(k, n)) return factorial(n, false);
+    key = String(n)+','+String(k);
+    if (null == derange_k_of_n.mem[key])
+    {
+        res = O;
+        nk = sub(n, k);
+        if (Arithmetic.lt(nk, k))
+        {
+            // \sum\limits_{i=0}^{n-k} {{n-k} \choose i} \ !(k+i)
+            for (i=O; Arithmetic.lte(i, nk); i=add(i, I))
+            {
+                res = add(res, mul(factorial(nk, i), factorial(add(k, i), false)));
+            }
+        }
+        else
+        {
+            // \sum\limits_{i=0}^k\binom{k}{i}(-1)^i(n-i)!
+            for (f=I,i=O; Arithmetic.lte(i, k); i=add(i, I))
+            {
+                res = add(res, mul(f, mul(factorial(k, i), factorial(sub(n, i)))));
+                f = Arithmetic.neg(f);
+            }
+        }
+
+        // memoize only up to MAXMEM results
+        if (Arithmetic.lt(n, MAXMEM))
+            derange_k_of_n.mem[key] = res;
+    }
+    else
+    {
+        res = derange_k_of_n.mem[key];
+    }
+    return res;
+}
+derange_k_of_n.mem = Obj();
+function derange_rank(n, y, i, k, indexOf)
+{
+    var Arithmetic = Abacus.Arithmetic, count = Arithmetic.O, x;
+    for (x=0; x<y; x++)
+    {
+        if ((i === x) || (0 <= indexOf[x] && indexOf[x] < i)) continue;
+        count = Arithmetic.add(count, derange_k_of_n(n-i-1, k+(y>i && x<i)));
+    }
+    return count;
+}
 function stirling(n, k, s)
 {
     // https://en.wikipedia.org/wiki/Stirling_number
@@ -6176,6 +6263,115 @@ function unpackpartition(packed, dir)
                 partition[push](v);
     }
     return partition;
+}
+function singletons(item, n)
+{
+    var i, j, l, S = [];
+    for (i=0,l=item.length; i<l; i++)
+    {
+        if (1 === item[i].length)
+            S.push(item[i][0])
+    }
+    return S;
+}
+function adjInit(item, n)
+{
+    var i, j, l, I = [];
+    for (i=0,l=item.length; i<l; i++)
+    {
+        if (1 === item[i].length)
+        {
+            I.push(item[i][0]);
+        }
+        else
+        {
+            for (j=0; j+1<item[i].length; j++)
+            {
+                if (item[i][j]+1 === item[i][j+1])
+                    I.push(item[i][j]);
+            }
+            if ((item[i][j]+1) % n === item[i][0])
+                    I.push(item[i][j]);
+        }
+    }
+    return I;
+}
+function adjTerm(item, n)
+{
+    var i, j, l, T = [];
+    for (i=0,l=item.length; i<l; i++)
+    {
+        if (1 === item[i].length)
+        {
+            T.push(item[i][0]);
+        }
+        else
+        {
+            for (j=0; j+1<item[i].length; j++)
+            {
+                if (item[i][j]+1 === item[i][j+1])
+                    T.push(item[i][j+1]);
+            }
+            if ((item[i][j]+1) % n === item[i][0])
+                    T.push(item[i][0]);
+        }
+    }
+    return T;
+}
+/*function separateIS(item, S, I)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function separateST(item, S, T)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function combineIS(item, S, I)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function combineST(item, S, T)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}*/
+function conjugatesetpartition(item, n)
+{
+    // adapted from https://arxiv.org/abs/math/0508052
+    if (null == item) return null;
+    var congugate = null;
+    return conjugate;
 }
 function permutation2matrix(matrix, permutation, transposed)
 {
@@ -20174,7 +20370,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 order = $ && null!=-$.order ? $.order : LEX,
                 sub = Arithmetic.sub, add = Arithmetic.add,
                 mul = Arithmetic.mul, div = Arithmetic.div,
-                index = Arithmetic.O, i, ii, m,
+                O = Arithmetic.O, index = O,
+                i, j, ii, m, x, k, inv, indexOf, dict,
                 I = Arithmetic.I, J = Arithmetic.J, N, M;
 
             n = n || item.length;
@@ -20188,7 +20385,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 // O(1)
                 index = Arithmetic.num(item[0]);
             }
-            else if (("derangement" === type) || ("involution" === type) || ("connected" === type))
+            else if (("involution" === type) || ("connected" === type))
             {
                 /*item = permutation2inversion(null, item);
                 for (I=n&1?-1:1,i=0; i<n-1; i++,I=-I)
@@ -20197,6 +20394,24 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 }
                 return index;*/
                 return NotImplemented();
+            }
+            else if ("derangement" === type)
+            {
+                if (kfixed) return NotImplemented();
+                for (indexOf=new Array(n),dict={},i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || i === x || 1 === dict[x]) return J;
+                    dict[x] = 1;
+                    indexOf[x] = i;
+                }
+                //inv = permutation2inversion(null, permutation2inverse(null, item));
+                for (i=0; i+1<n; i++)
+                {
+                    for (k=0,j=i+1; j<n; j++) k += (item[j] > i);
+                    index = add(index, derange_rank(n, item[i], i, k, indexOf));
+                }
+                return index;
             }
             else if ("multiset" === type)
             {
@@ -20213,11 +20428,17 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else//if ("permutation" === type)
             {
-                if (kcycles) return J;
+                if (kcycles) return NotImplemented();
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // O(nlgn)
-                item = permutation2inversion(null, item);
-                for (m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), item[i]);
+                for (dict={},i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    dict[x] = 1;
+                }
+                inv = permutation2inversion(null, item);
+                for (m=n-1,i=0; i<m; i++) index = add(mul(index, n-i), inv[i]);
             }
 
             if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
@@ -20232,8 +20453,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 kfixed = $ && null!=$['fixed='] ? $['fixed=']|0 : null,
                 order = $ && null!=-$.order ? $.order : LEX,
                 mod = Arithmetic.mod, div = Arithmetic.div, mul = Arithmetic.mul,
-                sub = Arithmetic.sub, val = Arithmetic.val,
-                item, r, i, ii, b, t, N, M;
+                add = Arithmetic.add, sub = Arithmetic.sub, val = Arithmetic.val,
+                item, indexOf, r, i, j, ii, x, y, k, b, t, N, M;
 
             index = null == index ? null : Arithmetic.num(index);
             if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
@@ -20251,9 +20472,32 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 index = val(index);
                 item = array(n, function(i){return (index+i)%n});
             }
-            else if (("derangement" === type) || ("involution" === type) || ("connected" === type))
+            else if (("involution" === type) || ("connected" === type))
             {
                 return NotImplemented();
+            }
+            else if ("derangement" === type)
+            {
+                if (kfixed || 2 > n) return null;
+                item = new Array(n);
+                indexOf = array(n, -1, 0);
+                i = 0;
+                while (i<n && Arithmetic.gte(index, Arithmetic.O))
+                {
+                    for (k=0,j=0; j<i; j++) k += (item[j] > i);
+                    for (r=Arithmetic.O,y=n-1; y>=0; y--)
+                    {
+                        if ((y === i) || (0 <= indexOf[y] && indexOf[y] < i)) continue;
+                        r = derange_rank(n, y, i, n-i-1-k-(y>i), indexOf);
+                        if (Arithmetic.lte(r, index)) break;
+                    }
+                    if (0 > y) break;
+                    item[i] = y;
+                    indexOf[y] = i;
+                    index = sub(index, r);
+                    i++;
+                }
+                //if (!Arithmetic.equ(O, index)) item = null;
             }
             else if ("multiset" === type)
             {
@@ -22263,9 +22507,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     }
                     for (i=0; 0<n && i<item.length; i++)
                     {
-                        if (W && i+1===item.length) continue;
                         x = item[i];
                         if (0 >= x || x > n || (W && x < W) || (M && x > M)) return J;
+                        if (W && i+1===item.length) continue;
                         index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
                         n -= x;
                     }
@@ -23637,6 +23881,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
+        ,conjugate: conjugatesetpartition
     }
     ,output: function(item) {
         if (null == item) return null;

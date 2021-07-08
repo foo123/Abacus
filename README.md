@@ -60,7 +60,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
 * `CyclicPermutation` (`test/cyclic_permutations.js`)
 * `MultisetPermutation` (`test/multiset_permutations.js`)
-* `DerangementPermutation` (`test/derangements.js`) **rank/unrank methods missing**
+* `DerangementPermutation` (`test/derangements.js`)
 * `InvolutionPermutation` (`test/involutions.js`) **rank/unrank methods missing**
 * `ConnectedPermutation` (`test/connected_permutations.js`) **only counting &amp; random generation**
 * `UnorderedCombination` / `Combination` (`test/combinations.js`)
@@ -303,7 +303,8 @@ console.log(m.inv().mul(m).toString());
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
-* add efficient `rank`/`unrank` methods for `DerangementPermutation`, `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
+* add efficient `rank`/`unrank` methods for `DerangementPermutation` (right now O(n^2) complexity) **[DONE]**
+* add efficient `rank`/`unrank` methods for `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
