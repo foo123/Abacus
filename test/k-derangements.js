@@ -69,6 +69,15 @@ print_all( o.rewind(), 1, function(item){
     ];
 } );
 
+echo('o.order("random")');
+print_all( o.order("random"), 1, function(item){
+    return [
+    item.join(','),
+    Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    ];
+} );
+o.dispose();
+
 echo('o = Abacus.Combination(6,3).combineWith(Abacus.Permutation(6-3,{type:"derangement"}))');
 o = Abacus.Combination(6,3).combineWith(Abacus.Permutation(6-3,{type:"derangement"}));
 
@@ -94,6 +103,15 @@ print_all( o.rewind(), 1, function(item){
     Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
     ];
 } );
+
+echo('o.order("random")');
+print_all( o.order("random"), 1, function(item){
+    return [
+    item.join(','),
+    Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
+    ];
+} );
+o.dispose();
 
 echo('o = Abacus.Combination(8,4).combineWith(Abacus.Permutation(8-4,{type:"derangement"}))');
 o = Abacus.Combination(8,4).combineWith(Abacus.Permutation(8-4,{type:"derangement"}));
@@ -130,11 +148,16 @@ print_all( o.rewind(-1), -1, function(item){
     ];
 } );
 
+echo('o.order("random")');
+print_all( o.order("random"), 1, function(item){
+    return [
+    item.join(','),
+    Abacus.Permutation.isDerangement(item, 4, true) ? 'exactly 4 fixed points' : 'ERROR'
+    ];
+} );
+
 echo('o.random()');
 print(o.random());
-
-echo('o.order("lex").range(-5, -1)');
-print_all(o.order("lex").range(-5, -1));
 
 
 // dispose

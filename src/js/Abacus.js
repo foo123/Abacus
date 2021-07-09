@@ -18756,7 +18756,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 // lazy init
                 if (self._traversed) self._traversed.dispose();
                 self._traversed = new Abacus.BitArray(Arithmetic.val(tot));
-                r = self.random("index");
+                r = self.random("index", true);
                 self._traversed.set(+r);
                 self.__item = klass.unrank(r, n, $);
                 if (null != self.__item) self.__index = r;
@@ -18793,14 +18793,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         return self;
     }
 
-    ,order: function(order, reverse) {
+    ,order: function(order, dir) {
         if (!arguments.length) return this._order;
 
         var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic,
-            O = Arithmetic.O, I = Arithmetic.I, suborder, r, n, $, dir,
+            O = Arithmetic.O, I = Arithmetic.I, suborder, r, n, $,
             rewind = true === order, i, l;
 
-        reverse = -1 === reverse;
         n = self.n; $ = self.$;
 
         if (self._traversed)
@@ -18830,7 +18829,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             suborder = order = ORDER(order);
         }
         //dir = REVERSED & order ? -1 : 1; // T
-        dir = reverse ? -1 : 1; // T
+        dir = -1 === dir ? -1 : 1; // T
         $.order = order;
 
         if ($.sub)
@@ -19125,7 +19124,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     {
                         // random unranking
                         // get next un-traversed index, reject if needed
-                        r = self.random("index");
+                        r = self.random("index", true);
                         rs = Abacus.Math.rnd() > 0.5 ? J : I;
                         while (traversed.isset(+r)) r = Arithmetic.wrap(Arithmetic.add(r, rs), O, tot_1);
                         traversed.set(+r);
@@ -21124,7 +21123,6 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 val = Arithmetic.val, item, binom, k = n[1], N, m, t, p,
                 type = $ && $.type ? $.type : "combination"/*"unordered"*/, repeated,
                 order = $ && null!=$.order ? $.order : LEX;
-            n = n[0];
 
             index = null == index ? null : Arithmetic.num(index);
             if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
@@ -21136,6 +21134,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
                 index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
 
+            n = n[0];
             item = array(k);
             if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
             {
@@ -21187,6 +21186,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                     }
                 } while (m > 0);
             }
+            n = [n, k];
 
             item = klass.DUAL(item, n, $);
 
