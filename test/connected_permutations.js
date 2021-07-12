@@ -30,6 +30,12 @@ o = Abacus.Permutation(2,{type:"connected"});
 echo('o.total()'); 
 echo(o.total());
 
+echo('o.rewind()');
+print_all(o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
+});
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -39,6 +45,12 @@ o = Abacus.Permutation(3,{type:"connected"});
 
 echo('o.total()'); 
 echo(o.total());
+
+echo('o.rewind()');
+print_all(o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
+});
 
 echo('o.random()');
 print(o.random());
@@ -50,6 +62,12 @@ o = Abacus.Permutation(4,{type:"connected"});
 echo('o.total()'); 
 echo(o.total());
 
+echo('o.rewind()');
+print_all(o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
+});
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -60,6 +78,12 @@ o = Abacus.Permutation(5,{type:"connected"});
 echo('o.total()'); 
 echo(o.total());
 
+echo('o.rewind()');
+print_all(o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
+});
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -69,6 +93,12 @@ o = Abacus.Permutation(6,{type:"connected"});
 
 echo('o.total()'); 
 echo(o.total());
+
+echo('o.rewind()');
+print_all(o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
+});
 
 echo('o.random()');
 print(o.random());

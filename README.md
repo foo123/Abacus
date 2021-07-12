@@ -62,7 +62,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `MultisetPermutation` (`test/multiset_permutations.js`)
 * `DerangementPermutation` (`test/derangements.js`)
 * `InvolutionPermutation` (`test/involutions.js`) **rank/unrank methods missing**
-* `ConnectedPermutation` (`test/connected_permutations.js`) **only counting &amp; random generation**
+* `ConnectedPermutation` (`test/connected_permutations.js`) **supported order is not standard (CO)LEX**
 * `UnorderedCombination` / `Combination` (`test/combinations.js`)
 * `OrderedCombination` / `Variation` / `kPermutation` (`test/ordered_combinations.js`)
 * `UnorderedRepeatedCombination` / `RepeatedCombination` (`test/combinations_repeats.js`)
@@ -304,7 +304,8 @@ console.log(m.inv().mul(m).toString());
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
 * add efficient `rank`/`unrank` methods for `DerangementPermutation` (right now O(n^2) complexity) **[DONE]**
-* add efficient `rank`/`unrank` methods for `InvolutionPermutation` &amp; `ConnectedPermutation` (TODO)
+* add efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
+* add efficient `rank`/`unrank` methods for `InvolutionPermutation` (TODO)
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)

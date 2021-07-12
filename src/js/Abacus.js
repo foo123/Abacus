@@ -6490,6 +6490,56 @@ function inversion2permutation(permutation, inversion, N)
         return perm;
     }, permutation||new Array(n), inversion);
 }
+function permutation2count(count, permutation, dir)
+{
+    // O(n) count computation K(\sigma)_i = \#\{j > i : \sigma_j > i\}
+    // K(\sigma)_i = n-1-i-K'(\sigma)_i-1_{\sigma_{i} > i}, K'(\sigma)_i = \#\{j < i : \sigma_j > i\} (complement)
+    /*
+    https://cs.stackexchange.com/questions/142180/faster-algorithm-for-a-specific-inversion
+
+    $$
+    |\{j>i : \sigma_j > i\}| = | \{ j> i+1 : \sigma_j > i+1 \} | + | \{ j > i : \sigma_j = i+1 \} |
+    + 1_{\sigma_{i+1} > i+1}
+    $$
+
+    The cardinality of second set is $1$ if there is some value $j'$ of $j>i$ such that $\sigma_{j'}=i+1$ and $0$ otherwise (there can be at most one such value $j'$).
+    Rewrite it as:
+    $\sum_{h > i} 1_{\sigma_h = i+1} = 1_{\sigma_{i+1} = i+1} + \sum_{h > i+1} 1_{\sigma_h = i+1}
+    = 1_{\sigma_{i+1} = i+1} + \sum_{h > i+1} 1_{\min\{h, \sigma_h\} = i+1}$
+
+    Summing the above with the last term from the initial equation we have:
+    $$
+    1_{\sigma_{i+1} > i+1} + 1_{\sigma_{i+1} = i+1} + \sum_{h > i+1} 1_{\min\{h, \sigma_h\} = i+1}
+    $$
+
+    At most one of the two first two terms can be $1$, hence this simplifies to:
+    $$
+    1_{\sigma_{i+1} \ge i+1} + \sum_{h > i+1} 1_{\min\{h, \sigma_h\} = i+1}
+    = \sum_{h > i} 1_{\min\{h, \sigma_h\} = i+1}
+    $$
+
+    Substituting
+    $$
+    K(\sigma)_i = K(\sigma)_{i+1} + \sum_{h > i} 1_{\min\{h, \sigma_h\} = i+1}$$
+
+    Where the second term is exactly what we are writing in $A[i+1]$.
+    */
+    var n = permutation.length, A = array(n, 0, 0), i;
+    for (i=0; i<n; i++) A[stdMath.min(i,permutation[i])]++;
+    count = operate(function(count,i){
+        count[i] = i+1 === n ? 0 : count[i+1] + A[i+1];
+        return count;
+    }, count||new Array(n), null, n-1, 0, -1);
+    if (-1 === dir)
+    {
+        // compute complement count K'(\sigma)_i = \#\{j < i : \sigma_j > i\} = n-i-1-K(\sigma)_i-1_{\sigma_i>i}
+        count = operate(function(count,i){
+            count[i] = n-i-1-count[i]-(i<permutation[i]);
+            return count;
+        }, count, null, 0, n-1, 1);
+    }
+    return count;
+}
 function cycle2swaps(cycle, swaps, slen)
 {
     var c = cycle.length, noref = null == swaps, j;
@@ -6512,9 +6562,8 @@ function permutation2cycles(permutation, strict)
 {
     var n = permutation.length, i, cycles = new Array(n), current, cycle,
         min_cycle = true === strict ? 1 : 0,
-        visited = new Array(n),
+        visited = array(n, 0, 0),
         unvisited = 0, clen, cclen = 0;
-    for (i=0; i<n; i++) visited[ i ] = 0;
     cycle = new Array(n); clen = 0;
     current = unvisited++;
     cycle[clen++] = current;
@@ -6546,6 +6595,20 @@ function permutation2cycles(permutation, strict)
     if (cclen < cycles.length) cycles.length = cclen; // truncate
     return cycles;
 }
+function cycles2permutation(cycles, n)
+{
+    var permutation = array(n || (cycles.reduce(function(s, c){return stdMath.max(s, stdMath.max.apply(null, c)||0);}, 0)+1), 0, 1), i, j, k = cycles.length, ki, cycle;
+    for (i=k-1; i>=0; i--)
+    {
+        cycle = cycles[i]; ki = cycle.length;
+        if (ki)
+        {
+            for (j=0; j+1<ki; j++) permutation[cycle[j]] = cycle[j+1];
+            permutation[cycle[ki-1]] = cycle[0];
+        }
+    }
+    return permutation;
+}
 function permutation2swaps(permutation)
 {
     var n = permutation.length, i, l, j, k,
@@ -6557,6 +6620,7 @@ function permutation2swaps(permutation)
 }
 function swaps2permutation(swaps, n)
 {
+    n = n || (swaps.reduce(function(s, c){return stdMath.max(s, stdMath.max.apply(null, c)||0);}, 0)+1);
     var i, l = swaps.length, permutation = new Array(n), s, t;
     for (i=0; i<n; i++) permutation[i] = i;
     for (i=0; i<l; i++)
@@ -20182,13 +20246,13 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else if ("multiset" === type)
                 return factorial(n, $.multiplicity);
             else if ("derangement" === type)
-                return kfixed ? (2>n-kfixed ? O : Arithmetic.mul(factorial(n,kfixed),factorial(n-kfixed,false))) : (2>n ? O : factorial(n,false));
+                return null!=kfixed ? Arithmetic.mul(factorial(n,kfixed),factorial(n-kfixed,false)) : factorial(n,false);
             else if ("involution" === type)
                 return factorial(n, true);
             else if ("connected" === type)
                 return factorial(n-1);
             else//if ("permutation" === type)
-                return kcycles ? stirling(n,kcycles,1) : factorial(n);
+                return null!=kcycles ? stirling(n,kcycles,1) : factorial(n);
         }
         ,initial: function(n, $, dir) {
             // some C-P-T dualities, symmetries & processes at play here
@@ -20212,7 +20276,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("derangement" === type)
             {
-                if (kfixed || (2>n)) return null;
+                if ((null!=kfixed) || (2>n)) return null;
                 if (n&1) // odd
                 {
                     var n_2 = stdMath.floor(n/2);
@@ -20230,7 +20294,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else if ("connected" === type)
             {
                 // TODO
-                item = null;
+                item = cycles2permutation([0 > dir ? array(n, n-1, -1) : [n-1].concat(array(n-1, 0, 1))], n);
             }
             else if ("involution" === type)
             {
@@ -20238,7 +20302,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else//if ("permutation" === type)
             {
-                item = kcycles ? null : (0 > dir ? array(n, n-1, -1) : array(n, 0, 1));
+                item = null!=kcycles ? null : (0 > dir ? array(n, n-1, -1) : array(n, 0, 1));
             }
 
             item = klass.DUAL(item, n, $);
@@ -20251,7 +20315,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 kcycles = $ && null!=$['cycles='] ? $['cycles=']|0 : null,
                 kfixed = $ && null!=$['fixed='] ? $['fixed=']|0 : null
             ;
-            if ((("derangement"===type) && kfixed) || (("permutation"===type) && kcycles)) return null;
+            if ((("derangement"===type) && (null!=kfixed)) || (("permutation"===type) && (null!=kcycles))) return null;
             dir = -1 === dir ? -1 : 1;
             return next_permutation(item, n, dir, type, $ && null!=$.order ? $.order : LEX, $ && null!=$.base ? $.base : null, PI);
         }
@@ -20272,7 +20336,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("derangement" === type)
             {
-                if (kfixed) return null;
+                if (null!=kfixed) return null;
                 // p ~ 1 / !n = e / n!, O(3n)
                 // adapted from http://local.disia.unifi.it/merlini/papers/Derangements.pdf
                 item = new Array(n);
@@ -20349,7 +20413,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else//if ("permutation" === type)
             {
-                if (kcycles) return null;
+                if (null!=kcycles) return null;
                 // p ~ 1 / n!, O(n)
                 // fisher-yates-knuth unbiased shuffling
                 item = shuffle(array(n, 0, 1));
@@ -20374,7 +20438,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 I = Arithmetic.I, J = Arithmetic.J, N, M;
 
             n = n || item.length;
-            if (0 > n) return J;
+            if (!item || 0 > n) return J;
             if (0===n) return index;
 
             item = klass.DUAL(item, n, $);
@@ -20384,19 +20448,38 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 // O(1)
                 index = Arithmetic.num(item[0]);
             }
-            else if (("involution" === type) || ("connected" === type))
+            else if ("connected" === type)
             {
-                /*item = permutation2inversion(null, item);
+                // O(nlgn)
+                if (n === item.length)
+                {
+                    item = permutation2cycles(item)[0];
+                    if (n !== item.length) return J;
+                    k = item.indexOf(n-1);
+                    if (0 > k) return J;
+                    item = array(n, function(i){return item[(i+k)%n];}).slice(1);
+                }
+                if (n-1 === item.length)
+                {
+                    inv = permutation2inversion(null, item);
+                    for (m=n-2,i=0; i<m; i++) index = add(mul(index, n-1-i), inv[i]);
+                }
+                else return J;
+            }
+            else if ("involution" === type)
+            {
+                /*inv = permutation2inversion(null, item);
                 for (I=n&1?-1:1,i=0; i<n-1; i++,I=-I)
                 {
-                    index = add(mul(index,n-i), I*(n-i)+item[i]);
+                    index = add(mul(index,n-i), I*(n-i)+inv[i]);
                 }
                 return index;*/
                 return NotImplemented();
             }
             else if ("derangement" === type)
             {
-                if (kfixed) return NotImplemented();
+                if (null!=kfixed) return NotImplemented();
+                // O(n) algorithm best case, O(n^2) worst case
                 for (indexOf=new Array(n),dict={},i=0; i<n; i++)
                 {
                     x = item[i];
@@ -20404,11 +20487,11 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     dict[x] = 1;
                     indexOf[x] = i;
                 }
-                //inv = permutation2inversion(null, permutation2inverse(null, item));
+                inv = permutation2count(null, item);
                 for (i=0; i+1<n; i++)
                 {
-                    for (k=0,j=i+1; j<n; j++) k += (item[j] > i);
-                    index = add(index, derange_rank(n, item[i], i, k, indexOf));
+                    //for (k=0,j=i+1; j<n; j++) k += (item[j] > i);
+                    index = add(index, derange_rank(n, item[i], i, k=inv[i], indexOf));
                 }
                 return index;
             }
@@ -20427,7 +20510,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else//if ("permutation" === type)
             {
-                if (kcycles) return NotImplemented();
+                if (null!=kcycles) return NotImplemented();
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // O(nlgn)
                 for (dict={},i=0; i<n; i++)
@@ -20453,13 +20536,14 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 order = $ && null!=-$.order ? $.order : LEX,
                 mod = Arithmetic.mod, div = Arithmetic.div, mul = Arithmetic.mul,
                 add = Arithmetic.add, sub = Arithmetic.sub, val = Arithmetic.val,
-                item, indexOf, r, i, j, ii, x, y, k, b, t, N, M;
+                item, indexOf, r, i, j, C, ii, x, y, k, b, t, N, M;
+
+            if (0 > n) return null;
 
             index = null == index ? null : Arithmetic.num(index);
             if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
                 return null;
 
-            if (0 > n) return null;
             if (0===n) return [];
 
             if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
@@ -20471,19 +20555,50 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 index = val(index);
                 item = array(n, function(i){return (index+i)%n});
             }
-            else if (("involution" === type) || ("connected" === type))
+            else if ("involution" === type)
             {
                 return NotImplemented();
             }
+            else if ("connected" === type)
+            {
+                item = array(n-1); item[n-2] = 0;
+                for (r=index,i=n-3; i>=0; i--)
+                {
+                    b = n-1-i; t = mod(r, b); r = div(r, b);
+                    item[i] = val(t);
+                }
+                inversion2permutation(item, item);
+                item = cycles2permutation([[n-1].concat(item)], n);
+            }
             else if ("derangement" === type)
             {
-                if (kfixed || 2 > n) return null;
+                if (null!=kfixed || 2 > n) return null;
+                // https://cs.stackexchange.com/questions/142186/faster-algorithm-for-specific-inversion-count-part-2
+                // O(n^2)
+                /*t = stdMath.ceil(log2(n));
+                C = array((1 << t), function(i){return array(t, 0, 0);});
+                var Offset = function(index, delta) {
+                    var x, l, h = array(t, function(j){
+                        var b = index & 1;
+                        index >>>= 1;
+                        return b;
+                    });
+                    for (x=0,l=t-1; l>=0; l--)
+                    {
+                        if (0 < h[l])
+                        {
+                            C[x][l] += delta;
+                            x += (1 << h[l]);
+                        }
+                    }
+                };*/
                 item = new Array(n);
                 indexOf = array(n, -1, 0);
-                i = 0;
+                i = 0; //ii = array(t, 0, 0);
                 while (i<n && Arithmetic.gte(index, Arithmetic.O))
                 {
                     for (k=0,j=0; j<i; j++) k += (item[j] > i);
+                    //for (k=0,j=0; j<t && 0===ii[j]; j++) k += C[i][j];
                     for (r=Arithmetic.O,y=n-1; y>=0; y--)
                     {
                         if ((y === i) || (0 <= indexOf[y] && indexOf[y] < i)) continue;
@@ -20491,9 +20606,14 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                         if (Arithmetic.lte(r, index)) break;
                     }
                     if (0 > y) break;
+                    index = sub(index, r);
                     item[i] = y;
                     indexOf[y] = i;
-                    index = sub(index, r);
+                    //Offset(y, 1);
+                    //Offset(i, -1);
+                    //j = 0;
+                    //while (1 === ii[j]) {ii[j] = 0; j++;}
+                    //ii[j] = 1;
                     i++;
                 }
                 //if (!Arithmetic.equ(O, index)) item = null;
@@ -20514,7 +20634,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else//if ("permutation" === type)
             {
-                if (kcycles) return null;
+                if (null!=kcycles) return null;
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // O(nlgn)
                 item = array(n); item[n-1] = 0;
@@ -20556,13 +20676,34 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,cycles: function(item, dir) {
             return -1 === dir ? cycles2permutation(item) : permutation2cycles(item);
         }
+        ,toCycles: function(item) {
+            return permutation2cycles(item);
+        }
+        ,fromCycles: function(item, n) {
+            return cycles2permutation(item, n);
+        }
         ,swaps: function(item, dir) {
             return -1 === dir ? swaps2permutation(item) : permutation2swaps(item);
+        }
+        ,toSwaps: function(item) {
+            return permutation2swaps(item);
+        }
+        ,fromSwaps: function(item, n) {
+            return swaps2permutation(item, n);
         }
         ,inversion: function(item, dir) {
             return -1 === dir ? inversion2permutation(null, item) : permutation2inversion(null, item);
         }
+        ,toInversion: function(item) {
+            return permutation2inversion(null, item);
+        }
+        ,fromInversion: function(item) {
+            return inversion2permutation(null, item);
+        }
         ,inverse: function(item) {
+            return permutation2inverse(null, item);
+        }
+        ,toInverse: function(item) {
             return permutation2inverse(null, item);
         }
         ,multiset: function(item, multi, dir) {
@@ -20571,6 +20712,12 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         ,matrix: function(item, transposed, dir) {
             return -1 === dir ? matrix2permutation(null, item, transposed) : permutation2matrix(null, item, transposed);
+        }
+        ,toMatrix: function(item, transposed) {
+            return permutation2matrix(null, item, transposed);
+        }
+        ,fromMatrix: function(item, transposed) {
+            return matrix2permutation(null, item, transposed);
         }
         ,parity: NotImplemented
         ,isPermutation: is_permutation
@@ -20582,8 +20729,23 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,isConnected: is_connected
         ,isKcycle: is_kcycle
     }
-    ,_update: function() {
+    ,output: function(item) {
         var self = this;
+        if (item && ("connected" === self.$.type) && (self.n-1 === item.length)) item = cycles2permutation([[self.n-1].concat(item)], self.n);
+        return CombinatorialIterator[PROTO].output.call(self, item);
+    }
+    ,_update: function() {
+        var self = this, item, k, n;
+        if (self.__item && ("connected" === self.$.type))
+        {
+            n = self.n;
+            if (n === self.__item.length)
+            {
+                item = permutation2cycles(self.__item)[0];
+                k = item.indexOf(n-1);
+                self.__item = array(n, function(i){return item[(i+k)%n];}).slice(1);
+            }
+        }
         self.item__ = perm_item_(self.__item, self.n, self.$.order, self.$.type);
         return self;
     }
@@ -20629,6 +20791,12 @@ function next_permutation(item, N, dir, type, order, multiplicity, PI)
     var n = N, m = null == multiplicity ? n : multiplicity,
         k, kl, l, r, s, s0, fixed, k0, DK, a, b, da, db, MIN, MAX;
     if (0 >= n) return null;
+
+    if ("connected" === type)
+    {
+        return next_permutation(item, N-1, dir, "permutation", order, null, PI);
+    }
+
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
     MIN = 0; MAX = n-1;
@@ -20677,10 +20845,6 @@ function next_permutation(item, N, dir, type, order, multiplicity, PI)
             else item = null;
         }
         else if ("involution" === type)
-        {
-            item = null;
-        }
-        else if ("connected" === type)
         {
             item = null;
         }
@@ -20840,10 +21004,6 @@ function next_permutation(item, N, dir, type, order, multiplicity, PI)
                 }
             }
             if (fixed) item = null; // last
-        }
-        else if ("connected" === type)
-        {
-            item = null;
         }
         else//if (("multiset" === type) || ("derangement" === type) || ("permutation" === type))
         {
