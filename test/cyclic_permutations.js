@@ -40,7 +40,10 @@ print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind());
+print_all(o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
+    return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(',')];
+});
 
 echo('backwards');
 echo('o.rewind(-1)');

@@ -20005,6 +20005,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
                 index = Arithmetic.O, J = Arithmetic.J, nd, i;
 
+            if (!item) return J;
             if ("partial" === type)
             {
                 index = Arithmetic.num(find($.data, item, true));
@@ -20017,14 +20018,22 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 if ("tuple" === type)
                 {
                     nd = n[0];
-                    if (!nd) return J;
-                    for (n=n[1],i=0; i<nd; i++) index = add(mul(index, n), item[i]);
+                    if (!nd || nd !== item.length) return J;
+                    for (n=n[1],i=0; i<nd; i++)
+                    {
+                        if (0 > item[i] || item[i] >= n) return J;
+                        index = add(mul(index, n), item[i]);
+                    }
                 }
                 else
                 {
                     nd = n.length;
-                    if (!nd) return J;
-                    for (i=0; i<nd; i++) index = add(mul(index, n[i]), item[i]);
+                    if (!nd || nd !== item.length) return J;
+                    for (i=0; i<nd; i++)
+                    {
+                        if (0 > item[i] || item[i] >= n[i]) return J;
+                        index = add(mul(index, n[i]), item[i]);
+                    }
                 }
             }
 
@@ -20088,6 +20097,14 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,gray: function(item, n, dir) {
             dir = -1 === dir ? -1 : 1;
             return 0 > dir ? igray(new Array(item.length), item, n) : gray(new Array(item.length), item, n);
+        }
+        ,toGray: function(item, n) {
+            dir = -1 === dir ? -1 : 1;
+            return gray(new Array(item.length), item, n);
+        }
+        ,fromGray: function(item, n) {
+            dir = -1 === dir ? -1 : 1;
+            return igray(new Array(item.length), item, n);
         }
         ,inversion: function(inv) {
             // assume inv is tensor component of dimensions: (1,2,..,n-1,n) in this order
@@ -20216,7 +20233,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         // random ordering for derangements / involutions / connecteds
         // is based on random generation, instead of random unranking
         $.rand = $.rand || {};
-        $.rand["involution"] = 1; $.rand["connected"] = 1;
+        $.rand["involution"] = 1;
         if ("multiset" === $.type)
         {
             $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array($.dimension, 1, 0);
@@ -20438,21 +20455,33 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 I = Arithmetic.I, J = Arithmetic.J, N, M;
 
             n = n || item.length;
-            if (!item || 0 > n) return J;
+            if (!item || 0 > n || n !== item.length) return J;
             if (0===n) return index;
 
             item = klass.DUAL(item, n, $);
 
             if ("cyclic"=== type)
             {
-                // O(1)
-                index = Arithmetic.num(item[0]);
+                // O(n)
+                ii = item[0];
+                for (i=0; i<n; i++)
+                {
+                    x = item[(i+n-ii)%n];
+                    if (x !== i) return J;
+                }
+                index = Arithmetic.num(ii);
             }
             else if ("connected" === type)
             {
                 // O(nlgn)
                 if (n === item.length)
                 {
+                    for (dict={},i=0; i<n; i++)
+                    {
+                        x = item[i];
+                        if (0 > x || x >= n || 1 === dict[x]) return J;
+                        dict[x] = 1;
+                    }
                     item = permutation2cycles(item)[0];
                     if (n !== item.length) return J;
                     k = item.indexOf(n-1);
@@ -20500,6 +20529,14 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 //item = permutation2inversion(null, multiset2permutation(item));
                 // adapted from https://github.com/WoDoInc/FindMultisetRank
                 // O(nm) ~ O(n^2) TODO construct O(nlgn) algorithm
+                M = $.multiplicity.slice();
+                for (i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= M.length || 0 >= M[x]) return J;
+                    M[x]--;
+                }
+                if (0 !== M.filter(function(x){return x !== 0;}).length) return J;
                 M = $.multiplicity.slice();
                 N = $ && null!=$.count ? $.count : factorial(n,M);
                 for (m=n-1,i=0; i<m && Arithmetic.gt(N, I); i++)
@@ -21217,12 +21254,13 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         ,rank: function(item, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 add = Arithmetic.add, sub = Arithmetic.sub,
-                mul = Arithmetic.mul, O = Arithmetic.O, I = Arithmetic.I,
-                index = O, i, c, j, k = n[1], N, binom,
+                mul = Arithmetic.mul, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
+                index = O, i, c, j, k = n[1], N, binom, x, dict,
                 order = $ && null!=$.order ? $.order : LEX,
                 type = $ && $.type ? $.type : "combination"/*"unordered"*/;
 
-            if (0 > n[0] || 0 > n[1]) return Arithmetic.J;
+            if (!item || 0 > n[0] || 0 > n[1] || k !== item.length) return J;
+
             if (0===k) return O;
             item = klass.DUAL(item, n, $);
 
@@ -21230,7 +21268,11 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             {
                 // O(k)
                 N = n[0];
-                for (i=0; i<k; i++) index = add(mul(index, N), item[i]);
+                for (i=0; i<k; i++)
+                {
+                    if (0 > item[i] || item[i] >= N) return J;
+                    index = add(mul(index, N), item[i]);
+                }
             }
             else if (("repeated" === type) || ("combination+repeated" === type))
             {
@@ -21241,6 +21283,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                     // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                     // adjust the order to match MSB to LSB
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
+                    if (0 > item[i-1] || item[i-1] >= n[0] || (i<k && item[i-1] > item[i])) return J;
                     c = N-1-item[i-1]-i+1; j = k+1-i;
                     if (j <= c) index = add(index, factorial(c, j));
                 }
@@ -21251,7 +21294,13 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // rank(ordered) = rank(k-n-permutation)
                 // O(klgk)
-                N = n[0]; item = permutation2inversion(null, item, N);
+                N = n[0];
+                for (dict={},i=0; i<k; i++)
+                {
+                    if (0 > item[i] || item[i] >= N || 1 === dict[item[i]]) return J;
+                    dict[item[i]] = 1;
+                }
+                item = permutation2inversion(null, item, N);
                 for (i=0; i<k; i++) index = add(mul(index, N-i), item[ i ]);
             }
             else//if (("combination" === type) || ("unordered" === type) || ("binary" === type))
@@ -21264,6 +21313,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                     // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                     // adjust the order to match MSB to LSB
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
+                    if (0 > item[i-1] || item[i-1] >= N || (i<k && item[i-1] >= item[i])) return J;
                     c = N-1-item[i-1]; j = k+1-i;
                     if (j <= c) index = add(index, factorial(c, j));
                 }
@@ -21357,6 +21407,12 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         }
         ,binary: function(item, n, dir) {
             return -1 === dir ? binary2subset(item, n) : subset2binary(item, n);
+        }
+        ,toBinary: function(item, n) {
+            return subset2binary(item, n);
+        }
+        ,fromBinary: function(item, n) {
+            return binary2subset(item, n);
         }
         ,pick: function(a, k, type) {
             return (0 < k) && a.length ? pick(a, k, ("ordered+repeated"!==type)&&("variation+repeated"!==type)&&("repeated+variation"!==type)&&("ordered"!==type)&&("variation"!==type), ("ordered+repeated"===type)||("variation+repeated"===type)||("repeated"===type)||("combination+repeated"===type), new Array(k)) : [];
@@ -21764,6 +21820,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             {
                 item = (is_binary && !is_reflected) || (is_reflected && !is_binary) ? item.slice(n-item[n],n) : item.slice(0,item[n]);
             }
+            if ($.mindimension > item.length || $.maxdimension < item.length) return J;
             if (0 === n)
             {
                 index = O;
@@ -22632,6 +22689,8 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 {
                     item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
                 }
+                if ($.mindimension > item.length || $.maxdimension < item.length) return J;
+
                 //if (REFLECTED & order) item = item.slice().reverse();
                 item = klass.DUAL(item.slice(), n, $, -1);
 
@@ -22643,7 +22702,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     index = O;
                     if (W && M === W)
                     {
-                        return null == K || stdMath.floor(n/M) === K ? O : J;
+                        return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? O : J;
                     }
                     for (w=0,m=0,i=0; 0<n && i<item.length; i++)
                     {
@@ -22654,7 +22713,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                         if (M === x) m++;
                         n -= x;
                     }
-                    if (0 !== n) return J;
+                    if (0 !== n || i !== item.length) return J;
                     if (REVERSED & order) index = Arithmetic.sub(last, index);
                 }
                 else
@@ -22662,7 +22721,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     index = last;
                     if (W)
                     {
-                        if (M === W) return null == K || stdMath.floor(n/M) === K ? O : J;
+                        if (M === W) return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? O : J;
                         n -= W; if (K) K--;
                     }
                     for (i=0; 0<n && i<item.length; i++)
@@ -22673,7 +22732,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                         index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
                         n -= x;
                     }
-                    if (0 !== n) return J;
+                    if (0 !== n || i !== item.length) return J;
                     if (!(REVERSED & order)) index = Arithmetic.sub(last, index);
                 }
             }
