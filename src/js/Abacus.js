@@ -17747,7 +17747,7 @@ Filter = Abacus.Filter = Class({
             });
         }
         ,MOD: function(iter, item0) {
-            index0 = null == item0 || !is_instance(iter, CombinatorialIterator) ? Abacus.Arithmetic.O : iter.index(item0);
+            var index0 = null == item0 || !is_instance(iter, CombinatorialIterator) ? Abacus.Arithmetic.O : iter.index(item0);
             return Filter(is_instance(iter, CombinatorialIterator) ? function(item){
                 return Abacus.Arithmetic.equ(index0, iter.index(item));
             } : function(item){
@@ -18291,6 +18291,18 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 return 0>dir || (REVERSED&($ && null!=$.order ? $.order : LEX)) ? $.seq[$.seq.length-1].item0(dir) : $.seq[0].item0(dir);
             }
             return null;
+        }
+        ,valid: function(item, n, $) {
+            if ((null!=item) && $ && ("sequence"===$.type) && $.seq && $.seq.length)
+            {
+                for (var i=0; i<$.seq.length; i++)
+                {
+                    if ($.seq[i][CLASS].valid(item, $.seq[i].n, $.seq[i].$))
+                        return true;
+                }
+                return false;
+            }
+            return false;
         }
         ,succ: function(item, index, n, $, dir, item_) {
             if ((null == n) || (null == item)) return null;
@@ -18946,9 +18958,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
     }
 
     ,has: function(item) {
-        var self = this, Arithmetic = Abacus.Arithmetic,
-            index = is_array(item) ? self.index(item) : Arithmetic.J;
-        return Arithmetic.gte(index, Arithmetic.O) && Arithmetic.lt(index, self.total(true));
+        var self = this, klass = self[CLASS];
+        return is_array(item) ? Abacus.Arithmetic.gt(self.total(true), Abacus.Arithmetic.O) && klass.valid(item, self.n, self.$) : false;
     }
 
     ,index: function(index, non_recursive) {
@@ -19063,7 +19074,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             o = $.order; $.order = order;
 
             self.__item = index.slice();
-            self.__index = klass.rank(self.__item, n, $);
+            try {
+                self.__index = klass.rank(self.__item, n, $);
+            } catch (e) {
+                self.__index = O;
+            }
             // any extra info for fast computation of item succ
             self._update();
             self._item = self.output(self.__item);
@@ -19986,6 +20001,38 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             return item;
         }
+        ,valid: function(item, n, $) {
+            var klass = this, type = $ && $.type ? $.type : "tensor", nd, i;
+
+            if (!item) return false;
+            if ("partial" === type)
+            {
+                return 0 <= find($.data, item, true);
+            }
+            else
+            {
+                item = klass.DUAL(item.slice(), n, $);
+                if ("tuple" === type)
+                {
+                    nd = n[0];
+                    if (!nd || nd !== item.length) return false;
+                    for (n=n[1],i=0; i<nd; i++)
+                    {
+                        if (0 > item[i] || item[i] >= n) return false;
+                    }
+                }
+                else
+                {
+                    nd = n.length;
+                    if (!nd || nd !== item.length) return false;
+                    for (i=0; i<nd; i++)
+                    {
+                        if (0 > item[i] || item[i] >= n[i]) return false;
+                    }
+                }
+            }
+            return true;
+        }
         ,succ: function(item, index, n, $, dir, TI) {
             if (!n || (null == item)) return null;
             var type = $ && $.type ? $.type : "tensor",
@@ -20358,6 +20405,70 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             item = klass.DUAL(item, n, $);
 
             return item;
+        }
+        ,valid: function(item, n, $) {
+            var klass = this, type = $ && $.type ? $.type : "permutation",
+                kcycles = $ && null!=$['cycles='] ? $['cycles=']|0 : null,
+                kfixed = $ && null!=$['fixed='] ? $['fixed=']|0 : null,
+                i, j, x, dict, M;
+
+            if (!item || 0 > n || n !== item.length) return false;
+            item = klass.DUAL(item.slice(), n, $);
+            if ("cyclic"=== type)
+            {
+                j = item[0];
+                for (i=0; i<n; i++)
+                {
+                    x = item[(i+n-j)%n];
+                    if (x !== i) return false;
+                }
+            }
+            else if ("connected" === type)
+            {
+                for (dict={},i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return false;
+                    dict[x] = 1;
+                }
+                if (!is_connected(item)) return false;
+            }
+            else if ("involution" === type)
+            {
+                if (!is_involution(item)) return false;
+            }
+            else if ("derangement" === type)
+            {
+                for (dict={},i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return false;
+                    dict[x] = 1;
+                }
+                if (!is_derangement(item, null!=kfixed ? kfixed : 0, true)) return false;
+            }
+            else if ("multiset" === type)
+            {
+                M = $.multiplicity.slice();
+                for (i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= M.length || 0 >= M[x]) return false;
+                    M[x]--;
+                }
+                if (0 !== M.filter(function(x){return x !== 0;}).length) return false;
+            }
+            else//if ("permutation" === type)
+            {
+                for (dict={},i=0; i<n; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x]) return false;
+                    dict[x] = 1;
+                }
+                if (null!=kcycles && kcycles !== permutation2cycles(item).length) return false;
+            }
+            return true;
         }
         ,succ: function(item, index, n, $, dir, PI) {
             if (!n || (0 >= n) || (null == item)) return null;
@@ -21210,6 +21321,48 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
 
             return item;
         }
+        ,valid: function(item, n, $) {
+            var klass = this, type = $ && $.type ? $.type : "combination"/*"unordered"*/,
+                k = n[1], N, i, x, dict;
+
+            if (!item || 0 > n[0] || 0 > n[1] || k !== item.length) return false;
+
+            item = klass.DUAL(item.slice(), n, $);
+            if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
+            {
+                N = n[0];
+                for (i=0; i<k; i++)
+                {
+                    if (0 > item[i] || item[i] >= N) return false;
+                }
+            }
+            else if (("repeated" === type) || ("combination+repeated" === type))
+            {
+                N = n[0];
+                for (i=0; i<k; i++)
+                {
+                    if (0 > item[i] || item[i] >= N || (i+1<k && item[i] > item[i+1])) return false;
+                }
+            }
+            else if (("ordered" === type) || ("variation" === type))
+            {
+                N = n[0];
+                for (dict={},i=0; i<k; i++)
+                {
+                    if (0 > item[i] || item[i] >= N || 1 === dict[item[i]]) return false;
+                    dict[item[i]] = 1;
+                }
+            }
+            else//if (("combination" === type) || ("unordered" === type) || ("binary" === type))
+            {
+                N = n[0];
+                for (i=0; i<k; i++)
+                {
+                    if (0 > item[i] || item[i] >= N || (i+1<k && item[i] >= item[i+1])) return false;
+                }
+            }
+            return true;
+        }
         ,succ: function(item, index, n, $, dir, CI) {
             if (!n || !n[0] || (0 >= n[0]) || (0>=n[1]) || (null == item)) return null;
             dir = -1 === dir ? -1 : 1;
@@ -21784,6 +21937,37 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             item = klass.DUAL(item, n, $, 1);
 
             return item;
+        }
+        ,valid: function(item, n, $) {
+            var klass = this, is_binary = "binary" === ($||{}).type, i, x, l, dict;
+
+            if (!item || 0>n) return false;
+
+            item = klass.DUAL(item.slice(), n, $, -1);
+            if ($.mindimension > item.length || $.maxdimension < item.length) return false;
+            if (is_binary)
+            {
+                l = item.length;
+                dict = {};
+                for (i = 0; i < l; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x <= item[i+1])) return false;
+                    dict[x] = 1;
+                }
+            }
+            else
+            {
+                l = item.length;
+                dict = {};
+                for (i = 0; i < l; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= item[i+1])) return false;
+                    dict[x] = 1;
+                }
+            }
+            return true;
         }
         ,succ: function(item, index, n, $, dir, SI) {
             if (null == item) return null;
@@ -22607,6 +22791,58 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             item = klass.DUAL(item, n, $, 1);
 
             return item;
+        }
+        ,valid: function(item, n, $) {
+            var klass = this, type = $ && $.type ? $.type : "partition",
+                M = $ && null!=$["max="] ? $["max="]|0 : null,
+                W = $ && null!=$["min="] ? $["min="]|0 : null,
+                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+                i, l, x;
+
+            if (
+                !item || !item.length
+                || (0 > n)
+                || $.mindimension > item.length || $.maxdimension < item.length
+                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
+                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
+                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
+                || (null!=M && (0 >= M || M > n))
+                || (null!=K && (0 >= K || K > n))
+            )
+                return false;
+
+            item = klass.DUAL(item.slice(), n, $, -1);
+            if ("composition" === type)
+            {
+                if (W && M === W)
+                {
+                    return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? true : false;
+                }
+                for (i=0,l=item.length; i<l; i++)
+                {
+                    x = item[i];
+                    if (0 >= x || x > n || (W && x < W) || (M && x > M)) return false;
+                    n -= x;
+                }
+                if (0 !== n) return false;
+            }
+            else
+            {
+                if (W && M === W)
+                {
+                    return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? true : false;
+                }
+                for (i=0,l=item.length; i<l; i++)
+                {
+                    x = item[i];
+                    if (0 >= x || x > n || (W && x < W) || (M && x > M)) return false;
+                    n -= x;
+                }
+                if (0 !== n) return false;
+            }
+            return true;
         }
         ,succ: function(item, index, n, $, dir, PI) {
             if ((null == n) || (null == item)) return null;
@@ -24094,6 +24330,21 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
 
             return item;
         }
+        ,valid: function(item, n, $) {
+            var klass = this, K = $ && null!=$["parts="] ? $["parts="]|0 : null, l, k, i, j, s, x, dict;
+            if (!item || 0>n || $.mindimension > item.length || $.maxdimension < item.length) return false;
+            item = klass.DUAL(item.slice(), n, $);
+            for (dict={},j=0,k=item.length; j<k; j++)
+            {
+                for (s=item[j],i=0,l=s.length; i<l; i++)
+                {
+                    x = set[i];
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= set[i+1])) return false;
+                    dict[x] = 1;
+                }
+            }
+            return true;
+        }
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
             dir = -1 === dir ? -1 : 1;
@@ -24314,6 +24565,26 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
 
             // O(n)
             return array(n, function(i){return 0 > dir ? 2*i : i;});
+        }
+        ,valid: function(item, n, $) {
+            var klass = this, i, l, x, s0 = $.symbols[0], s1 = $.symbols[$.symbols.length-1], stack;
+            if (!item || 0>n || 2*n !== item.length) return false;
+            item = klass.DUAL(item.slice(), n, $);
+            for (stack=0,i=0,l=item.length; i<l; i++)
+            {
+                x = item[i];
+                if (x === s0)
+                {
+                    stack++;
+                }
+                else if (x === s1)
+                {
+                    if (0 >= stack) return false;
+                    stack--;
+                }
+                else return false;
+            }
+            return 0 === stack;
         }
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
