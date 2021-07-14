@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for Javascript
-*   @version: 1.0.6
+*   @version: 1.0.7
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -20,7 +20,7 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus(undef){
 "use strict";
 
-var  Abacus = {VERSION: "1.0.6"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "1.0.7"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array[PROTO].slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -17739,6 +17739,21 @@ Filter = Abacus.Filter = Class({
                 return true;
             });
         }
+        ,DIFF: function(iter) {
+            return Filter(is_instance(iter, CombinatorialIterator) ? function(item){
+                return !iter.has(item);
+            } : function(item){
+                return true;
+            });
+        }
+        ,MOD: function(iter, item0) {
+            index0 = null == item0 || !is_instance(iter, CombinatorialIterator) ? Abacus.Arithmetic.O : iter.index(item0);
+            return Filter(is_instance(iter, CombinatorialIterator) ? function(item){
+                return Abacus.Arithmetic.equ(index0, iter.index(item));
+            } : function(item){
+                return true;
+            });
+        }
     }
 
     ,filter: null
@@ -18930,6 +18945,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         return self;
     }
 
+    ,has: function(item) {
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            index = is_array(item) ? self.index(item) : Arithmetic.J;
+        return Arithmetic.gte(index, Arithmetic.O) && Arithmetic.lt(index, self.total(true));
+    }
+
     ,index: function(index, non_recursive) {
         non_recursive = !!non_recursive;
         var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic,
@@ -18944,44 +18965,56 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             return /*Arithmetic.sub(*/index/*, self.hasNext()?1:0)*/;
         }
 
-        index = Arithmetic.wrapR(Arithmetic.num(index), tot);
-
-        if (!Arithmetic.equ(index, curindex) && Arithmetic.inside(index, J, tot))
+        if (is_array(index))
         {
-            tot = $.count; tot_1 = $.last;
-            if ($.sub && !non_recursive)
-            {
-                $.sub.index(Arithmetic.div(index, tot));
-                self.__subindex = $.sub.index();
-                self.__subitem = $.sub.item();
-                index = Arithmetic.mod(index, tot);
+            try {
+                index = klass.rank(index, self.n, self.$);
+            } catch (e) {
+                index = J;
             }
-
-            if (!(RANDOM & order))
-            {
-                self.__index = index;
-                self._index = index;
-                self.__item = Arithmetic.equ(O, index)
-                ? klass.initial(n, $, 1)
-                : (Arithmetic.equ(tot_1, index)
-                ? klass.initial(n, $, -1)
-                : klass.unrank(index, n, $));
-                // any extra info for fast computation of item succ
-                self._update();
-                self._item = self.output(self.__item);
-                self._prev = null != self.__item;
-                self._next = null != self.__item;
-            }
-
-            if ($.sub)
-            {
-                self._prev = self._prev && (null != self.__subitem);
-                self._next = self._next && (null != self.__subitem);
-                self._subindex = Arithmetic.add(Arithmetic.mul(self.__subindex,tot), self._index);
-                self._subitem = self.fusion(self._item, self.__subitem);
-            }
+            return index;
         }
-        return self;
+        else
+        {
+            index = Arithmetic.wrapR(Arithmetic.num(index), tot);
+
+            if (!Arithmetic.equ(index, curindex) && Arithmetic.inside(index, J, tot))
+            {
+                tot = $.count; tot_1 = $.last;
+                if ($.sub && !non_recursive)
+                {
+                    $.sub.index(Arithmetic.div(index, tot));
+                    self.__subindex = $.sub.index();
+                    self.__subitem = $.sub.item();
+                    index = Arithmetic.mod(index, tot);
+                }
+
+                if (!(RANDOM & order))
+                {
+                    self.__index = index;
+                    self._index = index;
+                    self.__item = Arithmetic.equ(O, index)
+                    ? klass.initial(n, $, 1)
+                    : (Arithmetic.equ(tot_1, index)
+                    ? klass.initial(n, $, -1)
+                    : klass.unrank(index, n, $));
+                    // any extra info for fast computation of item succ
+                    self._update();
+                    self._item = self.output(self.__item);
+                    self._prev = null != self.__item;
+                    self._next = null != self.__item;
+                }
+
+                if ($.sub)
+                {
+                    self._prev = self._prev && (null != self.__subitem);
+                    self._next = self._next && (null != self.__subitem);
+                    self._subindex = Arithmetic.add(Arithmetic.mul(self.__subindex,tot), self._index);
+                    self._subitem = self.fusion(self._item, self.__subitem);
+                }
+            }
+            return self;
+        }
     }
 
     ,item0: function(dir, raw) {
@@ -20831,7 +20864,7 @@ function next_permutation(item, N, dir, type, order, multiplicity, PI)
 
     if ("connected" === type)
     {
-        return next_permutation(item, N-1, dir, "permutation", order, null, PI);
+        return next_permutation(item, N-1, dir, "permutation", LEX, null, PI);
     }
 
     // some C-P-T dualities, symmetries & processes at play here
@@ -21833,7 +21866,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 for (index = O,i = 0; i < l; i++)
                 {
                     x = item[i];
-                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= item[i+1])) return J;
                     index = add(index, subset_bin_rank(n, x));
                     dict[x] = 1;
                 }
@@ -21849,7 +21882,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 for (index = O,i = 0; i < l; i++)
                 {
                     x = item[i];
-                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x <= item[i+1])) return J;
                     index = add(index, subset_bin_rank(n, x));
                     dict[x] = 1;
                 }
@@ -21864,7 +21897,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 for (index = O,i = 0; i < l; i++)
                 {
                     x = item[i];
-                    if (0 > x || x >= n || 1 === dict[x]) return J;
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= item[i+1])) return J;
                     index = add(index, subset_lex_rank(n, x, y));
                     dict[x] = 1; y = x;
                 }
