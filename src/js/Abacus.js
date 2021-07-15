@@ -21944,7 +21944,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             if (!item || 0>n) return false;
 
             item = klass.DUAL(item.slice(), n, $, -1);
-            if ($.mindimension > item.length || $.maxdimension < item.length) return false;
+            if (0 > item.length || n < item.length) return false;
             if (is_binary)
             {
                 l = item.length;
@@ -22797,12 +22797,11 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 M = $ && null!=$["max="] ? $["max="]|0 : null,
                 W = $ && null!=$["min="] ? $["min="]|0 : null,
                 K = $ && null!=$["parts="] ? $["parts="]|0 : null,
-                i, l, x;
+                i, l, x, k0, k1, d0, d1;
 
             if (
                 !item || !item.length
                 || (0 > n)
-                || $.mindimension > item.length || $.maxdimension < item.length
                 || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
                 || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
                 || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
@@ -22813,10 +22812,16 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             )
                 return false;
 
+            k1 = null!=K ? K : (null!=W && null!=M ? (M===W ? stdMath.ceil(n/W) : stdMath.max(1, stdMath.ceil((n-M)/W))+1) : (null!=W ? stdMath.ceil(n/W) : (null!=M ? stdMath.max(0, n-M)+1 : n)));
+            k0 = null!=K ? K : (null!=W && null!=M ? (M===W ? stdMath.ceil(n/M) : stdMath.max(1, stdMath.ceil((n-W)/M))+1) : (null!=W ? 2 : (null!=M ? stdMath.ceil(n/M) : 1)));
+            d0 = stdMath.max(1, stdMath.min(k0, k1));
+            d1 = stdMath.max(1, stdMath.max(k0, k1));
+            if (d0 > item.length || d1 < item.length) return false;
+
             item = klass.DUAL(item.slice(), n, $, -1);
             if ("composition" === type)
             {
-                if (W && M === W)
+                if (null!=W && M === W)
                 {
                     return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? true : false;
                 }
@@ -22830,7 +22835,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             }
             else
             {
-                if (W && M === W)
+                if (null!=W && M === W)
                 {
                     return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? true : false;
                 }
@@ -24331,10 +24336,13 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, K = $ && null!=$["parts="] ? $["parts="]|0 : null, l, k, i, j, s, x, dict;
-            if (!item || 0>n || $.mindimension > item.length || $.maxdimension < item.length) return false;
+            var klass = this, K = $ && null!=$["parts="] ? $["parts="]|0 : null, l, k, i, j, s, x, m, dict, d0, d1;
+            if (!item || 0>n) return false;
+            d0 = stdMath.max(0, null != K ? K : 1);
+            d1 = stdMath.max(0, null != K ? K : n);
+            if (d0 > item.length || d1 < item.length) return false;
             item = klass.DUAL(item.slice(), n, $);
-            for (dict={},j=0,k=item.length; j<k; j++)
+            for (dict={},m=0,j=0,k=item.length; j<k; j++)
             {
                 for (s=item[j],i=0,l=s.length; i<l; i++)
                 {
@@ -24342,8 +24350,9 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
                     if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= set[i+1])) return false;
                     dict[x] = 1;
                 }
+                m += l;
             }
-            return true;
+            return m === n;
         }
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
@@ -24555,7 +24564,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
             return 0>n ? Abacus.Arithmetic.O : catalan(n);
         }
         ,initial: function(n, $, dir) {
-            var klass = this, order = $ && null!=$.order ? $.order : LEX;
+            var klass = this, item, j, order = $ && null!=$.order ? $.order : LEX;
 
             if ((0 > n)) return null;
 
@@ -24564,12 +24573,26 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
             if ((REVERSED&order)) dir = -dir;
 
             // O(n)
-            return array(n, function(i){return 0 > dir ? 2*i : i;});
+            item = array(n, function(i){return 0 > dir ? 2*i : i;});
+            j = 0;
+            return array(2*n, function(i){
+                if (j<n && i === item[j]) { j++; return $.symbols[0]; }
+                return $.symbols[$.symbols.length-1];
+            });
         }
         ,valid: function(item, n, $) {
-            var klass = this, i, l, x, s0 = $.symbols[0], s1 = $.symbols[$.symbols.length-1], stack;
-            if (!item || 0>n || 2*n !== item.length) return false;
-            item = klass.DUAL(item.slice(), n, $);
+            var klass = this, i, j, l, x, s0 = $.symbols[0], s1 = $.symbols[$.symbols.length-1], stack;
+            if (!item || 0>n) return false;
+            if (n === item.length)
+            {
+                j = 0;
+                item = array(2*n, function(i){
+                    if (j<n && i === item[j]) { j++; return s0; }
+                    return s1;
+                });
+            }
+            if (2*n !== item.length) return false;
+            //item = klass.DUAL(item.slice(), n, $);
             for (stack=0,i=0,l=item.length; i<l; i++)
             {
                 x = item[i];
@@ -24626,10 +24649,10 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
             }
 
             // convert to FXT format
-            return prefix.concat(suffix).reduce(function(item, x, i){
+            return prefix.concat(suffix).map(function(x){return 0 < x ? $.symbols[0] : $.symbols[$.symbols.length-1];})/*.reduce(function(item, x, i){
                 if (0 < x) item.push(i);
                 return item;
-            }, []);
+            }, [])*/;
         }
         // random unranking, another method for unbiased random sampling
         ,randu: CombinatorialIterator.rand
@@ -24640,13 +24663,28 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         if (null == item) return null;
         var self = this, $ = self.$, n = self.n,
             order = null!=$.order ? $.order : LEX,
-            symbols = $.symbols, is_reflected = REFLECTED & order, word, j = 0;
-        word = array(2*n, function(i){
-            if (j<item.length && i === item[j]) { j++; return symbols[0]; }
-            return symbols[symbols.length-1];
-        });
-        if (is_reflected) word = array(word.length, function(i){return symbols[0]===word[word.length-1-i] ? symbols[symbols.length-1] : symbols[0];});
-        return CombinatorialIterator[PROTO].output.call(self, word);
+            symbols = $.symbols, is_reflected = REFLECTED & order, j = 0;
+        if (n === item.length)
+        {
+            item = array(2*n, function(i){
+                if (j<item.length && i === item[j]) { j++; return symbols[0]; }
+                return symbols[symbols.length-1];
+            });
+        }
+        if (is_reflected) item = array(item.length, function(i){return symbols[0]===item[item.length-1-i] ? symbols[symbols.length-1] : symbols[0];});
+        return CombinatorialIterator[PROTO].output.call(self, item);
+    }
+    ,_update: function() {
+        var self = this;
+        if (self.__item && 2*self.n === self.__item.length)
+        {
+            // convert to FXT format
+            self.__item = self.__item.reduce(function(item, x, i){
+                if (self.$.symbols[0] === x) item.push(i);
+                return item;
+            }, []);
+        }
+        return self;
     }
 });
 function next_catalan(item, n, dir, order)
