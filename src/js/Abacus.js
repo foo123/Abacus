@@ -61,7 +61,7 @@ var  Abacus = {VERSION: "1.0.7"}, stdMath = Math, PROTO = 'prototype', CLASS = '
     ,LEXICAL = LEX | COLEX | MINIMAL
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
-    ,Node, Heap
+    ,Node, Heap, ListSet
     ,DefaultArithmetic, INUMBER, INumber, Numeric, Integer, IntegerMod, Rational, Complex
     ,Symbolic, SymbolTerm, PowTerm, MulTerm, AddTerm, Expr, RationalExpr, Op, RelOp, Func
     ,UniPolyTerm, MultiPolyTerm, Poly, PiecewisePolynomial, Polynomial, MultiPolynomial, RationalFunc
@@ -4366,6 +4366,8 @@ function factorial(n, m)
     else if (true === m)
     {
         // involution factorial = I(n) = I(n-1) + (n-1) I(n-2)
+        // http://oeis.org/A000085
+        // I(n) = \sum_{k=0}^{\lfloor n/2 \rfloor}\binom{n}{2k}\frac{(2k)!}{k!2^k}
         if (Arithmetic.lte(n, 18)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,4,10,26,76,232,764,2620,9496,35696,140152,568504,2390480,10349536,46206736,211799312,997313824])[VAL(n)]);
         key = 'I'+String(n);
         if (null == factorial.mem2[key])
@@ -4572,13 +4574,18 @@ function derange_k_of_n(n, k)
     return res;
 }
 derange_k_of_n.mem = Obj();
-function derange_rank(n, y, i, k, indexOf)
+function derange_rank(n, y, i, k, unvisited/*indexOf*/)
 {
     var Arithmetic = Abacus.Arithmetic, count = Arithmetic.O, x;
-    for (x=0; x<y; x++)
+    /*for (x=0; x<y; x++)
     {
         if ((i === x) || (0 <= indexOf[x] && indexOf[x] < i)) continue;
         count = Arithmetic.add(count, derange_k_of_n(n-i-1, k+(y>i && x<i)));
+    }*/
+    for (x=unvisited.first(); x && (x.index<y); x=x.next)
+    {
+        if (i === x.index) continue;
+        count = Arithmetic.add(count, derange_k_of_n(n-i-1, k+(y>i && x.index<i)));
     }
     return count;
 }
@@ -7321,6 +7328,152 @@ Abacus.BitArray = Class({
         return self;
     }
 });
+
+// ListSet, a fixed-size array which is also a doubly-lnked list and allows for O(1) retrieval, removal, re-addition and traverse asc/desc only valid items.
+ListSet = Abacus.ListSet = function ListSet(a) {
+    var self = this, i, n, _first, _last;
+    if (!is_instance(self, ListSet)) return new ListSet(a);
+    a = is_array(a) ? a.slice() : new Array(+a);
+    n = a.length;
+    for (i=0; i<n; i++)
+    {
+        a[i] = {value:a[i], index:i, incl:true, prev:null, next:null};
+        if (0 < i)
+        {
+            a[i-1].next = a[i];
+            a[i].prev = a[i-1];
+        }
+    }
+    _first = a[0]; _last = a[n-1];
+
+    self.first = function() {
+        return _first;
+    };
+    self.last = function() {
+        return _last;
+    };
+    self.rem = function(x) {
+        // remove x from listset
+        var item = null;
+        if (x === +x)
+        {
+            if (0>x || x>=n) return self;
+            item = a[x];
+        }
+        else if (x && (null != x.index))
+        {
+            if (0>x.index || x.index>=n) return self;
+            item = x;
+        }
+        else
+        {
+            return self;
+        }
+        if (item.incl)
+        {
+            if (_first === item) _first = item.next;
+            if (_last === item) _last = item.prev;
+            if (item.prev) item.prev.next = item.next;
+            if (item.next) item.next.prev = item.prev;
+            item.incl = false;
+        }
+        return self;
+    };
+    self.add = function(x) {
+        // add x back to listset
+        var item = null;
+        if (x === +x)
+        {
+            if (0>x || x>=n) return self;
+            item = a[x];
+        }
+        else if (x && (null != x.index))
+        {
+            if (0>x.index || x.index>=n) return self;
+            item = x;
+        }
+        else
+        {
+            return self;
+        }
+        if (!item.incl)
+        {
+            if (_first === item.next) _first = item;
+            if (_last === item.prev) _last = item;
+            if (item.prev) item.prev.next = item;
+            if (item.next) item.next.prev = item;
+            item.incl = true;
+        }
+        return self;
+    };
+    self.dispose = function() {
+        a = null;
+        _first = null;
+        _last = null;
+        return self;
+    };
+};
+
+// auxiliary data structure to count certain things in log(n) time
+// https://cs.stackexchange.com/questions/142186/faster-algorithm-for-specific-inversion-count-part-2
+function Counters(n)
+{
+    var self = this, k, C;
+    if (!is_instance(self, Counters)) return new Counters(n);
+
+    k = stdMath.ceil(log2(n));
+    C = array((1 << (k+1)), function(i){
+        //var kk = 0;
+        //while (kk <= k && !(i & 1)) {kk++; i >>>= 1;}
+        return array(k+1, 0, 0);
+    });
+    self.offset = function(i, delta) {
+        if (0 > i) return self;
+        i++;
+        var x = 0, y, j, il, ih, yl, yh;
+        //il = (i >>> 0) & 0xFFFF;
+        //ih = (i >>> 16) & 0xFFFF;
+        for (j=k; (0<=j) && (0<i /*|| 0<ih*/); j--)
+        {
+            y = (1 << j);
+            //yl = (y >>> 0) & 0xFFFF;
+            //yh = (y >>> 16) & 0xFFFF;
+            if ((i & y) /*|| (ih & yh)*/)
+            {
+                C[x][j] += delta;
+                x += y;
+                i &= ~y;
+                //ih &= ~yh;
+            }
+        }
+        return self;
+    };
+    self.eval = function(i) {
+        var r = 0, j, y, il, ih, yl, yh;
+        //ih = (i >>> 16) & 0xFFFF;
+        //il = (i >>> 0) & 0xFFFF;
+        for (j=0; j<=k; j++)
+        {
+            y = (1 << j);
+            //yh = (y >>> 16) & 0xFFFF;
+            //yl = (y >>> 0) & 0xFFFF;
+            if ((i & y) /*|| (ih & yh)*/)
+            {
+                i &= ~y;
+                //ih &= ~yh;
+            }
+            else
+            {
+                r += C[i/*((ih << 16) | (il)) & 0xFFFFFFFF*/][j];
+            }
+        }
+        return r;
+    };
+    self.dispose = function() {
+        C = null;
+        return self;
+    };
+}
 
 // Abacus.Node, Node class which can represent (dynamic) Linked Lists, Binary Trees and similar structures
 Node = Abacus.Node = function Node(value, left, right, top) {
@@ -20595,7 +20748,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 sub = Arithmetic.sub, add = Arithmetic.add,
                 mul = Arithmetic.mul, div = Arithmetic.div,
                 O = Arithmetic.O, index = O,
-                i, j, ii, m, x, k, inv, indexOf, dict,
+                i, j, ii, m, x, y, k, inv, /*indexOf,*/ unvisited, dict,
                 I = Arithmetic.I, J = Arithmetic.J, N, M;
 
             n = n || item.length;
@@ -20641,32 +20794,105 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("involution" === type)
             {
-                /*inv = permutation2inversion(null, item);
-                for (I=n&1?-1:1,i=0; i<n-1; i++,I=-I)
+                // O(n^2)
+                var countswaps = function countswaps(n, x, y, unvisited) {
+                    var c = O, j, k;
+                    if (y+1 === n) return I;
+                    unvisited.rem(x);
+                    unvisited.rem(y);
+                    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
+                    {
+                        unvisited.rem(j);
+                        for (k=j.prev; k && (k.index>=0); k=k.prev)
+                        {
+                            unvisited.rem(k);
+                            c = add(c, add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? 1 : 0));
+                            unvisited.add(k);
+                        }
+                        unvisited.add(j);
+                    }
+                    unvisited.add(y);
+                    unvisited.add(x);
+                    return c;
+                };
+                var matchswaps = function matchswaps(n, x, y, inv, i, unvisited) {
+                    var c = O, j, k, b, s0, s1;
+                    if (i >= inv.length) return c;
+                    if (y+1 === n) return I;
+                    s0 = inv[i][0];
+                    s1 = inv[i][1];
+                    unvisited.rem(x);
+                    unvisited.rem(y);
+                    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
+                    {
+                        b = false;
+                        unvisited.rem(j);
+                        for (k=j.prev; k && (k.index>=0); k=k.prev)
+                        {
+                            unvisited.rem(k);
+                            if (k.index===s0 && j.index===s1)
+                            {
+                                c = add(add(c, matchswaps(n, k.index, j.index, inv, i+1, unvisited)), 1);
+                                b = true;
+                            }
+                            else
+                            {
+                                c = add(c, add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? 1 : 0));
+                            }
+                            unvisited.add(k);
+                            if (b) break;
+                        }
+                        unvisited.add(j);
+                        if (b) break;
+                    }
+                    unvisited.add(y);
+                    unvisited.add(x);
+                    return c;
+                };
+                var comebefore = function comebefore(n, x, y, unvisited) {
+                    var c = I, j, k;
+                    for (j=n-1; j>y; j--)
+                    {
+                        for (k=j-1; k>=0; k--)
+                        {
+                            c = add(c, add(countswaps(n, k, j, unvisited), j+1<n ? 1 : 0));
+                        }
+                    }
+                    for (k=y-1; k>x; k--)
+                    {
+                        c = add(c, add(countswaps(n, k, y, unvisited), y+1<n ? 1 : 0));
+                    }
+                    return c;
+                };
+                inv = permutation2cycles(item, true).sort(function(a,b){return stdMath.max.apply(null, a)-stdMath.max.apply(null, b);});
+                if (inv.length)
                 {
-                    index = add(mul(index,n-i), I*(n-i)+inv[i]);
+                    unvisited = ListSet(n);
+                    x = inv[0][0]; y = inv[0][1];
+                    index = add(comebefore(n, x, y, unvisited), matchswaps(n, x, y, inv, 1, unvisited));
+                    unvisited.dispose();
                 }
-                return index;*/
-                return NotImplemented();
             }
             else if ("derangement" === type)
             {
                 if (null!=kfixed) return NotImplemented();
                 // O(n) algorithm best case, O(n^2) worst case
-                for (indexOf=new Array(n),dict={},i=0; i<n; i++)
+                for (/*indexOf=new Array(n),*/dict={},i=0; i<n; i++)
                 {
                     x = item[i];
                     if (0 > x || x >= n || i === x || 1 === dict[x]) return J;
                     dict[x] = 1;
-                    indexOf[x] = i;
+                    //indexOf[x] = i;
                 }
+                unvisited = ListSet(n);
                 inv = permutation2count(null, item);
                 for (i=0; i+1<n; i++)
                 {
                     //for (k=0,j=i+1; j<n; j++) k += (item[j] > i);
-                    index = add(index, derange_rank(n, item[i], i, k=inv[i], indexOf));
+                    index = add(index, derange_rank(n, item[i], i, k=inv[i], unvisited));
+                    unvisited.rem(item[i]);
                 }
-                return index;
+                unvisited.dispose();
             }
             else if ("multiset" === type)
             {
@@ -20717,7 +20943,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 order = $ && null!=-$.order ? $.order : LEX,
                 mod = Arithmetic.mod, div = Arithmetic.div, mul = Arithmetic.mul,
                 add = Arithmetic.add, sub = Arithmetic.sub, val = Arithmetic.val,
-                item, indexOf, r, i, j, C, ii, x, y, k, b, t, N, M;
+                item, /*indexOf,*/ unvisited, r, i, j, C, ii, x, y, k, b, t, N, M;
 
             if (0 > n) return null;
 
@@ -20756,47 +20982,32 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null!=kfixed || 2 > n) return null;
                 // https://cs.stackexchange.com/questions/142186/faster-algorithm-for-specific-inversion-count-part-2
                 // O(n^2)
-                /*t = stdMath.ceil(log2(n));
-                C = array((1 << t), function(i){return array(t, 0, 0);});
-                var Offset = function(index, delta) {
-                    var x, l, h = array(t, function(j){
-                        var b = index & 1;
-                        index >>>= 1;
-                        return b;
-                    });
-                    for (x=0,l=t-1; l>=0; l--)
-                    {
-                        if (0 < h[l])
-                        {
-                            C[x][l] += delta;
-                            x += (1 << h[l]);
-                        }
-                    }
-                };*/
                 item = new Array(n);
-                indexOf = array(n, -1, 0);
-                i = 0; //ii = array(t, 0, 0);
+                //indexOf = array(n, -1, 0);
+                C = Counters(n);
+                unvisited = ListSet(n);
+                i = 0;
                 while (i<n && Arithmetic.gte(index, Arithmetic.O))
                 {
-                    for (k=0,j=0; j<i; j++) k += (item[j] > i);
-                    //for (k=0,j=0; j<t && 0===ii[j]; j++) k += C[i][j];
-                    for (r=Arithmetic.O,y=n-1; y>=0; y--)
+                    //for (var k=0,j=0; j<i; j++) k += (item[j] > i);
+                    k = C.eval(i);
+                    for (r=Arithmetic.O,y=unvisited.last(); y && (y.index>=0); y=y.prev)
                     {
-                        if ((y === i) || (0 <= indexOf[y] && indexOf[y] < i)) continue;
-                        r = derange_rank(n, y, i, n-i-1-k-(y>i), indexOf);
+                        if ((y.index === i)/* || (0 <= indexOf[y] && indexOf[y] < i)*/) continue;
+                        r = derange_rank(n, y.index, i, n-i-1-k-(y.index>i), unvisited);
                         if (Arithmetic.lte(r, index)) break;
                     }
-                    if (0 > y) break;
+                    if (null == y) break;
                     index = sub(index, r);
-                    item[i] = y;
-                    indexOf[y] = i;
-                    //Offset(y, 1);
-                    //Offset(i, -1);
-                    //j = 0;
-                    //while (1 === ii[j]) {ii[j] = 0; j++;}
-                    //ii[j] = 1;
+                    item[i] = y.index;
+                    //indexOf[y] = i;
+                    unvisited.rem(y.index);
+                    if (y.index > i +1)
+                        C.offset(y.index-1, 1).offset(i, -1);
                     i++;
                 }
+                unvisited.dispose();
+                C.dispose();
                 //if (!Arithmetic.equ(O, index)) item = null;
             }
             else if ("multiset" === type)
@@ -22842,7 +23053,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 for (i=0,l=item.length; i<l; i++)
                 {
                     x = item[i];
-                    if (0 >= x || x > n || (W && x < W) || (M && x > M)) return false;
+                    if (0 >= x || x > n || (W && x < W) || (M && x > M) || (i+1<l && x < item[i+1])) return false;
                     n -= x;
                 }
                 if (0 !== n) return false;
@@ -23001,7 +23212,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     for (i=0; 0<n && i<item.length; i++)
                     {
                         x = item[i];
-                        if (0 >= x || x > n || (W && x < W) || (M && x > M)) return J;
+                        if (0 >= x || x > n || (W && x < W) || (M && x > M) || (i+1<item.length && x < item[i+1])) return J;
                         if (W && i+1===item.length) continue;
                         index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
                         n -= x;

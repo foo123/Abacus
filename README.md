@@ -61,8 +61,8 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `CyclicPermutation` (`test/cyclic_permutations.js`)
 * `MultisetPermutation` (`test/multiset_permutations.js`)
 * `DerangementPermutation` (`test/derangements.js`)
-* `InvolutionPermutation` (`test/involutions.js`) **rank/unrank methods missing**
-* `ConnectedPermutation` (`test/connected_permutations.js`) **supported order is not standard (CO)LEX**
+* `InvolutionPermutation` (`test/involutions.js`) **supported order is LEX of swaps**
+* `ConnectedPermutation` (`test/connected_permutations.js`) **supported order is LEX of cycle**
 * `UnorderedCombination` / `Combination` (`test/combinations.js`)
 * `OrderedCombination` / `Variation` / `kPermutation` (`test/ordered_combinations.js`)
 * `UnorderedRepeatedCombination` / `RepeatedCombination` (`test/combinations_repeats.js`)
@@ -101,7 +101,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 
 ### Performance
 
-* `first`/`last`, `random`, `rank`/`unrank` methods use **efficient linear** `O(n)` (or **log-linear** `O(nlgn)`) **time and space** algorithms
+* `first`/`last`, `random`, `rank`/`unrank` methods use **efficient linear** `O(n)` (or **log-linear** `O(nlgn)`) **time and space** algorithms (**note** a couple of rank/unrank methods are of `O(n^2)` or higher order)
 * `random` methods are **statisticaly unbiased** (ie uniform sampling methods, see below as well)
 * `successor` methods use **efficient CAT (ie constant average time) or Loopless (ie strictly constant time)** algorithms to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above) (**note** a couple of methods are **linear time** algorithms because the lib does not use extra space to store information between successive runs and also support static random access to successors so any extra is computed at `run-time`, but can easily be made `CAT` or even `Loopless` by storing extra information, eg current index position)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit `ranking` / `unranking` is needed and objects are large)
@@ -303,9 +303,9 @@ console.log(m.inv().mul(m).toString());
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
-* add efficient `rank`/`unrank` methods for `DerangementPermutation` (right now O(n^2) complexity) **[DONE]**
+* add efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
 * add efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
-* add efficient `rank`/`unrank` methods for `InvolutionPermutation` (TODO)
+* add efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE PARTIALLY]**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
