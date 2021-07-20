@@ -5512,6 +5512,79 @@ function polygonal(n, k)
     number = Arithmetic.div(Arithmetic.mul(n, Arithmetic.sub(Arithmetic.mul(n, Arithmetic.sub(k, two)), Arithmetic.sub(k, 4))), two);
     return number;
 }
+function sum_nk(n, k)
+{
+    // https://brilliant.org/wiki/sum-of-n-n2-or-n3/
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O, I = Arithmetic.I,
+        add = Arithmetic.add, sub = Arithmetic.sub,
+        mul = Arithmetic.mul, div = Arithmetic.div, pow = Arithmetic.pow,
+        NUM = Arithmetic.num, sum = O, m, f, k1, key, MAXMEM = Abacus.Options.MAXMEM;
+    if (is_instance(n, Integer)) return new n[CLASS](polygonal(n.num, k));
+    n = NUM(n);
+    if (is_instance(k, Integer)) k = k.num;
+    k = NUM(k);
+    if (Arithmetic.lte(n, O) || Arithmetic.lt(k, O)) return sum;
+    if (Arithmetic.equ(k, O))
+    {
+        sum = n;
+    }
+    else if (Arithmetic.equ(k, I))
+    {
+        sum = div(mul(n, add(n, I)), 2);
+    }
+    else if (Arithmetic.equ(k, 2))
+    {
+        sum = div(mul(n, mul(add(n, I), add(mul(n, 2), I))), 6);
+    }
+    else if (Arithmetic.equ(k, 3))
+    {
+        sum = div(mul(pow(n, 2), pow(add(n, I), 2)), 4);
+    }
+    else
+    {
+        key = String(n)+','+String(k);
+        if (null == sum_nk.mem[key])
+        {
+            if (Arithmetic.lt(k, n))
+            {
+                /*
+                compute it using recurrence relation on k
+                s_{k,n} = \sum\limits_{i=1}^n i^k.
+
+                n^{k+1} = \binom{k+1}1 s_{k,n} - \binom{k+1}2 s_{k-1,n} + \binom{k+1}3 s_{k-2,n} - \cdots + (-1)^{k-1} \binom{k+1}{k} s_{1,n} + (-1)^k n
+                */
+                m = I; f = I; k1 = add(k, I);
+                sum = pow(n, k1);
+                while (Arithmetic.lte(m, k))
+                {
+                    sum = add(sum, mul(f, mul(factorial(k1, add(m, I)), sum_nk(n, sub(k, m)))));
+                    m = add(m, I);
+                    f = Arithmetic.neg(f);
+                }
+                sum = div(sum, k1);
+            }
+            else
+            {
+                // compute it directly, on iterating over n
+                while (Arithmetic.gt(n, O))
+                {
+                    sum = add(sum, pow(n, k));
+                    n = sub(n, I);
+                }
+            }
+            // memoize only up to MAXMEM results
+            if (Arithmetic.lt(n, MAXMEM))
+                sum_nk.mem[key] = sum;
+        }
+        else
+        {
+            sum = sum_nk.mem[key];
+        }
+    }
+    return sum;
+}
+sum_nk.mem = Obj();
 // combinatorial utilities, available as static methods of respective objects
 function kronecker(/* var args here */)
 {
@@ -6567,18 +6640,18 @@ function cycle2swaps(cycle, swaps, slen)
 }
 function permutation2cycles(permutation, strict)
 {
-    var n = permutation.length, i, cycles = new Array(n), current, cycle,
-        min_cycle = true === strict ? 1 : 0,
-        visited = array(n, 0, 0),
-        unvisited = 0, clen, cclen = 0;
+    var n = permutation.length, i, cycles = new Array(n),
+        current, cycle, min_cycle = true === strict ? 1 : 0,
+        unvisited = ListSet(n), clen, cclen = 0;
+    if (!n) return cycles;
     cycle = new Array(n); clen = 0;
-    current = unvisited++;
+    current = unvisited.first().index;
+    unvisited.rem(current);
     cycle[clen++] = current;
-    visited[ current ] = 1;
-    while (unvisited < n)
+    while (unvisited.first())
     {
         current = permutation[ current ];
-        if (visited[current])
+        if (!unvisited.has(current))
         {
             if (clen > min_cycle)
             {
@@ -6586,13 +6659,10 @@ function permutation2cycles(permutation, strict)
                 cycles[cclen++] = cycle;
             }
             cycle = new Array(n); clen = 0;
-            while ((unvisited < n) && visited[current=unvisited]) ++unvisited;
+            current = unvisited.first().index;
         }
-        if (!visited[current])
-        {
-            cycle[clen++] = current;
-            visited[ current ] = 1;
-        }
+        cycle[clen++] = current;
+        unvisited.rem(current);
     }
     if (clen > min_cycle)
     {
@@ -7405,6 +7475,25 @@ ListSet = Abacus.ListSet = function ListSet(a) {
             item.incl = true;
         }
         return self;
+    };
+    self.has = function(x) {
+        // check if x is included
+        var item = null;
+        if (x === +x)
+        {
+            if (0>x || x>=n) return false;
+            item = a[x];
+        }
+        else if (x && (null != x.index))
+        {
+            if (0>x.index || x.index>=n) return false;
+            item = x;
+        }
+        else
+        {
+            return false;
+        }
+        return item.incl;
     };
     self.dispose = function() {
         a = null;
