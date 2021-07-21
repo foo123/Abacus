@@ -3,7 +3,7 @@
 A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Javascript, Python
 
 
-**version 1.0.7** (~ 317kB minified)
+**version 1.0.7** (~ 331kB minified)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -305,7 +305,7 @@ console.log(m.inv().mul(m).toString());
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
 * add efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
-* add efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE PARTIALLY]**
+* add efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE] (not very efficient)**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)

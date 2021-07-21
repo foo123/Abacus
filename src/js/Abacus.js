@@ -6620,6 +6620,111 @@ function permutation2count(count, permutation, dir)
     }
     return count;
 }
+function countswaps(n, x, y, unvisited)
+{
+    var Arithmetic = Abacus.Arithmetic, c = Arithmetic.O, j, k;
+    if (y+1 === n) return Arithmetic.I;
+    unvisited.rem(x);
+    unvisited.rem(y);
+    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
+    {
+        unvisited.rem(j);
+        for (k=j.prev; k && (k.index>=0); k=k.prev)
+        {
+            unvisited.rem(k);
+            c = Arithmetic.add(c, Arithmetic.add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? Arithmetic.I : Arithmetic.O));
+            unvisited.add(k);
+        }
+        unvisited.add(j);
+    }
+    unvisited.add(y);
+    unvisited.add(x);
+    return c;
+}
+function matchswaps(n, x, y, swaps, i, unvisited)
+{
+    var Arithmetic = Abacus.Arithmetic, c = Arithmetic.O, j, k, b, s0, s1;
+    if (i >= swaps.length) return c;
+    if (y+1 === n) return Arithmetic.I;
+    s0 = swaps[i][0];
+    s1 = swaps[i][1];
+    unvisited.rem(x);
+    unvisited.rem(y);
+    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
+    {
+        b = false;
+        unvisited.rem(j);
+        for (k=j.prev; k && (k.index>=0); k=k.prev)
+        {
+            unvisited.rem(k);
+            if (k.index===s0 && j.index===s1)
+            {
+                c = Arithmetic.add(Arithmetic.add(c, matchswaps(n, k.index, j.index, swaps, i+1, unvisited)), Arithmetic.I);
+                b = true;
+            }
+            else
+            {
+                c = Arithmetic.add(c, Arithmetic.add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? Arithmetic.I : Arithmetic.O));
+            }
+            unvisited.add(k);
+            if (b) break;
+        }
+        unvisited.add(j);
+        if (b) break;
+    }
+    unvisited.add(y);
+    unvisited.add(x);
+    return c;
+}
+function findswaps(n, x, y, index, unvisited)
+{
+    var Arithmetic = Abacus.Arithmetic, c = [], j, k, r, r2, b;
+    if (Arithmetic.lte(index, Arithmetic.O)) return c;
+    if (y+1 === n) return [[x, y]];
+    unvisited.rem(x);
+    unvisited.rem(y);
+    r2 = r = Arithmetic.O;
+    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
+    {
+        b = false;
+        unvisited.rem(j);
+        for (k=j.prev; k && (k.index>=0); k=k.prev)
+        {
+            unvisited.rem(k);
+            r2 = r;
+            r = Arithmetic.add(r, Arithmetic.add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? Arithmetic.I : Arithmetic.O));
+            unvisited.add(k);
+            if (Arithmetic.gte(r, index))
+            {
+                if (j.index+1<n) c.push([k.index, j.index])
+                c = c.concat(findswaps(n, k.index, j.index, Arithmetic.sub(index, Arithmetic.add(r2, j.index+1<n ? Arithmetic.I : Arithmetic.O)), unvisited));
+                b = true;
+                break;
+            }
+        }
+        unvisited.add(j);
+        if (b) break;
+    }
+    unvisited.add(y);
+    unvisited.add(x);
+    return c;
+}
+function countinvol(n, x, y, unvisited)
+{
+    var Arithmetic = Abacus.Arithmetic, c = Arithmetic.I, j, k;
+    for (j=n-1; j>y; j--)
+    {
+        for (k=j-1; k>=0; k--)
+        {
+            c = Arithmetic.add(c, Arithmetic.add(countswaps(n, k, j, unvisited), j+1<n ? Arithmetic.I : Arithmetic.O));
+        }
+    }
+    for (k=y-1; k>x; k--)
+    {
+        c = Arithmetic.add(c, Arithmetic.add(countswaps(n, k, y, unvisited), y+1<n ? Arithmetic.I : Arithmetic.O));
+    }
+    return c;
+}
 function cycle2swaps(cycle, swaps, slen)
 {
     var c = cycle.length, noref = null == swaps, j;
@@ -6820,29 +6925,32 @@ function is_connected(perm)
 }
 function is_kcycle(perm, kcycles, compare, fixed)
 {
-    // O(n) on average, O(n^2) worst-case
+    // O(n)
     if (!perm.length || 0>=kcycles) return false;
     fixed = false !== fixed;
-    var n = perm.length, i, pi, ncycles, cycle, done;
-    i = 0; ncycles = 0; done = 0; cycle = new Array(n);
-    while (done<n)
+    var n = perm.length, i, pi, ncycles, unvisited, done;
+    ncycles = 0; done = false; unvisited = ListSet(n);
+    i = unvisited.first().index;
+    while (!done)
     {
+        unvisited.rem(i);
         pi = perm[i];
-        if (i===pi || 1===cycle[pi])
+        if (i===pi || !unvisited.has(pi))
         {
             // close cycle
             if (fixed || i!==pi) ncycles++;
-            cycle[pi] = 1;
+            unvisited.rem(pi);
             // start next cycle
-            i = 0; while (i<n && 1===cycle[perm[i]]) i++;
+            if (unvisited.first())
+                i = unvisited.first().index;
+            else
+                done = true;
         }
         else
         {
             // follow cycle
-            cycle[pi] = 1;
             i = pi;
         }
-        done++;
     }
     return "<="===compare||"=<"===compare ? ncycles<=kcycles : (">="===compare||"=>"===compare ? ncycles>=kcycles : ncycles===kcycles);
 }
@@ -7494,6 +7602,25 @@ ListSet = Abacus.ListSet = function ListSet(a) {
             return false;
         }
         return item.incl;
+    };
+    self.item = function(x) {
+        // return x
+        var item = null;
+        if (x === +x)
+        {
+            if (0>x || x>=n) return false;
+            item = a[x];
+        }
+        else if (x && (null != x.index))
+        {
+            if (0>x.index || x.index>=n) return false;
+            item = x;
+        }
+        else
+        {
+            return null;
+        }
+        return item;
     };
     self.dispose = function() {
         a = null;
@@ -20189,7 +20316,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 $.dimension = n.length;
                 if ("gray" === $.output)
                 {
-                    $.output = function(item, n){ return Tensor.gray(item,n); };
+                    $.output = function(item, n){ return Tensor.toGray(item,n); };
                 }
                 else if ("inversion" === $.output)
                 {
@@ -20416,16 +20543,10 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,gray: function(item, n, dir) {
-            dir = -1 === dir ? -1 : 1;
-            return 0 > dir ? igray(new Array(item.length), item, n) : gray(new Array(item.length), item, n);
-        }
         ,toGray: function(item, n) {
-            dir = -1 === dir ? -1 : 1;
             return gray(new Array(item.length), item, n);
         }
         ,fromGray: function(item, n) {
-            dir = -1 === dir ? -1 : 1;
             return igray(new Array(item.length), item, n);
         }
         ,inversion: function(inv) {
@@ -20555,7 +20676,6 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         // random ordering for derangements / involutions / connecteds
         // is based on random generation, instead of random unranking
         $.rand = $.rand || {};
-        $.rand["involution"] = 1;
         if ("multiset" === $.type)
         {
             $.multiplicity = is_array($.multiplicity) && $.multiplicity.length ? $.multiplicity.slice() : array($.dimension, 1, 0);
@@ -20599,7 +20719,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             var item, klass = this, type = $ && $.type ? $.type : "permutation",
                 order = $ && null!=-$.order ? $.order : LEX,
                 kcycles = $ && null!=$['cycles='] ? $['cycles=']|0 : null,
-                kfixed = $ && null!=$['fixed='] ? $['fixed=']|0 : null
+                kfixed = $ && null!=$['fixed='] ? $['fixed=']|0 : null,
+                n_2, nn
             ;
 
             if (0 > n) return null;
@@ -20615,10 +20736,27 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("derangement" === type)
             {
-                if ((null!=kfixed) || (2>n)) return null;
-                if (n&1) // odd
+                if (null != kfixed)
                 {
-                    var n_2 = stdMath.floor(n/2);
+                    nn = n-kfixed;
+                    if (0 > nn) return null;
+                    if (nn & 1) // odd
+                    {
+                        n_2 = stdMath.floor(nn/2);
+                        item = 0 > dir ? array(nn-n_2-1, nn-1, -1).concat(1 <= n_2 ? [n_2-1,n_2] : []).concat(array(n_2-1, n_2-2, -1)).concat(array(kfixed, nn, 1)) : array(kfixed, 0, 1).concat(array(nn-3, function(i){return kfixed+(i&1?i-1:i+1);}).concat(3 <= nn ? [n-2,n-1,n-3] : []));
+                    }
+                    else
+                    {
+                        item = 0 > dir ? array(nn, nn-1, -1).concat(array(kfixed, nn, 1)) : array(kfixed, 0, 1).concat(array(nn, function(i){return kfixed+(i&1?i-1:i+1);}));
+                    }
+                }
+                else if (2>n)
+                {
+                    return null;
+                }
+                else if (n & 1) // odd
+                {
+                    n_2 = stdMath.floor(n/2);
                     item = 0 > dir ? array(n-n_2-1, n-1, -1).concat([n_2-1,n_2]).concat(array(n_2-1, n_2-2, -1)) : array(n-3, function(i){return i&1?i-1:i+1;}).concat([n-2,n-1,n-3]);
                 }
                 else // even
@@ -20632,16 +20770,23 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("connected" === type)
             {
-                // TODO
                 item = cycles2permutation([0 > dir ? array(n, n-1, -1) : [n-1].concat(array(n-1, 0, 1))], n);
             }
             else if ("involution" === type)
             {
-                item = 0 > dir ? array(n, n-1, -1) : array(n, 0, 1);
+                item = 0 > dir ? array(n, function(i){return /*n-1-i;*/i&1 ? i-1 : (i+1<n ? i+1 : i);}) : array(n, 0, 1);
             }
             else//if ("permutation" === type)
             {
-                item = null!=kcycles ? null : (0 > dir ? array(n, n-1, -1) : array(n, 0, 1));
+                if (null!=kcycles)
+                {
+                    if (kcycles > n) return null;
+                    item = cycles2permutation(0 > dir ? array(kcycles, function(i){return 0 === i ? array(n-kcycles+1, n-kcycles, -1) : [n-kcycles+i];}) : array(kcycles, function(i){return i+1===kcycles ? [n-1].concat(array(n-kcycles, n-kcycles, 1)) : [i];}), n);
+                }
+                else
+                {
+                    item = 0 > dir ? array(n, n-1, -1) : array(n, 0, 1);
+                }
             }
 
             item = klass.DUAL(item, n, $);
@@ -20708,7 +20853,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     if (0 > x || x >= n || 1 === dict[x]) return false;
                     dict[x] = 1;
                 }
-                if (null!=kcycles && kcycles !== permutation2cycles(item).length) return false;
+                if (null!=kcycles && !is_kcycle(item, kcycles, '==', true)) return false;
             }
             return true;
         }
@@ -20883,82 +21028,13 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("involution" === type)
             {
-                // O(n^2)
-                var countswaps = function countswaps(n, x, y, unvisited) {
-                    var c = O, j, k;
-                    if (y+1 === n) return I;
-                    unvisited.rem(x);
-                    unvisited.rem(y);
-                    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
-                    {
-                        unvisited.rem(j);
-                        for (k=j.prev; k && (k.index>=0); k=k.prev)
-                        {
-                            unvisited.rem(k);
-                            c = add(c, add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? 1 : 0));
-                            unvisited.add(k);
-                        }
-                        unvisited.add(j);
-                    }
-                    unvisited.add(y);
-                    unvisited.add(x);
-                    return c;
-                };
-                var matchswaps = function matchswaps(n, x, y, inv, i, unvisited) {
-                    var c = O, j, k, b, s0, s1;
-                    if (i >= inv.length) return c;
-                    if (y+1 === n) return I;
-                    s0 = inv[i][0];
-                    s1 = inv[i][1];
-                    unvisited.rem(x);
-                    unvisited.rem(y);
-                    for (j=unvisited.last(); j && (j.index>y); j=j.prev)
-                    {
-                        b = false;
-                        unvisited.rem(j);
-                        for (k=j.prev; k && (k.index>=0); k=k.prev)
-                        {
-                            unvisited.rem(k);
-                            if (k.index===s0 && j.index===s1)
-                            {
-                                c = add(add(c, matchswaps(n, k.index, j.index, inv, i+1, unvisited)), 1);
-                                b = true;
-                            }
-                            else
-                            {
-                                c = add(c, add(countswaps(n, k.index, j.index, unvisited), j.index+1<n ? 1 : 0));
-                            }
-                            unvisited.add(k);
-                            if (b) break;
-                        }
-                        unvisited.add(j);
-                        if (b) break;
-                    }
-                    unvisited.add(y);
-                    unvisited.add(x);
-                    return c;
-                };
-                var comebefore = function comebefore(n, x, y, unvisited) {
-                    var c = I, j, k;
-                    for (j=n-1; j>y; j--)
-                    {
-                        for (k=j-1; k>=0; k--)
-                        {
-                            c = add(c, add(countswaps(n, k, j, unvisited), j+1<n ? 1 : 0));
-                        }
-                    }
-                    for (k=y-1; k>x; k--)
-                    {
-                        c = add(c, add(countswaps(n, k, y, unvisited), y+1<n ? 1 : 0));
-                    }
-                    return c;
-                };
+                // O(n^2) ??
                 inv = permutation2cycles(item, true).sort(function(a,b){return stdMath.max.apply(null, a)-stdMath.max.apply(null, b);});
                 if (inv.length)
                 {
                     unvisited = ListSet(n);
                     x = inv[0][0]; y = inv[0][1];
-                    index = add(comebefore(n, x, y, unvisited), matchswaps(n, x, y, inv, 1, unvisited));
+                    index = add(countinvol(n, x, y, unvisited), matchswaps(n, x, y, inv, 1, unvisited));
                     unvisited.dispose();
                 }
             }
@@ -21053,7 +21129,31 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("involution" === type)
             {
-                return NotImplemented();
+                // O(n^2) ??
+                item = [];
+                if (Arithmetic.gt(index, Arithmetic.O))
+                {
+                    unvisited = ListSet(n);
+                    for (y=1; y<n; y++)
+                    {
+                        for (x=0; x<y; x++)
+                        {
+                            r = countinvol(n, x, y, unvisited);
+                            if (Arithmetic.lte(r, index))
+                            {
+                                item.push([x, y]);
+                                break;
+                            }
+                        }
+                        if (item.length) break;
+                    }
+                    if (item.length)
+                    {
+                        item = item.concat(findswaps(n, x, y, sub(index, r), unvisited));
+                    }
+                    unvisited.dispose();
+                }
+                item = cycles2permutation(item, n);
             }
             else if ("connected" === type)
             {
@@ -21091,7 +21191,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item[i] = y.index;
                     //indexOf[y] = i;
                     unvisited.rem(y.index);
-                    if (y.index > i +1)
+                    if (y.index > i+1)
                         C.offset(y.index-1, 1).offset(i, -1);
                     i++;
                 }
@@ -21154,17 +21254,11 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,directsum: function(/* permutations */) {
             return arguments.length ? permutationdirectsum(is_array(arguments[0])&&is_array(arguments[0][0]) ? arguments[0] : slice.call(arguments)) : null;
         }
-        ,cycles: function(item, dir) {
-            return -1 === dir ? cycles2permutation(item) : permutation2cycles(item);
-        }
         ,toCycles: function(item) {
             return permutation2cycles(item);
         }
         ,fromCycles: function(item, n) {
             return cycles2permutation(item, n);
-        }
-        ,swaps: function(item, dir) {
-            return -1 === dir ? swaps2permutation(item) : permutation2swaps(item);
         }
         ,toSwaps: function(item) {
             return permutation2swaps(item);
@@ -21172,27 +21266,23 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,fromSwaps: function(item, n) {
             return swaps2permutation(item, n);
         }
-        ,inversion: function(item, dir) {
-            return -1 === dir ? inversion2permutation(null, item) : permutation2inversion(null, item);
-        }
         ,toInversion: function(item) {
             return permutation2inversion(null, item);
         }
         ,fromInversion: function(item) {
             return inversion2permutation(null, item);
         }
-        ,inverse: function(item) {
-            return permutation2inverse(null, item);
-        }
         ,toInverse: function(item) {
             return permutation2inverse(null, item);
         }
-        ,multiset: function(item, multi, dir) {
-            if (item === +item) return multiset(multi, item, -1===dir?-1:1) /*generate multiset*/;
-            return -1 === dir ? multiset2permutation(item) : permutation2multiset(item, multi);
+        ,Multiset: function(n, multi, dir) {
+            return multiset(multi, n, -1===dir?-1:1);
         }
-        ,matrix: function(item, transposed, dir) {
-            return -1 === dir ? matrix2permutation(null, item, transposed) : permutation2matrix(null, item, transposed);
+        ,toMultiset: function(item, multi) {
+            return permutation2multiset(item, multi);
+        }
+        ,fromMultiset: function(item) {
+            return multiset2permutation(item);
         }
         ,toMatrix: function(item, transposed) {
             return permutation2matrix(null, item, transposed);
@@ -21270,7 +21360,7 @@ function next_permutation(item, N, dir, type, order, multiplicity, PI)
 {
     //maybe "use asm"
     var n = N, m = null == multiplicity ? n : multiplicity,
-        k, kl, l, r, s, s0, fixed, k0, DK, a, b, da, db, MIN, MAX;
+        k, kl, l, r, s, s0, fixed, done, k0, DK, a, b, da, db, MIN, MAX;
     if (0 >= n) return null;
 
     if ("connected" === type)
@@ -21574,8 +21664,8 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             sub = $.sub;
         }
         $.base = n; $.dimension = stdMath.max(0, k);
-        if ("binary"===$.output) $.output = function(item,n){ return Combination.binary(item,n[0],1); };
-        else if ("conjugate"===$.output) $.output = function(item,n){ return Combination.complement(item,n[0]); };
+        if ("binary"===$.output) $.output = function(item,n){ return Combination.toBinary(item,n[0]); };
+        else if ("conjugate"===$.output) $.output = function(item,n){ return Combination.toComplement(item,n[0]); };
         CombinatorialIterator.call(self, "Combination", [n, k], $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
 
@@ -21888,11 +21978,8 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,complement: function(alpha, n, ordered) {
+        ,toComplement: function(alpha, n, ordered) {
             return true === ordered ? shuffle(complement(n, alpha, true)) : complement(n, alpha);
-        }
-        ,binary: function(item, n, dir) {
-            return -1 === dir ? binary2subset(item, n) : subset2binary(item, n);
         }
         ,toBinary: function(item, n) {
             return subset2binary(item, n);
@@ -21916,7 +22003,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
     }
 });
 // aliases
-Combination.conjugate = Combination.complement;
+Combination.toConjugate = Combination.toComplement;
 Combination.project = Combination.choose;
 function comb_item_(item, n, k, order, type)
 {
@@ -22181,7 +22268,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         $.mindimension = 0;
         $.maxdimension = stdMath.max(0, n);
         $.dimension = $.maxdimension;
-        if ("binary"===$.output) $.output = function(item,n){ return Subset.binary(item,n,1); };
+        if ("binary"===$.output) $.output = function(item,n){ return Subset.toBinary(item,n); };
         CombinatorialIterator.call(self, "Subset", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
 
@@ -22463,8 +22550,11 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
 
             return item;
         }
-        ,binary: function(item, n, dir) {
-            return -1 === dir ? binary2subset(item, n) : subset2binary(item, n);
+        ,toBinary: function(item, n) {
+            return subset2binary(item, n);
+        }
+        ,fromBinary: function(item, n) {
+            return binary2subset(item, n);
         }
     }
 
@@ -22632,8 +22722,8 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         if ("conjugate"===$.output) $.output = function(item,n){
             return conjugatepartition(0, item, (REFLECTED&$.order)&&!(COLEX&$.order) || (COLEX&$.order)&&!(REFLECTED&$.order) ? -1 : 1);
         };
-        else if ("subset"===$.output) $.output = function(item,n){ return Partition.subset(item,1); };
-        else if ("packed"===$.output) $.output = function(item,n){ return Partition.pack(item,1); };
+        else if ("subset"===$.output) $.output = function(item,n){ return Partition.toSubset(item); };
+        else if ("packed"===$.output) $.output = function(item,n){ return Partition.toPacked(item); };
         CombinatorialIterator.call(self, "Partition", n, $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
     }
 
@@ -23406,14 +23496,20 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             item = klass.DUAL(item, n, $, 1);
             return item;
         }
-        ,conjugate: function(item, type) {
+        ,toConjugate: function(item, type) {
             return conjugatepartition("composition"===type, item);
         }
-        ,subset: function(item, dir) {
-            return -1 === dir ? subset2composition(item) : composition2subset(item);
+        ,toSubset: function(item) {
+            return composition2subset(item);
         }
-        ,pack: function(item, dir) {
-            return -1 === dir ? unpackpartition(item) : packpartition(item)
+        ,fromSubset: function(item) {
+            return subset2composition(item);
+        }
+        ,toPacked: function(item) {
+            return packpartition(item);
+        }
+        ,fromPacked: function(item) {
+            return unpackpartition(item);
         }
     }
     ,_update: function() {
@@ -24693,7 +24789,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
-        ,conjugate: conjugatesetpartition
+        ,toConjugate: conjugatesetpartition
     }
     ,output: function(item) {
         if (null == item) return null;

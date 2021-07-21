@@ -1,0 +1,4 @@
+Abacus.Permutations (VERSION = 1.0.7)
+---
+0,1,3,4,2
+2,0,1,3,4
