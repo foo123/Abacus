@@ -7185,6 +7185,7 @@ Abacus.Math = {
     ,catalan: catalan
     ,fibonacci: fibonacci
     ,polygonal: polygonal
+    ,sum_nk: sum_nk
 
     ,sum: sum
     ,product: product
@@ -18962,7 +18963,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         $.dimension = stdMath.max(0, $.dimension || 0);
         $.mindimension = stdMath.max(0, null != $.mindimension ? $.mindimension : $.dimension);
         $.maxdimension = stdMath.max(0, null != $.maxdimension ? $.maxdimension : $.dimension);
-        $.count = klass.count(n, $);
+        $.count = null != $.count ? klass.count(n, $) : $.count;
         $.first = Arithmetic.O;
         $.last = Arithmetic.gt($.count, Arithmetic.O) ? Arithmetic.sub($.count, Arithmetic.I) : Arithmetic.J;
         return self;
@@ -19396,7 +19397,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 {
                     if (is_instance($.sub, CombinatorialProxy))
                     {
-                        $.sub.seed(self._item);
+                        $.sub.seed(self._item).order(order);
                         self.__subindex = $.sub.index();
                         self.__subitem = $.sub.next();
                     }
@@ -19478,7 +19479,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             //$.order = o;
             if ($.sub && is_instance($.sub, CombinatorialProxy))
             {
-                $.sub.seed(self._item);
+                $.sub.seed(self._item).order(order);
                 self.__subindex = $.sub.index();
                 self.__subitem = $.sub.next();
             }
@@ -19721,8 +19722,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             }
             else
             {
-                self._index = Arithmetic.add(self._index, dI);
-                if (null === self.__index) self.__index = self._index;
+                if (!has_subnext)
+                {
+                    self._index = Arithmetic.add(self._index, dI);
+                    if (null === self.__index) self.__index = self._index;
+                }
                 if (0 > dir)
                 {
                     self._prev = has_next;
@@ -19735,13 +19739,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 }
             }
 
-            self._item = self.output(self.__item);
+            if (!has_subnext) self._item = self.output(self.__item);
 
             if ($.sub)
             {
                 if (!has_subnext && is_instance($.sub, CombinatorialProxy))
                 {
-                    $.sub.seed(self._item);
+                    $.sub.seed(self._item).rewind(dir);
                     self.__subindex = $.sub.index();
                     self.__subitem = $.sub.next(dir);
                 }
@@ -19888,25 +19892,48 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 CombinatorialProxy = Abacus.CombinatorialProxy = Class(CombinatorialIterator, {
 
     constructor: function CombinatorialProxy(combIterFactory, $) {
-        var self = this;
+        var self = this, iter;
         if (!is_instance(self, CombinatorialProxy)) return new CombinatorialProxy(combIterFactory, $);
         $ = $ || {};
         $.factory = is_callable(combIterFactory) ? combIterFactory : null;
         $.iter = null;
-        $.base = 0;
-        $.dimension = 1;
+        if ($.factory && (true===$.factory.SINGLETON))
+        {
+            iter = $.factory();
+            if (is_instance(iter, CombinatorialIterator))
+            {
+                $.iter = iter;
+                $.count = iter.total();
+                $.base = iter.base();
+                $.dimension = iter.dimension();
+            }
+        }
+        else
+        {
+            $.base = 0;
+            $.dimension = 1;
+        }
         CombinatorialIterator.call(self, "Proxy", 0, $);
     }
 
     ,__static__: {
-        count: function() {
-            return Abacus.Arithmetic.I;
+        count: function(n, $) {
+            return $ && $.iter ? $.iter.total() : Abacus.Arithmetic.I;
         }
         ,initial: NotImplemented
         ,valid: NotImplemented
         ,succ: NotImplemented
         ,rank: NotImplemented
         ,unrank: NotImplemented
+        ,singleton: function(factory) {
+            var iter = null;
+            var f = function(item) {
+                if (!iter) iter = factory(item);
+                return iter;
+            };
+            f.SINGLETON = true;
+            return f;
+        }
     }
 
     ,dispose: function() {
@@ -19917,13 +19944,13 @@ CombinatorialProxy = Abacus.CombinatorialProxy = Class(CombinatorialIterator, {
         return CombinatorialIterator[PROTO].dispose.call(self);
     }
     ,seed: function(item) {
-        var self = this, $ = self.$;
-        if ($.iter)
-        {
-            $.iter.dispose();
-            $.iter = null;
-        }
+        var self = this, $ = self.$, prev = $.iter;
         $.iter = $.factory && (null!=item) ? $.factory(item) : null;
+        if (prev && (prev !== $.iter))
+        {
+            prev.dispose();
+            prev = null;
+        }
         if (!is_instance($.iter, CombinatorialIterator)) $.iter = null;
         return self;
     }
@@ -19933,7 +19960,8 @@ CombinatorialProxy = Abacus.CombinatorialProxy = Class(CombinatorialIterator, {
         return self;
     }
     ,hasNext: function(dir) {
-        return true;
+        var $ = this.$;
+        return $.iter ? $.iter.hasNext(dir) : false;
     }
     ,next: function(dir) {
         var $ = this.$;
@@ -20855,7 +20883,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null != kfixed)
                 {
                     nn = n-kfixed;
-                    if (0 > nn) return null;
+                    if (0 > nn || 1 === nn) return null;
                     if (nn & 1) // odd
                     {
                         n_2 = stdMath.floor(nn/2);
@@ -24791,7 +24819,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         }
         ,count: function(n, $) {
             var K = $ && null!=$["parts="] ? $["parts="]|0 : null;
-            return 0<n ? (null == K ? bell(n) : (0 >= K ? Abacus.Arithmetic.O : stirling(n, K, 2))) : Abacus.Arithmetic.O;
+            return 0<n ? (null == K ? bell(n) : (0 >= K || K > n ? Abacus.Arithmetic.O : stirling(n, K, 2))) : Abacus.Arithmetic.O;
         }
         ,initial: function(n, $, dir) {
             var klass = this, item, order = $ && null!=$.order ? $.order : LEX,
@@ -24804,6 +24832,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             if ((REVERSED&order)) dir = -dir;
 
             // O(n)
+            /*
             item = new Array(n+1); item[n] = [n, new Array(n)];
             if (K)
             {
@@ -24844,6 +24873,15 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
                     return item;
                 }, item, null, 0, n-1, 1);
             }
+            */
+            if (0 > dir)
+            {
+                item = K ? array(K, function(i){return 0 === i ? array(n-K+1, 0, 1) : [n-K+i];}) : [array(n, function(i){return i;})];
+            }
+            else
+            {
+                item = K ? array(K, function(i){return i+1 === K ? array(n-K+1, K-1, 1) : [i];}) : array(n, function(i){return [i];});
+            }
 
             return item;
         }
@@ -24858,8 +24896,8 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             {
                 for (s=item[j],i=0,l=s.length; i<l; i++)
                 {
-                    x = set[i];
-                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= set[i+1])) return false;
+                    x = s[i];
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= s[i+1])) return false;
                     dict[x] = 1;
                 }
                 m += l;
@@ -24906,6 +24944,24 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,rank: NotImplemented
         ,unrank: NotImplemented
         ,toConjugate: conjugatesetpartition
+    }
+    ,_update: function() {
+        var self = this, n = self.n, $ = self.$, K = null!=$["parts="] ? $["parts="]|0 : null, item = self.__item, i, j, s, k;
+        if (item && (n+1 !== item.length))
+        {
+            self.__item = new Array(n+1); self.__item[n] = [n, new Array(n)];
+            if (K) self.__item[n].push(array(K, 0));
+            for (i=0; i<item.length; i++)
+            {
+                for (s=item[i],j=0; j<s.length; j++)
+                {
+                    self.__item[s[j]] = i;
+                    self.__item[n][1][s[j]] = i;
+                    if (K) self.__item[n][2][i]++;
+                }
+            }
+        }
+        return self;
     }
     ,output: function(item) {
         if (null == item) return null;

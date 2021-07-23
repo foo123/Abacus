@@ -369,7 +369,7 @@ function mirror_image_primes( ndigits )
     // and primes are odd, this means the first (and last) digits
     // can only be one of [1,3,5,7,9], the rest can be anything.
     var first = '13579', rest = '0123456789';
-    
+
     // odd number of digits
     return Abacus.Tensor(Abacus.Util.array((ndigits>>1)+1, function(i){return 0===i?first.length:rest.length;}))
         .mapTo(make_mirror_image(ndigits, first, rest))
@@ -394,10 +394,10 @@ function sum_of_two_primes( n )
 {
     var Arithmetic = Abacus.Arithmetic,
         p1 = Arithmetic.div(n, 2), p2 = p1, sum;
-    
+
     if ( Abacus.Math.isPrime(p1) )
         return String(n)+' = '+String(p1)+'+'+String(p2);
-    
+
     p1 = Abacus.Math.nextPrime(p1, -1); p2 = Abacus.Math.nextPrime(p2);
     do{
         sum = Arithmetic.add(p1, p2);
@@ -593,6 +593,69 @@ Running above we get:
 ```
 
 One drawback of this approach (unlike exhaustive search) is that we lose the original lexicographic (or other) ordering during the generation of the object. However for most cases this is not a problem.
+
+**Fixed number of Cycles**
+
+We can exploit the ability of `Abacus` to combine combinatorial objects in order to create new combinatorial objects. In this case we will generate all permutations with fixed number of cycles (ie `k`). To do that we can generate all set partitions of `n` into `k` parts and for each such partition, permute the entries to generate all cycles corresponding to this partition.
+
+Piece of cake:
+
+```javascript
+function kcycles(N, k)
+{
+    return Abacus.SetPartition(N, {"parts=":k}).fuse(
+    (partition, permutation) => {
+        if (!Array.isArray(permutation[0])) permutation = [permutation];
+        return Abacus.Permutation.fromCycles(partition.filter(p => 1 < p.length).map((p, i) => [p[p.length-1]].concat(Abacus.Permutation.permute(p.slice(0, -1), permutation[i], true))), N);
+    }, Abacus.CombinatorialProxy(item => item.reverse().reduce((p,i) => 1 < i.length ? Abacus.Permutation(i.length-1).juxtaposeWith(p) : p, null)));
+}
+
+solutions = kcycles(5, 3).get();
+echo(''+solutions.length+' 3-cycle permutations of 5 elements');
+echo(solutions.map(String).join("\n"));
+```
+
+Running above we get:
+
+```text
+35 3-cycle permutations of 5 elements
+0,1,3,4,2
+0,1,4,2,3
+0,4,3,2,1
+4,1,3,2,0
+0,3,4,1,2
+0,3,2,4,1
+0,4,2,1,3
+4,3,2,1,0
+3,1,4,0,2
+3,4,2,0,1
+3,1,2,4,0
+4,1,2,0,3
+0,2,1,4,3
+0,2,4,3,1
+0,4,1,3,2
+4,2,1,3,0
+0,2,3,1,4
+0,3,1,2,4
+3,2,1,0,4
+2,1,0,4,3
+2,4,0,3,1
+2,1,4,3,0
+4,1,0,3,2
+2,3,0,1,4
+2,1,3,0,4
+3,1,0,2,4
+1,0,2,4,3
+1,0,4,3,2
+1,4,2,3,0
+4,0,2,3,1
+1,0,3,2,4
+1,3,2,0,4
+3,0,2,1,4
+1,2,0,3,4
+2,0,1,3,4
+```
+
 
 We saw how we can generate efficiently constrained combinatorial objects satisfying user-defined patterns / templates with a couple of lines of code using `Abacus` library.
 
