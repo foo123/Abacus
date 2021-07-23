@@ -19321,7 +19321,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
             self._prev = self._prev && (null != self.__subitem);
             self._next = self._next && (null != self.__subitem);
-            self._subindex = Arithmetic.add(Arithmetic.mul(self.__subindex,$.count), self._index);
+            self._subindex = null == self.__subindex ? self._index : (is_instance($.sub, CombinatorialProxy) ? self.__subindex : Arithmetic.add(Arithmetic.mul(self.__subindex,$.count), self._index));
             self._subitem = self.fusion(self._item, self.__subitem);
         }
         else
@@ -19403,7 +19403,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     }
                     self._prev = self._prev && (null != self.__subitem);
                     self._next = self._next && (null != self.__subitem);
-                    self._subindex = Arithmetic.add(Arithmetic.mul(self.__subindex,tot), self._index);
+                    self._subindex = null == self.__subindex ? self._index : (is_instance($.sub, CombinatorialProxy) ? self.__subindex : Arithmetic.add(Arithmetic.mul(self.__subindex,tot), self._index));
                     self._subitem = self.fusion(self._item, self.__subitem);
                 }
             }

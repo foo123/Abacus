@@ -44,6 +44,7 @@ call node paren.js > paren.txt
 call node filtered_partitions.js > filtered_partitions.txt
 call node filtered_compositions.js > filtered_compositions.txt
 call node k-derangements.js > k-derangements.txt
+call node kcycles.js > kcycles.txt
 call node partially_fixed_permutations.js > partially_fixed_permutations.txt
 call node conditional_permutations_boolean.js > conditional_permutations_boolean.txt
 call node conditional_permutations_algebraic.js > conditional_permutations_algebraic.txt
