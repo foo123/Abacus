@@ -23,7 +23,36 @@ var o;
 echo('Abacus Algebraic Composition: k-Derangements (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
+
+print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":2}, 1));
+print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":2}, -1));
+print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":3}, 1));
+print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":3}, -1));
+print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":2}, 1));
+print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":2}, -1));
+print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":4}, 1));
+print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":4}, -1));
+print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":5}, 1));
+print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":5}, -1));
+
+
 // k-Derangements (derangements with exactly k fixed points)= (n,k)-Combinations combinedWith (n-k)-Derangements
+
+echo('o = Abacus.Permutation(4,{type:"derangement","fixed=":4})');
+o = Abacus.Permutation(4,{type:"derangement","fixed=":4});
+
+echo('o.rewind()');
+print_all( o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0),
+        rank = Abacus.Permutation.rank(item, o.n, o.$),
+        unranked = Abacus.Permutation.unrank(index, o.n, o.$);
+    return [item.join(','), index, rank, unranked.join(','), Abacus.Permutation.isDerangement(item, 4, true) ? 'CORRECT' : 'ERROR'];
+} );
+
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1);
+
+o.dispose();
 
 echo('o = Abacus.Combination(4,4).completeWith(Abacus.Permutation(0,{type:"derangement"}))');
 o = Abacus.Combination(4,4).completeWith(Abacus.Permutation(0,{type:"derangement"}));
@@ -41,6 +70,22 @@ echo('o.hasNext()');
 echo(o.hasNext());
 echo('o.next()');
 print(o.next());
+o.dispose();
+
+echo('o = Abacus.Permutation(6,{type:"derangement","fixed=":3})');
+o = Abacus.Permutation(6,{type:"derangement","fixed=":3});
+
+echo('o.rewind()');
+print_all( o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0),
+        rank = Abacus.Permutation.rank(item, o.n, o.$),
+        unranked = Abacus.Permutation.unrank(index, o.n, o.$);
+    return [item.join(','), index, rank, unranked.join(','), Abacus.Permutation.isDerangement(item, 3, true) ? 'CORRECT' : 'ERROR'];
+} );
+
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1);
+
 o.dispose();
 
 echo('o = Abacus.Combination(6,3).completeWith(Abacus.Permutation(6-3,{type:"derangement"}))');
@@ -68,6 +113,9 @@ print_all( o.rewind(), 1, function(item){
     Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
     ];
 } );
+
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1);
 
 echo('o.order("random")');
 print_all( o.order("random"), 1, function(item){
@@ -104,6 +152,9 @@ print_all( o.rewind(), 1, function(item){
     ];
 } );
 
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1);
+
 echo('o.order("random")');
 print_all( o.order("random"), 1, function(item){
     return [
@@ -111,6 +162,22 @@ print_all( o.order("random"), 1, function(item){
     Abacus.Permutation.isDerangement(item, 3, true) ? 'exactly 3 fixed points' : 'ERROR'
     ];
 } );
+o.dispose();
+
+echo('o = Abacus.Permutation(8,{type:"derangement","fixed=":4})');
+o = Abacus.Permutation(8,{type:"derangement","fixed=":4});
+
+echo('o.rewind()');
+print_all( o.rewind(), 1, function(item){
+    var index = o.index()-(o.hasNext()?1:0),
+        rank = Abacus.Permutation.rank(item, o.n, o.$),
+        unranked = Abacus.Permutation.unrank(index, o.n, o.$);
+    return [item.join(','), index, rank, unranked.join(','), Abacus.Permutation.isDerangement(item, 4, true) ? 'CORRECT' : 'ERROR'];
+} );
+
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1);
+
 o.dispose();
 
 echo('o = Abacus.Combination(8,4).combineWith(Abacus.Permutation(8-4,{type:"derangement"}))');

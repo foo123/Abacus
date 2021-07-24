@@ -42,6 +42,24 @@ echo(Abacus.SetPartition.initial(5, {"parts=":3}, -1));
 echo(Abacus.SetPartition.initial(6, {"parts=":3}, 1));
 echo(Abacus.SetPartition.initial(6, {"parts=":3}, -1));*/
 
+echo('o = Abacus.Permutation(5,{"cycles=":3})');
+o = Abacus.Permutation(5,{"cycles=":3});
+
+echo(o.total());
+
+echo('o.rewind()');
+print_all( o.rewind());
+
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1);
+o.dispose();
+
+echo('o = Abacus.SetPartition(5, {"parts=":3}).fuse(\
+(partition, permutation) => {\
+    if (!Array.isArray(permutation[0])) permutation = [permutation];\
+    return Abacus.Permutation.fromCycles(partition.filter(p => 1 < p.length).map((p, i) =>\ [p[p.length-1]].concat(Abacus.Permutation.permute(p.slice(0, -1), permutation[i], true))), 5);\
+}, Abacus.CombinatorialProxy(item => item.reverse().reduce((p,i) => 1 < i.length ? Abacus.Permutation(i.length-1).juxtaposeWith(p) : p, null)))');
+
 o = Abacus.SetPartition(5, {"parts=":3}).fuse(
 (partition, permutation) => {
     if (!Array.isArray(permutation[0])) permutation = [permutation];
