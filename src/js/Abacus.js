@@ -20948,7 +20948,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null!=kcycles)
                 {
                     if (0 > kcycles || kcycles > n) return null;
-                    item = cycles2permutation(0 > dir ? array(kcycles, function(i){return 0 === i ? array(n-kcycles+1, n-kcycles, -1) : [n-kcycles+i];}) : array(kcycles, function(i){return i+1===kcycles ? [n-1].concat(array(n-kcycles, n-kcycles, 1)) : [i];}), n);
+                    item = cycles2permutation(0 > dir ? array(kcycles, function(i){return 0 === i ? array(n-kcycles+1, n-kcycles, -1) : [n-kcycles+i];}) : array(kcycles, function(i){return i+1===kcycles ? [n-1].concat(array(n-kcycles, kcycles-1, 1)) : [i];}), n);
                 }
                 else
                 {
