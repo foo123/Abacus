@@ -39,6 +39,9 @@ print_all(o.rewind(), 1, function(item){
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
 
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -57,6 +60,9 @@ print_all(o.rewind(), 1, function(item){
 
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
+
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
 
 echo('o.random()');
 print(o.random());
@@ -77,6 +83,9 @@ print_all(o.rewind(), 1, function(item){
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
 
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -96,6 +105,9 @@ print_all(o.rewind(), 1, function(item){
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
 
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -114,6 +126,9 @@ print_all(o.rewind(), 1, function(item){
 
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
+
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
 
 echo('o.random()');
 print(o.random());

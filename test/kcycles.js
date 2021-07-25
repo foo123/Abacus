@@ -36,6 +36,8 @@ echo('---');
 /*
 print(Abacus.Permutation.initial(5, {"cycles=":3}, 1));
 print(Abacus.Permutation.initial(5, {"cycles=":3}, -1));
+print(Abacus.Permutation.initial(5, {"cycles=":2}, 1));
+print(Abacus.Permutation.initial(5, {"cycles=":2}, -1));
 */
 /*echo(Abacus.SetPartition.initial(5, {"parts=":3}, 1));
 echo(Abacus.SetPartition.initial(5, {"parts=":3}, -1));
@@ -52,6 +54,10 @@ print_all( o.rewind());
 
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1);
+
+echo('o.order("random")');
+print_all(o.order("random"));
+
 o.dispose();
 
 echo('o = Abacus.SetPartition(5, {"parts=":3}).fuse(\
