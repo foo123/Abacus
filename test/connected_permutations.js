@@ -36,6 +36,9 @@ print_all(o.rewind(), 1, function(item){
     return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
 });
 
+echo('o.rewind(-1)');
+print_all(o.rewind(-1), -1);
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -51,6 +54,9 @@ print_all(o.rewind(), 1, function(item){
     var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
     return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
 });
+
+echo('o.rewind(-1)');
+print_all(o.rewind(-1), -1);
 
 echo('o.random()');
 print(o.random());
@@ -68,6 +74,9 @@ print_all(o.rewind(), 1, function(item){
     return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
 });
 
+echo('o.rewind(-1)');
+print_all(o.rewind(-1), -1);
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -84,6 +93,9 @@ print_all(o.rewind(), 1, function(item){
     return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
 });
 
+echo('o.rewind(-1)');
+print_all(o.rewind(-1), -1);
+
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -99,6 +111,9 @@ print_all(o.rewind(), 1, function(item){
     var index = o.index()-(o.hasNext()?1:0), rank = Abacus.Permutation.rank(item, o.n, o.$);
     return [item.join(','), index, rank, Abacus.Permutation.unrank(index, o.n, o.$).join(','), Abacus.Permutation.isConnected(item) ? "cyclic" : "ERROR"];
 });
+
+echo('o.rewind(-1)');
+print_all(o.rewind(-1), -1);
 
 echo('o.random()');
 print(o.random());

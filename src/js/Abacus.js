@@ -20887,13 +20887,14 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 order = $ && null!=-$.order ? $.order : LEX,
                 kcycles = $ && null!=$['cycles='] ? $['cycles=']|0 : null,
                 kfixed = $ && null!=$['fixed='] ? $['fixed=']|0 : null,
-                n_2, nn
+                n_2, part, perm, odir
             ;
 
             if (0 > n) return null;
             if (0===n) return [];
 
             dir = -1 === dir ? -1 : 1;
+            odir = dir;
             if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
                 dir = -dir;
             // O(n)
@@ -20905,17 +20906,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             {
                 if (null != kfixed)
                 {
-                    nn = n-kfixed;
-                    if (0 > kfixed || 0 > nn || 1 === nn) return null;
-                    if (nn & 1) // odd
-                    {
-                        n_2 = stdMath.floor(nn/2);
-                        item = 0 > dir ? array(nn-n_2-1, nn-1, -1).concat(1 <= n_2 ? [n_2-1,n_2] : []).concat(array(n_2-1, n_2-2, -1)).concat(array(kfixed, nn, 1)) : array(kfixed, 0, 1).concat(array(nn-3, function(i){return kfixed+(i&1?i-1:i+1);}).concat(3 <= nn ? [n-2,n-1,n-3] : []));
-                    }
-                    else
-                    {
-                        item = 0 > dir ? array(nn, nn-1, -1).concat(array(kfixed, nn, 1)) : array(kfixed, 0, 1).concat(array(nn, function(i){return kfixed+(i&1?i-1:i+1);}));
-                    }
+                    if (0 > kfixed || kfixed > n || kfixed+1 === n) return null;
+                    item = compose_kfixed([Combination.initial([n, kfixed], {type:"combination",order:order},odir), Permutation.initial(n-kfixed, {type:"derangement",order:order}, odir)], n, kfixed);
                 }
                 else if (2>n)
                 {
@@ -20937,7 +20929,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("connected" === type)
             {
-                item = cycles2permutation([0 > dir ? array(n, n-1, -1) : [n-1].concat(array(n-1, 0, 1))], n);
+                item = cycles2permutation([[n-1].concat(Permutation.initial(n-1, {order:order}, odir))], n);
             }
             else if ("involution" === type)
             {
@@ -20948,7 +20940,9 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null!=kcycles)
                 {
                     if (0 > kcycles || kcycles > n) return null;
-                    item = cycles2permutation(0 > dir ? array(kcycles, function(i){return 0 === i ? array(n-kcycles+1, n-kcycles, -1) : [n-kcycles+i];}) : array(kcycles, function(i){return i+1===kcycles ? [n-1].concat(array(n-kcycles, kcycles-1, 1)) : [i];}), n);
+                    part = SetPartition.initial(n, {"parts=":kcycles,order:order}, odir);
+                    perm = part.filter(function(p){return 1 < p.length;}).map(function(p){return Permutation.initial(p.length-1, {order:order}, odir);});
+                    item = compose_kcycles([part, perm], n, kcycles);
                 }
                 else
                 {
@@ -21159,7 +21153,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 order = $ && null!=-$.order ? $.order : LEX,
                 sub = Arithmetic.sub, add = Arithmetic.add,
                 mul = Arithmetic.mul, div = Arithmetic.div,
-                O = Arithmetic.O, index = O,
+                O = Arithmetic.O, index = O, item0,
                 i, j, ii, m, x, y, k, inv, /*indexOf,*/ unvisited, dict,
                 I = Arithmetic.I, J = Arithmetic.J, N, M;
 
@@ -21345,13 +21339,8 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             }
             else if ("connected" === type)
             {
-                item = array(n-1); item[n-2] = 0;
-                for (r=index,i=n-3; i>=0; i--)
-                {
-                    b = n-1-i; t = mod(r, b); r = div(r, b);
-                    item[i] = val(t);
-                }
-                inversion2permutation(item, item);
+                item = Permutation.unrank(index, n-1, {});
+                if (null==item) return null;
                 item = cycles2permutation([[n-1].concat(item)], n);
             }
             else if ("derangement" === type)
@@ -21359,9 +21348,11 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null!=kfixed)
                 {
                     if (0 > kfixed || kfixed > n || kfixed+1===n) return null;
-                    i = div(index, factorial(n-kfixed, false));
-                    j = mod(index, factorial(n-kfixed, false));
-                    return compose_kfixed([Combination.unrank(i, [n, kfixed], {type:"combination",order:$.order}), Permutation.unrank(j, n-kfixed, {type:"derangement",order:$.order})]);
+                    r = factorial(n-kfixed, false);
+                    i = Combination.unrank(div(index, r), [n, kfixed], {type:"combination",order:$.order});
+                    j = Permutation.unrank(mod(index, r), n-kfixed, {type:"derangement",order:$.order});
+                    if (null==i || null==j) return null;
+                    item = compose_kfixed([i, j], n, kfixed);
                 }
                 else
                 {
@@ -21510,7 +21501,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         }
         else if (item && ("derangement" === type) && (null!=kfixed) && is_array(item[0]) && is_array(item[1]))
         {
-            return compose_kfixed(item, n);
+            return compose_kfixed(item, n, kfixed);
         }
         else if (item && ("connected" === type) && (n-1 === item.length))
         {
@@ -21649,8 +21640,7 @@ function next_kfixed(item, n, k, dir, order)
 function next_kcycles(item, n, k, dir, order)
 {
     if (0 > k || k > n) return null;
-    var i, j, next0, next1;
-    order = REVERSED&order ? LEX | REVERSED : LEX;
+    var i, j, next0, next1, order2 = REVERSED&order ? LEX | REVERSED : LEX;
     for (i=item[1].length-1; i>=0; i--)
     {
         next1 = next_permutation(item[1][i], item[1][i].length, dir, "permutation", order);
@@ -22619,12 +22609,23 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         ,DUAL: function(item, n, $, dir) {
             if (null == item) return null;
             // some C-P-T dualities, symmetries & processes at play here
-            var klass = this, order, order0 = null;
-            if ($ && "binary"===$.type)
+            var klass = this, type = $ && $.type ? $.type : "subset",
+                order = $ && null!=$.order ? $.order : LEX, order0 = null;
+            if ("binary" === type)
             {
-                order = $ && null!=$.order ? $.order : LEX;
+                order = LEX;
                 order0 = $.order;
-                $.order = REFLECTED & order ? (order & ~REFLECTED) : (order | REFLECTED);
+                if (!(REFLECTED & order0)) order |= REFLECTED;
+                if (REVERSED & order0) order |= REVERSED;
+                $.order = order;
+            }
+            else if (COLEX & order)
+            {
+                order = LEX;
+                order0 = $.order;
+                if (REFLECTED & order0) order |= REFLECTED;
+                if (REVERSED & order0) order |= REVERSED;
+                $.order = order;
             }
             item = CombinatorialIterator.DUAL.call(klass, item, n, $, dir);
             if ($ && null!=order0) $.order = order0;
@@ -22643,7 +22644,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             if (0 > n) return null;
 
             dir = -1 === dir ? -1 : 1;
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+            if (REVERSED&order)
                 dir = -dir;
 
             // O(n)
@@ -22651,14 +22652,14 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             item = [];
             if (0 < n)
             {
-                if (("binary" === type) && !(MINIMAL & order))
+                if ((("binary" === type) || (COLEX & order)) && !(MINIMAL & order))
                 {
                     //item = 0 > dir ? array(n, 0, 1) : [];
                     if (0>dir) item = array(n, 0, 1);
                 }
                 else
                 {
-                    if (0>dir) { item = [n-1]; }
+                    if (0>dir) item = [n-1];
                 }
             }
             item = klass.DUAL(item, n, $, 1);
@@ -22725,10 +22726,13 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 }
                 return null;
             }
-            else
+            else if ((COLEX & order) || ("binary" === type))
             {
-                return "binary" === type ? CombinatorialIterator.succ.call(this, item, index, n, $, dir) : next_subset(item, n, -1 === dir ? -1 : 1, order);
+                dir = -1 === dir ? -1 : 1;
+                //if (REVERSED & order) dir = -dir;
+                return CombinatorialIterator.succ.call(this, item, index, n, $, dir);
             }
+            return next_subset(item, n, -1 === dir ? -1 : 1, order);
         }
         ,rand: function(n, $) {
             var klass = this, rndInt = Abacus.Math.rndInt, item;
@@ -22754,7 +22758,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 type = $ && $.type ? $.type : "subset",
                 order = $ && null!=$.order ? $.order : LEX,
                 is_binary = "binary" === type,
-                is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order)),
+                is_reflected = REFLECTED & order,
                 index = J, x, y, i, j, k, l, dict;
 
             if (!$ || !item || 0>n) return J;
@@ -22785,6 +22789,21 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 if (REVERSED&order)
                     index = sub($ && null!=$.last?$.last:sub(klass.count(n, $), I), index);
             }
+            else if (COLEX & order)
+            {
+                // O(n)
+                l = item/*[n]*/.length;
+                dict = {};
+                for (index = O,i = 0; i < l; i++)
+                {
+                    x = item[i];
+                    if (0 > x || x >= n || 1 === dict[x] || (i+1<l && x >= item[i+1])) return J;
+                    index = add(index, subset_bin_rank(n, x));
+                    dict[x] = 1;
+                }
+                if (REVERSED & order)
+                    index = sub($ && null!=$.last?$.last:sub(klass.count(n, $), I), index);
+            }
             else if (is_binary)
             {
                 // O(n)
@@ -22797,7 +22816,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                     index = add(index, subset_bin_rank(n, x));
                     dict[x] = 1;
                 }
-                if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+                if (REVERSED & order)
                     index = sub($ && null!=$.last?$.last:sub(klass.count(n, $), I), index);
             }
             else
@@ -22848,9 +22867,22 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                         i++; index = shr(index, 1);
                     }
                 }
+                else if (COLEX & order)
+                {
+                    if (REVERSED & order)
+                        index = sub($ && null!=$.last?$.last:sub(count, I), index);
+
+                    // O(n)
+                    i = 0;
+                    while (i<n && gt(index, O))
+                    {
+                        if (gt(band(index,1),O)) item[item[n]++] = i;//item.push(i);
+                        i++; index = shr(index, 1);
+                    }
+                }
                 else if ("binary" === type)
                 {
-                    if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+                    if (REVERSED & order)
                         index = sub($ && null!=$.last?$.last:sub(count, I), index);
 
                     // O(n)
@@ -22901,14 +22933,14 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
     ,_update: function() {
         var self = this, $ = self.$, n = self.n, item = self.__item, itemlen,
             order = $.order || LEX, is_binary = "binary"===$.type,
-            is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order));
+            is_reflected = REFLECTED & order;
         if ((null != item) && (n+1 !== item.length))
         {
             itemlen = item.length;
             item = item.slice();
             if (itemlen<n)
             {
-                if ((is_binary && !is_reflected) || (is_reflected && !is_binary))
+                if (((is_binary) && !is_reflected) || (is_reflected && !(is_binary)))
                     item.unshift.apply(item, new Array(n-itemlen));
                 else
                     item.push.apply(item, new Array(n-itemlen));
@@ -22924,8 +22956,8 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         if (n+1===item.length)
         {
             var $ = this.$, order = $.order || LEX, is_binary = "binary"===$.type,
-                is_reflected = ((COLEX&order) && !(REFLECTED&order)) || ((REFLECTED&order) && !(COLEX&order));
-            item = (is_binary && !is_reflected) || (is_reflected && !is_binary) ? item.slice(n-item[n],n) : item.slice(0,item[n]);
+                is_reflected = REFLECTED & order;
+            item = ((is_binary) && !is_reflected) || (is_reflected && !(is_binary)) ? item.slice(n-item[n],n) : item.slice(0,item[n]);
         }
         return CombinatorialIterator[PROTO].output.call(this, item);
     }

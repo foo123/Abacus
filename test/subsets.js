@@ -70,6 +70,9 @@ print_all( o.order("lex,reversed,reflected") );
 echo('o.order("colex")');
 print_all( o.order("colex") );
 
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
 echo('o.order("colex,reflected")');
 print_all( o.order("colex,reflected") );
 
