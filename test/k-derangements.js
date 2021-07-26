@@ -23,7 +23,7 @@ var o;
 echo('Abacus Algebraic Composition: k-Derangements (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-
+/*
 print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":2}, 1));
 print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":2}, -1));
 print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":3}, 1));
@@ -34,7 +34,7 @@ print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":4}, 1));
 print(Abacus.Permutation.initial(4, {type:"derangement","fixed=":4}, -1));
 print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":5}, 1));
 print(Abacus.Permutation.initial(5, {type:"derangement","fixed=":5}, -1));
-
+*/
 
 // k-Derangements (derangements with exactly k fixed points)= (n,k)-Combinations combinedWith (n-k)-Derangements
 
@@ -51,6 +51,18 @@ print_all( o.rewind(), 1, function(item){
 
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1);
+
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
+
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
 
 o.dispose();
 
@@ -85,6 +97,18 @@ print_all( o.rewind(), 1, function(item){
 
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1);
+
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
+
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
 
 o.dispose();
 
@@ -177,6 +201,18 @@ print_all( o.rewind(), 1, function(item){
 
 echo('o.rewind(-1)');
 print_all( o.rewind(-1), -1);
+
+echo('o.order("lex,reversed")');
+print_all(o.order("lex,reversed"));
+
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
 
 o.dispose();
 

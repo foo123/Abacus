@@ -42,8 +42,15 @@ print_all(o.rewind(-1), -1);
 echo('o.order("lex,reversed")');
 print_all(o.order("lex,reversed"));
 
-echo('o.random()');
-print(o.random());
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
+
 o.dispose();
 
 echo('o = Abacus.Permutation(3,{type:"connected"})');
@@ -64,8 +71,15 @@ print_all(o.rewind(-1), -1);
 echo('o.order("lex,reversed")');
 print_all(o.order("lex,reversed"));
 
-echo('o.random()');
-print(o.random());
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
+
 o.dispose();
 
 echo('o = Abacus.Permutation(4,{type:"connected"})');
@@ -86,8 +100,15 @@ print_all(o.rewind(-1), -1);
 echo('o.order("lex,reversed")');
 print_all(o.order("lex,reversed"));
 
-echo('o.random()');
-print(o.random());
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
+
 o.dispose();
 
 echo('o = Abacus.Permutation(5,{type:"connected"})');
@@ -108,8 +129,15 @@ print_all(o.rewind(-1), -1);
 echo('o.order("lex,reversed")');
 print_all(o.order("lex,reversed"));
 
-echo('o.random()');
-print(o.random());
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
+
 o.dispose();
 
 echo('o = Abacus.Permutation(6,{type:"connected"})');
@@ -130,6 +158,13 @@ print_all(o.rewind(-1), -1);
 echo('o.order("lex,reversed")');
 print_all(o.order("lex,reversed"));
 
-echo('o.random()');
-print(o.random());
+echo('o.order("colex")');
+print_all(o.order("colex"));
+
+echo('o.order("colex,reversed")');
+print_all(o.order("colex,reversed"));
+
+echo('o.order("random")');
+print_all(o.order("random"));
+
 o.dispose();
