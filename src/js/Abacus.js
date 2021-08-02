@@ -20482,7 +20482,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 }
                 $.base = n[1];
                 $.dimension = stdMath.max(0, n[0]);
-                if ("gray" === $.output) $.output = function(item, n){ return Tensor.gray(item,n[1]); };
+                if ("gray" === $.output) $.output = function(item, n){ return Tensor.toGray(item,n[1]); };
             }
             else
             {
