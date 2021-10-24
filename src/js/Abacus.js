@@ -2,7 +2,7 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for Javascript
-*   @version: 1.0.8
+*   @version: 1.0.9
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -20,7 +20,7 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__Abacus(undef){
 "use strict";
 
-var  Abacus = {VERSION: "1.0.8"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
+var  Abacus = {VERSION: "1.0.9"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
     ,slice = Array[PROTO].slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
     ,log2 = stdMath.log2 || function(x) { return stdMath.log(x) / stdMath.LN2; }
     ,trim_re = /^\s+|\s+$/g
@@ -986,7 +986,92 @@ function is_mirror_image(x)
     }
     return true;
 }
-
+function lcs(a, b, contiguous, sizeOnly, eq)
+{
+    var i, j, n = a.length, m = b.length, s, L, L1, L2, ret;
+    if (!n || !m) return sizeOnly ? 0 : [];
+    eq = eq || function(a, b){return a === b};
+    if (contiguous)
+    {
+        // https://en.wikipedia.org/wiki/Longest_common_substring_problem
+        // O(nm)
+        s = 0;
+        ret = [];
+        L = new Array(n);
+        for (i=0; i<n; i++)
+        {
+            L[i] = new Array(m);
+            for (j=0; j<m; j++)
+            {
+                if (eq(a[i], b[j]))
+                {
+                    L[i][j] = (0 === i || 0 === j ? 0 : L[i-1][j-1]) + 1;
+                    if (L[i][j] > s)
+                    {
+                        s = L[i][j];
+                        ret = [[i-s+1, i], [j-s+1, j]];
+                    }
+                    /*else if (L[i][j] === s)
+                    {
+                        ret.push([i-s+1, i], [j-s+1, j]);
+                    }*/
+                }
+                else
+                {
+                    L[i][j] = 0;
+                }
+            }
+        }
+    }
+    else
+    {
+        // https://en.wikipedia.org/wiki/Longest_common_subsequence_problem
+        // O(nm)
+        L = new Array(n);
+        ret = [];
+        for (i=0; i<n; i++)
+        {
+            L[i] = new Array(m);
+            for (j=0; j<m; j++)
+            {
+                if (eq(a[i], b[j]))
+                {
+                    L[i][j] = (0 === i || 0 === j ? 0 : L[i-1][j-1]) + 1;
+                }
+                else
+                {
+                    L[i][j] = stdMath.max(0 === j ? 0 : L[i][j-1], 0 === i ? 0 : L[i-1][j]);
+                }
+            }
+        }
+        s = L[n-1][m-1];
+        if (!sizeOnly)
+        {
+            i = n-1;
+            j = m-1;
+            while (i >= 0 && j >= 0)
+            {
+                L1 = 0 === i ? 0 : L[i-1][j];
+                L2 = 0 === j ? 0 : L[i][j-1];
+                if (eq(a[i], b[j]))
+                {
+                    ret.unshift([i, j]);
+                    i--;
+                    j--;
+                }
+                else if (L1 > L2)
+                {
+                    i--;
+                }
+                else
+                {
+                    j--;
+                }
+            }
+        }
+    }
+    return sizeOnly ? s : ret;
+}
 function sorter(Arithmetic)
 {
     return true===Arithmetic ? function(a, b){return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);} : (Arithmetic ? function(a, b){return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b){return a===b ? 0 : (a<b ? -1 : 1);});
@@ -7444,6 +7529,7 @@ Abacus.Util = {
     ,complementation: complementation
     ,reflection: reflection
     ,reversion: reversion
+    ,lcs: lcs
     ,gray: gray
     ,igray: igray
     ,grayn: grayn
