@@ -986,17 +986,56 @@ function is_mirror_image(x)
     }
     return true;
 }
-function lcs(a, b, contiguous, sizeOnly, eq)
+function lcs_key(path)
 {
-    var i, j, n = a.length, m = b.length, s, L, L1, L2, ret;
+    return path.map(function(ij){return String(ij[0])+','+String(ij[1]);}).join('-');
+}
+function lcs_backtrack(L, a, b, i, j, eq, all)
+{
+    if (0 > i || 0 > j) return [];
+    var L1 = 0 === i ? 0 : L[i-1][j], L2 = 0 === j ? 0 : L[i][j-1], out, lcs1, lcs2, visited;
+    if (all)
+    {
+        if (eq(a[i], b[j]))
+        {
+            out = lcs_backtrack(L, a, b, i-1, j-1, eq, all);
+            return out.length ? out.map(function(path){path.push([i, j]); return path;}) : [[[i, j]]];
+        }
+        out = [];
+        // NOTE: below different paths, may lead to same LCS nevertheless, unless filtering is used
+        lcs1 = L1 >= L2 ? lcs_backtrack(L, a, b, i-1, j, eq, all) : [];
+        lcs2 = L2 >= L1 ? lcs_backtrack(L, a, b, i, j-1, eq, all) : [];
+        if (lcs1.length && lcs2.length)
+        {
+            visited = lcs1.reduce(function(visited, path){visited[lcs_key(path)] = 1; return visited;}, Obj());
+            lcs2 = lcs2.filter(function(path){return 1 !== visited[lcs_key(path)];});
+        }
+        out.push.apply(out, lcs1);
+        out.push.apply(out, lcs2);
+        return out;
+    }
+    else
+    {
+        if (eq(a[i], b[j]))
+        {
+            out = lcs_backtrack(L, a, b, i-1, j-1, eq, all);
+            out.push([i, j]);
+            return out;
+        }
+        return L1 > L2 ? lcs_backtrack(L, a, b, i-1, j, eq, all) : lcs_backtrack(L, a, b, i, j-1, eq, all);
+    }
+}
+function lcs(a, b, contiguous, ret, eq)
+{
+    var i, j, n = a.length, m = b.length, s, L, L1, L2, out, sizeOnly = 'size' === ret, all = 'all' === ret;
     if (!n || !m) return sizeOnly ? 0 : [];
-    eq = eq || function(a, b){return a === b};
+    eq = eq || default_eq;
     if (contiguous)
     {
         // https://en.wikipedia.org/wiki/Longest_common_substring_problem
         // O(nm)
         s = 0;
-        ret = [];
+        out = [];
         L = new Array(n);
         for (i=0; i<n; i++)
         {
@@ -1009,12 +1048,12 @@ function lcs(a, b, contiguous, sizeOnly, eq)
                     if (L[i][j] > s)
                     {
                         s = L[i][j];
-                        ret = [[i-s+1, i], [j-s+1, j]];
+                        if (!sizeOnly) out = [[i-s+1, i, j-s+1, j]];
                     }
-                    /*else if (L[i][j] === s)
+                    else if (all && L[i][j] === s)
                     {
-                        ret.push([i-s+1, i], [j-s+1, j]);
-                    }*/
+                        out.push([i-s+1, i, j-s+1, j]);
+                    }
                 }
                 else
                 {
@@ -1028,7 +1067,7 @@ function lcs(a, b, contiguous, sizeOnly, eq)
         // https://en.wikipedia.org/wiki/Longest_common_subsequence_problem
         // O(nm)
         L = new Array(n);
-        ret = [];
+        out = [];
         for (i=0; i<n; i++)
         {
             L[i] = new Array(m);
@@ -1045,32 +1084,9 @@ function lcs(a, b, contiguous, sizeOnly, eq)
             }
         }
         s = L[n-1][m-1];
-        if (!sizeOnly)
-        {
-            i = n-1;
-            j = m-1;
-            while (i >= 0 && j >= 0)
-            {
-                L1 = 0 === i ? 0 : L[i-1][j];
-                L2 = 0 === j ? 0 : L[i][j-1];
-                if (eq(a[i], b[j]))
-                {
-                    ret.unshift([i, j]);
-                    i--;
-                    j--;
-                }
-                else if (L1 > L2)
-                {
-                    i--;
-                }
-                else
-                {
-                    j--;
-                }
-            }
-        }
+        if (!sizeOnly) out = lcs_backtrack(L, a, b, n-1, m-1, eq, all);
     }
-    return sizeOnly ? s : ret;
+    return sizeOnly ? s : out;
 }
 function sorter(Arithmetic)
 {
