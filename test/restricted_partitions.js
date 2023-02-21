@@ -24,7 +24,7 @@ echo('Abacus.Partitions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Restricted Partitions
-/*
+
 echo('o = Abacus.Partition(7,{"min=":3})');
 o = Abacus.Partition(7,{"min=":3});
 
@@ -208,7 +208,7 @@ print(o.random());
 // dispose
 echo('o.dispose()');
 o.dispose();
-*/
+
 echo('o = Abacus.Partition(7,{"min=":3,"parts=":2})');
 o = Abacus.Partition(7,{"min=":3,"parts=":2});
 

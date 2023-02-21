@@ -43,7 +43,7 @@ print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -70,7 +70,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -97,7 +97,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -118,7 +118,28 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.random()');
+print(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.SetPartition(5, {"parts=":3})');
+o = Abacus.SetPartition(5, {"parts=":3});
+
+echo('o.total()'); 
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -139,7 +160,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -160,7 +181,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -181,7 +202,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');
@@ -202,7 +223,7 @@ echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind() );
+print_all(o.rewind());
 
 echo('backwards');
 echo('o.rewind(-1)');

@@ -25,7 +25,6 @@ echo('---');
 
 // Restricted Compositions
 
-/*
 echo('o = Abacus.Partition(7,{type:"composition","min=":3,"max=":4})');
 o = Abacus.Partition(7,{type:"composition","min=":3,"max=":4});
 
@@ -94,7 +93,6 @@ print(o.random());
 // dispose
 echo('o.dispose()');
 o.dispose();
-*/
 
 echo('o = Abacus.Partition(7,{type:"composition","min=":3,"parts=":2})');
 o = Abacus.Partition(7,{type:"composition","min=":3,"parts=":2});

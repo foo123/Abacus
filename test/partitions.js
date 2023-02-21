@@ -25,6 +25,11 @@ echo('---');
 
 // Partitions
 
+/*print([2, 1, 1, 1, 1]);
+print(Abacus.Partition.conjugate([2, 1, 1, 1, 1], "partition"));
+print([5, 1]);
+return;*/
+
 echo('o = Abacus.Partition(6)');
 o = Abacus.Partition(6);
 

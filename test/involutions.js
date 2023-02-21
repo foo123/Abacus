@@ -43,9 +43,6 @@ print_all(o.rewind(), 1, function(item){
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
 
-/*echo('o.order("colex")');
-print_all( o.order("colex") );*/
-
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -65,9 +62,6 @@ print_all(o.rewind(), 1, function(item){
 
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
-
-/*echo('o.order("colex")');
-print_all( o.order("colex") );*/
 
 echo('o.random()');
 print(o.random());
@@ -89,9 +83,6 @@ print_all(o.rewind(), 1, function(item){
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
 
-/*echo('o.order("colex")');
-print_all( o.order("colex") );*/
-
 echo('o.random()');
 print(o.random());
 o.dispose();
@@ -112,13 +103,11 @@ print_all(o.rewind(), 1, function(item){
 echo('o.rewind(-1)');
 print_all(o.rewind(-1), -1);
 
-/*echo('o.order("colex")');
-print_all( o.order("colex") );*/
-
 echo('o.random()');
 print(o.random());
 o.dispose();
 
+return;
 echo('o = Abacus.Permutation(5).filterBy(Abacus.Permutation.isInvolution)');
 o = Abacus.Permutation(5).filterBy(Abacus.Permutation.isInvolution);
 
@@ -128,9 +117,6 @@ echo(o.total());
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
 print_all(o.rewind());
-
-/*echo('o.order("colex")');
-print_all( o.order("colex") );*/
 
 echo('o.random()');
 print(o.random());
@@ -145,9 +131,6 @@ echo(o.total());
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
 print_all( o.rewind() );
-
-/*echo('o.order("colex")');
-print_all( o.order("colex") );*/
 
 echo('o.random()');
 print(o.random());

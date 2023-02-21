@@ -1022,7 +1022,7 @@ function lcs_backtrack(L, a, b, i, j, eq, all)
             out.push([i, j]);
             return out;
         }
-        return L1 > L2 ? lcs_backtrack(L, a, b, i-1, j, eq, all) : lcs_backtrack(L, a, b, i, j-1, eq, all);
+        return L1 >= L2 ? lcs_backtrack(L, a, b, i-1, j, eq, all) : lcs_backtrack(L, a, b, i, j-1, eq, all);
     }
 }
 function lcs(a, b, contiguous, ret, eq)

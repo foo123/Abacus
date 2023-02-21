@@ -25,6 +25,11 @@ echo('---');
 
 // Compositions
 
+/*print([2, 4, 1, 1, 5]);
+print(Abacus.Partition.conjugate([2, 4, 1, 1, 5], "composition"));
+print([1, 2, 1, 1, 4, 1, 1, 1, 1]);
+return;*/
+
 echo('o = Abacus.Partition(7,{type:"composition"})');
 o = Abacus.Partition(7,{type:"composition"});
 
