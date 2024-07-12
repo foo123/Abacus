@@ -351,6 +351,7 @@ Abacus.Util = {
     ,reflection: reflection
     ,reversion: reversion
     ,lcs: lcs
+    ,align: align
     ,gray: gray
     ,igray: igray
     ,grayn: grayn

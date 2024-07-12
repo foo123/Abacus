@@ -1014,6 +1014,157 @@ function lcs(a, b, contiguous, ret, eq)
     }
     return sizeOnly ? s : out;
 }
+function cmp_with_indices(cmp)
+{
+    return function(a, b) {
+        var res = cmp(a[0], b[0]);
+        return 0 > res ? -1 : (0 < res ? 1 : (a[1] - b[1]));
+    };
+}
+function with_indices(arr)
+{
+    var n = arr.length, vi = new Array(n), i;
+    for (i=0; i<n; ++i) vi[i] = [arr[i], i];
+    return vi;
+}
+function get_indices(vi, inv)
+{
+    var n = vi.length, i = new Array(n), j;
+    if (inv)
+    {
+        for (j=0; j<n; ++j) i[vi[j][1]] = j;
+    }
+    else
+    {
+        for (j=0; j<n; ++j) i[j] = vi[j][1];
+    }
+    return i;
+}
+/*function cmp_from_dist(dist, a0, b0)
+{
+    return [
+    function cmp_aa(a_0, a_1) {
+        var res = dist(a_0[0], b0) - dist(a_1[0], b0);
+        return 0 > res ? -1 : (0 < res ? 1 : (a_0[1] - a_1[1]));
+    },
+    function cmp_bb(b_0, b_1) {
+        var res = dist(a0, b_0[0]) - dist(a0, b_1[0]);
+        return 0 > res ? -1 : (0 < res ? 1 : (b_0[1] - b_1[1]));
+    }
+    ];
+}*/
+function cmp(a, b)
+{
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+function dist(a, b)
+{
+    return stdMath.abs(a - b);
+}
+function align(A, B, dist_AB, cmp_AA, cmp_BB)
+{
+    // https://stackoverflow.com/a/78740257/3591273
+    /*
+    Examples
+    note: "alignment" is like the permutation of (parts of) `b` that minimizes total given distance with `a`
+    a:0,1,2 b:0,1,2 alignment:0,1,2
+    a:0,1,2 b:2,1,0 alignment:2,1,0
+    a:2,1,0 b:0,1,2 alignment:2,1,0
+    a:2,1,0 b:2,1,0 alignment:0,1,2
+    a:0,1,2 b:0,1 alignment:0,1,1
+    a:0,1,2 b:1,0 alignment:1,0,0
+    a:2,1,0 b:0,1 alignment:1,1,0
+    a:2,1,0 b:1,0 alignment:0,0,1
+    a:0,1,2 b:-2,-1,0,1,2 alignment:2,3,4
+    a:0,1,2 b:2,1,0,4,3 alignment:2,1,0
+    a:2,1,0 b:-2,-1,0,1,2 alignment:4,3,2
+    a:2,1,0 b:2,1,0,4,3 alignment:0,1,2
+    */
+    var n = A.length, m = B.length, i, j, k, s, sm, km, perm_A, perm_B, iperm_A, iperm_B, alignment;
+    if (n && m)
+    {
+        // O(NlogN), N = max(n,m)
+        // assume that cmp_AA, cmp_BB, dist_AB are "compatible" in that:
+        // (0 > cmp_AA(A, A') and 0 > cmp_BB(B, B')) ==> (dist_AB(A, B) + dist_AB(A', B')) <= (dist_AB(A', B) + dist_AB(A, B'))
+        // in other words, minimum overall distance is when alignment implies similarly sorted sequences
+        dist_AB = dist_AB || dist;
+        perm_A = get_indices(with_indices(A).sort(cmp_with_indices(cmp_AA || cmp)));
+        perm_B = get_indices(with_indices(B).sort(cmp_with_indices(cmp_BB || cmp)));
+        alignment = new Array(n);
+        if (n > m)
+        {
+            for (i=0; i<m; ++i)
+            {
+                alignment[perm_A[perm_B[i]]] = i;
+            }
+            for (i=0; i<n;)
+            {
+                if (null == alignment[i]) // pad/interpolate
+                {
+                    j = i-1;
+                    k = i+1; while (k < n && null == alignment[k]) ++k;
+                    if (0 > j)
+                    {
+                        while (i < k) alignment[i++] = alignment[k];
+                    }
+                    else if (k >= n)
+                    {
+                        while (i < n) alignment[i++] = alignment[j];
+                    }
+                    else
+                    {
+                        if (dist_AB(A[i], B[alignment[j]]) > dist_AB(A[i], B[alignment[k]]))
+                        {
+                            while (i < k) alignment[i++] = alignment[k];
+                        }
+                        else
+                        {
+                            alignment[i++] = alignment[j];
+                        }
+                    }
+                }
+                else // bypass
+                {
+                    ++i;
+                }
+            }
+        }
+        else if (n < m)
+        {
+            sm = Infinity; km = 0;
+            for (k=0; k+n<=m; ++k)
+            {
+                s = 0;
+                for (i=0; i<n; ++i) s += dist_AB(A[perm_A[i]], B[perm_B[i+k]]);
+                if (s < sm)
+                {
+                    // best shift for min distance
+                    sm = s;
+                    km = k;
+                }
+            }
+            iperm_A = new Array(n);
+            for (i=0; i<n; ++i) iperm_A[perm_A[i]] = i;
+            iperm_B = new Array(m);
+            for (i=0; i<m; ++i) iperm_B[perm_B[i]] = i;
+            for (i=0; i<n; ++i)
+            {
+                alignment[i] = iperm_B[iperm_A[i]+km];
+            }
+        }
+        else// if (n === m)
+        {
+            for (i=0; i<m; ++i)
+            {
+                alignment[perm_A[perm_B[i]]] = i;
+            }
+        }
+        return alignment;
+    }
+    return [];
+}
+align.cmp = cmp;
+align.dist = dist;
 function sorter(Arithmetic)
 {
     return true===Arithmetic ? function(a, b){return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);} : (Arithmetic ? function(a, b){return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b){return a===b ? 0 : (a<b ? -1 : 1);});
