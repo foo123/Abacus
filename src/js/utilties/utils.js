@@ -1096,7 +1096,7 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
         {
             for (i=0; i<m; ++i)
             {
-                alignment[perm_A[perm_B[i]]] = i;
+                alignment[perm_A[i]] = perm_B[i];
             }
             for (i=0; i<n;)
             {
@@ -1166,9 +1166,13 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
         }
         else// if (n === m)
         {
-            for (i=0; i<m; ++i)
+            /*for (i=0; i<m; ++i)
             {
                 alignment[perm_A[perm_B[i]]] = i;
+            }*/
+            for (i=0; i<n; ++i)
+            {
+                alignment[perm_A[i]] = perm_B[i];
             }
         }
         return alignment;
