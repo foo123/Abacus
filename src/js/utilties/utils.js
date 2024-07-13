@@ -1066,7 +1066,7 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     // https://stackoverflow.com/a/78740257/3591273
     /*
     Examples
-    note: "alignment" is like the permutation of (parts of) `b` that minimizes total given distance with `a`
+    note: "alignment" is like the permutation (and/or warping) of (parts of) `b` that minimizes total given distance with `a`
     a:0,1,2 b:0,1,2 alignment:0,1,2
     a:0,1,2 b:2,1,0 alignment:2,1,0
     a:2,1,0 b:0,1,2 alignment:2,1,0
@@ -1079,8 +1079,9 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     a:0,1,2 b:2,1,0,4,3 alignment:2,1,0
     a:2,1,0 b:-2,-1,0,1,2 alignment:4,3,2
     a:2,1,0 b:2,1,0,4,3 alignment:0,1,2
+    a:2,1,0 b:0,2,4,1,3 alignment:1,3,0
     */
-    var n = A.length, m = B.length, i, j, k, s, sm, km, perm_A, perm_B, iperm_A, iperm_B, alignment;
+    var n = A.length, m = B.length, i, j, k, s, sm, km, perm_A, perm_B, /*iperm_A, iperm_B,*/ alignment;
     if (n && m)
     {
         // O(NlogN), N = max(n,m)
@@ -1154,13 +1155,13 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
                     km = k;
                 }
             }
-            iperm_A = new Array(n);
+            /*iperm_A = new Array(n);
             for (i=0; i<n; ++i) iperm_A[perm_A[i]] = i;
             iperm_B = new Array(m);
-            for (i=0; i<m; ++i) iperm_B[perm_B[i]] = i;
+            for (i=0; i<m; ++i) iperm_B[perm_B[i]] = i;*/
             for (i=0; i<n; ++i)
             {
-                alignment[i] = iperm_B[iperm_A[i]+km];
+                alignment[perm_A[i]] = /*i*/perm_B[/*iperm_A[*/i/*]*/+km];
             }
         }
         else// if (n === m)
