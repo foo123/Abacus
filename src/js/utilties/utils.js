@@ -1119,7 +1119,18 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
                         }
                         else
                         {
-                            alignment[i++] = alignment[j];
+                            alignment[i++] = alignment[j++];
+                            while (i < k)
+                            {
+                                if (dist_AB(A[i], B[alignment[j]]) > dist_AB(A[i], B[alignment[k]]))
+                                {
+                                    while (i < k) alignment[i++] = alignment[k];
+                                }
+                                else
+                                {
+                                    alignment[i++] = alignment[j++];
+                                }
+                            }
                         }
                     }
                 }
