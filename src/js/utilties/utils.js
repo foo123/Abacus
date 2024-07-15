@@ -1075,13 +1075,16 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     a:0,1,2 b:1,0 alignment:1,0,0
     a:2,1,0 b:0,1 alignment:1,1,0
     a:2,1,0 b:1,0 alignment:0,0,1
+    a:2,1,0,3,4 b:1,0,2 alignment:2,0,1,2,2
+    a:3,4,2,1,0 b:1,2 alignment:1,1,1,1,0
+    a:2,1,0,3,4 b:0,2 alignment:1,1,0,1,1
     a:0,1,2 b:-2,-1,0,1,2 alignment:2,3,4
     a:0,1,2 b:2,1,0,4,3 alignment:2,1,0
     a:2,1,0 b:-2,-1,0,1,2 alignment:4,3,2
     a:2,1,0 b:2,1,0,4,3 alignment:0,1,2
     a:2,1,0 b:0,2,4,1,3 alignment:1,3,0
     */
-    var n = A.length, m = B.length, i, j, k, s, sm, km, perm_A, perm_B, /*iperm_A, iperm_B,*/ alignment;
+    var n = A.length, m = B.length, i, j, k, s, sm, sM, km, perm_A, perm_B, iperm_A, /*iperm_B,*/ alignment;
     if (n && m)
     {
         // O(NlogN), N = max(n,m)
@@ -1094,50 +1097,36 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
         alignment = new Array(n);
         if (n > m)
         {
+            iperm_A = new Array(n);
+            for (i=0; i<n; ++i)
+            {
+                iperm_A[perm_A[i]] = i;
+            }
             for (i=0; i<m; ++i)
             {
                 alignment[perm_A[i]] = perm_B[i];
             }
-            for (i=0; i<n;)
+            for (i=0; i<n; ++i)
             {
-                if (null == alignment[i]) // pad/interpolate
+                if (null == alignment[i])
                 {
-                    j = i-1;
-                    k = i+1; while (k < n && null == alignment[k]) ++k;
-                    if (0 > j)
+                    // pad/interpolate
+                    j = stdMath.round(iperm_A[i]*(m-1)/(n-1));
+                    s = dist_AB(A[i], B[perm_B[j]]);
+                    sm = j-1>=0 ? dist_AB(A[i], B[perm_B[j-1]]) : Infinity;
+                    sM = j+1<m ? dist_AB(A[i], B[perm_B[j+1]]) : Infinity;
+                    km = j;
+                    if (sm < s)
                     {
-                        while (i < k) alignment[i++] = alignment[k];
+                        s = sm;
+                        km = j-1;
                     }
-                    else if (k >= n)
+                    if (sM < s)
                     {
-                        while (i < n) alignment[i++] = alignment[j];
+                        s = sM;
+                        km = j+1;
                     }
-                    else
-                    {
-                        if (dist_AB(A[i], B[alignment[j]]) > dist_AB(A[i], B[alignment[k]]))
-                        {
-                            while (i < k) alignment[i++] = alignment[k];
-                        }
-                        else
-                        {
-                            alignment[i++] = alignment[j++];
-                            while (i < k)
-                            {
-                                if (dist_AB(A[i], B[alignment[j]]) > dist_AB(A[i], B[alignment[k]]))
-                                {
-                                    while (i < k) alignment[i++] = alignment[k];
-                                }
-                                else
-                                {
-                                    alignment[i++] = alignment[j++];
-                                }
-                            }
-                        }
-                    }
-                }
-                else // bypass
-                {
-                    ++i;
+                    alignment[i] = perm_B[km];
                 }
             }
         }
