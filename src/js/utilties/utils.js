@@ -1076,7 +1076,7 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     a:2,1,0 b:0,1 alignment:1,1,0
     a:2,1,0 b:1,0 alignment:0,0,1
     a:2,1,0,3,4 b:1,0,2 alignment:2,0,1,2,2
-    a:3,4,2,1,0 b:1,2 alignment:1,1,1,1,0
+    a:3,4,2,1,0 b:1,2 alignment:1,1,1,0,0
     a:2,1,0,3,4 b:0,2 alignment:1,1,0,1,1
     a:0,1,2 b:-2,-1,0,1,2 alignment:2,3,4
     a:0,1,2 b:2,1,0,4,3 alignment:2,1,0
@@ -1084,7 +1084,7 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     a:2,1,0 b:2,1,0,4,3 alignment:0,1,2
     a:2,1,0 b:0,2,4,1,3 alignment:1,3,0
     */
-    var n = A.length, m = B.length, i, j, k, s, sm, sM, km, perm_A, perm_B, iperm_A, /*iperm_B,*/ alignment;
+    var n = A.length, m = B.length, i, j, k, s, sm, sM, jm, km, perm_A, perm_B, iperm_A, /*iperm_B,*/ alignment;
     if (n && m)
     {
         // O(NlogN), N = max(n,m)
@@ -1102,31 +1102,43 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
             {
                 iperm_A[perm_A[i]] = i;
             }
+            sm = Infinity; km = 0;
+            for (k=0; k+m<=n; ++k)
+            {
+                s = 0;
+                for (i=0; i<m; ++i) s += dist_AB(A[perm_A[i+k]], B[perm_B[i]]);
+                if (s < sm)
+                {
+                    // best shift for min distance
+                    sm = s;
+                    km = k;
+                }
+            }
             for (i=0; i<m; ++i)
             {
-                alignment[perm_A[i]] = perm_B[i];
+                alignment[perm_A[i+km]] = perm_B[i];
             }
             for (i=0; i<n; ++i)
             {
                 if (null == alignment[i])
                 {
                     // pad/interpolate
-                    j = stdMath.round(iperm_A[i]*(m-1)/(n-1));
+                    j = stdMath.round(stdMath.max(0, iperm_A[i]-km)*(m-1)/(n-1));
                     s = dist_AB(A[i], B[perm_B[j]]);
                     sm = j-1>=0 ? dist_AB(A[i], B[perm_B[j-1]]) : Infinity;
                     sM = j+1<m ? dist_AB(A[i], B[perm_B[j+1]]) : Infinity;
-                    km = j;
+                    jm = j;
                     if (sm < s)
                     {
                         s = sm;
-                        km = j-1;
+                        jm = j-1;
                     }
                     if (sM < s)
                     {
                         s = sM;
-                        km = j+1;
+                        jm = j+1;
                     }
-                    alignment[i] = perm_B[km];
+                    alignment[i] = perm_B[jm];
                 }
             }
         }
