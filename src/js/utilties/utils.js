@@ -1125,7 +1125,9 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
                 if (null == alignment[i])
                 {
                     // pad/interpolate
-                    j = stdMath.round(stdMath.max(0, iperm_A[i]-km)*(m-1)/(n-1-km));
+                    //j = stdMath.round(stdMath.max(0, iperm_A[i]-km)*(m-1)/(n-1-km));
+                    k = iperm_A[i]-km;
+                    j = k <= 0 ? 0 : (k>=m ? (m-1) : k);
                     s = dist_AB(A[i], B[perm_B[j]]);
                     sm = j-1>=0 ? dist_AB(A[i], B[perm_B[j-1]]) : Infinity;
                     sM = j+1<m ? dist_AB(A[i], B[perm_B[j+1]]) : Infinity;
