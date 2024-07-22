@@ -20,7 +20,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             operate(function(_,iter){
                 var bmin = iter.base(true, "min"), bmax = iter.base(true, "max"),
                     dmin = iter.dimension(true, "min"), dmax = iter.dimension(true, "max");
-                if (bmax > maxbase) maxbase = bax;
+                if (bmax > maxbase) maxbase = bmax;
                 if (bmin < minbase) minbase = bmin;
                 if (dmax > maxdim) maxdim = dmax;
                 if (dmin < mindim) mindim = dmin;
