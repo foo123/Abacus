@@ -4,15 +4,15 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic, args = arguments,
             num, den, symbol, ring, simplified, simplify = RationalFunc.autoSimplify;
 
-        simplified = (4<args.length) && (true===args[4]);
+        simplified = (4 < args.length) && (true === args[4]);
         ring = 3<args.length ? (is_instance(args[3], Ring) ? args[3] : null) : null;
         symbol = 2<args.length ? (is_array(args[2]) ? args[2] : args[2]) : null;
-        if (1<args.length)
+        if (1 < args.length)
         {
             num = args[0];
             den = args[1];
         }
-        else if (1===args.length)
+        else if (1 === args.length)
         {
             num = args[0];
             den = null;
@@ -39,7 +39,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             symbol = symbol || [num.symbol];
         }
         ring = is_instance(ring, Ring) ? ring : Ring.Q();
-        symbol = is_array(symbol) ? symbol : [String(symbol||'x')];
+        symbol = is_array(symbol) ? symbol : [String(symbol || 'x')];
 
         if (null == num) num = MultiPolynomial.Zero(symbol, ring);
         else if (!is_instance(num, MultiPolynomial)) num = MultiPolynomial(num, symbol, ring);
@@ -49,7 +49,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
 
         if (den.equ(Arithmetic.O)) throw new Error('Zero denominator in Abacus.RationalFunc!');
         if (num.equ(Arithmetic.O) && !den.equ(Arithmetic.I)) den = MultiPolynomial.One(num.symbol, num.ring);
-        if (den.lc().lt(Arithmetic.O)) { den = den.neg(); num = num.neg(); }
+        if (den.lc().lt(Arithmetic.O)) {den = den.neg(); num = num.neg();}
         self.num = num;
         self.den = den;
 
@@ -73,129 +73,38 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         }
         ,cast: null // added below
 
-        ,gcd: rfgcd
-        ,xgcd: rfxgcd
-        ,lcm: rflcm
+        ,gcd: function rfgcd(/* args */) {
+            // gcd of Rational Functions
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                denom;
+            denom = operate(function(p, r) {return r.den.mul(p);}, Abacus.Arithmetic.I, args);
+            return RationalFunc(MultiPolynomial.gcd(array(args.length, function(i) {return args[i].num.mul(denom.div(args[i].den));})), denom);
+        }
+        ,xgcd: function rfxgcd(/* args */) {
+            // xgcd of Rational Functions
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                denom;
+            if (!args.length) return;
+            denom = operate(function(p, r) {return r.den.mul(p);}, Abacus.Arithmetic.I, args);
+            return MultiPolynomial.xgcd(array(args.length, function(i) {return args[i].num.mul(denom.div(args[i].den));})).map(function(g, i) {return 0 === i ? RationalFunc(g, denom) : RationalFunc(g);});
+        }
+        ,lcm: function rflcm(/* args */) {
+            // lcm of Rational Functions
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                denom;
+            denom = operate(function(p, r) {return r.den.mul(p);}, Abacus.Arithmetic.I, args);
+            return RationalFunc(MultiPolynomial.lcm(array(args.length, function(i) {return args[i].num.mul(denom.div(args[i].den));})), denom);
+        }
 
         ,fromString: function(s, symbol, ring) {
-            var paren = 0, braket = 0, parts = ['', ''], sign = '', is_tex = false,
-                i = 0, l, c, j, num, den, space = /\s/;
-            ring = ring || Ring.Q();
-            symbol = symbol || 'x';
-            if (!is_array(symbol)) symbol = [String(symbol)];
-            s = trim(String(s));
-            if (!s.length) return RationalFunc.Zero(symbol, ring);
-            if (('-' === s.charAt(0)) || ('+' === s.charAt(0)))
-            {
-                sign = s.charAt(0);
-                s = trim(s.slice(1));
-                if (!s.length) return RationalFunc.Zero(symbol, ring);
-                sign = '-' === sign ? '-' : '';
-            }
-            is_tex = ('\\frac' === s.slice(0, 5));
-            l = s.length;
-            i = is_tex ? 5 : 0;
-            j = 0; // parse num
-            c = s.charAt(i);
-            // skip first braket if tex
-            if (is_tex && ('{' === c))
-            {
-                braket++;
-                i++;
-            }
-            while (i<l)
-            {
-                c = s.charAt(i++);
-
-                if (space.test(c))
-                {
-                    // continue
-                }
-                else if ('/' === c)
-                {
-                    if (!is_tex && !paren && !braket &&
-                        (
-                        (parts[j].length && (')' === parts[j].charAt(parts[j].length-1))) ||
-                        ((i<l) && ('('===s.charAt(i)))
-                       )
-                   )
-                    {
-                        j = 1; // parse den
-                    }
-                    else
-                    {
-                        parts[j] += c;
-                    }
-                }
-                else if ('(' === c)
-                {
-                    paren++;
-                    parts[j] += c;
-                }
-                else if (')' === c)
-                {
-                    paren--;
-                    parts[j] += c;
-                    if (!is_tex && !paren && !braket && ((i>=l) || ('/'===s.charAt(i))))
-                    {
-                        if ((i<l) && ('/'===s.charAt(i))) i++;
-                        j = 1; // parse den
-                    }
-                }
-                else if ('{' === c)
-                {
-                    braket++;
-                    parts[j] += c;
-                }
-                else if ('}' === c)
-                {
-                    braket--;
-                    if (!paren && !braket)
-                    {
-                        if (is_tex && (i<l) && ('{'===s.charAt(i)))
-                        {
-                            braket++;
-                            i++;
-                        }
-                        j = 1; // parse den
-                    }
-                    else
-                    {
-                        parts[j] += c;
-                    }
-                }
-                else
-                {
-                    parts[j] += c;
-                }
-            }
-            if (paren || braket)
-            {
-                num = MultiPolynomial.fromString(parts[0], symbol, ring);
-                den = null;
-            }
-            else
-            {
-                if (parts[0].length && parts[1].length && ('(' === parts[0].charAt(0)) && (')'===parts[0].charAt(parts[0].length-1)))
-                {
-                    parts[0] = trim(parts[0].slice(1,-1));
-                }
-                if (parts[1].length && ('(' === parts[1].charAt(0)) && (')'===parts[1].charAt(parts[1].length-1)))
-                {
-                    parts[1] = trim(parts[1].slice(1,-1));
-                }
-                num = MultiPolynomial.fromString(parts[0], symbol, ring);
-                den = parts[1].length ? MultiPolynomial.fromString(parts[1], symbol, ring) : null;
-            }
-            if ('-' === sign) num = num.neg();
-            return new RationalFunc(num, den);
+            return RationalFunc.fromExpr(Expr.fromString(s), symbol, ring);
         }
-        ,fromExpr: function(e, symbol, ring) {
-            if (!is_instance(e, Expr)) return null;
+        ,fromExpr: function(expr, symbol, ring) {
+            if (!is_instance(expr, Expr)) return null;
             ring = ring || Ring.Q();
             symbol = symbol || 'x';
             if (!is_array(symbol)) symbol = [String(symbol)];
-            return new RationalFunc(MultiPolynomial.fromExpr(e, symbol, ring));
+            return RationalFunc(MultiPolynomial.fromExpr(expr.num, symbol, ring), MultiPolynomial.fromExpr(expr.den, symbol, ring));
         }
     }
 
@@ -210,15 +119,15 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
 
     ,dispose: function() {
         var self = this;
-        if (self._n && self===self._n._n)
+        if (self._n && (self === self._n._n))
         {
             self._n._n = null;
         }
-        if (self._i && self===self._i._i)
+        if (self._i && (self === self._i._i))
         {
             self._i._i = null;
         }
-        if (self._c && self===self._c._c)
+        if (self._c && (self === self._c._c))
         {
             self._c._c = null;
         }
@@ -298,7 +207,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         else if (is_instance(x, [Rational, RationalFunc]))
             return self.num.mul(x.den).equ(self.den.mul(x.num));
         else if (is_string(x))
-            return (x===self.toString()) || (x===self.toTex());
+            return (x === self.toString()) || (x === self.toTex());
         return false;
     }
     ,gt: function(x) {
@@ -393,7 +302,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         n = Integer.cast(n);
         if (n.gt(MAX_DEFAULT)) return null;
         n = Arithmetic.val(n.num);
-        if (0 > n) { n = -n; t = num; num = den; den = t; }
+        if (0 > n) {n = -n; t = num; num = den; den = t;}
         if (0 === n)
             return RationalFunc.One(num.symbol, num.ring);
         else if (1 === n)
@@ -424,11 +333,11 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         if (0 > n) return null; // not supported
         else if (0 === n) return self;
         num = self.num; den = self.den;
-        while (0<n && !num.equ(Arithmetic.O))
+        while ((0 < n) && !num.equ(Arithmetic.O))
         {
             d_num = num.d(x, 1).mul(den).sub(num.mul(den.d(x, 1)));
             d_den = den.pow(2);
-            num = d_num; den = d_den; n--;
+            num = d_num; den = d_den; --n;
         }
         return RationalFunc(d_num, d_den);
     }
@@ -445,13 +354,13 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
                 // here best if we could use multipolynomial gcd if possible
                 if ((1 === self.num.symbol.length) && (1 === self.den.symbol.length))
                 {
-                    qr = polygcd(self.num, self.den); // works correctly for univariate case only
+                    qr = MultiPolynomial.gcd(self.num, self.den); // works correctly for univariate case only
                     self.num = self.num.div(qr);
                     self.den = self.den.div(qr);
                 }
                 else if ((qr=self.num.divmod(self.den)) && qr[1].equ(Arithmetic.O))
                 {
-                    // den divides num exactly, simplify
+                    // num divides den exactly, simplify
                     self.num = qr[0];
                     self.den = MultiPolynomial.One(self.num.symbol, self.num.ring);
                 }
@@ -491,7 +400,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
                         }
                         else
                         {
-                            g = cgcd(num[1], den[1]);
+                            g = Complex.gcd(num[1], den[1]);
                             self.num = num[0].mul(num[1].div(g));
                             self.den = den[0].mul(den[1].div(g));
                         }
@@ -517,25 +426,25 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     ,toString: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._str)
-            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('('+self.num.toString()+')'))+'/'+(self.den.isConst(true) && (self.den.isReal()) ? self.den.toString() : ('('+self.den.toString()+')')));
+            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + (self.den.isConst(true) && (self.den.isReal()) ? self.den.toString() : ('(' + self.den.toString() + ')')));
         return self._str;
     }
     ,toTex: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._tex)
-            self._tex = self.den.equ(Arithmetic.I) ? self.num.toTex() : ('\\frac{'+self.num.toTex()+'}{'+self.den.toTex()+'}');
+            self._tex = self.den.equ(Arithmetic.I) ? self.num.toTex() : ('\\frac{' + self.num.toTex() + '}{' + self.den.toTex() + '}');
         return self._tex;
     }
     ,toDec: function(precision) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return self.den.equ(Arithmetic.I) ? self.num.toDec(precision) : ('('+self.num.toDec(precision)+')/('+self.den.toDec(precision)+')');
+        return self.den.equ(Arithmetic.I) ? self.num.toDec(precision) : ('(' + self.num.toDec(precision) + ')/(' + self.den.toDec(precision) + ')');
     }
 });
 RationalFunc.cast = function(a, symbol, ring) {
     ring = ring || Ring.Q();
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
-    var type_cast = typecast([RationalFunc], function(a){
+    var type_cast = typecast([RationalFunc], function(a) {
         return is_string(a) ? RationalFunc.fromString(a, symbol, ring) : new RationalFunc(MultiPolynomial(a, symbol, ring));
     });
     return type_cast(a);

@@ -40,7 +40,7 @@ Abacus.BitArray = Class({
 
     ,reset: function() {
         var self = this, bits = self.bits, len = bits.length, i;
-        for (i=0; i<len; i++) bits[i] = 0;
+        for (i=0; i<len; ++i) bits[i] = 0;
         return self;
     }
 

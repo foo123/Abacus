@@ -7,7 +7,7 @@ Rational = Abacus.Rational = Class(Numeric, {
 
         if (args.length && (is_array(args[0]) || is_args(args[0]))) args = args[0];
 
-        simplified = (2<args.length) && (true===args[2]);
+        simplified = (2 < args.length) && (true === args[2]);
 
         if (1 < args.length)
         {
@@ -90,9 +90,28 @@ Rational = Abacus.Rational = Class(Numeric, {
         }
         ,cast: null // added below
 
-        ,gcd: rgcd
-        ,xgcd: rxgcd
-        ,lcm: rlcm
+        ,gcd: function rgcd(/* args */) {
+            // gcd of Rational numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                Arithmetic = Abacus.Arithmetic, denom;
+            denom = operate(function(p, r) {return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
+            return Rational(gcd(array(args.length, function(i) {return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})), denom);
+        }
+        ,xgcd: function rxgcd(/* args */) {
+            // xgcd of Rational numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, denom;
+            if (!args.length) return;
+            denom = operate(function(p, r) {return Arithmetic.mul(p, r.den);}, I, args);
+            return xgcd(array(args.length, function(i) {return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})).map(function(g, i) {return 0 === i ? Rational(g, denom) : Rational(g, I, true);});
+        }
+        ,lcm: function rlcm(/* args */) {
+            // lcm of Rational numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                Arithmetic = Abacus.Arithmetic, denom;
+            denom = operate(function(p, r) {return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
+            return Rational(lcm(array(args.length, function(i) {return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})), denom);
+        }
         ,max: nmax
         ,min: nmin
         ,rnd01: function(limit) {
@@ -101,19 +120,19 @@ Rational = Abacus.Rational = Class(Numeric, {
             if (null == limit) limit = 15;
             limit = Abacus.Math.rndInt(0, stdMath.abs(+limit)); tries = 0;
             lo = Rational.Zero(); hi = Rational.One();
-            while (tries<limit && lo.lte(hi))
+            while (tries < limit && lo.lte(hi))
             {
                 mid = hi.add(lo).div(two);
                 if (Abacus.Math.rnd() < 0.5) hi = mid;
                 else lo = mid;
-                tries++;
+                ++tries;
             }
             return lo;
         }
         ,rnd: function(m, M, limit) {
             var t;
             m = Rational.cast(m); M = Rational.cast(M);
-            if (M.lt(m)) { t=m; m=M; M=t; }
+            if (M.lt(m)) {t = m; m = M; M = t;}
             return m.equ(M) ? m : m.add(Rational.rnd01(limit).mul(M.sub(m)));
         }
 
@@ -129,7 +148,7 @@ Rational = Abacus.Rational = Class(Numeric, {
             if (is_array(cfr))
             {
                 k = cfr.length-1;
-                while (0<=k)
+                while (0 <= k)
                 {
                     n0 = n; d0 = d;
                     n = d0; d = n0;
@@ -144,7 +163,7 @@ Rational = Abacus.Rational = Class(Numeric, {
         }
         ,fromString: function(s) {
             var Arithmetic = Abacus.Arithmetic, num_denom, m, sign = '+', num, den,
-                tex_frac_pattern = /^(-)?\\frac\{(-?\d+)\}\{(-?\d+)\}$/, O = Rational.Zero();
+                tex_frac_pattern = /^(-)?\\frac\{\s*(-?\s*\d+)\s*\}\{\s*(-?\s*\d+)\s*\}$/, O = Rational.Zero();
             s = trim(String(s));
             if (!s.length) return O;
             if (('+' === s.charAt(0)) || ('-' === s.charAt(0)))
@@ -171,14 +190,14 @@ Rational = Abacus.Rational = Class(Numeric, {
                 m = s.match(tex_frac_pattern);
                 if (!m) return O;
                 if ('-' === m[1]) sign = '-' === sign ? '+' : '-';
-                num = Arithmetic.num(m[2]);
-                den = Arithmetic.num(m[3]);
+                num = Arithmetic.num(trim(m[2].split(/s+/).join('')));
+                den = Arithmetic.num(trim(m[3].split(/s+/).join('')));
             }
             else
             {
                 num_denom = String(s).split('/');
-                num = Arithmetic.num(num_denom[0].length ? num_denom[0] : '0');
-                den = 1<num_denom.length ? Arithmetic.num(num_denom[1]) : Arithmetic.I;
+                num = Arithmetic.num(num_denom[0].length ? trim(num_denom[0]) : '0');
+                den = 1 < num_denom.length ? Arithmetic.num(trim(num_denom[1])) : Arithmetic.I;
             }
             if ('-' === sign) num = Arithmetic.neg(num);
             return Rational(num, den);
@@ -200,11 +219,11 @@ Rational = Abacus.Rational = Class(Numeric, {
 
     ,dispose: function() {
         var self = this;
-        if (self._n && self===self._n._n)
+        if (self._n && (self === self._n._n))
         {
             self._n._n = null;
         }
-        if (self._i && self===self._i._i)
+        if (self._i && (self === self._i._i))
         {
             self._i._i = null;
         }
@@ -231,13 +250,13 @@ Rational = Abacus.Rational = Class(Numeric, {
     ,equ: function(a, strict) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(a, Rational))
-            return true===strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, a.den)) : Arithmetic.equ(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
+            return true === strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, a.den)) : Arithmetic.equ(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
         else if (is_instance(a, [Integer, IntegerMod]))
-            return true===strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(a.num, self.den));
+            return true === strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(a.num, self.den));
         else if (is_instance(a, INumber))
             return a.equ(self);
         else if (Arithmetic.isNumber(a)) // assume integer
-            return true===strict ? (Arithmetic.equ(self.num, a) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(self.den, a));
+            return true === strict ? (Arithmetic.equ(self.num, a) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(self.den, a));
         else if (is_string(a))
             return (a === self.toString()) || (a === self.toTex()) || (a === self.toDec());
 
@@ -378,7 +397,7 @@ Rational = Abacus.Rational = Class(Numeric, {
             if (!a.isReal()) return Complex(self).div(a);
             a = a.real();
         }
-        if (is_instance(a, RationalFunc))
+        if (is_instance(a, [RationalFunc, Expr]))
             return a.inv().mul(self);
         else if (is_instance(a, Rational))
             return Rational(Arithmetic.mul(self.num, a.den), Arithmetic.mul(self.den, a.num));
@@ -455,7 +474,7 @@ Rational = Abacus.Rational = Class(Numeric, {
         return self;
     }
     ,round: function(absolute) {
-        absolute = false!==absolute;
+        absolute = false !== absolute;
         var self = this, Arithmetic = Abacus.Arithmetic,
             sign = absolute ? (Arithmetic.gt(Arithmetic.O, self.num) ? Arithmetic.J : Arithmetic.I) : Arithmetic.I;
         return Rational(Arithmetic.mul(sign, Arithmetic.div(Arithmetic.add(Arithmetic.mul(absolute ? Arithmetic.abs(self.num) : self.num, Arithmetic.II), self.den), Arithmetic.mul(self.den, Arithmetic.II))), Arithmetic.I, true);
@@ -464,13 +483,13 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._int)
             self._int = Rational(Arithmetic.div(self.num, self.den), Arithmetic.I, true); // return integer part
-        return true===raw ? self._int.num : self._int;
+        return true === raw ? self._int.num : self._int;
     }
     ,remainder: function(raw) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._rem)
             self._rem = Rational(Arithmetic.mod(self.num, self.den), Arithmetic.I, true); // return remainder part
-        return true===raw ? self._rem.num : self._rem;
+        return true === raw ? self._rem.num : self._rem;
     }
     ,approximate: function(bound) {
         // compute an approximation of given rational with denominator no larger than bound via Farey sequence
@@ -511,7 +530,7 @@ Rational = Abacus.Rational = Class(Numeric, {
                 c = m1; d = m2;
             }
         }
-        if (null==rn || null==rd)
+        if (null == rn || null == rd)
         {
             if (Arithmetic.gt(b, bound))
             {
@@ -547,19 +566,19 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, dec, point, repeating, ndigits, digit, d, i, i0, carry;
         if (null == self._dec)
             self._dec = frac2dec(self.num, self.den); // return **exact** decimal expansion (with optional repeating digits)
-        if (is_number(precision) && 0<=precision)
+        if (is_number(precision) && 0 <= precision)
         {
             precision = stdMath.ceil(precision);
             dec = self._dec;
             point = dec.indexOf('.');
-            if (-1 === point) return 0<precision ? (dec+'.'+(new Array(precision+1).join('0'))) : dec;
+            if (-1 === point) return 0 < precision ? (dec + '.'+(new Array(precision+1).join('0'))) : dec;
             i = dec.indexOf('[', point+1);
             if (-1 !== i)
             {
                 repeating = dec.slice(i+1, -1);
-                dec = dec.slice(0, i)+repeating;
+                dec = dec.slice(0, i) + repeating;
                 if (repeating.length && (dec.length-point-1 <= precision))
-                    dec += new Array(stdMath.floor((precision-(dec.length-point-1))/repeating.length)+2).join(repeating);
+                    dec += new Array(stdMath.floor((precision-(dec.length-point-1)) / repeating.length)+2).join(repeating);
             }
             ndigits = dec.length-point-1;
             if (ndigits < precision)
@@ -570,14 +589,14 @@ Rational = Abacus.Rational = Class(Numeric, {
             {
                 digit = dec.charAt(point+1+precision); d = parseInt(digit, 10);
                 dec = dec.slice(0, point+1+precision).split('');
-                i = dec.length-1; i0 = '-'===dec[0] ? 1 : 0; carry = (d >= 5);
-                if (point === i) i--;
+                i = dec.length-1; i0 = '-' === dec[0] ? 1 : 0; carry = (d >= 5);
+                if (point === i) --i;
                 while (carry && (i >= i0))
                 {
                     d = parseInt(dec[i], 10);
                     carry = (9 === d);
                     dec[i] = String(carry ? 0 : d+1);
-                    i--; if (point === i) i--;
+                    --i; if (point === i) --i;
                 }
                 if (carry) dec.splice(i0, 0, '1');
                 if ('.' === dec[dec.length-1]) dec.pop();
@@ -592,24 +611,24 @@ Rational = Abacus.Rational = Class(Numeric, {
     }
     ,valueOf: function() {
         var Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.val(this.num)/Arithmetic.val(this.den);
+        return Arithmetic.val(this.num) / Arithmetic.val(this.den);
     }
     ,toString: function(parenthesized) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._str)
         {
-            self._str = String(self.num) + (Arithmetic.equ(Arithmetic.I, self.den) ? '' : ('/'+String(self.den)));
-            self._strp = Arithmetic.equ(Arithmetic.I, self.den) ? String(self.num) : ((Arithmetic.gt(Arithmetic.O, self.num) ? '-' : '')+'('+String(Arithmetic.abs(self.num))+'/'+String(self.den)+')');
+            self._str = String(self.num) + (Arithmetic.equ(Arithmetic.I, self.den) ? '' : ('/' + String(self.den)));
+            self._strp = Arithmetic.equ(Arithmetic.I, self.den) ? String(self.num) : ((Arithmetic.gt(Arithmetic.O, self.num) ? '-' : '') + '(' + String(Arithmetic.abs(self.num)) + '/' + String(self.den) + ')');
         }
         return parenthesized ? self._strp : self._str;
     }
     ,toTex: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._tex)
-            self._tex = Arithmetic.equ(Arithmetic.I, self.den) ? Tex(self.num) : ((Arithmetic.gt(Arithmetic.O, self.num) ? '-' : '')+'\\frac{'+Tex(Arithmetic.abs(self.num))+'}{'+Tex(self.den)+'}');
+            self._tex = Arithmetic.equ(Arithmetic.I, self.den) ? Tex(self.num) : ((Arithmetic.gt(Arithmetic.O, self.num) ? '-' : '') + '\\frac{' + Tex(Arithmetic.abs(self.num)) + '}{' + Tex(self.den) + '}');
         return self._tex;
     }
 });
-Rational.cast = typecast([Rational], function(a){
+Rational.cast = typecast([Rational], function(a) {
     return is_string(a) ? Rational.fromString(a) : new Rational(a);
 });

@@ -1,16 +1,48 @@
 function nmax(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return args.length ? operate(function(max, a){
+    return args.length ? operate(function(max, a) {
         return a.gt(max) ? a : max;
-    }, args[0], 1, args.length-1) : null;
+    }, args[0], args, 1, args.length-1, 1) : null;
 }
 function nmin(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return args.length ? operate(function(min, a){
+    return args.length ? operate(function(min, a) {
         return a.lt(min) ? a : min;
-    }, args[0], 1, args.length-1) : null;
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nadd(/* args */)
+{
+    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
+        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
+    return args.length ? operate(function(result, a) {
+        return result.add(a, explicit);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nsub(/* args */)
+{
+    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
+        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
+    return args.length ? operate(function(result, a) {
+        return result.sub(a, explicit);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nmul(/* args */)
+{
+    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
+        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
+    return args.length ? operate(function(result, a) {
+        return result.mul(a, explicit);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function ndiv(/* args */)
+{
+    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
+        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
+    return args.length ? operate(function(result, a) {
+        return result.div(a, explicit);
+    }, args[0], args, 1, args.length-1, 1) : null;
 }
 function typecast(ClassTypeCheck, toClassType)
 {
@@ -18,18 +50,18 @@ function typecast(ClassTypeCheck, toClassType)
     if (is_array(ClassTypeCheck) && is_callable(ClassTypeCheck[0]))
     {
         ClassType = ClassTypeCheck[0];
-        ClassTypeCheck = function(a){return is_instance(a, ClassType);};
-        toClassType = is_callable(toClassType) ? toClassType : function(a){return new ClassType(a);};
+        ClassTypeCheck = function(a) {return is_instance(a, ClassType);};
+        toClassType = is_callable(toClassType) ? toClassType : function(a) {return new ClassType(a);};
     }
     else if (!is_callable(ClassTypeCheck))
     {
-        ClassTypeCheck = function(a){return true;};
-        toClassType = function(a){return a;};
+        ClassTypeCheck = function(a) {return true;};
+        toClassType = function(a) {return a;};
     }
     return function type_cast(a) {
         if (is_array(a) || is_args(a))
         {
-            for (var i=0,l=a.length; i<l; i++)
+            for (var i=0,l=a.length; i<l; ++i)
                 a[i] = type_cast(a[i]);
         }
         else if (!ClassTypeCheck(a))
@@ -40,16 +72,16 @@ function typecast(ClassTypeCheck, toClassType)
     };
 }
 
-// Abacus.INumber, represents a generic (numeric/symbolic) number interface
+// Abacus.INumber, represents a generic numeric or symbolic number interface
 INUMBER = {
-    isReal: function() {
+     isReal: function() {
         return true;
     }
     ,isImag: function() {
         return false;
     }
     ,equ: function(a) {
-        return is_instance(a, INumber) ? a.equ(this) : (is_string(a) ? (String(this)===a) : (this === a));
+        return is_instance(a, INumber) ? a.equ(this) : (is_string(a) ? (String(this) === a) : (this === a));
     }
     ,gt: function(a) {
         if (is_number(a)) return (this > a);
@@ -77,16 +109,18 @@ INUMBER = {
     ,imag: function() {
         return 0;
     }
+    ,conj: function() {
+        return this;
+    }
     ,abs: function() {
-        return stdMath.abs(this);
+        return this.lt(0) ? this.neg() : this;
     }
     ,neg: function() {
         return -this;
     }
-    ,conj: function() {
-        return this;
-    }
-    ,inv: NotImplemented
+    ,inv: NotImplemented/*function() {
+        return 1.0 / this;
+    }*/
 
     ,add: function(a) {
         return is_instance(a, INumber) ? a.add(this) : (this + a);
@@ -98,11 +132,13 @@ INUMBER = {
         return is_instance(a, INumber) ? a.mul(this) : (this * a);
     }
     ,div: function(a) {
-        if (is_instance(a, Numeric)) return a[CLASS](this).div(a);
+        if (is_instance(a, Expr)) return Expr('', this).div(a);
+        else if (is_instance(a, Numeric)) return a[CLASS](this).div(a);
         return is_instance(a, INumber) ? null : stdMath.floor(this / a);
     }
     ,mod: function(a) {
-        if (is_instance(a, Numeric)) return a[CLASS](this).mod(a);
+        if (is_instance(a, Expr)) return Expr('', this).mod(a);
+        else if (is_instance(a, Numeric)) return a[CLASS](this).mod(a);
         return is_instance(a, INumber) ? null : (this % a);
     }
     ,divmod: function(a) {
@@ -112,7 +148,7 @@ INUMBER = {
         if (0 === this) return false;
         if (is_number(a)) return (0 === (a % this));
         else if (is_instance(a, Integer)) return a.mod(this).equ(0);
-        else if (is_instance(a, Numeric)) return true;
+        else if (is_instance(a, [Numeric, Expr])) return true;
         return false;
     }
     ,pow: function(n) {
@@ -123,7 +159,9 @@ INUMBER = {
    }
 };
 INumber = Class(Merge({
-    constructor: function INumber() { }
+    constructor: function INumber() {
+
+    }
     ,dispose: function() {
         return this;
     }
@@ -143,9 +181,14 @@ INumber = Class(Merge({
 
 // Numeric is INumber that represents strictly constant numbers, eg Integer, Rational, Complex
 Numeric = Class(INumber, {
-    constructor: function Numeric() { }
+    constructor: function Numeric() {
+
+    }
     ,clone: function() {
         return new this[CLASS](this);
+    }
+    ,isSimple: function() {
+        return true;
     }
     ,isConst: function() {
         return true;
@@ -163,9 +206,14 @@ Numeric = Class(INumber, {
 
 // Symbolic is INumber that represents generally non-constant symbolic objects, eg Expr, Polynomial, MultiPolynomial, RationalFunc
 Symbolic = Class(INumber, {
-    constructor: function Symbolic() { }
+    constructor: function Symbolic() {
+
+    }
     ,clone: function() {
         return new this[CLASS](this);
+    }
+    ,isSimple: function() {
+        return false;
     }
     ,isConst: function() {
         return false;
@@ -191,9 +239,9 @@ Symbolic = Class(INumber, {
     ,imag: function() {
         return this[CLASS].Zero();
     }
-    ,abs: NotImplemented
-    ,neg: NotImplemented
-    ,conj: NotImplemented
+    //,abs: NotImplemented
+    //,neg: NotImplemented
+    //,conj: NotImplemented
     ,inv: NotImplemented
 
     ,add: NotImplemented
@@ -211,5 +259,7 @@ Symbolic = Class(INumber, {
 
 // Poly is represents a polynomial either univariate or multivariate eg Polynomial, MultiPolynomial
 Poly = Class(Symbolic, {
-    constructor: function Poly() { }
+    constructor: function Poly() {
+
+    }
 });

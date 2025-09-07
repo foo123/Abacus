@@ -6,18 +6,18 @@ function Counters(n)
     if (!is_instance(self, Counters)) return new Counters(n);
 
     k = stdMath.ceil(log2(n));
-    C = array((1 << (k+1)), function(i){
+    C = array((1 << (k+1)), function(i) {
         //var kk = 0;
         //while (kk <= k && !(i & 1)) {kk++; i >>>= 1;}
         return array(k+1, 0, 0);
     });
     self.offset = function(i, delta) {
         if (0 > i) return self;
-        i++;
+        ++i;
         var x = 0, y, j, il, ih, yl, yh;
         //il = (i >>> 0) & 0xFFFF;
         //ih = (i >>> 16) & 0xFFFF;
-        for (j=k; (0<=j) && (0<i /*|| 0<ih*/); j--)
+        for (j=k; (0<=j) && (0<i /*|| 0<ih*/); --j)
         {
             y = (1 << j);
             //yl = (y >>> 0) & 0xFFFF;
@@ -36,7 +36,7 @@ function Counters(n)
         var r = 0, j, y, il, ih, yl, yh;
         //ih = (i >>> 16) & 0xFFFF;
         //il = (i >>> 0) & 0xFFFF;
-        for (j=0; j<=k; j++)
+        for (j=0; j<=k; ++j)
         {
             y = (1 << j);
             //yh = (y >>> 16) & 0xFFFF;

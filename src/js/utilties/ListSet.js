@@ -4,7 +4,7 @@ ListSet = Abacus.ListSet = function ListSet(a) {
     if (!is_instance(self, ListSet)) return new ListSet(a);
     a = is_array(a) ? a.slice() : new Array(+a);
     n = a.length;
-    for (i=0; i<n; i++)
+    for (i=0; i<n; ++i)
     {
         a[i] = {value:a[i], index:i, incl:true, prev:null, next:null};
         if (0 < i)
@@ -26,12 +26,12 @@ ListSet = Abacus.ListSet = function ListSet(a) {
         var item = null;
         if (x === +x)
         {
-            if (0>x || x>=n) return self;
+            if (0 > x || x >= n) return self;
             item = a[x];
         }
         else if (x && (null != x.index))
         {
-            if (0>x.index || x.index>=n) return self;
+            if (0 > x.index || x.index >= n) return self;
             item = x;
         }
         else
@@ -53,12 +53,12 @@ ListSet = Abacus.ListSet = function ListSet(a) {
         var item = null;
         if (x === +x)
         {
-            if (0>x || x>=n) return self;
+            if (0 > x || x >= n) return self;
             item = a[x];
         }
         else if (x && (null != x.index))
         {
-            if (0>x.index || x.index>=n) return self;
+            if (0 > x.index || x.index >= n) return self;
             item = x;
         }
         else
@@ -80,12 +80,12 @@ ListSet = Abacus.ListSet = function ListSet(a) {
         var item = null;
         if (x === +x)
         {
-            if (0>x || x>=n) return false;
+            if (0 > x || x >= n) return false;
             item = a[x];
         }
         else if (x && (null != x.index))
         {
-            if (0>x.index || x.index>=n) return false;
+            if (0 > x.index || x.index >= n) return false;
             item = x;
         }
         else
@@ -99,12 +99,12 @@ ListSet = Abacus.ListSet = function ListSet(a) {
         var item = null;
         if (x === +x)
         {
-            if (0>x || x>=n) return false;
+            if (0 > x || x >= n) return false;
             item = a[x];
         }
         else if (x && (null != x.index))
         {
-            if (0>x.index || x.index>=n) return false;
+            if (0 > x.index || x.index >= n) return false;
             item = x;
         }
         else

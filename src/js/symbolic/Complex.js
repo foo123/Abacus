@@ -67,9 +67,152 @@ Complex = Abacus.Complex = Class(Numeric, {
         }
         ,cast: null // added below
 
-        ,gcd: cgcd
-        ,xgcd: cxgcd
-        ,lcm: clcm
+        ,gcd: function cgcd(/* args */) {
+            // Generalization of Euclid GCD Algorithm for complex numbers
+            // https://en.wikipedia.org/wiki/Euclidean_algorithm
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                c = args.length, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, a0, b0, a, b, t, r, i;
+
+            if (0 === c) return Complex.Zero();
+
+            i = 0;
+            while (i < c && (a=args[i++]).equ(O)) ;
+            while (i < c)
+            {
+                while (i < c && (b=args[i++]).equ(O)) ;
+                if (b.equ(a)) continue;
+                else if (b.equ(O)) break;
+                // swap them (a >= b)
+                if (b.norm().gt(a.norm())) {t = b; b = a; a = t;}
+                while (!b.equ(O))
+                {
+                    //a0 = a; b0 = b;
+                    r = a.mod(b); a = b; b = r;
+                    //if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
+                }
+            }
+            // normalize it
+            if (a.real().abs().lt(a.imag().abs())) a = a.mul(Complex.Img());
+            if (a.real().lt(O)) a = a.neg();
+            return a;
+        }
+        ,xgcd: function cxgcd(/* args */) {
+            // Generalization of Extended GCD Algorithm for complex numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                k = args.length, i, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+                asign = Complex.One(), bsign = Complex.One(), t, a, b, a0, b0, a1, b1, a2, b2, qr, gcd;
+
+            if (0 === k) return;
+
+            a = args[0];
+
+            if (1 === k)
+            {
+                // normalize it
+                if (a.real().abs().lt(a.imag().abs())) {a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());}
+                if (a.real().lt(O)) {a = a.neg(); asign = asign.neg();}
+                return [a, asign];
+            }
+            else //if (2 <= k)
+            {
+                // recursive on number of arguments
+                // compute xgcd on rest arguments and combine with current
+                // based on recursive property: gcd(a,b,c,..) = gcd(a, gcd(b, c,..))
+                gcd = 2 === k ? [args[1], Complex.One()] : cxgcd(slice.call(args, 1));
+                b = gcd[0];
+
+                // gcd with zero factor, take into account
+                if (a.equ(O))
+                {
+                    // normalize it
+                    if (b.real().abs().lt(b.imag().abs())) {b = b.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img());}
+                    if (b.real().lt(O)) {b = b.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                    return array(gcd.length+1,function(i) {
+                        return 0 === i ? b : (1 === i ? asign : gcd[i-1].mul(bsign));
+                    });
+                }
+                else if (b.equ(O))
+                {
+                    // normalize it
+                    if (a.real().abs().lt(a.imag().abs())) {a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img());}
+                    if (a.real().lt(O)) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                    return array(gcd.length+1,function(i) {
+                        return 0 === i ? a : (1 === i ? asign : gcd[i-1].mul(bsign));
+                    });
+                }
+
+                a1 = Complex.One();
+                b1 = Complex.Zero();
+                a2 = Complex.Zero();
+                b2 = Complex.One();
+
+                for (;;)
+                {
+                    //a0 = a; b0 = b;
+
+                    qr = a.divmod(b);
+                    a = qr[1];
+                    a1 = a1.sub(qr[0].mul(a2))
+                    b1 = b1.sub(qr[0].mul(b2));
+                    if (a.equ(O))
+                    {
+                        // normalize it
+                        if (b.real().abs().lt(b.imag().abs())) {b = b.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img());}
+                        if (b.real().lt(O)) {b = b.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                        a2 = a2.mul(asign); b2 = b2.mul(bsign);
+                        return array(gcd.length+1,function(i) {
+                            return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
+                        });
+                    }
+
+                    qr = b.divmod(a);
+                    b = qr[1];
+                    a2 = a2.sub(qr[0].mul(a1));
+                    b2 = b2.sub(qr[0].mul(b1));
+                    if (b.equ(O))
+                    {
+                        // normalize it
+                        if (a.real().abs().lt(a.imag().abs())) {a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img());}
+                        if (a.real().lt(O)) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                        a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                        return array(gcd.length+1, function(i) {
+                            return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
+                        });
+                    }
+
+                    /*if (a.equ(a0) && b.equ(b0))
+                    {
+                        // will not change anymore
+                        if (a.real().abs().lt(a.imag().abs())) {a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img());}
+                        if (a.real().lt(O)) {a = a.neg(); asign = asign.neg(); bsign = bsign.neg();}
+                        a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                        return array(gcd.length+1, function(i) {
+                            return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
+                        });
+                    }*/
+                }
+            }
+        }
+        ,lcm: function clcm(/* args */) {
+            // least common multiple
+            // https://en.wikipedia.org/wiki/Least_common_multiple
+            function clcm2(a, b)
+            {
+                var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = Complex.gcd(a, b);
+                return g.equ(O) ? g : a.div(g).mul(b);
+            }
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                i, l = args.length, LCM, O = Abacus.Arithmetic.O;
+            if (1 >= l) return 1 === l ? args[0] : Complex.Zero();
+            if (args[0].equ(O) || args[1].equ(O)) return Complex.Zero();
+            LCM = clcm2(args[0], args[1]);
+            for (i=2; i<l; ++i)
+            {
+                if (args[i].equ(O)) return Complex.Zero();
+                LCM = clcm2(LCM, args[i]);
+            }
+            return LCM;
+        }
         ,max: nmax
         ,min: nmin
         ,rnd: function(m, M, limit) {
@@ -89,16 +232,16 @@ Complex = Abacus.Complex = Class(Numeric, {
                 // given in opposite order or imaginary only
                 imag = m[2] ? m[2] : (m[3] ? '1' : '0');
                 real = m[5] || '0';
-                signim = '-'===m[1] ? '-' : '';
-                signre = '-'===m[4] ? '-' : '';
+                signim = '-' === m[1] ? '-' : '';
+                signre = '-' === m[4] ? '-' : '';
             }
             else
             {
                 // given in correct order or real only
                 imag = m[5] ? m[5] : (m[6] ? '1' : '0');
                 real = m[2] || '0';
-                signim = '-'===m[4] ? '-' : '';
-                signre = '-'===m[1] ? '-' : '';
+                signim = '-' === m[4] ? '-' : '';
+                signre = '-' === m[1] ? '-' : '';
             }
             return Complex(Rational.fromString(signre+real), Rational.fromString(signim+imag));
         }
@@ -120,15 +263,15 @@ Complex = Abacus.Complex = Class(Numeric, {
 
     ,dispose: function() {
         var self = this;
-        if (self._n && self===self._n._n)
+        if (self._n && (self === self._n._n))
         {
             self._n._n = null;
         }
-        if (self._i && self===self._i._i)
+        if (self._i && (self === self._i._i))
         {
             self._i._i = null;
         }
-        if (self._c && self===self._c._c)
+        if (self._c && (self === self._c._c))
         {
             self._c._c = null;
         }
@@ -477,7 +620,7 @@ Complex = Abacus.Complex = Class(Numeric, {
         return self;
     }
     ,round: function(absolute) {
-        absolute = false!==absolute;
+        absolute = false !== absolute;
         var self = this;
         return Complex(self.re.round(absolute), self.im.round(absolute)); // return integer part
     }
@@ -504,9 +647,9 @@ Complex = Abacus.Complex = Class(Numeric, {
         if (null == self._str)
         {
             zr = self.re.equ(O);
-            self._str = (zr ? '' : self.re.toString()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toString(true)+'*'))) + Complex.Symbol));
+            self._str = (zr ? '' : self.re.toString()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toString(true) + '*'))) + Complex.Symbol));
             if (!self._str.length) self._str = '0';
-            self._strp = (zr ? '' : self.re.toString(true)) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toString(true)+'*'))) + Complex.Symbol));
+            self._strp = (zr ? '' : self.re.toString(true)) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toString(true) + '*'))) + Complex.Symbol));
             if (!self._strp.length) self._strp = '0';
         }
         return parenthesized ? self._strp : self._str;
@@ -516,7 +659,7 @@ Complex = Abacus.Complex = Class(Numeric, {
         if (null == self._tex)
         {
             zr = self.re.equ(O);
-            self._tex = (zr ? '' : self.re.toTex()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : self.im.toTex()))+Complex.Symbol));
+            self._tex = (zr ? '' : self.re.toTex()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : self.im.toTex())) + Complex.Symbol));
             if (!self._tex.length) self._tex = '0';
         }
         return self._tex;
@@ -529,7 +672,7 @@ Complex = Abacus.Complex = Class(Numeric, {
             self._dec = (zr ? '' : self.re.toDec()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toDec()))) + Complex.Symbol));
             if (!self._dec.length) self._dec = '0';
         }
-        if (is_number(precision) && 0<=precision)
+        if (is_number(precision) && 0 <= precision)
         {
             zr = self.re.equ(O);
             dec = (zr ? '' : self.re.toDec(precision)) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toDec(precision)))) + Complex.Symbol));
@@ -546,6 +689,6 @@ Complex = Abacus.Complex = Class(Numeric, {
         }
     }
 });
-Complex.cast = typecast([Complex], function(a){
+Complex.cast = typecast([Complex], function(a) {
     return is_string(a) ? Complex.fromString(a) : new Complex(a);
 });

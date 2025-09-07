@@ -13,7 +13,7 @@ Heap = Abacus.Heap = Class({
 
     ,__static__: {
          CMP: function(a, b) {
-             return a<b ? -1 : (a>b ? 1 : 0);
+             return a < b ? -1 : (a > b ? 1 : 0);
          }
 
         ,heapify: function(x, type, cmp) {
@@ -27,12 +27,12 @@ Heap = Abacus.Heap = Class({
             cmp = cmp || Heap.CMP;
             if ("max" === type)
             {
-                for (i=(n>>>1)-1; i>=0; i--)
+                for (i=(n>>>1)-1; i>=0; --i)
                     Heap._siftup_max(x, i, cmp);
             }
             else
             {
-                for (i=(n>>>1)-1; i>=0; i--)
+                for (i=(n>>>1)-1; i>=0; --i)
                     Heap._siftup(x, i, cmp);
             }
             return x;
@@ -64,7 +64,7 @@ Heap = Abacus.Heap = Class({
             {
                 // Set childpos to index of smaller child.
                 rightpos = childpos + 1;
-                if (rightpos<endpos && 0<=cmp(heap[childpos], heap[rightpos]))
+                if (rightpos < endpos && 0 <= cmp(heap[childpos], heap[rightpos]))
                     childpos = rightpos;
                 // Move the smaller child up.
                 heap[pos] = heap[childpos];
@@ -85,7 +85,7 @@ Heap = Abacus.Heap = Class({
             {
                 parentpos = (pos - 1) >>> 1;
                 parent = heap[parentpos];
-                if (0>cmp(parent, newitem))
+                if (0 > cmp(parent, newitem))
                 {
                     heap[pos] = parent;
                     pos = parentpos;
@@ -104,7 +104,7 @@ Heap = Abacus.Heap = Class({
             {
                 // Set childpos to index of larger child.
                 rightpos = childpos + 1;
-                if (rightpos<endpos && 0<=cmp(heap[rightpos], heap[childpos]))
+                if (rightpos < endpos && 0 <= cmp(heap[rightpos], heap[childpos]))
                     childpos = rightpos;
                 // Move the larger child up.
                 heap[pos] = heap[childpos];

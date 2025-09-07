@@ -8,7 +8,7 @@ Abacus.Options = {
 
 DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as distinct
      // whether using default arithmetic or using external implementation (eg big-int or other)
-     isDefault: function(){
+     isDefault: function() {
          return true;
      }
     ,isNumber: function(x) {
@@ -21,57 +21,57 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     ,O: 0
     ,I: 1
     ,II: 2
-    ,INF: {valueOf: function(){return Infinity;}, toString: function(){return "Infinity";}, toTex: function(){return "\\infty";}} // a representation of Infinity
-    ,NINF: {valueOf: function(){return -Infinity;}, toString: function(){return "-Infinity";}, toTex: function(){return "-\\infty";}} // a representation of -Infinity
+    ,INF: {valueOf: function() {return Infinity;}, toString: function() {return "Infinity";}, toTex: function() {return "\\infty";}} // a representation of Infinity
+    ,NINF: {valueOf: function() {return -Infinity;}, toString: function() {return "-Infinity";}, toTex: function() {return "-\\infty";}} // a representation of -Infinity
 
     ,nums: function(a) {
         var Arithmetic = this;
         if (is_array(a) || is_args(a))
         {
-            for (var i=0,l=a.length; i<l; i++) a[i] = Arithmetic.nums(a[i]); // recursive
+            for (var i=0,l=a.length; i<l; ++i) a[i] = Arithmetic.nums(a[i]); // recursive
             return a;
         }
         return Arithmetic.num(a);
     }
     ,num: function(a) {
-        return is_number(a) ? stdMath.floor(a) : parseInt(a||0,10);
+        return is_number(a) ? stdMath.floor(a) : parseInt(a||0, 10);
     }
     ,val: function(a) {
         return stdMath.floor(a.valueOf());
     }
-    ,digits: function(a, base){
+    ,digits: function(a, base) {
         var s = a.toString(+(base||10)); /* default base 10 */
         if ('-' === s.charAt(0)) s = s.slice(1); // dont include the sign in digits
         return s;
     }
 
-    ,neg: function(a) { return -(+a); }
+    ,neg: function(a) {return -(+a);}
     ,inv: NotImplemented
 
-    ,equ: function(a, b) { return a===b; }
-    ,gte: function(a, b) { return a>=b; }
-    ,lte: function(a, b) { return a<=b; }
-    ,gt: function(a, b) { return a>b; }
-    ,lt: function(a, b) { return a<b; }
+    ,equ: function(a, b) {return a === b;}
+    ,gte: function(a, b) {return a >= b;}
+    ,lte: function(a, b) {return a <= b;}
+    ,gt: function(a, b) {return a > b;}
+    ,lt: function(a, b) {return a < b;}
 
-    ,inside: function(a, m, M, closed) { return closed ? (a >= m) && (a <= M) : (a > m) && (a < M); }
-    ,clamp: function(a, m, M) { return a < m ? m : (a > M ? M : a); }
-    ,wrap: function(a, m, M) { return a < m ? M : (a > M ? m : a); }
-    ,wrapR: function(a, M) { return a < 0 ? a+M : a; }
+    ,inside: function(a, m, M, closed) {return closed ? (a >= m) && (a <= M) : (a > m) && (a < M);}
+    ,clamp: function(a, m, M) {return a < m ? m : (a > M ? M : a);}
+    ,wrap: function(a, m, M) {return a < m ? M : (a > M ? m : a);}
+    ,wrapR: function(a, M) {return a < 0 ? a + M : a;}
 
     ,add: addn
-    ,sub: function(a, b){ return a-b; }
+    ,sub: function(a, b) {return a - b;}
     ,mul: muln
-    ,div: function(a, b){ return stdMath.floor(a/b); }
-    ,divceil: function(a, b){ return stdMath.ceil(a/b); }
-    ,mod: function(a, b){ return a % b; }
+    ,div: function(a, b) {return stdMath.floor(a / b);}
+    ,divceil: function(a, b) {return stdMath.ceil(a / b);}
+    ,mod: function(a, b) {return a % b;}
     ,pow: stdMath.pow
 
-    ,shl: function(a, b){ return a << b; }
-    ,shr: function(a, b){ return a >> b; }
-    ,bor: function(a, b){ return a | b; }
-    ,band: function(a, b){ return a & b; }
-    ,xor: function(a, b){ return a ^ b; }
+    ,shl: function(a, b) {return a << b;}
+    ,shr: function(a, b) {return a >> b;}
+    ,bor: function(a, b) {return a | b;}
+    ,band: function(a, b) {return a & b;}
+    ,xor: function(a, b) {return a ^ b;}
 
     ,abs: stdMath.abs
     ,min: stdMath.min

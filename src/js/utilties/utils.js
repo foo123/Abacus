@@ -1,12 +1,12 @@
 // utility methods
-function NotImplemented() { throw new Error("Method not implemented!"); }
-function ID(x) { return x; }
-function is_array(x) { return (x instanceof Array) || ('[object Array]' === toString.call(x)); }
-function is_args(x) { return ('[object Arguments]' === toString.call(x)) && (null != x.length); }
-function is_obj(x) { return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x)); }
-function is_string(x) { return (x instanceof String) || ('[object String]' === toString.call(x)); }
-function is_number(x) { return "number"===typeof x; }
-function is_callable(x) { return "function"===typeof x; }
+function NotImplemented() {throw new Error("Method not implemented!");}
+function ID(x) {return x;}
+function is_array(x) {return (x instanceof Array) || ('[object Array]' === toString.call(x));}
+function is_args(x) {return ('[object Arguments]' === toString.call(x)) && (null != x.length);}
+function is_obj(x) {return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));}
+function is_string(x) {return (x instanceof String) || ('[object String]' === toString.call(x));}
+function is_number(x) {return "number" === typeof x;}
+function is_callable(x) {return "function" === typeof x;}
 function is_class(C1, C2)
 {
     // C1 is same class as C2, or is a subclass of C2
@@ -14,7 +14,7 @@ function is_class(C1, C2)
     {
         if (is_array(C2))
         {
-            for (var i=0,n=C2.length; i<n; i++)
+            for (var i=0,n=C2.length; i<n; ++i)
             {
                 if (is_callable(C2[i]) && ((C1===C2[i]) || (C1[PROTO] instanceof C2[i])))
                     return true;
@@ -33,7 +33,7 @@ function is_instance(x, C)
     // x is object of class C
     if (is_array(C))
     {
-        for (var i=0,n=C.length; i<n; i++)
+        for (var i=0,n=C.length; i<n; ++i)
         {
             if (is_callable(C[i]) && (x instanceof C[i]))
                 return true;
@@ -54,9 +54,9 @@ function to_fixed_binary_string_32(b)
 function to_tex(s)
 {
     var p = String(s).split('_');
-    return p[0] + (p.length > 1 ? ('_{'+p[1]+'}') : '');
+    return p[0] + (p.length > 1 ? ('_{' + p[1] + '}') : '');
 }
-function Tex(s) { return is_callable(s.toTex) ? s.toTex() : String(s); }
+function Tex(s) {return is_callable(s.toTex) ? s.toTex() : String(s);}
 
 // https://github.com/foo123/FnList.js
 function operate(F, F0, x, i0, i1, ik, strict)
@@ -74,14 +74,14 @@ function operate(F, F0, x, i0, i1, ik, strict)
     if (0 > ik)
     {
         // remove not reachable range (not multiple of step ik)
-        rem = (i0-i1)%(-ik); if (rem) last = i1;
+        rem = (i0-i1) % (-ik); if (rem) last = i1;
         i1 += rem; i00 = i1; i11 = i0;
         di = -1; ikk = -((-ik) << 4);
     }
     else
     {
         // remove not reachable range (not multiple of step ik)
-        rem = (i1-i0)%ik; if (rem) last = i1;
+        rem = (i1-i0) % ik; if (rem) last = i1;
         i1 -= rem; i00 = i0; i11 = i1;
         di = 1; ikk = (ik << 4);
     }
@@ -147,11 +147,11 @@ function array(n, x0, xs)
     {
         xs = xs||0;
         var xk = x0;
-        operate(is_callable(x0) ? function(x,xi,i){
+        operate(is_callable(x0) ? function(x ,xi, i) {
             x[i] = x0(i); return x;
-        } : (x0 === +x0 ? function(x,xi,i){
+        } : (x0 === +x0 ? function(x, xi, i) {
             x[i] = xk; xk += xs; return x;
-        } : function(x,xi,i){
+        } : function(x, xi, i) {
             x[i] = x0; return x;
         }), x, x);
     }
@@ -159,16 +159,16 @@ function array(n, x0, xs)
 }
 function pluck(b, a, k)
 {
-    return operate(function(b, ai, i){
+    return operate(function(b, ai, i) {
         b[i] = ai[k]; return b;
     }, b, a);
 }
 function complementation(b, a, n, a0, a1)
 {
     if (null == a) return b;
-    return operate(is_array(n) ? function(b, ai, i){
+    return operate(is_array(n) ? function(b, ai, i) {
         b[i] = n[i]-1-ai; return b;
-    } : function(b, ai, i){
+    } : function(b, ai, i) {
         b[i] = n-1-ai; return b;
     }, b, a, a0, a1);
 }
@@ -177,26 +177,26 @@ function reflection(b, a, n, a0, a1)
     if (null == a) return b;
     if (null == a0) a0 = 0;
     if (null == a1) a1 = a.length-1;
-    if (b!==a || a0<a1) for (var t,l=a0,r=a1; l<=r; l++,r--) { t = a[l]; b[l] = a[r]; b[r] = t; }
+    if (b!==a || a0<a1) for (var t,l=a0,r=a1; l<=r; ++l,--r) {t = a[l]; b[l] = a[r]; b[r] = t;}
     return b;
 }
 function reversion(n, n0)
 {
     if (null == n0) n0 = 0;
-    return is_array(n) ? array(n, is_array(n0) ? function(i){
+    return is_array(n) ? array(n, is_array(n0) ? function(i) {
         return n0[i]-1-n[n.length-1-i];
-    } : function(i){
+    } : function(i) {
         return n0-n[i];
-    }) : ((n===+n)&&(n0===+n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.num(n0),n));
+    }) : ((n === +n) && (n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.num(n0),n));
 }
 function gray(b, a, n, a0, a1)
 {
     // adapted from https://en.wikipedia.org/wiki/Gray_code#n-ary_Gray_code
     if (null == a) return b;
     var s = 0;
-    return operate(is_array(n) ? function(b, ai, i){
+    return operate(is_array(n) ? function(b, ai, i) {
         b[i] = n[i]>0 ? (ai + s) % n[i] : 0; s += n[i]-b[i]; return b;
-    } : function(b, ai, i){
+    } : function(b, ai, i) {
         b[i] = (ai + s) % n; s += n-b[i]; return b;
     }, b, a, a0, a1);
 }
@@ -204,9 +204,9 @@ function igray(b, a, n, a0, a1)
 {
     if (null == a) return b;
     var s = 0;
-    return operate(is_array(n) ? function(b, ai, i){
+    return operate(is_array(n) ? function(b, ai, i) {
         b[i] = n[i]>0 ? (ai + s) % n[i] : 0; s += ai; return b;
-    } : function(b, ai, i){
+    } : function(b, ai, i) {
         b[i] = (ai + s) % n; s += ai; return b;
     }, b, a, a0, a1);
 }
@@ -215,9 +215,9 @@ function igray(b, a, n, a0, a1)
     // adapted from https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1344&rep=rep1&type=pdf
     if (null == a) return b;
     var s = 0;
-    return operate(is_array(n) ? function(b, ai, i){
+    return operate(is_array(n) ? function(b, ai, i) {
         b[i] = s & 1 ? (0 < n[i] ? n[i]-1-ai : 0) : ai; s += b[i]; return b;
-    } : function(b, ai, i){
+    } : function(b, ai, i) {
         b[i] = s & 1 ? n-1-ai : ai; s += b[i]; return b;
     }, b, a, a0, a1);
 }
@@ -226,9 +226,9 @@ function ingray(b, a, n, a0, a1)
     // adapted from https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1344&rep=rep1&type=pdf
     if (null == a) return b;
     var s = 0;
-    return operate(is_array(n) ? function(b, ai, i){
+    return operate(is_array(n) ? function(b, ai, i) {
         b[i] = s & 1 ? (0 < n[i] ? n[i]-1-ai : 0) : ai; s += ai; return b;
-    } : function(b, ai, i){
+    } : function(b, ai, i) {
         b[i] = s & 1 ? n-1-ai : ai; s += ai; return b;
     }, b, a, a0, a1);
 }*/
@@ -257,9 +257,9 @@ function shift(b, a, k, a0, a1)
     if (null == a) return b;
     if (null == a1) a1 = a.length-1;
     if (null == a0) a0 = 0;
-    return b!==a || 0!==k ? operate(function(b,ai,i){
+    return b!==a || 0!==k ? operate(function(b, ai, i) {
         b[i+k] = ai; return b;
-    }, b, a, 0>k?a0:a1, 0>k?a1:a0, 0>k?1:-1) : b;
+    }, b, a, 0 > k ? a0 : a1, 0 > k ? a1 : a0, 0 > k ? 1 : -1) : b;
 }
 function fdiff/*finite_difference*/(b, a, c1, c0, a0, a1, b0, b1)
 {
@@ -271,7 +271,7 @@ function fdiff/*finite_difference*/(b, a, c1, c0, a0, a1, b0, b1)
     if (null == b0) b0 = a0;
     if (null == b1) b1 = a1;
     var d0 = 0, bk = b0 > b1 ? -1 : 1, bi = b0;
-    return operate(function(b, ai, i){
+    return operate(function(b, ai, i) {
         ai=c0+c1*ai; b[bi] = ai-d0; d0 = ai; bi+=bk; return b;
     }, b, a, a0, a1);
 }
@@ -285,7 +285,7 @@ function psum/*partial_sum*/(b, a, c1, c0, a0, a1, b0, b1)
     if (null == b0) b0 = a0;
     if (null == b1) b1 = a1;
     var s = 0, bk = b0 > b1 ? -1 : 1, bi = b0;
-    return operate(function(b, ai, i){
+    return operate(function(b, ai, i) {
         s+=ai; b[bi] = c0+c1*s; bi+=bk; return b;
     }, b, a, a0, a1);
 }
@@ -300,7 +300,7 @@ function unique(a, a0, a1)
     while (a0 <= a1)
     {
         key = String(a[a0]);
-        if (!dict[key]) { uniq[ul++] = a[a0]; dict[key] = 1; }
+        if (1 !== dict[key]) {uniq[ul++] = a[a0]; dict[key] = 1;}
         a0++;
     }
     // truncate if needed
@@ -324,18 +324,18 @@ function intersection(comm, a, b, dir, a0, a1, b0, b1)
     // assume lists are already sorted ascending/descending (indepentantly)
     while ((0 <= ak*(a1-ai)) && (0 <= bk*(b1-bi)))
     {
-        if      ((1===dir && a[ai]<b[bi]) || (-1===dir && a[ai]>b[bi]))
+        if      ((1 === dir && a[ai] < b[bi]) || (-1 === dir && a[ai] > b[bi]))
         {
-            ai+=ak;
+            ai += ak;
         }
-        else if ((1===dir && a[ai]>b[bi]) || (-1===dir && a[ai]<b[bi]))
+        else if ((1 === dir && a[ai] > b[bi]) || (-1 === dir && a[ai] < b[bi]))
         {
-            bi+=bk;
+            bi += bk;
         }
         else // they're equal
         {
-            comm[il++] = a[ ai ];
-            ai+=ak; bi+=bk;
+            comm[il++] = a[ai];
+            ai += ak; bi += bk;
         }
     }
     // truncate if needed
@@ -354,7 +354,7 @@ function difference/*complement*/(diff, a, b, dir, a0, a1, b0, b1, duplicates)
     var ak = a0 > a1 ? -1 : 1, bk = b0 > b1 ? -1 : 1,
         al = ak*(a1-a0)+1, bl = bk*(b1-b0)+1, ai = a0, bi = b0, dl = 0;
     if (!b || !b.length) return a === +a ? array(a, a0, ak) : (a ? a.slice() : a);
-    if (null == diff) diff = new Array(duplicates?2*al:al);
+    if (null == diff) diff = new Array(duplicates ? 2*al : al);
 
     // O(al)
     // assume lists are already sorted ascending/descending (independantly)
@@ -365,18 +365,18 @@ function difference/*complement*/(diff, a, b, dir, a0, a1, b0, b1, duplicates)
             if      (ai === b[bi])
             {
                 if (duplicates) diff[dl++] = ai;
-                ai+=ak; bi+=bk;
+                ai += ak; bi += bk;
             }
-            else if ((1===dir && ai>b[bi]) || (-1===dir && ai<b[bi]))
+            else if ((1 === dir && ai > b[bi]) || (-1 === dir && ai < b[bi]))
             {
-                bi+=bk;
+                bi += bk;
             }
-            else//if ((1===dir && ai<b[bi]) || (-1===dir && ai>b[bi]))
+            else//if ((1 === dir && ai < b[bi]) || (-1 === dir && ai > b[bi]))
             {
-                diff[dl++] = ai; ai+=ak;
+                diff[dl++] = ai; ai += ak;
             }
         }
-        while (0 <= ak*(a1-ai)) { diff[dl++] = ai; ai+=ak; }
+        while (0 <= ak*(a1-ai)) {diff[dl++] = ai; ai += ak;}
     }
     else
     {
@@ -385,18 +385,18 @@ function difference/*complement*/(diff, a, b, dir, a0, a1, b0, b1, duplicates)
             if      (a[ai] === b[bi])
             {
                 if (duplicates) diff[dl++] = a[ai];
-                ai+=ak; bi+=bk;
+                ai += ak; bi += bk;
             }
-            else if ((1===dir && a[ai]>b[bi]) || (-1===dir && a[ai]<b[bi]))
+            else if ((1 === dir && a[ai] > b[bi]) || (-1 === dir && a[ai] < b[bi]))
             {
-                bi+=bk;
+                bi += bk;
             }
-            else//if ((1===dir && a[ai]<b[bi]) || (-1===dir && a[ai]>b[bi]))
+            else//if ((1 === dir && a[ai] < b[bi]) || (-1 === dir && a[ai] > b[bi]))
             {
-                diff[dl++] = a[ ai ]; ai+=ak;
+                diff[dl++] = a[ai]; ai += ak;
             }
         }
-        while (0 <= ak*(a1-ai)) { diff[dl++] = a[ai]; ai+=ak; }
+        while (0 <= ak*(a1-ai)) {diff[dl++] = a[ai]; ai += ak;}
     }
     // truncate if needed
     if (dl < diff.length) diff.length = dl;
@@ -422,29 +422,29 @@ function multi_difference(diff, mult, a, b, a0, a1, b0, b1)
         {
             if (1 < mult[a[ai]])
             {
-                mult[a[ai]]--;
+                --mult[a[ai]];
             }
             else
             {
-                ai+=ak;
-                bi+=bk;
+                ai += ak;
+                bi += bk;
             }
         }
-        else if (a[ai]>b[bi])
+        else if (a[ai] > b[bi])
         {
-            bi+=bk;
+            bi += bk;
         }
-        else//if (a[ai]<b[bi])
+        else//if (a[ai] < b[bi])
         {
             diff[dl++] = a[ai];
-            mult[a[ai]]--;
-            ai+=ak;
+            --mult[a[ai]];
+            ai += ak;
         }
     }
     while (0 <= ak*(a1-ai))
     {
         if (0 < mult[a[ai]]) diff[dl++] = a[ai];
-        mult[a[ai]]--; ai+=ak;
+        --mult[a[ai]]; ai += ak;
     }
     // truncate if needed
     if (dl < diff.length) diff.length = dl;
@@ -493,12 +493,12 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
         }
         if (indices)
         {
-            if      ((1===dir && a[ai][0]<b[bi][0]) || (-1===dir && a[ai][0]>b[bi][0]))
+            if      ((1 === dir && a[ai][0] < b[bi][0]) || (-1 === dir && a[ai][0] > b[bi][0]))
             {
                 union[ui++] = last=a[ai];
                 ai+=ak;
             }
-            else if ((1===dir && a[ai][0]>b[bi][0]) || (-1===dir && a[ai][0]<b[bi][0]))
+            else if ((1 === dir && a[ai][0] > b[bi][0]) || (-1 === dir && a[ai][0] < b[bi][0]))
             {
                 union[ui++] = last=b[bi];
                 bi+=bk;
@@ -506,7 +506,7 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
             else // they're equal, push one unique
             {
                 // make it stable
-                if ((1===dir && a[ai][1]<b[bi][1]) || (-1===dir && a[ai][1]>b[bi][1]))
+                if ((1 === dir && a[ai][1] < b[bi][1]) || (-1 === dir && a[ai][1] > b[bi][1]))
                 {
                     union[ui++] = last=a[ai];
                     if (with_duplicates) union[ui++] = b[bi];
@@ -516,26 +516,26 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
                     union[ui++] = last=b[bi];
                     if (with_duplicates) union[ui++] = a[ai];
                 }
-                ai+=ak; bi+=bk;
+                ai += ak; bi += bk;
             }
         }
         else
         {
-            if      ((1===dir && a[ai]<b[bi]) || (-1===dir && a[ai]>b[bi]))
+            if      ((1 === dir && a[ai] < b[bi]) || (-1 === dir && a[ai] > b[bi]))
             {
                 union[ui++] = last=a[ai];
-                ai+=ak;
+                ai += ak;
             }
-            else if ((1===dir && a[ai]>b[bi]) || (-1===dir && a[ai]<b[bi]))
+            else if ((1 === dir && a[ai] > b[bi]) || (-1 === dir && a[ai] < b[bi]))
             {
                 union[ui++] = last=b[bi];
-                bi+=bk;
+                bi += bk;
             }
             else // they're equal, push one unique
             {
                 union[ui++] = last=a[ai];
                 if (with_duplicates) union[ui++] = b[bi];
-                ai+=ak; bi+=bk;
+                ai += ak; bi += bk;
             }
         }
     }
@@ -544,7 +544,7 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
         if (with_duplicates || (a[ai]!==last))
         {
             union[ui++] = last=a[ai];
-            ai+=ak;
+            ai += ak;
         }
     }
     while (0 <= bk*(b1-bi))
@@ -552,13 +552,13 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
         if (with_duplicates || (b[bi]!==last))
         {
             union[ui++] = last=b[bi];
-            bi+=bk;
+            bi += bk;
         }
     }
     if (inplace)
     {
         // move the merged back to the a array
-        for (ai=0>ak?a1:a0,ui=0; ui<ul; ui++,ai++) a[ai] = union[ui];
+        for (ai=0>ak?a1:a0,ui=0; ui<ul; ++ui,++ai) a[ai] = union[ui];
         return a;
     }
     else
@@ -576,17 +576,17 @@ function sortedrun(a, a0, a1, index, indices, dir)
     index[3] = -1; index[4] = -1; index[5] = 0;
     d0 = 0; d1 = 0;
     i0 = a0; i1 = -1;
-    for (ap=indices?a[i0][0]:a[i0],i=i0+1; i<=a1; i++)
+    for (ap=indices?a[i0][0]:a[i0],i=i0+1; i<=a1; ++i)
     {
-        ai = indices?a[i][0]:a[i];
+        ai = indices ? a[i][0] : a[i];
         if (ap < ai)
         {
-            if (-1 === d0) { i1 = i-1; break; }
+            if (-1 === d0) {i1 = i-1; break;}
             else if (0 === d0) d0 = 1;
         }
         else if (ap > ai)
         {
-            if (1 === d0) { i1 = i-1; break; }
+            if (1 === d0) {i1 = i-1; break;}
             else if (0 === d0) d0 = -1;
         }
         ap = ai;
@@ -599,17 +599,17 @@ function sortedrun(a, a0, a1, index, indices, dir)
     else
     {
         i2 = i1+1; i3 = -1;
-        for (ap=indices?a[i2][0]:a[i2],i=i2+1; i<=a1; i++)
+        for (ap=indices?a[i2][0]:a[i2],i=i2+1; i<=a1; ++i)
         {
-            ai = indices?a[i][0]:a[i];
+            ai = indices ? a[i][0] : a[i];
             if (ap < ai)
             {
-                if (-1 === d1) { i3 = i-1; break; }
+                if (-1 === d1) {i3 = i-1; break;}
                 else if (0 === d1) d1 = 1;
             }
             else if (ap > ai)
             {
-                if (1 === d1) { i3 = i-1; break; }
+                if (1 === d1) {i3 = i-1; break;}
                 else if (0 === d1) d1 = -1;
             }
             ap = ai;
@@ -635,7 +635,7 @@ function mergesort(a, dir, natural, indices, a0, a1)
         index, i0, i1, i0p, i1p;
     if (indices)
     {
-        a = operate(function(b,ai,i){b[i-a0]=[ai,i]; return b;}, new Array(N), a, a0, a1, 1);
+        a = operate(function(b, ai, i) {b[i-a0] = [ai,i]; return b;}, new Array(N), a, a0, a1, 1);
         a0 = 0; a1 = N-1;
     }
     if (true === natural)
@@ -658,8 +658,8 @@ function mergesort(a, dir, natural, indices, a0, a1)
             {
                 // merge partialy sorted chunks appropriately into one run
                 // O(n)
-                index[2] = dir!==index[2]?1:0; index[5] = dir!==index[5]?1:0;
-                merge(aux, a, a, dir, index[2]?index[1]:index[0], index[2]?index[0]:index[1], index[5]?index[4]:index[3], index[5]?index[3]:index[4], indices, false, true);
+                index[2] = dir !== index[2] ? 1 : 0; index[5] = dir !== index[5] ? 1 : 0;
+                merge(aux, a, a, dir, index[2] ? index[1] : index[0], index[2] ? index[0] : index[1], index[5] ? index[4] : index[3], index[5] ? index[3] : index[4], indices, false, true);
                 i0 = index[0]; i1 = index[4];
             }
             // merge with the previous run
@@ -674,7 +674,7 @@ function mergesort(a, dir, natural, indices, a0, a1)
         // O(NlgN)
         while (0 < logN)
         {
-            operate(function(_,j){
+            operate(function(_ , j) {
                 merge(aux, a, a, dir, a0+ak*j, a0+ak*(j+size-1), a0+ak*(j+size), a0+ak*min(j+size2-1, N-1), indices, false, true);
             }, null, null, 0, N-size-1, size2);
             size <<= 1; size2 <<= 1; logN >>= 1;
@@ -692,7 +692,7 @@ function is_sorted(a, dir, a0, a1)
     {
         // findout if and how it is sorted
         dir = 0;
-        for (ap=a[a0],i=a0+1; i<=a1; i++)
+        for (ap=a[a0],i=a0+1; i<=a1; ++i)
         {
             ai = a[i];
             if (ap < ai)
@@ -717,7 +717,7 @@ function is_sorted(a, dir, a0, a1)
         if (-1 === dir)
         {
             // reverse sorted, descending
-            for (ap=a[a0],i=a0+1; i<=a1; i++)
+            for (ap=a[a0],i=a0+1; i<=a1; ++i)
             {
                 ai = a[i];
                 if (ap < ai) return 0;
@@ -727,7 +727,7 @@ function is_sorted(a, dir, a0, a1)
         else
         {
             // sorted, ascending
-            for (ap=a[a0],i=a0+1; i<=a1; i++)
+            for (ap=a[a0],i=a0+1; i<=a1; ++i)
             {
                 ai = a[i];
                 if (ap > ai) return 0;
@@ -745,11 +745,11 @@ function shuffle(a, connected, a0, a1)
     // O(n)
     if (is_array(a0))
     {
-        if (1 < (N=a0.length)) operate(function(a){
+        if (1 < (N=a0.length)) operate(function(a) {
             if (offset < N--)
             {
-                var perm = rndInt(0, N-offset), swap = a[ a0[N] ];
-                a[ a0[N] ] = a[ a0[perm] ]; a[ a0[perm] ] = swap;
+                var perm = rndInt(0, N-offset), swap = a[a0[N]];
+                a[a0[N]] = a[a0[perm]]; a[a0[perm]] = swap;
             }
             return a;
         }, a, a0, 0, N-1);
@@ -758,11 +758,11 @@ function shuffle(a, connected, a0, a1)
     {
         if (null == a0) a0 = 0;
         if (null == a1) a1 = a.length-1;
-        if (1 < (N=a1-a0+1)) operate(function(a){
+        if (1 < (N=a1-a0+1)) operate(function(a) {
             if (offset < N--)
             {
-                var perm = rndInt(0, N-offset), swap = a[ a0+N ];
-                a[ a0+N ] = a[ a0+perm ]; a[ a0+perm ] = swap;
+                var perm = rndInt(0, N-offset), swap = a[a0+N];
+                a[a0+N] = a[a0+perm]; a[a0+perm] = swap;
             }
             return a;
         }, a, a, 0, N-1);
@@ -783,33 +783,33 @@ function pick(a, k, sorted, repeated, backup, a0, a1)
     if (true === repeated)
     {
         n = n-1;
-        for (i=0; i<k; i++) // O(k) times
-            picked[ i ] = a[ a0+rndInt(0, n) ];
+        for (i=0; i<k; ++i) // O(k) times
+            picked[i] = a[a0+rndInt(0, n)];
         if (sorted) mergesort(picked);// O(klogk) times, average/worst-case
         return picked;
     }
 
     // partially shuffle the array, and generate unbiased selection simultaneously
     // this is a variation on fisher-yates-knuth shuffle
-    for (i=0; i<k; i++) // O(k) times
+    for (i=0; i<k; ++i) // O(k) times
     {
         selected = rndInt(0, --n); // unbiased sampling n * n-1 * n-2 * .. * n-k+1
-        value = a[ a0+selected ];
-        a[ a0+selected ] = a[ a0+n ];
-        a[ a0+n ] = value;
-        picked[ i ] = value;
-        backup && (backup[ i ] = selected);
+        value = a[a0+selected];
+        a[a0+selected] = a[a0+n];
+        a[a0+n] = value;
+        picked[i] = value;
+        backup && (backup[i] = selected);
     }
     if (backup)
     {
         // restore partially shuffled input array from backup
-        for (i=k-1; i>=0; i--) // O(k) times
+        for (i=k-1; i>=0; --i) // O(k) times
         {
-            selected = backup[ i ];
-            value = a[ a0+n ];
-            a[ a0+n ] = a[ a0+selected ];
-            a[ a0+selected ] = value;
-            n++;
+            selected = backup[i];
+            value = a[a0+n];
+            a[a0+n] = a[a0+selected];
+            a[a0+selected] = value;
+            ++n;
         }
     }
     if (sorted) mergesort(picked);// O(klogk) times, average/worst-case
@@ -818,20 +818,20 @@ function pick(a, k, sorted, repeated, backup, a0, a1)
 function binarysearch(v, a, dir, a0, a1, eq, lt)
 {
     // binary search O(logn)
-    eq = eq || function(a, b){return a==b;};
-    lt = lt || function(a, b){return a<b;};
+    eq = eq || function(a, b) {return a == b;};
+    lt = lt || function(a, b) {return a < b;};
     dir = -1 === dir ? -1 : 1;
     if (null == a0) a0 = 0;
     if (null == a1) a1 = a.length-1;
-    var l=stdMath.max(a0, 0), r=stdMath.min(a1, a.length-1), m, am;
+    var l = stdMath.max(a0, 0), r = stdMath.min(a1, a.length-1), m, am;
 
-    if (l>r || lt(v, a[l]) || lt(a[r], v)) return -1;
-    else if ( eq(v, a[l])) return l;
+    if (l > r || lt(v, a[l]) || lt(a[r], v)) return -1;
+    else if (eq(v, a[l])) return l;
     else if (eq(v, a[r])) return r;
 
-    if (-1===dir)
+    if (-1 === dir)
     {
-        while (l<r)
+        while (l < r)
         {
             m = ((l+r)>>>1); am = a[m];
             if (eq(v, am)) return m;
@@ -841,7 +841,7 @@ function binarysearch(v, a, dir, a0, a1, eq, lt)
     }
     else
     {
-        while (l<r)
+        while (l < r)
         {
             m = ((l+r)>>>1); am = a[m];
             if (eq(v, am)) return m;
@@ -856,13 +856,13 @@ function bisect(list, item, dir, lo, hi, lt)
     // binary search O(logn) for point of insertion (either left or right depending on dir)
     // adapted from python's c source code, module bisect
     // https://github.com/python/cpython/blob/master/Modules/_bisectmodule.c
-    lt = lt || function(a, b){return a<b};
+    lt = lt || function(a, b) {return a < b};
     if (null == lo) lo = 0;
     if (null == hi) hi = list.length;
     dir = -1 === dir ? -1 : 1; // left, else right bisection
     var mid, litem;
     if (0 > lo) return -1;
-    if (-1===dir)
+    if (-1 === dir)
     {
         while (lo < hi)
         {
@@ -887,9 +887,9 @@ function bitreverse(b, nbits)
     b = +b;
     var r = b & 1;
     if (null == nbits)
-        while (b >>= 1) { r <<= 1; r |= b & 1; }
+        while (b >>= 1) {r <<= 1; r |= b & 1;}
     else
-        while (--nbits) { r <<= 1; b >>= 1; r |= b & 1; }
+        while (--nbits) {r <<= 1; b >>= 1; r |= b & 1;}
     return r;
 }
 function is_mirror_image(x)
@@ -898,7 +898,7 @@ function is_mirror_image(x)
     if (is_array(x) || is_args(x))
     {
         if (1 >= x.length) return true;
-        for (i=0,j=x.length-1; i<j; i++,j--)
+        for (i=0,j=x.length-1; i<j; ++i,--j)
             if (x[i] !== x[j])
                 return false;
     }
@@ -906,7 +906,7 @@ function is_mirror_image(x)
     {
         x = String(x);
         if (1 >= x.length) return true;
-        for (i=0,j=x.length-1; i<j; i++,j--)
+        for (i=0,j=x.length-1; i<j; ++i,--j)
             if (x.charAt(i) !== x.charAt(j))
                 return false;
     }
@@ -914,7 +914,7 @@ function is_mirror_image(x)
 }
 function lcs_key(path)
 {
-    return path.map(function(ij){return String(ij[0])+','+String(ij[1]);}).join('-');
+    return path.map(function(ij) {return String(ij[0]) + ',' + String(ij[1]);}).join('-');
 }
 function lcs_backtrack(L, a, b, i, j, eq, all)
 {
@@ -963,10 +963,10 @@ function lcs(a, b, contiguous, ret, eq)
         s = 0;
         out = [];
         L = new Array(n);
-        for (i=0; i<n; i++)
+        for (i=0; i<n; ++i)
         {
             L[i] = new Array(m);
-            for (j=0; j<m; j++)
+            for (j=0; j<m; ++j)
             {
                 if (eq(a[i], b[j]))
                 {
@@ -976,7 +976,7 @@ function lcs(a, b, contiguous, ret, eq)
                         s = L[i][j];
                         if (!sizeOnly) out = [[i-s+1, i, j-s+1, j]];
                     }
-                    else if (all && L[i][j] === s)
+                    else if (all && (L[i][j] === s))
                     {
                         out.push([i-s+1, i, j-s+1, j]);
                     }
@@ -994,10 +994,10 @@ function lcs(a, b, contiguous, ret, eq)
         // O(nm)
         L = new Array(n);
         out = [];
-        for (i=0; i<n; i++)
+        for (i=0; i<n; ++i)
         {
             L[i] = new Array(m);
-            for (j=0; j<m; j++)
+            for (j=0; j<m; ++j)
             {
                 if (eq(a[i], b[j]))
                 {
@@ -1188,33 +1188,33 @@ align.cmp = cmp;
 align.dist = dist;
 function sorter(Arithmetic)
 {
-    return true===Arithmetic ? function(a, b){return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);} : (Arithmetic ? function(a, b){return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b){return a===b ? 0 : (a<b ? -1 : 1);});
+    return true === Arithmetic ? function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);} : (Arithmetic ? function(a, b) {return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b) {return a === b ? 0 : (a < b ? -1 : 1);});
 }
 function pad(x, n, s)
 {
     var l = x.length;
     s = s || ' ';
-    return l < n ? (new Array(n-l+1).join(s)+x) : x;
+    return l < n ? ((new Array(n-l+1)).join(s) + x) : x;
 }
 function addn(s, a)
 {
-    return s+a;
+    return s + a;
 }
 function muln(p, a)
 {
-    return p*a;
+    return p * a;
 }
 function sum(x, i0, i1, ik)
 {
     var Arithmetic = Abacus.Arithmetic;
-    return operate(function(s, x){
+    return operate(function(s, x) {
         return s instanceof INumber ? s.add(x) : (x instanceof INumber ? x.add(s) : Arithmetic.add(s, x));
     }, Arithmetic.O, x, i0, i1, ik);
 }
 function product(x, i0, i1, ik)
 {
     var Arithmetic = Abacus.Arithmetic;
-    return operate(function(p, x){
+    return operate(function(p, x) {
         return p instanceof INumber ? p.mul(x) : (x instanceof INumber ? x.mul(p) : Arithmetic.mul(p, x));
     }, Arithmetic.I, x, i0, i1, ik);
 }
@@ -1400,11 +1400,11 @@ function jskthroot(x, k)
     }
     if (1 === k) return x;
     kg = k & 1;
-    if ((1===kg) && (0>x)) x = -x;
+    if ((1 === kg) && (0 > x)) x = -x;
     r = stdMath.pow(x, 1.0/k); p = stdMath.pow(r, k);
 
-    if ((stdMath.abs(x-p)<1.0) && ((0<x) === (0<p)))
-        return kg && (0>x) ? -r : r;
+    if ((stdMath.abs(x-p) < 1.0) && ((0 < x) === (0 < p)))
+        return kg && (0 > x) ? -r : r;
     return 1;
 }
 function ikthroot(n, k)
@@ -1461,7 +1461,7 @@ function polykthroot(p, k, limit)
     // normalise r to have positive lead coeff
     // if k is multiple of 2 (since then both r and -r are roots)
     // and is not a (truncated) power series approximation
-    return (0===nterms) && k.mod(two).equ(O) ? r.abs() : r;
+    return (0 === nterms) && k.mod(two).equ(O) ? r.abs() : r;
 }
 function kthroot(x, k, limit)
 {
@@ -1519,7 +1519,7 @@ function kthroot(x, k, limit)
             d = x.div(r.pow(k_1)).sub(r).div(k);
             if (d.real().abs().lte(epsilon) && d.imag().abs().lte(epsilon)) break;
             r = r.add(d);
-        } while (true);
+        } while (1);
     }
     else
     {
@@ -1527,7 +1527,7 @@ function kthroot(x, k, limit)
             d = x.div(r.pow(k_1)).sub(r).div(k);
             if (d.abs().lte(epsilon)) break;
             r = r.add(d);
-        } while (true);
+        } while (1);
     }
     return r;
 }
@@ -1640,7 +1640,7 @@ function isqrtp(n, p)
     while (!Arithmetic.equ(O, Arithmetic.mod(Arithmetic.sub(t, I), p)))
     {
         t2 = mulm(t, t, p);
-        for (i=1; i<m; i++)
+        for (i=1; i<m; ++i)
         {
             if (Arithmetic.equ(O, Arithmetic.mod(Arithmetic.sub(t2, I), p))) break;
             t2 = mulm(t2, t2, p);
@@ -1691,7 +1691,7 @@ function trailing_zeroes(n, bits, with_remaining)
     var Arithmetic = Abacus.Arithmetic, z = 0, i;
     bits = bits || Arithmetic.digits(n, 2);
     i = bits.length-1;
-    while (0<=i && '0'===bits.charAt(i)) { i--; z++; }
+    while (0 <= i && '0' === bits.charAt(i)) {--i; ++z;}
     return with_remaining ? [z, 0 > i ? '0' : bits.slice(0, i+1)] : z;
 }
 function small_primes()
@@ -1798,11 +1798,12 @@ function miller_rabin_test(n, k, kextra)
     }
 
     // test the base a to see whether it is a witness for the compositeness of n
-    function try_composite(a) {
+    function try_composite(a)
+    {
         var x, r;
         x = powm(a, d, n);
         if (Arithmetic.equ(x, I) || Arithmetic.equ(x, n_1)) return false;
-        for (r=1; r<s; r++)
+        for (r=1; r<s; ++r)
         {
             x = Arithmetic.mod(Arithmetic.mul(x, x), n);
             if (Arithmetic.equ(x, I)) return true;
@@ -1815,14 +1816,14 @@ function miller_rabin_test(n, k, kextra)
 
     if (is_array(k))
     {
-        for (i=0,kl=k.length; i<kl; i++)
+        for (i=0,kl=k.length; i<kl; ++i)
             if (try_composite(k[i]))
                 return false;
         // extra tests
         if (null != kextra)
         {
             kextra = +kextra;
-            for (i=0; i<kextra; i++)
+            for (i=0; i<kextra; ++i)
                 if (try_composite(Arithmetic.rnd(two, n_2)))
                     return false;
         }
@@ -1830,7 +1831,7 @@ function miller_rabin_test(n, k, kextra)
     else
     {
         k = +k;
-        for (i=0; i<k; i++)
+        for (i=0; i<k; ++i)
             if (try_composite(Arithmetic.rnd(two, n_2)))
                 return false;
     }
@@ -1850,7 +1851,7 @@ function lucas_sequence(n, P, Q, k, bits)
     if (Arithmetic.equ(O, D)) return null; //D must not be zero
 
     bits = bits || Arithmetic.digits(k, 2);
-    if ('0'===bits /*|| Arithmetic.equ(O, k)*/) return [O, two, Q];
+    if ('0' === bits /*|| Arithmetic.equ(O, k)*/) return [O, two, Q];
 
     U = I; V = P; Qk = Q;
     b = bits.length;
@@ -1858,7 +1859,7 @@ function lucas_sequence(n, P, Q, k, bits)
     if (Arithmetic.equ(I, Q))
     {
         // Optimization for extra strong tests.
-        for (bit=1; bit<b; bit++)/*while (1 < b)*/
+        for (bit=1; bit<b; ++bit)/*while (1 < b)*/
         {
             U = Arithmetic.mod(Arithmetic.mul(U, V), n);
             V = Arithmetic.mod(Arithmetic.sub(Arithmetic.mul(V, V), two), n);
@@ -1878,7 +1879,7 @@ function lucas_sequence(n, P, Q, k, bits)
     else if (Arithmetic.equ(I, P) && Arithmetic.equ(J, Q))
     {
         // Small optimization for 50% of Selfridge parameters.
-        for (bit=1; bit<b; bit++)/*while (1 < b)*/
+        for (bit=1; bit<b; ++bit)/*while (1 < b)*/
         {
             U = Arithmetic.mod(Arithmetic.mul(U, V), n);
             if (Arithmetic.equ(I, Qk))
@@ -1907,7 +1908,7 @@ function lucas_sequence(n, P, Q, k, bits)
     else
     {
         // The general case with any P and Q.
-        for (bit=1; bit<b; bit++)/*while (1 < b)*/
+        for (bit=1; bit<b; ++bit)/*while (1 < b)*/
         {
             U = Arithmetic.mod(Arithmetic.mul(U, V), n);
             V = Arithmetic.mod(Arithmetic.sub(Arithmetic.mul(V, V), Arithmetic.mul(two, Qk)), n);
@@ -2053,7 +2054,7 @@ function extra_strong_lucas_test(n)
 
     if (Arithmetic.equ(O, U) && (Arithmetic.equ(two, V) || Arithmetic.equ(V, Arithmetic.sub(n, two)))) return true;
     if (Arithmetic.equ(O, V)) return true;
-    for (r=1; r<s; r++)
+    for (r=1; r<s; ++r)
     {
         V = Arithmetic.mod(Arithmetic.sub(Arithmetic.mul(V, V), two), n);
         if (Arithmetic.equ(O, V)) return true;
@@ -2068,7 +2069,7 @@ function baillie_psw_test(n, extra_mr)
 
     // Check divisibility by a short list of small primes
     if (Arithmetic.lt(n, primes[0])) return false;
-    for (i=0,l=stdMath.min(primes.length,100); i<l; i++)
+    for (i=0,l=stdMath.min(primes.length,100); i<l; ++i)
     {
         p = primes[i];
         if (Arithmetic.equ(n, p)) return true;
@@ -2090,7 +2091,7 @@ function is_probable_prime(n)
 
     // Check divisibility by a short list of small primes
     if (Arithmetic.lt(n, primes[0])) return false;
-    for (i=0,l=stdMath.min(primes.length,50); i<l; i++)
+    for (i=0,l=stdMath.min(primes.length,70); i<l; ++i)
     {
         p = primes[i];
         if (Arithmetic.equ(n, p)) return true;
@@ -2107,14 +2108,14 @@ function wheel(/* args */)
     if (!l || !base[0]) return null;
 
     prod = 1;
-    for (k=0; k<l; k++) prod *= base[k];
+    for (k=0; k<l; ++k) prod *= base[k];
     w = [];
 
     prod += 1;
-    for (j=base[0]; j<=prod; j++)
+    for (j=base[0]; j<=prod; ++j)
     {
         all = true;
-        for (k=0; k<l; k++)
+        for (k=0; k<l; ++k)
         {
             if (!(j % base[k]))
             {
@@ -2127,7 +2128,7 @@ function wheel(/* args */)
             w.push(j);
         }
     }
-    return [w, array(w.length, function(i){return i+1<w.length ? w[i+1]-w[i] : w[0]+prod-1-w[i];})];
+    return [w, array(w.length, function(i){return i+1 < w.length ? (w[i+1]-w[i]) : (w[0]+prod-1-w[i]);})];
 }
 function wheel_trial_div_test(n)
 {
@@ -2279,7 +2280,7 @@ function pollard_rho(n, s, a, retries, max_steps, F)
     F = F || null;
 
     V = s;
-    for (i=0; i<=retries; i++)
+    for (i=0; i<=retries; ++i)
     {
         U = V;
         j = 0;
@@ -2289,7 +2290,7 @@ function pollard_rho(n, s, a, retries, max_steps, F)
             };
         for (;;)
         {
-            if ((null!=max_steps) && (j>max_steps)) break;
+            if ((null != max_steps) && (j > max_steps)) break;
             j += 1;
             U = F(U);
             V = F(F(V));  // V is 2x further along than U
@@ -2323,10 +2324,10 @@ function pollard_pm1(n, B, a, retries)
     // computing a**lcm(1,2,3,..B) % n for B > 2
     // it looks weird, but it's right: primes run [2, B]
     // and the answer's not right until the loop is done.
-    for (i=0; i<=retries; i++)
+    for (i=0; i<=retries; ++i)
     {
         aM = a;
-        for (ip=0; ip<pl; ip++)
+        for (ip=0; ip<pl; ++ip)
         {
             // these are pre-computed (small) primes and may not cover whole range up to B
             // for small values of B, no problem, else it will cover up to largest pre-computed small prime
@@ -2361,7 +2362,7 @@ function trial_div_fac(n, maxlimit)
     factors = null; f1 = null; L = 0;
 
     n0 = n;
-    for (i=0,l=primes.length; i<l; i++)
+    for (i=0,l=primes.length; i<l; ++i)
     {
         p = primes[i];
         if (Arithmetic.equ(n0, p)) return [[p, I]];
@@ -2382,7 +2383,7 @@ function trial_div_fac(n, maxlimit)
             f = new Node([p, e]);
             f.l = f1;
             if (f1) f1.r = f;
-            f1 = f; L++;
+            f1 = f; ++L;
             if (!factors) factors = f1;
         }
     }
@@ -2403,24 +2404,24 @@ function trial_div_fac(n, maxlimit)
                 f = new Node([p, e]);
                 f.l = f1;
                 if (f1) f1.r = f;
-                f1 = f; L++;
+                f1 = f; ++L;
                 if (!factors) factors = f1;
             }
             p = Arithmetic.add(p, two); p2 = Arithmetic.mul(p, p);
         }
     }
-    if ((null==maxlimit) && Arithmetic.gt(n, I))
+    if ((null == maxlimit) && Arithmetic.gt(n, I))
     {
         // add last
         f = new Node([n, I]);
         f.l = f1;
         if (f1) f1.r = f;
-        f1 = f; L++;
+        f1 = f; ++L;
         if (!factors) factors = f1;
     }
 
     // traverse list of factors and return array
-    fac = array(L, function(){
+    fac = array(L, function() {
         var f = factors, factor = f.v;
         factors = factors.r;
         f.dispose(); // dispose
@@ -2451,7 +2452,7 @@ function merge_factors(f1, f2)
             {
                 f12[l++] = [f1[i1][0], Arithmetic.add(f1[i1][1], f2[i2][1])];
             }
-            i1++; i2++;
+            ++i1; ++i2;
         }
         else if (Arithmetic.lt(f1[i1][0], f2[i2][0]))
         {
@@ -2463,7 +2464,7 @@ function merge_factors(f1, f2)
             {
                 f12[l++] = f1[i1];
             }
-            i1++;
+            ++i1;
         }
         else //if (Arithmetic.gt(f1[i1][0], f2[i2][0]))
         {
@@ -2475,7 +2476,7 @@ function merge_factors(f1, f2)
             {
                 f12[l++] = f2[i2];
             }
-            i2++;
+            ++i2;
         }
     }
     while (i1 < l1)
@@ -2488,7 +2489,7 @@ function merge_factors(f1, f2)
         {
             f12[l++] = f1[i1];
         }
-        i1++;
+        ++i1;
     }
     while (i2 < l2)
     {
@@ -2500,7 +2501,7 @@ function merge_factors(f1, f2)
         {
             f12[l++] = f2[i2];
         }
-        i2++;
+        ++i2;
     }
     // truncate if needed
     if (f12.length > l) f12.length = l;
@@ -2577,7 +2578,7 @@ function dec2frac(dec, simplify)
     {
         repeating = m[5].slice(1,-1); // remove surrounding brackets
         is_zero = true;
-        for (k=repeating.length-1; k>=0; k--)
+        for (k=repeating.length-1; k>=0; --k)
         {
             if (repeating.charAt(k) !== '0')
             {
@@ -2592,7 +2593,7 @@ function dec2frac(dec, simplify)
     {
         // no repeating decimals
         // remove unnecessary trailing zeroes
-        while (non_repeating && (non_repeating.slice(-1)==='0')) non_repeating = non_repeating.slice(0, -1);
+        while (non_repeating && (non_repeating.slice(-1) === '0')) non_repeating = non_repeating.slice(0, -1);
         if (!non_repeating || !non_repeating.length)
         {
             d = I;
@@ -2616,7 +2617,7 @@ function dec2frac(dec, simplify)
         if (non_repeating)
         {
             // remove common repeating digits from non_repeating digits, in case they are included
-            while ((non_repeating.length>=repeating.length) && (non_repeating.slice(-repeating.length)===repeating))
+            while ((non_repeating.length >= repeating.length) && (non_repeating.slice(-repeating.length) === repeating))
                 non_repeating = non_repeating.slice(0, -repeating.length);
             if (!non_repeating.length) non_repeating = null;
         }
@@ -2638,7 +2639,7 @@ function dec2frac(dec, simplify)
 function default_eq(a, b)
 {
     // default equality between a and b
-    return a===b;
+    return a === b;
 }
 function floyd_cycle_detection(f, x0, eq)
 {
@@ -2658,14 +2659,14 @@ function floyd_cycle_detection(f, x0, eq)
     {
         tortoise = f(tortoise);
         hare = f(hare);
-        mu++;
+        ++mu;
     }
     lam = 1;
     hare = f(tortoise);
     while (!eq(tortoise, hare))
     {
         hare = f(hare);
-        lam++;
+        ++lam;
     }
     return [lam/*period*/, mu/*first_repeat*/];
 }
@@ -2696,7 +2697,7 @@ function frac2dec(n, d)
         }
    );
 
-    for (i=0,c=period[0]+period[1]; i<c; i++)
+    for (i=0,c=period[0]+period[1]; i<c; ++i)
     {
         // long division up to repeating digits
         t = Arithmetic.mul(ten, r);
@@ -2709,9 +2710,9 @@ function frac2dec(n, d)
     if (repeating.length)
     {
         is_zero = true;
-        for (i=repeating.length-1; i>=0; i--)
+        for (i=repeating.length-1; i>=0; --i)
         {
-            if (repeating.charAt(i) !== '0')
+            if ('0' !== repeating.charAt(i))
             {
                 is_zero = false;
                 break;
@@ -2725,9 +2726,9 @@ function frac2dec(n, d)
     if (non_repeating.length)
     {
         is_zero = true;
-        for (i=non_repeating.length-1; i>=0; i--)
+        for (i=non_repeating.length-1; i>=0; --i)
         {
-            if (non_repeating.charAt(i) !== '0')
+            if ('0' !== non_repeating.charAt(i))
             {
                 is_zero = false;
                 break;
@@ -2754,21 +2755,21 @@ function gcd(/* args */)
     if (0 === c) return O;
 
     i = 0;
-    while (i<c && Arithmetic.equ(O, a=args[i++]));
+    while ((i < c) && Arithmetic.equ(O, a=args[i++]));
     a = Arithmetic.abs(a);
-    while (i<c)
+    while (i < c)
     {
         // break early
         if (Arithmetic.equ(a, I)) return I;
-        while (i<c && Arithmetic.equ(O, b=args[i++]));
+        while ((i < c) && Arithmetic.equ(O, b=args[i++]));
         b = Arithmetic.abs(b);
         // break early
         if (Arithmetic.equ(b, I)) return I;
         else if (Arithmetic.equ(b, a)) continue;
         else if (Arithmetic.equ(b, O)) break;
         // swap them (a >= b)
-        if (Arithmetic.lt(a, b)) { t=b; b=a; a=t; }
-        while (!Arithmetic.equ(O, b)) { t = b; b = Arithmetic.mod(a, t); a = t; }
+        if (Arithmetic.lt(a, b)) {t = b; b = a; a = t;}
+        while (!Arithmetic.equ(O, b)) {t = b; b = Arithmetic.mod(a, t); a = t;}
     }
     return a;
 }
@@ -2784,10 +2785,10 @@ function lcm(/* args */)
     // https://en.wikipedia.org/wiki/Least_common_multiple
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         i, l = args.length, LCM, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
-    if (1 >= l) return 1===l ? args[0] : O;
+    if (1 >= l) return 1 === l ? args[0] : O;
     if (Arithmetic.equ(O, args[0]) || Arithmetic.equ(O, args[1])) return O;
     LCM = lcm2(args[0], args[1]);
-    for (i=2; i<l; i++)
+    for (i=2; i<l; ++i)
     {
         if (Arithmetic.equ(O, args[i])) return O;
         LCM = lcm2(LCM, args[i]);
@@ -2833,12 +2834,12 @@ function xgcd(/* args */)
 
         // gcd with zero factor, take into account
         if (Arithmetic.equ(O, a))
-            return array(gcd.length+1,function(i){
-                return 0===i ? b : (1===i ? asign : Arithmetic.mul(bsign, gcd[i-1]));
+            return array(gcd.length+1,function(i) {
+                return 0 === i ? b : (1 === i ? asign : Arithmetic.mul(bsign, gcd[i-1]));
             });
         else if (Arithmetic.equ(O, b))
-            return array(gcd.length+1,function(i){
-                return 0===i ? a : (1===i ? asign : Arithmetic.mul(bsign, gcd[i-1]));
+            return array(gcd.length+1,function(i) {
+                return 0 === i ? a : (1 === i ? asign : Arithmetic.mul(bsign, gcd[i-1]));
             });
 
         for (;;)
@@ -2850,8 +2851,8 @@ function xgcd(/* args */)
             if (Arithmetic.equ(O, a))
             {
                 a2 = Arithmetic.mul(a2, asign); b2 = Arithmetic.mul(b2, bsign);
-                return array(gcd.length+1,function(i){
-                    return 0===i ? b : (1===i ? a2 : Arithmetic.mul(b2, gcd[i-1]));
+                return array(gcd.length+1,function(i) {
+                    return 0 === i ? b : (1 === i ? a2 : Arithmetic.mul(b2, gcd[i-1]));
                 });
             }
 
@@ -2862,579 +2863,12 @@ function xgcd(/* args */)
             if (Arithmetic.equ(O, b))
             {
                 a1 = Arithmetic.mul(a1, asign); b1 = Arithmetic.mul(b1, bsign);
-                return array(gcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : Arithmetic.mul(b1, gcd[i-1]));
+                return array(gcd.length+1, function(i) {
+                    return 0 === i ? a : (1 === i ? a1 : Arithmetic.mul(b1, gcd[i-1]));
                 });
             }
         }
     }
-}
-function igcd(/* args */)
-{
-    // gcd of Integer numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return Integer(gcd(array(args.length, function(i){return args[i].num;})));
-}
-function ilcm(/* args */)
-{
-    // lcm of Integer numbers
-    // https://math.stackexchange.com/questions/44836/rational-numbers-lcm-and-hcf
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return Integer(lcm(array(args.length, function(i){return args[i].num;})));
-}
-function ixgcd(/* args */)
-{
-    // xgcd of Integer numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    if (!args.length) return;
-    return xgcd(array(args.length, function(i){return args[i].num;})).map(function(g){return Integer(g);});
-}
-function ngcd(/* args */)
-{
-    // gcd of Integer modulo numbers = min(n1,n2,..nk)
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, gcd = null, i, l = args.length;
-    for (i=0; i<l; i++)
-    {
-        if (!args[i].equ(O) && (null==gcd || args[i].lt(gcd)))
-            gcd = args[i];
-    }
-    return null==gcd ? args[0] : gcd;
-}
-function nxgcd(/* args */)
-{
-    // xgcd of Integer modulo numbers = min(n1,n2,..nk)
-    var args = slice.call(arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments),
-        Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, index = -1, gcd = null, i, l = args.length;
-    if (!args.length) return;
-    for (i=0; i<l; i++)
-    {
-        if (!args[i].equ(O) && (null==gcd || args[i].lt(gcd)))
-        {
-            gcd = args[i];
-            index = i;
-        }
-    }
-    return null==gcd ? array(args.length+1, function(i){
-        return 0===i ? args[0] : (1===i ? IntegerMod.One(args[0].m) : IntegerMod.Zero(args[0].m));
-    }) : array(args.length+1, function(i){
-        return 0===i ? gcd : (index+1===i ? IntegerMod.One(args[0].m) : IntegerMod.Zero(args[0].m));
-    });
-}
-function nlcm(/* args */)
-{
-    // least common multiple of Integers modulo = max(n1,n2,..nk)
-    // https://en.wikipedia.org/wiki/Least_common_multiple
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        i, l = args.length, LCM, O = Abacus.Arithmetic.O;
-    if (1 >= l) return 1===l ? args[0] : IntegerMod.Zero(2);
-    if (args[0].equ(O) || args[1].equ(O)) return IntegerMod.Zero(args[0].m);
-    LCM = nmax(args[0], args[1]);
-    for (i=2; i<l; i++)
-    {
-        if (args[i].equ(O)) return IntegerMod.Zero(args[0].m);
-        LCM = nmax(LCM, args[i]);
-    }
-    return LCM;
-}
-function rgcd(/* args */)
-{
-    // gcd of Rational numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        Arithmetic = Abacus.Arithmetic, denom;
-    denom = operate(function(p, r){return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
-    return Rational(gcd(array(args.length, function(i){return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})), denom);
-}
-function rxgcd(/* args */)
-{
-    // xgcd of Rational numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, denom;
-    if (!args.length) return;
-    denom = operate(function(p, r){return Arithmetic.mul(p, r.den);}, I, args);
-    return xgcd(array(args.length, function(i){return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})).map(function(g, i){return 0===i ? Rational(g, denom) : Rational(g, I, true);});
-}
-function rlcm(/* args */)
-{
-    // lcm of Rational numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        Arithmetic = Abacus.Arithmetic, denom;
-    denom = operate(function(p, r){return Arithmetic.mul(p, r.den);}, Arithmetic.I, args);
-    return Rational(lcm(array(args.length, function(i){return Arithmetic.mul(Arithmetic.div(denom, args[i].den), args[i].num);})), denom);
-}
-function cgcd(/* args */)
-{
-    // Generalization of Euclid GCD Algorithm for complex numbers
-    // https://en.wikipedia.org/wiki/Euclidean_algorithm
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        c = args.length, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, a0, b0, a, b, t, r, i;
-
-    if (0 === c) return Complex.Zero();
-
-    i = 0;
-    while (i<c && (a=args[i++]).equ(O)) ;
-    while (i<c)
-    {
-        while (i<c && (b=args[i++]).equ(O)) ;
-        if (b.equ(a)) continue;
-        else if (b.equ(O)) break;
-        // swap them (a >= b)
-        if (b.norm().gt(a.norm())) { t=b; b=a; a=t; }
-        while (!b.equ(O))
-        {
-            //a0 = a; b0 = b;
-            r = a.mod(b); a = b; b = r;
-            //if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
-        }
-    }
-    // normalize it
-    if (a.real().abs().lt(a.imag().abs())) a = a.mul(Complex.Img());
-    if (a.real().lt(O)) a = a.neg();
-    return a;
-}
-function cxgcd(/* args */)
-{
-    // Generalization of Extended GCD Algorithm for complex numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        k = args.length, i, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-        asign = Complex.One(), bsign = Complex.One(), t, a, b, a0, b0, a1, b1, a2, b2, qr, gcd;
-
-    if (0 === k) return;
-
-    a = args[0];
-
-    if (1 === k)
-    {
-        // normalize it
-        if (a.real().abs().lt(a.imag().abs())) { a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img()); }
-        if (a.real().lt(O)) { a = a.neg(); asign = asign.neg(); }
-        return [a, asign];
-    }
-    else //if (2 <= k)
-    {
-        // recursive on number of arguments
-        // compute xgcd on rest arguments and combine with current
-        // based on recursive property: gcd(a,b,c,..) = gcd(a, gcd(b, c,..))
-        gcd = 2===k ? [args[1], Complex.One()] : cxgcd(slice.call(args, 1));
-        b = gcd[0];
-
-        // gcd with zero factor, take into account
-        if (a.equ(O))
-        {
-            // normalize it
-            if (b.real().abs().lt(b.imag().abs())) { b = b.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img()); }
-            if (b.real().lt(O)) { b = b.neg(); asign = asign.neg(); bsign = bsign.neg(); }
-            return array(gcd.length+1,function(i){
-                return 0===i ? b : (1===i ? asign : gcd[i-1].mul(bsign));
-            });
-        }
-        else if (b.equ(O))
-        {
-            // normalize it
-            if (a.real().abs().lt(a.imag().abs())) { a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img()); }
-            if (a.real().lt(O)) { a = a.neg(); asign = asign.neg(); bsign = bsign.neg(); }
-            return array(gcd.length+1,function(i){
-                return 0===i ? a : (1===i ? asign : gcd[i-1].mul(bsign));
-            });
-        }
-
-        a1 = Complex.One();
-        b1 = Complex.Zero();
-        a2 = Complex.Zero();
-        b2 = Complex.One();
-
-        for (;;)
-        {
-            //a0 = a; b0 = b;
-
-            qr = a.divmod(b);
-            a = qr[1];
-            a1 = a1.sub(qr[0].mul(a2))
-            b1 = b1.sub(qr[0].mul(b2));
-            if (a.equ(O))
-            {
-                // normalize it
-                if (b.real().abs().lt(b.imag().abs())) { b = b.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img()); }
-                if (b.real().lt(O)) { b = b.neg(); asign = asign.neg(); bsign = bsign.neg(); }
-                a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                return array(gcd.length+1,function(i){
-                    return 0===i ? b : (1===i ? a2 : gcd[i-1].mul(b2));
-                });
-            }
-
-            qr = b.divmod(a);
-            b = qr[1];
-            a2 = a2.sub(qr[0].mul(a1));
-            b2 = b2.sub(qr[0].mul(b1));
-            if (b.equ(O))
-            {
-                // normalize it
-                if (a.real().abs().lt(a.imag().abs())) { a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img()); }
-                if (a.real().lt(O)) { a = a.neg(); asign = asign.neg(); bsign = bsign.neg(); }
-                a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(gcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : gcd[i-1].mul(b1));
-                });
-            }
-
-            /*if (a.equ(a0) && b.equ(b0))
-            {
-                // will not change anymore
-                if (a.real().abs().lt(a.imag().abs())) { a = a.mul(Complex.Img()); asign = asign.mul(Complex.Img());  bsign = bsign.mul(Complex.Img()); }
-                if (a.real().lt(O)) { a = a.neg(); asign = asign.neg(); bsign = bsign.neg(); }
-                a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(gcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : gcd[i-1].mul(b1));
-                });
-            }*/
-        }
-    }
-}
-function clcm2(a, b)
-{
-    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = cgcd(a, b);
-    return g.equ(O) ? g : a.div(g).mul(b);
-}
-function clcm(/* args */)
-{
-    // least common multiple
-    // https://en.wikipedia.org/wiki/Least_common_multiple
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        i, l = args.length, LCM, O = Abacus.Arithmetic.O;
-    if (1 >= l) return 1===l ? args[0] : Complex.Zero();
-    if (args[0].equ(O) || args[1].equ(O)) return Complex.Zero();
-    LCM = clcm2(args[0], args[1]);
-    for (i=2; i<l; i++)
-    {
-        if (args[i].equ(O)) return Complex.Zero();
-        LCM = clcm2(LCM, args[i]);
-    }
-    return LCM;
-}
-function polygcd(/* args */)
-{
-    // Generalization of Euclid GCD Algorithm for polynomials
-    // https://en.wikipedia.org/wiki/Euclidean_algorithm
-    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
-    // https://en.wikipedia.org/wiki/Euclidean_division_of_polynomials
-    // https://en.wikipedia.org/wiki/Polynomial_long_division
-    // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        c = args.length, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
-        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, a, b, a0, b0, t, r, i, p, q, field;
-
-    if (0 === c) return PolynomialClass.Zero();
-    PolynomialClass = args[0][CLASS];
-
-    for (i=0; i<c; i++)
-    {
-        if (!args[i].isConst())
-        {
-            are_const = false;
-            break;
-        }
-    }
-    // defer to gcd of coefficients and transform back to polynomial
-    if (are_const) return PolynomialClass(args[0].ring.gcd(array(args.length, function(i){return args[i].cc();})), args[0].symbol, args[0].ring);
-
-    // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
-    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(args[0].ring.NumberClass, Integer))
-    {
-        a = args[0];
-        if (1 == c)
-        {
-            return a.monic();
-        }
-        else //if (2 <= c)
-        {
-            field = a.ring.associatedField(); // Q[X]
-            p = PolynomialClass(a, a.symbol, field);
-            q = PolynomialClass(2===c ? args[1] : polygcd(slice.call(args, 1)), a.symbol, field);
-            return PolynomialClass(polygcd(p, q).primitive().mul(field.gcd(p.content(), q.content())), a.symbol, a.ring);
-        }
-    }
-
-    i = 0;
-    while (i<c && (a=args[i++]).equ(O)) ;
-    if (a.lc().lt(O)) a = a.neg();
-    while (i<c)
-    {
-        if (a.equ(I)) return PolynomialClass.One(a.symbol, a.ring);
-        while (i<c && (b=args[i++]).equ(O)) ;
-        if (b.lc().lt(O)) b = b.neg();
-        if (b.equ(I)) return PolynomialClass.One(a.symbol, a.ring);
-        else if (b.equ(a)) continue;
-        else if (b.equ(O)) break;
-        // swap them (a >= b)
-        if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true)) { t=b; b=a; a=t; }
-        while (!b.equ(O))
-        {
-            //a0 = a; b0 = b;
-            r = a.mod(b); a = b; b = r;
-            //if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
-        }
-    }
-    // simplify, positive and monic
-    a = a.monic();
-    return a;
-}
-function polyxgcd(/* args */)
-{
-    // Generalization of Extended GCD Algorithm for univariate polynomials
-    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#B%C3%A9zout's_identity_and_extended_GCD_algorithm
-    // should be a generalisation of number xgcd, meaning for constant polynomials should coincide with xgcd of respective numbers
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        k = args.length, i, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
-        O = Arithmetic.O, I = Arithmetic.I, asign, bsign,
-        a, b, a0, b0, a1, b1, a2, b2, lead,
-        qr, gcd, g, f, p, q, field;
-
-    if (0 === k) return;
-
-    a = args[0];
-    PolynomialClass = a[CLASS];
-
-    for (i=0; i<k; i++)
-    {
-        if (!args[i].isConst())
-        {
-            are_const = false;
-            break;
-        }
-    }
-    // defer to xgcd of coefficients and transform back to polynomial
-    if (are_const) return a.ring.xgcd(array(args.length, function(i){return args[i].cc();})).map(function(g){return PolynomialClass(g, a.symbol, a.ring);});
-
-
-    // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
-    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(a.ring.NumberClass, Integer))
-    {
-        field = a.ring.associatedField(); // Q[X]
-        asign = field.One(); bsign = asign;
-        if (1 == k)
-        {
-            // normalize it
-            lead = a.lc();
-            if (lead.divides(asign))
-            {
-                a = a.monic();
-                if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead);}
-            }
-            else if (lead.lt(O))
-            {
-                a = a.neg(); asign = asign.neg();
-            }
-            return [a, PolynomialClass(asign, a.symbol, field)];
-        }
-        else //if (2 <= k)
-        {
-            gcd = 2===k ? [args[1], PolynomialClass.One(a.symbol, field)] : polyxgcd(slice.call(args, 1));
-            b = gcd[0];
-            p = PolynomialClass(a, a.symbol, field);
-            q = PolynomialClass(b, a.symbol, field);
-            g = polyxgcd(p, q);
-            f = field.gcd(p.content(), q.content());
-            // Bezout's Identity for Polynomials works only for polys over a field, not simply a ring, like Z
-            // thus the coefficients are in general polys over Q ie Q[x]
-            // https://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity#For_polynomials
-            g[0] = g[0].primitive().mul(f); g[1] = g[1].mul(f); g[2] = g[2].mul(f);
-            return array(gcd.length+1, function(i){
-                return 0===i ? PolynomialClass(g[0], a.symbol, a.ring) : (1===i ? g[1] : gcd[i-1].mul(g[2]));
-            });
-        }
-    }
-
-    asign = a.ring.One(); bsign = asign;
-    if (1 === k)
-    {
-        // normalize it
-        lead = a.lc();
-        if (lead.divides(asign))
-        {
-            a = a.monic();
-            if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead);}
-        }
-        else if (lead.lt(O))
-        {
-            a = a.neg(); asign = asign.neg();
-        }
-        return [a, PolynomialClass(asign, a.symbol, a.ring)];
-    }
-    else //if (2 <= k)
-    {
-        // recursive on number of arguments
-        // compute xgcd on rest arguments and combine with current
-        // based on recursive property: gcd(a,b,c,..) = gcd(a, gcd(b, c,..))
-        // for coefficients this translates to:
-        // gcd(a,b,c,..) = ax + by + cz + .. =
-        // gcd(a, gcd(b, c, ..)) = ax + k gcd(b,c,..) = (given gcd(b,c,..) = nb + mc + ..)
-        // gcd(a, gcd(b, c, ..)) = ax + k (nb + mc + ..) = ax + b(kn) + c(km) + .. = ax + by +cz + ..
-        // note2: any zero arguments are skipped and do not break xGCD computation
-        // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
-        gcd = 2===k ? [args[1], PolynomialClass.One(a.symbol, a.ring)] : polyxgcd(slice.call(args, 1));
-        b = gcd[0];
-
-        // gcd with zero factor, take into account
-        if (a.equ(O))
-        {
-            // normalize it
-            lead = b.lc();
-            if (lead.divides(asign) && lead.divides(bsign))
-            {
-                b = b.monic();
-                if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
-            }
-            else if (lead.lt(O))
-            {
-                b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
-            }
-            return array(gcd.length+1,function(i){
-                return 0===i ? b : (1===i ? PolynomialClass(asign, a.symbol, a.ring) : gcd[i-1].mul(bsign));
-            });
-        }
-        else if (b.equ(O))
-        {
-            // normalize it
-            lead = a.lc();
-            if (lead.divides(asign) && lead.divides(bsign))
-            {
-                a = a.monic();
-                if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
-            }
-            else if (lead.lt(O))
-            {
-                a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
-            }
-            return array(gcd.length+1,function(i){
-                return 0===i ? a : (1===i ? PolynomialClass(asign, a.symbol, a.ring) : gcd[i-1].mul(bsign));
-            });
-        }
-
-        a1 = PolynomialClass.One(a.symbol, a.ring);
-        b1 = PolynomialClass.Zero(a.symbol, a.ring);
-        a2 = Polynomial.Zero(a.symbol, a.ring);
-        b2 = Polynomial.One(a.symbol, a.ring);
-
-        for (;;)
-        {
-            //a0 = a; b0 = b;
-
-            qr = a.divmod(b);
-            a = qr[1];
-            a1 = a1.sub(qr[0].mul(a2))
-            b1 = b1.sub(qr[0].mul(b2));
-            if (a.equ(O))
-            {
-                // normalize it
-                lead = b.lc();
-                if (lead.divides(asign) && lead.divides(bsign))
-                {
-                    b = b.monic();
-                    if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
-                }
-                else if (lead.lt(O))
-                {
-                    b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
-                }
-                a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                return array(gcd.length+1,function(i){
-                    return 0===i ? b : (1===i ? a2 : gcd[i-1].mul(b2));
-                });
-            }
-
-            qr = b.divmod(a);
-            b = qr[1];
-            a2 = a2.sub(qr[0].mul(a1));
-            b2 = b2.sub(qr[0].mul(b1));
-            if (b.equ(O))
-            {
-                // normalize it
-                lead = a.lc();
-                if (lead.divides(asign) && lead.divides(bsign))
-                {
-                    a = a.monic();
-                    if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
-                }
-                else if (lead.lt(O))
-                {
-                    a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
-                }
-                a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(gcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : gcd[i-1].mul(b1));
-                });
-            }
-
-            /*if (a.equ(a0) && b.equ(b0))
-            {
-                // will not change anymore
-                // normalize it
-                lead = a.lc();
-                if (lead.divides(asign) && lead.divides(bsign))
-                {
-                    a = a.monic();
-                    if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
-                }
-                else if (lead.lt(O))
-                {
-                    a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
-                }
-                a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(gcd.length+1, function(i){
-                    return 0===i ? a : (1===i ? a1 : gcd[i-1].mul(b1));
-                });
-            }*/
-        }
-    }
-}
-function polylcm2(a, b)
-{
-    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = polygcd(a, b);
-    return g.equ(O) ? g : a.div(g).mul(b);
-}
-function polylcm(/* args */)
-{
-    // least common multiple
-    // https://en.wikipedia.org/wiki/Least_common_multiple
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        i, l = args.length, LCM, O = Abacus.Arithmetic.O, PolynomialClass = Polynomial;
-    if (1 >= l) return 1===l ? args[0] : PolynomialClass.Zero();
-    PolynomialClass = args[0][CLASS];
-    if (args[0].equ(O) || args[1].equ(O)) return PolynomialClass.Zero(args[0].symbol, args[0].ring);
-    LCM = polylcm2(args[0], args[1]);
-    for (i=2; i<l; i++)
-    {
-        if (args[i].equ(O)) return PolynomialClass.Zero(args[0].symbol, args[0].ring);
-        LCM = polylcm2(LCM, args[i]);
-    }
-    return LCM;
-}
-function rfgcd(/* args */)
-{
-    // gcd of Rational Functions
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        denom;
-    denom = operate(function(p, r){return r.den.mul(p);}, Abacus.Arithmetic.I, args);
-    return RationalFunc(polygcd(array(args.length, function(i){return args[i].num.mul(denom.div(args[i].den));})), denom);
-}
-function rfxgcd(/* args */)
-{
-    // xgcd of Rational Functions
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        denom;
-    if (!args.length) return;
-    denom = operate(function(p, r){return r.den.mul(p);}, Abacus.Arithmetic.I, args);
-    return polyxgcd(array(args.length, function(i){return args[i].num.mul(denom.div(args[i].den));})).map(function(g, i){return 0===i ? RationalFunc(g, denom) : RationalFunc(g);});
-}
-function rflcm(/* args */)
-{
-    // lcm of Rational Functions
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        denom;
-    denom = operate(function(p, r){return r.den.mul(p);}, Abacus.Arithmetic.I, args);
-    return RationalFunc(polylcm(array(args.length, function(i){return args[i].num.mul(denom.div(args[i].den));})), denom);
 }
 function divisors(n, as_generator)
 {
@@ -3444,7 +2878,7 @@ function divisors(n, as_generator)
     if (is_instance(n, Integer)) { INT = n[CLASS]; n = n.num; }
 
     n = Arithmetic.abs(n);
-    if (true===as_generator)
+    if (true === as_generator)
     {
         if (Arithmetic.gte(n, 10000))
         {
@@ -3452,10 +2886,10 @@ function divisors(n, as_generator)
             // compute divisors through prime factorisation
             // using a tensor combinatorial iterator/generator
             factors = factorize(n);
-            return Tensor(factors.map(function(factor){
-                return Arithmetic.val(factor[1])+1;
-            })).mapTo(function(selection){
-                var d = selection.reduce(function(divisor, e, i){
+            return Tensor(factors.map(function(factor) {
+                return Arithmetic.val(factor[1]) + 1;
+            })).mapTo(function(selection) {
+                var d = selection.reduce(function(divisor, e, i) {
                     return 0 === e ? divisor : Arithmetic.mul(divisor, Arithmetic.pow(factors[i][0], e));
                 }, I);
                 return INT ? new INT(d) : d;
@@ -3467,7 +2901,7 @@ function divisors(n, as_generator)
             sqrn = isqrt(n);
             i = I; next = null;
             // return iterator/generator
-            return Iterator(function(k, dir, state, first){
+            return Iterator(function(k, dir, state, first) {
                 // note will NOT return divisors sorted in order
                 if (0 > dir) return null; // only forward
                 if (first)
@@ -3513,17 +2947,17 @@ function divisors(n, as_generator)
                 if (Arithmetic.equ(n_i, i))
                 {
                     // one distinct divisor, add to small list (after current)
-                    node = new Node(i, D1, null); L1++;
+                    node = new Node(i, D1, null); ++L1;
                     if (D1) D1.r = node;
                     D1 = node;
                 }
                 else
                 {
                     // two distinct divisors, add to small list (after current) and add to large list (before current)
-                    node = new Node(i, D1, null); L1++;
+                    node = new Node(i, D1, null); ++L1;
                     if (D1) D1.r = node;
                     D1 = node;
-                    node = new Node(n_i, null, D2); L2++;
+                    node = new Node(n_i, null, D2); ++L2;
                     if (D2) D2.l = node;
                     D2 = node;
                 }
@@ -3539,7 +2973,7 @@ function divisors(n, as_generator)
         }
         D1 = null; D2 = null;
         // return all divisors sorted from smaller to larger (traverse divisors list and return items in order)
-        return array(L1+L2, function(){
+        return array(L1+L2, function() {
             var curr = list, divisor = curr.v; // get current list item
             list = curr.r; // shift list to next item in order from left to right
             curr.dispose(); // dispose previous list item
@@ -3557,7 +2991,7 @@ function moebius(n)
 
     // use factorization of n
     p = factorize(n); m = p.length;
-    for (i=0; i<m; i++)
+    for (i=0; i<m; ++i)
         if (Arithmetic.lt(I, p[i][1]))
             return O; // is not square-free
     return m & 1 ? I : Arithmetic.J;
@@ -3566,7 +3000,7 @@ function dotp(a, b, Arithmetic)
 {
     Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
     var c = Arithmetic.O, n = stdMath.min(a.length, b.length), i;
-    for (i=0; i<n; i++)
+    for (i=0; i<n; ++i)
     {
         // support dot product of numeric/symbolic as well
         if (is_instance(c, INumber))
@@ -3601,36 +3035,36 @@ function gramschmidt(v)
     if (is_instance(v[0][0], INumber))
     {
         igcd = v[0][0][CLASS].gcd || gcd;
-        for (i=0; i<n; i++)
+        for (i=0; i<n; ++i)
         {
             vi = v[i]; u[i] = ui = vi.slice();
             kl = ui.length;
-            for (j=0; j<i; j++)
+            for (j=0; j<i; ++j)
             {
                 uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
-                for (k=0; k<kl; k++) ui[k] = pjj[j].mul(ui[k]).sub(pij.mul(uj[k]));
+                for (k=0; k<kl; ++k) ui[k] = pjj[j].mul(ui[k]).sub(pij.mul(uj[k]));
             }
             g = igcd(ui);
             if (g.gt(Arithmetic.I))
-                for (k=0; k<kl; k++) ui[k] = ui[k].div(g);
+                for (k=0; k<kl; ++k) ui[k] = ui[k].div(g);
             pjj[i] = dotp(ui, ui, Arithmetic);
         }
     }
     else
     {
         igcd = gcd;
-        for (i=0; i<n; i++)
+        for (i=0; i<n; ++i)
         {
             vi = v[i]; u[i] = ui = vi.slice();
             kl = ui.length;
-            for (j=0; j<i; j++)
+            for (j=0; j<i; ++j)
             {
                 uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
-                for (k=0; k<kl; k++) ui[k] = Arithmetic.sub(Arithmetic.mul(pjj[j], ui[k]), Arithmetic.mul(pij, uj[k]));
+                for (k=0; k<kl; ++k) ui[k] = Arithmetic.sub(Arithmetic.mul(pjj[j], ui[k]), Arithmetic.mul(pij, uj[k]));
             }
             g = igcd(ui);
             if (Arithmetic.gt(g, Arithmetic.I))
-                for (k=0; k<kl; k++) ui[k] = Arithmetic.div(ui[k], g);
+                for (k=0; k<kl; ++k) ui[k] = Arithmetic.div(ui[k], g);
             pjj[i] = dotp(ui, ui, Arithmetic);
         }
     }
@@ -3640,8 +3074,8 @@ function indexOf(item, set)
 {
     var i, l = set.length, eq;
     if (!l) return -1;
-    eq = is_instance(item, INumber) ? function(it, si){return it.equ(si);} : function(it, si){return it===si;};
-    for (i=0; i<l; i++)
+    eq = is_instance(item, INumber) ? function(it, si) {return it.equ(si);} : function(it, si) {return it === si;};
+    for (i=0; i<l; ++i)
         if (eq(item, set[i]))
             return i;
     return -1;
@@ -3674,7 +3108,7 @@ function buchberger_groebner(Basis)
 
         // Build a Groebner basis using Buchberger's algorithm.
         pairs = Combination(Basis.length, 2).mapTo(function(i){return [Basis[i[0]], Basis[i[1]]];});
-        while (true)
+        while (1)
         {
             newBasis = [];
             while (pairs.hasNext())
@@ -3695,19 +3129,19 @@ function buchberger_groebner(Basis)
             if (!newBasis.length) break;
 
             extraBasis = newBasis;
-            pairs = 1 === extraBasis.length ? Tensor(Basis.length, extraBasis.length).mapTo(function(i){return [Basis[i[0]], extraBasis[i[1]]];}) : CombinatorialIterator([
-                Tensor(Basis.length, extraBasis.length).mapTo(function(i){return [Basis[i[0]], extraBasis[i[1]]];}),
-                Combination(extraBasis.length, 2).mapTo(function(i){return [extraBasis[i[0]], extraBasis[i[1]]];})
+            pairs = 1 === extraBasis.length ? Tensor(Basis.length, extraBasis.length).mapTo(function(i) {return [Basis[i[0]], extraBasis[i[1]]];}) : CombinatorialIterator([
+                Tensor(Basis.length, extraBasis.length).mapTo(function(i) {return [Basis[i[0]], extraBasis[i[1]]];}),
+                Combination(extraBasis.length, 2).mapTo(function(i) {return [extraBasis[i[0]], extraBasis[i[1]]];})
             ]);
             Basis = Basis.concat(extraBasis);
         }
 
         // Minimize it.
-        lts = Basis.map(function(g){return g.ltm(true);});
+        lts = Basis.map(function(g) {return g.ltm(true);});
         while (lts.length)
         {
             found = false;
-            for (i=0,n=lts.length; i<n; i++)
+            for (i=0,n=lts.length; i<n; ++i)
             {
                 lt = lts[i];
                 others = lts.slice(0, i).concat(lts.slice(i+1));
@@ -3723,7 +3157,7 @@ function buchberger_groebner(Basis)
         }
 
         // Reduce it.
-        for (i=0,n=Basis.length; i<n; i++)
+        for (i=0,n=Basis.length; i<n; ++i)
         {
             g = Basis[i];
             others = Basis.slice(0,i).concat(Basis.slice(i+1));
@@ -3769,13 +3203,13 @@ function solvedioph2(a, b, param)
         xp = [Arithmetic.mul(b, xp[1]), Arithmetic.mul(b, xp[2])];
     }
     // fix sign to be always positive for 1st variable
-    if (Arithmetic.gt(O, a[1])) { a[0] = Arithmetic.neg(a[0]); a[1] = Arithmetic.neg(a[1]); }
+    if (Arithmetic.gt(O, a[1])) {a[0] = Arithmetic.neg(a[0]); a[1] = Arithmetic.neg(a[1]);}
     x0 = [a[1], Arithmetic.neg(a[0])];
 
     return [
     // general solution = any particular solution of non-homogeneous + general solution of homogeneous
-    Expr(xp[0], MulTerm(SymbolTerm(param), x0[0])),
-    Expr(xp[1], MulTerm(SymbolTerm(param), x0[1]))
+    Expr('+', [xp[0], Expr('*', [x0[0], param])]),
+    Expr('+', [xp[1], Expr('*', [x0[1], param])])
     ];
 }
 function solvedioph(a, b, with_param, with_free_vars)
@@ -3795,7 +3229,7 @@ function solvedioph(a, b, with_param, with_free_vars)
     if (!ok) return null;
 
     // filter out zero coefficients and mark positions of non-zero coeffs to restore later
-    a = a.filter(function(ai, i){
+    a = a.filter(function(ai, i) {
         var NZ = !Arithmetic.equ(O, ai);
         if (NZ) pos.push(i);
         return NZ;
@@ -3807,10 +3241,10 @@ function solvedioph(a, b, with_param, with_free_vars)
     {
         // degenerate case where all coefficients are 0, either infinite or no solutions depending on value of b
         index = 0;
-        solutions = Arithmetic.equ(O, b) ? array(ok, function(i){
-            var param = symbol+'_'+(++index);
+        solutions = Arithmetic.equ(O, b) ? array(ok, function(i) {
+            var param = symbol + '_' + String(++index);
             free_vars.push(param);
-            return Expr(MulTerm(SymbolTerm(param)));
+            return Expr('', param);
         }) /* infinite */ : null /* none */;
     }
 
@@ -3818,35 +3252,35 @@ function solvedioph(a, b, with_param, with_free_vars)
     {
         // equation of 1 variable has infinite (if other zero variables) or only 1 (if only 1 variable) or 0 solutions
         index = 0;
-        solutions = Arithmetic.equ(O, Arithmetic.mod(b, a[0])) ? array(ok, function(i){
+        solutions = Arithmetic.equ(O, Arithmetic.mod(b, a[0])) ? array(ok, function(i) {
             var param;
-            if ((1 < ok) && i!==pos[0])
+            if ((1 < ok) && i !== pos[0])
             {
-                param = symbol+'_'+(++index);
+                param = symbol + '_' + String(++index);
                 free_vars.push(param);
             }
-            return i===pos[0] ? Expr(Arithmetic.div(b, a[0])) : Expr(MulTerm(SymbolTerm(param)));
+            return i === pos[0] ? Expr('', Arithmetic.div(b, a[0])) : Expr('', param);
         }) /* one/infinite */: null /* none */
     }
 
     else if (2 === k)
     {
         // equation with only 2 (non-zero) variables
-        sol2 = solvedioph2(a, b, symbol+'_1');
+        sol2 = solvedioph2(a, b, symbol + '_1');
         p = 0; index = 0;
-        if (sol2) free_vars.push(symbol+'_1');
-        solutions = null == sol2 ? null : array(ok, function(i){
+        if (sol2) free_vars.push(symbol + '_1');
+        solutions = null == sol2 ? null : array(ok, function(i) {
             var param;
-            if (p < pos.length && i === pos[p])
+            if ((p < pos.length) && (i === pos[p]))
             {
-                p++;
+                ++p;
                 return sol2[p-1];
             }
             else
             {
-                param = symbol+'_'+(pos.length+(index++));
+                param = symbol + '_' + String(pos.length+(index++));
                 free_vars.push(param);
-                return Expr(MulTerm(SymbolTerm(param)));
+                return Expr('', param);
             }
         });
     }
@@ -3898,7 +3332,7 @@ function solvedioph(a, b, with_param, with_free_vars)
         ab = [gcd(a[k-2], a[k-1])];
         a[k-2] = Arithmetic.div(a[k-2], ab[0]);
         a[k-1] = Arithmetic.div(a[k-1], ab[0]);
-        for (i=k-3; i>0; i--)
+        for (i=k-3; i>0; --i)
         {
             d = gcd(ab[0], a[i]);
             ab[0] = Arithmetic.div(ab[0], d);
@@ -3908,15 +3342,15 @@ function solvedioph(a, b, with_param, with_free_vars)
         ab.push(a[k-1]);
 
         solutions = [];
-        parameters = array(k, function(i){ return symbol+'_'+(i+1); });
-        b = Expr(b);
-        for (i=0,l=ab.length; i<l; i++)
+        parameters = array(k, function(i) {return symbol + '_' + String(i+1); });
+        b = Expr('', b);
+        for (i=0,l=ab.length; i<l; ++i)
         {
             tot_x = []; tot_y = [];
             symbols = b.symbols();
-            for (j=0,m=symbols.length; j<m; j++)
+            for (j=0,m=symbols.length; j<m; ++j)
             {
-                n = b.terms[symbols[j]].c().real().num; // expressions/terms use complex numbers by default
+                n = b.terms(symbols[j]).c().real().num; // expressions/terms use complex numbers by default
                 if ('1' === symbols[j])
                 {
                     // constant term
@@ -3936,41 +3370,41 @@ function solvedioph(a, b, with_param, with_free_vars)
                 if ('1' !== p)
                 {
                     // re-express partial solution in terms of original symbol
-                    sol2[0] = Expr(MulTerm(SymbolTerm(p), sol2[0].c()), sol2[0].terms[pnew]);
-                    sol2[1] = Expr(MulTerm(SymbolTerm(p), sol2[1].c()), sol2[1].terms[pnew]);
+                    sol2[0] = Expr('+', [Expr('*', [p, sol2[0].c()]), sol2[0].terms(pnew)]);
+                    sol2[1] = Expr('+', [Expr('*', [p, sol2[1].c()]), sol2[1].terms(pnew)]);
                 }
                 if (-1 === free_vars.indexOf(pnew)) free_vars.push(pnew);
 
                 tot_x.push(sol2[0]); tot_y.push(sol2[1]);
             }
-            solutions.push(Expr(tot_x));
-            b = Expr(tot_y);
+            solutions.push(Expr('+', tot_x));
+            b = Expr('+', tot_y);
         }
         solutions.push(b);
 
         p = 0; index = 0;
-        solutions = array(ok, function(i){
+        solutions = array(ok, function(i) {
             var param;
             if (p < pos.length && i === pos[p])
             {
-                p++;
+                ++p;
                 return solutions[p-1];
             }
             else
             {
-                param = symbol+'_'+(pos.length+(index++));
+                param = symbol + '_' + String(pos.length+(index++));
                 free_vars.push(param);
-                return Expr(MulTerm(SymbolTerm(param)));
+                return Expr('', param);
             }
         });
     }
 
-    solutions = null==solutions ? null : (false===with_param ? solutions.map(function(x){
+    solutions = null == solutions ? null : (false === with_param ? solutions.map(function(x) {
         // return particular solution (as number), not general (as expression)
         return x.c().real().num; // expressions/terms use complex numbers by default
     }) : solutions);
     free_vars.symbol = symbol;
-    return null==solutions ? null : (true===with_free_vars ? [solutions, free_vars] : solutions);
+    return null == solutions ? null : (true === with_free_vars ? [solutions, free_vars] : solutions);
 }
 function solvediophs(a, b, with_param, with_free_vars)
 {
@@ -3991,7 +3425,7 @@ function solvediophs(a, b, with_param, with_free_vars)
     if (is_instance(b, Matrix)) b = b.col(0);
     b = ring.cast(b);
     // concat with zeroes
-    if (m > b.length) b = b.concat(array(m-b.length, function(i){return O;}));
+    if (m > b.length) b = b.concat(array(m-b.length, function(i) {return O;}));
     // A*X = B <=> iref(A.t|I) = R|T <=> iif R.t*P = B has int solutions P => X = T.t*P
     tmp = a.t()/*.concat(Matrix.I(ring, k))*/.ref(true/*, [k, m]*/);
     ref = tmp[0]; aug = tmp[3]; pivots = tmp[1]; rank = pivots.length;
@@ -3999,25 +3433,25 @@ function solvediophs(a, b, with_param, with_free_vars)
     p = new Array(k); free_vars = new Array(k-rank);
 
     // R.t*P can be easily solved by substitution
-    for (i=0; i<k; i++)
+    for (i=0; i<k; ++i)
     {
         if (i >= rank)
         {
-            free_vars[i-rank] = symbol+'_'+(i-rank+1);
-            p[i] = Expr(MulTerm(SymbolTerm(free_vars[i-rank]), I)); // free variable
+            free_vars[i-rank] = symbol + '_' + String(i-rank+1);
+            p[i] = Expr('', free_vars[i-rank]); // free variable
         }
         else
         {
-            for (t=O,j=0; j<i; j++) t = t.add(Rt.val[i][j].mul(p[j].c().real().num)); // expressions/terms use complex numbers by default
+            for (t=O,j=0; j<i; ++j) t = t.add(Rt.val[i][j].mul(p[j].c().real().num)); // expressions/terms use complex numbers by default
             p[i] = b[i].sub(t);
             if (Rt.val[i][i].equ(O))
             {
-                if (p[i].equ(O)) p[i] = Expr(MulTerm(SymbolTerm(symbol+'_'+(i+1)), I)); // free variable
+                if (p[i].equ(O)) p[i] = Expr('', symbol + '_' + String(i+1)); // free variable
                 else return null; // no integer solution
             }
             else if (Rt.val[i][i].divides(p[i]))
             {
-                p[i] = Expr(p[i].div(Rt.val[i][i]));
+                p[i] = Expr('', p[i].div(Rt.val[i][i]));
             }
             else
             {
@@ -4027,31 +3461,31 @@ function solvediophs(a, b, with_param, with_free_vars)
         }
     }
     // X = T.t*P
-    solutions = array(k, function(i){
-        return Expr(array(k, function(j){
+    solutions = array(k, function(i) {
+        return Expr('+', array(k, function(j) {
             return p[j].mul(Tt.val[i][j]);
         }));
     });
 
     // if over-determined system (m > k)
     // check if additional rows are satisfied by solution as well
-    for (i=k; i<m; i++)
-        if (!Expr(solutions.map(function(xj){return xj.mul(a.val[i][j]);})).equ(b[i]))
+    for (i=k; i<m; ++i)
+        if (!Expr('+', solutions.map(function(xj) {return xj.mul(a.val[i][j]);})).equ(b[i]))
             return null; // no solution
 
-    solutions = null==solutions ? null : (false===with_param ? solutions.map(function(x){
+    solutions = null == solutions ? null : (false === with_param ? solutions.map(function(x) {
         // return particular solution (as number), not general (as expression)
         return x.c().real().num; // expressions/terms use complex numbers by default
     }) : solutions);
     free_vars.symbol = symbol;
-    return null==solutions ? null : (true===with_free_vars ? [solutions, free_vars] : solutions);
+    return null == solutions ? null : (true === with_free_vars ? [solutions, free_vars] : solutions);
 }
 function solvecongr(a, b, m, with_param, with_free_vars)
 {
     // solve linear congruence using the associated linear diophantine equation
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, solution, free_vars;
     if (!a.length) return null;
-    with_free_vars = (true===with_free_vars);
+    with_free_vars = (true === with_free_vars);
     solution = solvedioph(a.concat(m), b, with_param, with_free_vars);
     if (solution && with_free_vars)
     {
@@ -4061,7 +3495,7 @@ function solvecongr(a, b, m, with_param, with_free_vars)
         solution = solution[0];
     }
     // skip last variable
-    solution = null==solution ? null : array(solution.length-1, function(i){
+    solution = null == solution ? null : array(solution.length-1, function(i) {
         // make positive constant terms modulo m
         var x = solution[i];
         if (false === with_param)
@@ -4079,7 +3513,7 @@ function solvecongr(a, b, m, with_param, with_free_vars)
         return x;
     });
 
-    return null==solution ? null : (with_free_vars ? [solution, free_vars] : solution);
+    return null == solution ? null : (with_free_vars ? [solution, free_vars] : solution);
 }
 function solvecongrs(a, b, m, with_param, with_free_vars)
 {
@@ -4091,7 +3525,7 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
     if (!is_array(m) && !is_args(m) && !is_instance(m, Matrix))
     {
         //m = cast(m);
-        m = array(a.nr, function(i){return m;});
+        m = array(a.nr, function(i) {return m;});
     }
     if (is_array(m) || is_args(m)) m = Matrix(ring, m);
     if (is_array(b) || is_args(b)) b = Matrix(ring, b);
@@ -4099,7 +3533,7 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
     // http://www.math.harvard.edu/~knill/preprints/linear.pdf
     mc = m.col(0); M = ring.lcm(mc);
     a = a.concat(m);
-    with_free_vars = (true===with_free_vars);
+    with_free_vars = (true === with_free_vars);
     solution = solvediophs(a, b, with_param, true);
     if (null != solution)
     {
@@ -4109,7 +3543,7 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
         solution = solution[0];
     }
     // skip last variable
-    solution = null==solution ? null : array(solution.length-1, function(i){
+    solution = null == solution ? null : array(solution.length-1, function(i) {
         // make positive constant terms modulo LCM(m)
         var x = solution[i], add_M = true, t, param;
         if (false === with_param)
@@ -4133,9 +3567,9 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
             }
             if (add_M)
             {
-                param = free_vars.symbol+'_'+(free_vars.length+1);
+                param = free_vars.symbol + '_' + String(free_vars.length+1);
                 free_vars.push(param);
-                x = x.add(MulTerm(SymbolTerm(param), M))
+                x = x.add(Expr('*', [M, param]));
             }
             if (x.c().real().lt(O))
                 x = x.add(M);
@@ -4143,7 +3577,7 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
         return x;
     });
 
-    return null==solution ? null : (with_free_vars ? [solution, free_vars] : solution);
+    return null == solution ? null : (with_free_vars ? [solution, free_vars] : solution);
 }
 function solvelinears(a, b, x)
 {
@@ -4160,9 +3594,9 @@ function solvelinears(a, b, x)
     if (!a.nr || !a.nc) return null;
     b = Matrix(a.ring, b);
     apinv = a.ginv(); bp = apinv.mul(b);
-    if (true===x) return bp.col(0); // least squares solution
+    if (true === x) return bp.col(0); // least squares solution
     else if (!a.mul(bp).equ(b)) return null; // no solutions exist
-    if (false===x)
+    if (false === x)
     {
         // particular solution
         return bp.col(0);
@@ -4171,11 +3605,11 @@ function solvelinears(a, b, x)
     {
         // general solution(s)
         ns = Matrix.I(a.ring, bp.nr).sub(apinv.mul(a));
-        if (is_string(x)) x = array(ns.nc, function(i){return x+'_'+(i+1);});
-        else if (is_array(x) && ns.nc>x.length) x = x.concat(array(ns.nc-x.length, function(i){return x[x.length-1].split('_')[0]+'_'+(x.length+i+1);}));
-        return array(bp.nr, function(i){
-            return Expr(array(ns.nc, function(j){
-                return MulTerm(SymbolTerm(x[j]), ns.val[i][j]);
+        if (is_string(x)) x = array(ns.nc, function(i){return x + '_' + String(i+1);});
+        else if (is_array(x) && ns.nc > x.length) x = x.concat(array(ns.nc-x.length, function(i) {return x[x.length-1].split('_')[0] + '_' + String(x.length+i+1);}));
+        return array(bp.nr, function(i) {
+            return Expr('+', array(ns.nc, function(j) {
+                return Expr('*', [x[j], ns.val[i][j]]);
             })).add(bp.val[i][0]);
         });
     }
@@ -4195,19 +3629,19 @@ function solvelineqs(a, b, x)
     k = a.nc; m = a.nr;
 
     if (!x) x = 'x';
-    if (is_string(x)) x = array(k, function(i){return x+'_'+(i+1);});
-    else if (is_array(x) && k>x.length) x = x.concat(array(k-x.length, function(i){return x[x.length-1].split('_')[0]+'_'+(x.length+i+1);}));
+    if (is_string(x)) x = array(k, function(i){return x + '_' + String(i+1);});
+    else if (is_array(x) && k > x.length) x = x.concat(array(k-x.length, function(i) {return x[x.length-1].split('_')[0] + '_' + String(x.length+i+1);}));
 
-    rel0 = array(m, function(j){
-        return RelOp.LTE(Expr(a.row(j).map(function(v, i){return MulTerm(SymbolTerm(x[i]), v);})), Expr(b[j]));
+    rel0 = array(m, function(j) {
+        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [x[i], v]);})), b[j]]);
     });
 
     sol = [];
     rel = rel0.slice();
-    for (i=k-1; i>=0; i--)
+    for (i=k-1; i>=0; --i)
     {
         p = []; n = [], z = [];
-        rel.forEach(function(s){
+        rel.forEach(function(s) {
             var f = s.lhs.term(x[i]).c().sub(s.rhs.term(x[i]).c()),
                 e = s.rhs.sub(s.rhs.term(x[i])).sub(s.lhs.sub(s.lhs.term(x[i])));
             if (f.gt(0)) p.push(e.div(f));
@@ -4218,46 +3652,46 @@ function solvelineqs(a, b, x)
         {
             l = z.length;
             rel = new Array(l);
-            for (j=0; j<l; j++)
+            for (j=0; j<l; ++j)
             {
                 if (z[j].isConst() && z[j].lt(0)) return null; // no solution
-                rel[j] = RelOp.LTE(Expr(), z[j]);
+                rel[j] = Expr('<=', [Expr(), z[j]]);
             }
             if (p.length || n.length)
             {
-                sol.unshift(p.length ? [RelOp.LTE(Expr(SymbolTerm(x[i])), Func.MIN(p))] : (n.length ? [RelOp.LTE(Func.MAX(n), Expr(SymbolTerm(x[i])))] : []));
+                sol.unshift(p.length ? [Expr('<=', [x[i], Expr('min()', p)])] : (n.length ? [Expr('<=', [Expr('max()', n), x[i]])] : []));
             }
         }
         else
         {
             l = p.length*n.length+z.length;
             rel = new Array(l);
-            for (j=0; j<l; j++)
+            for (j=0; j<l; ++j)
             {
                 if (j < z.length)
                 {
                     if (z[j].isConst() && z[j].lt(0)) return null; // no solution
-                    rel[j] = RelOp.LTE(Expr(), z[j]);
+                    rel[j] = Expr('<=', [Expr(), z[j]]);
                 }
                 /*else if (!p.length)
                 {
-                    rel[j] = RelOp.LTE(n[j-z.length], Expr(SymbolTerm(x[i])));
+                    rel[j] = Expr('<=', [n[j-z.length], x[i]]);
                 }
                 else if (!n.length)
                 {
-                    rel[j] = RelOp.LTE(Expr(SymbolTerm(x[i])), p[j-z.length]);
+                    rel[j] = Expr('<=', [x[i], p[j-z.length]]);
                 }*/
                 else
                 {
                     pi = stdMath.floor((j-z.length)/n.length);
                     ni = (j-z.length) % n.length;
                     if (p[pi].isConst() && n[ni].isConst() && p[pi].lt(n[ni])) return null; // no solution
-                    rel[j] = RelOp.LTE(n[ni], p[pi]);
+                    rel[j] = Expr('<=', [n[ni], p[pi]]);
                 }
             }
             sol.unshift([
-                RelOp.LTE(Func.MAX(n), Expr(SymbolTerm(x[i]))),
-                RelOp.LTE(Expr(SymbolTerm(x[i])), Func.MIN(p))
+                Expr('<=', [Expr('max()', n), x[i]]),
+                Expr('<=', [x[i], Expr('min()', p)])
             ]);
         }
     }
@@ -4284,56 +3718,56 @@ function solvepythag(a, with_param)
     if (!k) return null;
 
     // NOTE: assume all coefficients are perfect squares and non-zero
-    pos = a.filter(function(ai){return 1 === sign(ai);}).length;
-    neg = a.filter(function(ai){return -1 === sign(ai);}).length;
+    pos = a.filter(function(ai) {return 1 === sign(ai);}).length;
+    neg = a.filter(function(ai) {return -1 === sign(ai);}).length;
     //z = k-pos-neg;
 
-    if ((1===k) || (0===pos) || (0===neg))
+    if ((1 === k) || (0 === pos) || (0 === neg))
         // trivial solution: sum of (same sign) integer squares to be zero, all terms have to be zero
-        return array(k, function(){return Expr(); /* zero */});
+        return array(k, function() {return Expr(); /* zero */});
 
-    s = array(k, function(i){return isqrt(Arithmetic.abs(a[i]));});
+    s = array(k, function(i) {return isqrt(Arithmetic.abs(a[i]));});
 
-    if (k !== a.filter(function(ai,i){return Arithmetic.equ(Arithmetic.abs(ai), Arithmetic.mul(s[i], s[i]));}).length)
+    if (k !== a.filter(function(ai, i) {return Arithmetic.equ(Arithmetic.abs(ai), Arithmetic.mul(s[i], s[i]));}).length)
         // no general solution in integers, coefficients are not perfect squares, return trivial solution
-        return array(k, function(){return Expr(); /* zero */});
+        return array(k, function() {return Expr(); /* zero */});
 
-    param = array(k-1, function(i){return symbol+'_'+(i+1);});
+    param = array(k-1, function(i) {return symbol + '_' + String(i+1);});
 
     if (2 === k)
         // different sign, parametrised solution:
         // a1^2 x1^2 = a2^2 x2^2 ==> x1 = a2*i_1, x2 = a1*i_1
         return [
-            Expr(MulTerm(SymbolTerm(param[0]), s[1])),
-            Expr(MulTerm(SymbolTerm(param[0]), s[0]))
+            Expr('*', [param[0], s[1]]),
+            Expr('*', [param[0], s[0]])
         ];
 
     // k >= 3
     if (0 > sign(a[0])+sign(a[1])+sign(a[2]))
-        a = a.map(function(ai){return Arithmetic.neg(ai); });
+        a = a.map(function(ai) {return Arithmetic.neg(ai);});
 
     index = 0;
-    for (i=0; i<k; i++)
+    for (i=0; i<k; ++i)
         if (-1 === sign(a[i]))
             index = i; // find last negative coefficient, to be solved with respect to that
 
-    ith = Expr(array(param.length, function(i){return MulTerm(param[i]+'^2');}));
+    ith = Expr('+', array(param.length, function(i) {return Expr('^', [param[i], 2]);}));
     L = [
-        Expr([ith, MulTerm(param[k-2]+'^2', Arithmetic.mul(J, two))])
-    ].concat(array(k-2, function(i){
-        return Expr(MulTerm(param[i]+'*'+param[k-2], two));
+        Expr('+', [ith, Expr('*', [Expr('^', [param[k-2], 2]), Arithmetic.mul(J, two)])])
+    ].concat(array(k-2, function(i) {
+        return Expr('*', [param[i], param[k-2], two]);
     }));
     solutions = L.slice(0, index).concat(ith).concat(L.slice(index));
 
     ilcm = I;
-    for (i=0; i<k; i++)
+    for (i=0; i<k; ++i)
     {
         if (i === index || (index > 0 && i === 0) || (index === 0 && i === 1))
             ilcm = lcm(ilcm, s[i]);
         else
             ilcm = lcm(ilcm, Arithmetic.equ(O, Arithmetic.mod(s[i], two)) ? Arithmetic.div(s[i], two) : s[i]);
     }
-    for (i=0; i<k; i++)
+    for (i=0; i<k; ++i)
     {
         sol = solutions[i];
         solutions[i] = solutions[i].mul(Arithmetic.div(ilcm, s[i]));
@@ -4348,12 +3782,12 @@ function subset_lex_rank(n, x, y)
     var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
         O = Arithmetic.O, I = Arithmetic.I,
         k, j, index = O, key;
-    key = String(n)+','+String(x)+','+String(null == y ? null : x-y);
+    key = String(n) + ',' + String(x) + ',' + String(null == y ? null : x-y);
     if (null == subset_lex_rank.mem[key])
     {
         if (null == y)
         {
-            for (k = I,j = 0; j < x; j++) k = add(k, pow2(n-j-1));
+            for (k = I,j = 0; j < x; ++j) k = add(k, pow2(n-j-1));
             index = add(index, k);
             subset_lex_rank.mem[key] = index;
         }
@@ -4366,7 +3800,7 @@ function subset_lex_rank(n, x, y)
             }
             else if (x > y+1)
             {
-                for (k = I,j = y+1; j < x; j++) k = add(k, pow2(n-j-1));
+                for (k = I,j = y+1; j < x; ++j) k = add(k, pow2(n-j-1));
                 index = add(index, k);
                 subset_lex_rank.mem[key] = index;
             }
@@ -4454,12 +3888,12 @@ function dsc_factorial(n)
         d = bisect(primes, Arithmetic.add(I, Arithmetic.div(m, three)), -1, null, null, Arithmetic.lt);
         e = bisect(primes, Arithmetic.add(I, Arithmetic.div(m, two)), -1, null, null, Arithmetic.lt);
         g = bisect(primes, Arithmetic.add(I, m), -1, null, null, Arithmetic.lt);
-        factors = primes.slice(e, g).concat(primes.slice(s, d).filter(function(p){return Arithmetic.equ(I, Arithmetic.mod(Arithmetic.div(m, p), two));}));
-        for (i=1; i<s; i++)
+        factors = primes.slice(e, g).concat(primes.slice(s, d).filter(function(p) {return Arithmetic.equ(I, Arithmetic.mod(Arithmetic.div(m, p), two));}));
+        for (i=1; i<s; ++i)
         {
             prime = primes[i]; // prime in primes[1:s]
             p = I; q = m;
-            while (true)
+            while (1)
             {
                 q = Arithmetic.div(q, prime);
                 if (Arithmetic.equ(O, q)) break;
@@ -4477,9 +3911,9 @@ function dsc_factorial(n)
     };
 
     if (Arithmetic.lt(n, two)) return I;
-    bits = Arithmetic.sub(n, Arithmetic.digits(n, 2).split('').reduce(function(s, d){return Arithmetic.add(s, '1'===d?I:O);}, O));
+    bits = Arithmetic.sub(n, Arithmetic.digits(n, 2).split('').reduce(function(s, d) {return Arithmetic.add(s, '1'===d?I:O);}, O));
     sieve = PrimeSieve();
-    primes = sieve.get(function(p){return Arithmetic.lte(p, n);});
+    primes = sieve.get(function(p) {return Arithmetic.lte(p, n);});
     sieve.dispose();
     return Arithmetic.mul(odd_factorial(n, primes), pow2(bits));
 }
@@ -4532,7 +3966,7 @@ function factorial(n, m)
         // derangement sub-factorial D(n) = n D(n-1) + (-1)^n = !n = [(n!+1)/e]
         // for given number of fixed points k > 0: D(n,k) = C(n,k) D(n-k)
         if (Arithmetic.lte(n, 12)) return Arithmetic.equ(n, O) ? I : (Arithmetic.lte(n, I) ? O : NUM(([1,2,9,44,265,1854,14833,133496,1334961,14684570,176214841])[VAL(sub(n, two))]));
-        key = '!'+String(n);
+        key = '!' + String(n);
         if (null == factorial.mem2[key])
         {
             //factorial.mem2[key] = Math.floor((factorial(n)+1)/Math.E);
@@ -4568,7 +4002,7 @@ function factorial(n, m)
         // http://oeis.org/A000085
         // I(n) = \sum_{k=0}^{\lfloor n/2 \rfloor}\binom{n}{2k}\frac{(2k)!}{k!2^k}
         if (Arithmetic.lte(n, 18)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,4,10,26,76,232,764,2620,9496,35696,140152,568504,2390480,10349536,46206736,211799312,997313824])[VAL(n)]);
-        key = 'I'+String(n);
+        key = 'I' + String(n);
         if (null == factorial.mem2[key])
         {
             // recursive and memoized
@@ -4594,10 +4028,10 @@ function factorial(n, m)
             m = m[0];
             if (!m.length) return Arithmetic.lt(n, O) ? O : factorial(n);
             else if (1 === m.length) return factorial(n, m[0]);
-            res = operate(function(N, mk){return add(N, mk);}, O, m);
+            res = operate(function(N, mk) {return add(N, mk);}, O, m);
             if (Arithmetic.equ(res, O)) return n;
             else if (Arithmetic.gt(res, n)) return O;
-            key = String(n)+'@'+mergesort(m.map(String),1,true).join(',')+'@';
+            key = String(n) + '@' + mergesort(m.map(String),1,true).join(',') + '@';
             if (null == factorial.mem3[key])
             {
                 i = sub(res, I); res = I;
@@ -4606,7 +4040,7 @@ function factorial(n, m)
                     res = mul(res, sub(n, i));
                     i = sub(i, I);
                 }
-                res = operate(function(N, mk){return div(N, factorial(mk));}, res, m);
+                res = operate(function(N, mk) {return div(N, factorial(mk));}, res, m);
                 // memoize only up to MAXMEM results
                 if (Arithmetic.lt(n, MAXMEM))
                     factorial.mem3[key] = res;
@@ -4618,10 +4052,10 @@ function factorial(n, m)
         }
         else
         {
-            key = String(n)+'@'+mergesort(m.map(String),1,true).join(',');
+            key = String(n) + '@' + mergesort(m.map(String),1,true).join(',');
             if (null == factorial.mem3[key])
             {
-                res = operate(function(N, mk){return div(N, factorial(mk));}, factorial(n), m);
+                res = operate(function(N, mk) {return div(N, factorial(mk));}, factorial(n), m);
                 // memoize only up to MAXMEM results
                 if (Arithmetic.lt(n, MAXMEM))
                     factorial.mem3[key] = res;
@@ -4640,7 +4074,7 @@ function factorial(n, m)
         {
             // selections, ie m!C(n,m) = n!/(n-m)! = (n-m+1)*..(n-1)*n
             if (Arithmetic.lte(n, Arithmetic.neg(m))) return Arithmetic.equ(n, Arithmetic.neg(m)) ? factorial(n) : O;
-            key = String(n)+'@'+String(m);
+            key = String(n) + '@' + String(m);
             if (null == factorial.mem3[key])
             {
                 i = add(n, m);
@@ -4674,7 +4108,7 @@ function factorial(n, m)
             if (Arithmetic.lt(n, mul(m, two))) m = sub(n, m); // take advantage of symmetry
             if (Arithmetic.equ(m, O) || Arithmetic.equ(n, I)) return I;
             else if (Arithmetic.equ(m, I)) return n;
-            key = String(n)+'@'+String(m);
+            key = String(n) + '@' + String(m);
             if (null == factorial.mem3[key])
             {
                 // recursive and memoized
@@ -4685,9 +4119,9 @@ function factorial(n, m)
                 }
                 else if (Arithmetic.isDefault())
                 {
-                    res = stdMath.round(operate(function(Cnm,i){
+                    res = stdMath.round(operate(function(Cnm,i) {
                         // this is faster and will not overflow unnecesarily for default arithmetic
-                        return Cnm*(1+n/i);
+                        return Cnm * (1+n/i);
                     }, (n=n-m)+1, null, 2, m));
                 }
                 else
@@ -4739,7 +4173,7 @@ function derange_k_of_n(n, k)
     if (Arithmetic.lt(n, O) || Arithmetic.lt(k, O) || Arithmetic.gt(k, n)) return O;
     if (Arithmetic.equ(k, O)) return factorial(n);
     if (Arithmetic.equ(k, n)) return factorial(n, false);
-    key = String(n)+','+String(k);
+    key = String(n) + ',' + String(k);
     if (null == derange_k_of_n.mem[key])
     {
         res = O;
@@ -4812,7 +4246,7 @@ function stirling(n, k, s)
         // L(n+1,k)=(n+k)L(n,k)+L(n,k-1)
         if (Arithmetic.equ(k, O)) return O;
         else if (Arithmetic.equ(k, I) && Arithmetic.equ(n, I)) return I;
-        key = String(n)+','+String(k);
+        key = String(n) + ',' + String(k);
         if (null == stirling.mem3[key])
         {
             n = sub(n, I);
@@ -4831,7 +4265,7 @@ function stirling(n, k, s)
         // second kind: S{n,k} = k S{n-1,k} + S{n-1,k-1}
         if (Arithmetic.equ(n, k) || (Arithmetic.equ(k, I) && Arithmetic.lt(n, O))) return I;
         else if (Arithmetic.equ(n, O) || Arithmetic.equ(k, O)) return O;
-        key = String(n)+','+String(k);
+        key = String(n) + ',' + String(k);
         if (null == stirling.mem2[key])
         {
             res = add(stirling(sub(n, I), sub(k, I), 2), mul(stirling(sub(n, I), k, 2), k));
@@ -4849,7 +4283,7 @@ function stirling(n, k, s)
         // signed first kind: S[n,k] = -(n-1) S[n-1,k] + S[n-1,k-1]
         if (Arithmetic.equ(k, O) && Arithmetic.lt(n, O)) return O;
         else if (Arithmetic.equ(n, k)) return I;
-        key = String(n)+','+String(k)+'-';
+        key = String(n) + ',' + String(k)+'-';
         if (null == stirling.mem1[key])
         {
             res = add(stirling(sub(n, I), sub(k, I), -1), mul(stirling(sub(n, I), k, -1), sub(I, n)));
@@ -4909,7 +4343,7 @@ function p_nkab(n, k, a, b)
     if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : p;
     if (Arithmetic.equ(add(a, I), b)) return Arithmetic.lte(sub(n, mul(k, a)), k) ? I : p;
 
-    key = String(n)+','+String(k)+','+String(a)+','+String(b);
+    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
     if (null == p_nkab.mem[key])
     {
         // compute it directly
@@ -4937,7 +4371,7 @@ function part_rank(n, limit, min, max, k)
     if (is_instance(limit, Integer)) limit = limit.num;
     if (is_instance(min, Integer)) min = min.num;
     //if (is_instance(max, Integer)) max = max.num;
-    key = String(n)+','+String(limit)+','+String(min)/*+','+String(max)*/+','+String(k);
+    key = String(n) + ',' + String(limit) + ',' + String(min)/* + ',' + String(max)*/ + ',' + String(k);
     if (null == part_rank.mem[key])
     {
         n = N(n);
@@ -4988,18 +4422,18 @@ function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*
         return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
     if (
         Arithmetic.lt(n, O)
-        || (null!=K && null!=M && null!=W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null!=M && null!=W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null!=K && null!=W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null!=K && null!=M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null!=M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null!=W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null!=K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
+        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
+        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
+        || (null != K && null ! =M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
+        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
+        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
     ) return p;
 
     if (null != M && null == K && null == W) {m = n; k0 = M; k1 = M; K = M; M = null;} // count the conjugates, same
 
-    key = String(n)+'|'+String(K)+'|'+String(M)+'|'+String(W);
+    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
     if (null == partitions.mem[key])
     {
         if (null != M && null != W)
@@ -5069,7 +4503,7 @@ function c_nkab(n, k, a, b)
     if (Arithmetic.equ(n, b)) return factorial(add(sub(n, mul(k, a)), sub(k, I)), sub(k, I));
     if (Arithmetic.equ(add(a, I), b)) return factorial(k, sub(n, mul(k, a)));
 
-    key = String(n)+','+String(k)+','+String(a)+','+String(b);
+    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
     if (null == c_nkab.mem[key])
     {
         // compute it directly
@@ -5099,7 +4533,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
     if (is_instance(limit, Integer)) limit = limit.num;
     if (is_instance(min, Integer)) min = min.num;
     if (is_instance(max, Integer)) max = max.num;
-    key = String(n)+','+String(limit)+','+String(min)+','+String(max)+','+String(k)+','+String(0<nmin)+','+String(0<nmax);
+    key = String(n) + ',' + String(limit) + ',' + String(min) + ',' + String(max) + ',' + String(k) + ',' + String(0<nmin) + ',' + String(0<nmax);
     if (null == comp_rank.mem[key])
     {
         n = N(n);
@@ -5410,16 +4844,16 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
         return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
     if (
         Arithmetic.lt(n, O)
-        || (null!=K && null!=M && null!=W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null!=M && null!=W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null!=K && null!=W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null!=K && null!=M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null!=M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null!=W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null!=K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
+        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
+        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
+        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
+        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
+        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
     ) return c;
 
-    key = String(n)+'|'+String(K)+'|'+String(M)+'|'+String(W);
+    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
     if (null == compositions.mem[key])
     {
         if (null != K && null != M && null != W)
@@ -5764,7 +5198,7 @@ function sum_nk(n, k)
     }
     else
     {
-        key = String(n)+','+String(k);
+        key = String(n) + ',' + String(k);
         if (null == sum_nk.mem[key])
         {
             if (Arithmetic.lt(k, n))
@@ -5817,50 +5251,50 @@ function kronecker(/* var args here */)
     if (true === args[0])
     {
         // flat tensor product
-        for (kl=args[1].length,k=2; k<nv; k++) kl *= args[ k ].length;
+        for (kl=args[1].length,k=2; k<nv; ++k) kl *= args[k].length;
         product = new Array(kl);
-        for (k=0; k<kl; k++)
+        for (k=0; k<kl; ++k)
         {
             tensor = 0;
-            for (j=1,r=k,a=1; a<nv; a++)
+            for (j=1,r=k,a=1; a<nv; ++a)
             {
-                l = args[ a ].length;
+                l = args[a].length;
                 i = r % l;
                 r = ~~(r / l);
-                vv = args[ a ][ i ];
+                vv = args[a][i];
                 tensor += j*vv;
                 j *= l;
             }
-            product[ k ] = tensor;
+            product[k] = tensor;
         }
     }
     else
     {
         // component tensor product
-        for (kl=args[0].length,k=1; k<nv; k++) kl *= args[ k ].length;
+        for (kl=args[0].length,k=1; k<nv; ++k) kl *= args[k].length;
         product = new Array(kl);
-        for (k=0; k<kl; k++)
+        for (k=0; k<kl; ++k)
         {
             tensor = new Array(nv); tl = 0;
-            for (r=k,a=nv-1; a>=0; a--)
+            for (r=k,a=nv-1; a>=0; --a)
             {
-                l = args[ a ].length;
+                l = args[a].length;
                 i = r % l;
                 r = ~~(r / l);
-                vv = args[ a ][ i ];
+                vv = args[a][i];
                 if (is_array(vv) || is_args(vv))
                 {
                     // kronecker can be re-used to create higher-order products
                     // i.e kronecker(alpha, beta, gamma) and kronecker(kronecker(alpha, beta), gamma)
                     // should produce exactly same results
-                    for (j=vv.length-1; j>=0; j--) tensor[nv-(++tl)] = vv[ j ];
+                    for (j=vv.length-1; j>=0; --j) tensor[nv-(++tl)] = vv[j];
                 }
                 else
                 {
                     tensor[nv-(++tl)] = vv;
                 }
             }
-            product[ k ] = tensor;
+            product[k] = tensor;
         }
     }
     return product;
@@ -5870,11 +5304,11 @@ function cartesian(/* var args here */)
     // direct sum product, since the final dimensions = sum of component dimensions it is like cartesian product
     // whereas tensor product has final dimensions = product of component dimensions
     var v = arguments, nv = v.length, n=0, k, j;
-    for (j=0; j<nv; j++) n += v[j].length;
+    for (j=0; j<nv; ++j) n += v[j].length;
     k = 0; j = 0;
-    return array(n, function(i){
-        if (i >= k+v[j].length) k+=v[j++].length;
-        return k+v[j][i-k];
+    return array(n, function(i) {
+        if (i >= k+v[j].length) k += v[j++].length;
+        return k + v[j][i-k];
     });
 }
 function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
@@ -5895,13 +5329,13 @@ function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
         extra_conditions = false;
     }
 
-    if (!(V_EQU===value_conditions || V_DIFF===value_conditions || V_INC===value_conditions || V_DEC===value_conditions || V_NONINC===value_conditions || V_NONDEC===value_conditions))
+    if (!(V_EQU === value_conditions || V_DIFF === value_conditions || V_INC === value_conditions || V_DEC === value_conditions || V_NONINC === value_conditions || V_NONDEC === value_conditions))
     {
         value_conditions = false;
     }
 
     pe = new Array(nv); pea = []; pl = 0; pv = [];
-    for (kl=1,k=0; k<nv; k++)
+    for (kl=1,k=0; k<nv; ++k)
     {
         if (is_callable(v[k][0]))
         {
@@ -5915,7 +5349,7 @@ function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
             {
                 // depends on one or multiple other positions
                 // expr v[k][0] for pos k, depends on value at positions v[k][1][]
-                for (e=0,el=v[k][1].length; e<el; e++)
+                for (e=0,el=v[k][1].length; e<el; ++e)
                 {
                     if (null == pe[v[k][1][e]]) pe[v[k][1][e]] = [[v[k][0],k,v[k][1]]];
                     else pe[v[k][1][e]].push([v[k][0],k,v[k][1]]);
@@ -5937,12 +5371,12 @@ function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
     product = new Array(kl); nvalid = 0;
     t1 = nv-1; npv = pv.length-1;
     // O(kl), count only necessary values, minus any outliers (as few as possible)
-    for (k=0; k<kl; k++)
+    for (k=0; k<kl; ++k)
     {
         // O(nv)
         tensor = new Array(nv); invalid = false;
         // explicit tensor values, not expressions
-        for (r=k,a=npv; a>=0; a--)
+        for (r=k,a=npv; a>=0; --a)
         {
             p = pv[a];
             l = v[p].length;
@@ -5951,27 +5385,27 @@ function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
             tensor[p] = v[p][i];
         }
         // evaluate expressions which are autonomous, do not depend on any position
-        for (a=0,pl=pea.length; a<pl; a++)
+        for (a=0,pl=pea.length; a<pl; ++a)
         {
             expr = pea[a];
             tensor[expr[1]] = expr[0]();
         }
         // evaluate expressions now after any explicit tensor values were calculated previously
-        for (a=0; a<nv; a++)
+        for (a=0; a<nv; ++a)
         {
             // if expression and not already avaluated (eg by previous expression)
             if (null != pe[a])
             {
                 // fill-up any pos values which are expressions based on this pos value
                 expr = pe[a];
-                for (e=0,el=expr.length; e<el; e++)
+                for (e=0,el=expr.length; e<el; ++e)
                 {
                     p = expr[e][1];
                     if (null == tensor[p])
                     {
                         // not computed already
                         ok = true;
-                        vv = expr[e][2].map(function(k){
+                        vv = expr[e][2].map(function(k) {
                             if ((null == tensor[k]) || isNaN(tensor[k])) ok = false; // not computed already, abort
                             return tensor[k];
                         });
@@ -5989,8 +5423,8 @@ function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
             else
             {
                 v1 = tensor[t1];
-                if (V_DIFF === value_conditions) { seen = {}; seen[v1] = 1; }
-                for (t0=t1-1; t0>=0; t0--)
+                if (V_DIFF === value_conditions) {seen = {}; seen[v1] = 1;}
+                for (t0=t1-1; t0>=0; --t0)
                 {
                     v0 = tensor[t0];
                     if (
@@ -6013,7 +5447,7 @@ function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
             }
         }
         if (invalid) continue;
-        product[ nvalid++ ] = tensor;
+        product[nvalid++] = tensor;
     }
     // truncate if needed
     if (product.length > nvalid) product.length = nvalid;
@@ -6025,14 +5459,14 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
     pos = pos || array(data.length||0, 0, 1);
     // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
     // NOTE: needs at least one non-autonomous expression or one range of values, else will return empty set
-    var min = null==options.min ? 0 : options.min,
-        max = null==options.max ? n-1 : options.max,
+    var min = null == options.min ? 0 : options.min,
+        max = null == options.max ? n-1 : options.max,
         nn = max-min+1, D = data, m, d, i, a, j, pi, l = D.length, none = false,
         pos_ref, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
-        in_range = function in_range(x){ return min<=x && x<=max; }, additional_conditions;
+        in_range = function in_range(x) {return min <= x && x <= max;}, additional_conditions;
 
     data = []; none = false;
-    for (pi=0,i=0; i<l; i++,pi++)
+    for (pi=0,i=0; i<l; ++i,++pi)
     {
         d = D[i];
         if (is_string(d))
@@ -6042,16 +5476,16 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
                 if (0 < m[1].indexOf('..'))
                 {
                     m = m[1].split('..').map(Number);
-                    if (m[0]>m[1])
-                        a = complement(n,array(m[0]-m[1]+1,m[1],1).filter(in_range)).reverse();
+                    if (m[0] > m[1])
+                        a = complement(n, array(m[0]-m[1]+1, m[1], 1).filter(in_range)).reverse();
                     else
-                        a = complement(n,array(m[1]-m[0]+1,m[0],1).filter(in_range));
+                        a = complement(n, array(m[1]-m[0]+1, m[0], 1).filter(in_range));
                 }
                 else
                 {
-                    a = complement(n,m[1].split(',').map(Number).filter(in_range));
+                    a = complement(n, m[1].split(',').map(Number).filter(in_range));
                 }
-                if (!a.length) { none = true; break; }
+                if (!a.length) {none = true; break;}
                 data.push(a);
             }
             else if (m=d.match(in_set_re))
@@ -6059,20 +5493,20 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
                 if (0 < m[1].indexOf('..'))
                 {
                     m = m[1].split('..').map(Number);
-                    a = (m[0]>m[1]?array(m[0]-m[1]+1,m[0],-1):array(m[1]-m[0]+1,m[0],1)).filter(in_range);
+                    a = (m[0] > m[1] ? array(m[0]-m[1]+1, m[0], -1) : array(m[1]-m[0]+1, m[0], 1)).filter(in_range);
                 }
                 else
                 {
                     a = m[1].split(',').map(Number).filter(in_range);
                 }
-                if (!a.length) { none = true; break; }
+                if (!a.length) {none = true; break;}
                 data.push(a);
             }
             else
             {
                 is_valid = true; pos_ref = []; expr = null;
-                d = d.replace(pos_re, function(m, d){
-                    var posref = parseInt(d, 10), varname = 'v'+String(posref);
+                d = d.replace(pos_re, function(m, d) {
+                    var posref = parseInt(d, 10), varname = 'v' + String(posref);
                     if (isNaN(posref) || !in_range(posref)) is_valid = false;
                     if (is_valid && (-1 === pos_ref.indexOf(posref))) pos_ref.push(posref);
                     return varname;
@@ -6083,9 +5517,9 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
                     continue;
                 }
                 pos_ref.sort(sorter());
-                try{
-                    expr = new Function(pos_ref.map(function(p){return 'v'+String(p);}).join(','),'return Math.floor('+d+');');
-                } catch(e){
+                try {
+                    expr = new Function(pos_ref.map(function(p) {return 'v' + String(p);}).join(','),'return Math.floor('+d+');');
+                } catch(e) {
                     expr = null;
                 }
                 if (!is_callable(expr))
@@ -6093,11 +5527,11 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
                     if (pos) pos.splice(pi--, 1);
                     continue;
                 }
-                for (j=0; j<pos_ref.length; j++)
+                for (j=0; j<pos_ref.length; ++j)
                 {
                     if (!ref[pos_ref[j]]) ref[pos_ref[j]] = [expr];
                     else ref[pos_ref[j]].push(expr);
-                    if ((-1===pos.indexOf(pos_ref[j])) && (-1===missing.indexOf(pos_ref[j]))) missing.push(pos_ref[j]);
+                    if ((-1 === pos.indexOf(pos_ref[j])) && (-1 === missing.indexOf(pos_ref[j]))) missing.push(pos_ref[j]);
                 }
                 algebraic.push([expr,null,null,pos_ref,pos[pi]]);
                 data.push(algebraic[algebraic.length-1]);
@@ -6105,8 +5539,8 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
         }
         else if (is_array(d))
         {
-            a = false===d[0] ? complement(n,d.slice(1).filter(in_range)) : (true===d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
-            if (!a.length) { none = true; break; }
+            a = false === d[0] ? complement(n, d.slice(1).filter(in_range)) : (true === d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
+            if (!a.length) {none = true; break;}
             data.push(a);
         }
     }
@@ -6114,11 +5548,11 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
 
     if (missing.length)
     {
-        for (i=0,l=missing.length; i<l; i++)
+        for (i=0,l=missing.length; i<l; ++i)
         {
             // add any missing references
             pos.push(missing[i]);
-            if (!none) data.push(array(nn,min,1));
+            if (!none) data.push(array(nn, min, 1));
         }
     }
 
@@ -6139,30 +5573,30 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
     if (none) return [];
     if (algebraic.length)
     {
-        for (i=0,l=algebraic.length; i<l; i++)
+        for (i=0,l=algebraic.length; i<l; ++i)
         {
             m = algebraic[i];
             // adjust relative positions in algebraic expressions used in data (same reference)
-            m[1] = m[3].map(function(m3){return pos.indexOf(m3);});
+            m[1] = m[3].map(function(m3) {return pos.indexOf(m3);});
             m[2] = pos.indexOf(m[4]);
-            for (j=0; j<m[3].length; j++)
+            for (j=0; j<m[3].length; ++j)
             {
                 // by the way, filter out some invalid values here for all expr on the same pos ref
                 // for expr that depend on single position only, else leave for actual combinatorial generation later on
                 expr = ref[m[3][j]];
                 if (!is_callable(data[m[1][j]][0]) /*expression does not reference another expression*/)
                 {
-                    a = data[m[1][j]].filter(function(x){
-                        for (var ex,i=0,l=expr.length; i<l; i++)
+                    a = data[m[1][j]].filter(function(x) {
+                        for (var ex,i=0,l=expr.length; i<l; ++i)
                         {
                             // for expr that depend on single position only
                             if (1 !== expr[i].length /*num of func args*/) continue;
                             ex = expr[i](x);
-                            if (isNaN(ex) || min>ex || ex>max) return false;
+                            if (isNaN(ex) || min > ex || ex > max) return false;
                         }
                         return true;
                     });
-                    if (!a.length) { none = true; break; }
+                    if (!a.length) {none = true; break;}
                     else data[m[1][j]] = a;
                 }
             }
@@ -6181,26 +5615,26 @@ function gen_combinatorial_data(n, data, pos, value_conditions, options)
     else value_conditions = false;
 
     // check additional conditions
-    additional_conditions = is_callable(options.extra_conditions) ? function(v,i0,i1){
+    additional_conditions = is_callable(options.extra_conditions) ? function(v, i0, i1) {
         var v0 = v[i0];
         if (
             // check in range
-            (min>v0 || v0>max) ||
+            (min > v0 || v0 > max) ||
             // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
             // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
-            (V_INC === value_conditions && pos[i0]>v0) ||
-            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0]>v0)
+            (V_INC === value_conditions && pos[i0] > v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
        ) return false
-        return options.extra_conditions(v,i0,i1);
-    } : function(v,i0,i1){
+        return options.extra_conditions(v ,i0, i1);
+    } : function(v, i0, i1) {
         var v0 = v[i0];
         if (
             // check in range
-            (min>v0 || v0>max) ||
+            (min > v0 || v0 > max) ||
             // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
             // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
-            (V_INC === value_conditions && pos[i0]>v0) ||
-            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0]>v0)
+            (V_INC === value_conditions && pos[i0] > v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
        ) return false
         return true;
     };
@@ -6212,27 +5646,27 @@ function summation(a, b, Arithmetic, do_subtraction)
 {
     // O(max(n1,n2))
     var i, j, n1 = a.length, n2 = b.length, c;
-    if (true===Arithmetic)
+    if (true === Arithmetic)
     {
-        c = array(stdMath.max(n1, n2), do_subtraction ? function(i){
+        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
             return i >= n1 ? b[i].neg() : (i >= n2 ? a[i] : a[i].sub(b[i]));
-        } : function(i){
+        } : function(i) {
             return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i].add(b[i]));
         });
     }
     else if (Arithmetic)
     {
-        c = array(stdMath.max(n1, n2), do_subtraction ? function(i){
+        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
             return i >= n1 ? Arithmetic.neg(b[i]) : (i >= n2 ? a[i] : Arithmetic.sub(a[i], b[i]));
-        } : function(i){
+        } : function(i) {
             return i >= n1 ? b[i] : (i >= n2 ? a[i] : Arithmetic.add(a[i], b[i]));
         });
     }
     else
     {
-        c = array(stdMath.max(n1, n2), do_subtraction ? function(i){
+        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
             return i >= n1 ? -b[i] : (i >= n2 ? a[i] : a[i] - b[i]);
-        } : function(i){
+        } : function(i) {
             return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i] + b[i]);
         });
     }
@@ -6244,25 +5678,25 @@ function convolution(a, b, Arithmetic)
     // 1. by using FFT multiplication, not implemented here
     // 2. by Divide&Conquer and using eg. Strassen multiplication, not implemented here
     var i, j, n1 = a.length, n2 = b.length, c;
-    if (true===Arithmetic)
+    if (true === Arithmetic)
     {
-        c = array(n1+n2-1, function(){return 0;});
-        for (i=0; i<n1; i++)
-            for (j=0; j<n2; j++)
+        c = array(n1+n2-1, function() {return 0;});
+        for (i=0; i<n1; ++i)
+            for (j=0; j<n2; ++j)
                 c[i+j] = 0 === c[i+j] ? a[i].mul(b[j]) : c[i+j].add(a[i].mul(b[j]));
     }
     else if (Arithmetic)
     {
-        c = array(n1+n2-1, function(){return Arithmetic.O;});
-        for (i=0; i<n1; i++)
-            for (j=0; j<n2; j++)
+        c = array(n1+n2-1, function() {return Arithmetic.O;});
+        for (i=0; i<n1; ++i)
+            for (j=0; j<n2; ++j)
                 c[i+j] = Arithmetic.add(c[i+j], Arithmetic.mul(a[i], b[j]));
     }
     else
     {
-        c = array(n1+n2-1, function(){return 0;});
-        for (i=0; i<n1; i++)
-            for (j=0; j<n2; j++)
+        c = array(n1+n2-1, function() {return 0;});
+        for (i=0; i<n1; ++i)
+            for (j=0; j<n2; ++j)
                 c[i+j] += a[i] * b[j];
     }
     return c;
@@ -6270,47 +5704,47 @@ function convolution(a, b, Arithmetic)
 function addition_sparse(a, b, TermClass, do_subtraction, ring)
 {
     // O(n1+n2) ~ O(max(n1,n2))
-    // assume a, b are arrays of **non-zero only** coeffs of MulTerm class of coefficient and exponent already sorted in exponent decreasing order
+    // assume a, b are arrays of **non-zero only** coeffs of PolyTerm class of coefficient and exponent already sorted in exponent decreasing order
     // merge terms by efficient merging and produce already sorted order c
     // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
     // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
-    do_subtraction = (true===do_subtraction);
-    TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    do_subtraction = (true === do_subtraction);
+    TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     ring = ring || Ring.Q();
     var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
-    while (i<n1 && j<n2)
+    while (i < n1 && j < n2)
     {
-        if (0<TermClass.cmp(a[i], b[j]))
+        if (0 < TermClass.cmp(a[i], b[j]))
         {
             res = a[i].cast(ring);
             if (!res.equ(O)) c[k++] = res; // check if zero
-            i++;
+            ++i;
         }
-        else if (0<TermClass.cmp(b[j], a[i]))
+        else if (0 < TermClass.cmp(b[j], a[i]))
         {
             res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
             if (!res.equ(O)) c[k++] = res; // check if zero
-            j++;
+            ++j;
         }
         else //equal
         {
             res = (do_subtraction ? a[i].sub(b[j]) : a[i].add(b[j])).cast(ring);
             if (!res.equ(O)) c[k++] = res; // check if cancelled
-            i++; j++;
+            ++i; ++j;
         }
     }
-    while (i<n1)
+    while (i < n1)
     {
         res = a[i].cast(ring);
         if (!res.equ(O)) c[k++] = res; // check if zero
-        i++;
+        ++i;
     }
-    while (j<n2)
+    while (j < n2)
     {
         res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
         if (!res.equ(O)) c[k++] = res; // check if zero
-        j++;
+        ++j;
     }
     if (c.length > k) c.length = k; // truncate if needed
     return c;
@@ -6318,35 +5752,35 @@ function addition_sparse(a, b, TermClass, do_subtraction, ring)
 function multiplication_sparse(a, b, TermClass, ring)
 {
     // O(log(n1)*n1*n2)
-    // assume a, b are arrays of **non-zero only** coeffs of MulTerm class of coefficient and exponent already sorted in exponent decreasing order
+    // assume a, b are arrays of **non-zero only** coeffs of PolyTerm class of coefficient and exponent already sorted in exponent decreasing order
     // merge terms by efficient merging and produce already sorted order c
     // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
     // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
     // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
-    TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     ring = ring || Ring.Q();
     var k, t, n1, n2, c, f, max, heap, O = Abacus.Arithmetic.O;
-    if (a.length > b.length){ t=a; a=b; b=t;} // swap to achieve better performance
+    if (a.length > b.length) {t = a; a = b; b = t;} // swap to achieve better performance
     n1 = a.length; n2 = b.length; c = new Array(n1*n2);
-    if (0<n1 && 0<n2)
+    if (0 < n1 && 0 < n2)
     {
         k = 0;
         c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
-        heap = Heap(array(n1, function(i){
+        heap = Heap(array(n1, function(i) {
             return [a[i].cast(ring).mul(b[0].cast(ring)), i];
-        }), "max", function(a, b){
+        }), "max", function(a, b) {
             return TermClass.cmp(a[0], b[0]);
         });
         f = array(n1, 0);
         while (max=heap.peek())
         {
-            if (0!==TermClass.cmp(c[k], max[0]))
+            if (0 !== TermClass.cmp(c[k], max[0]))
             {
                 if (!c[k].equ(O)) c[++k] = TermClass(0, 0, ring);
                 c[k].e = max[0].e;
             }
             c[k] = c[k].add(max[0]);
-            f[max[1]]++;
+            ++f[max[1]];
             if (f[max[1]] < n2) heap.replace([a[max[1]].cast(ring).mul(b[f[max[1]]].cast(ring)), max[1]]);
             else heap.pop();
         }
@@ -6359,37 +5793,37 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
 {
     // sparse polynomial reduction/long division
     // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
-    q_and_r = (true===q_and_r);
-    TermClass = TermClass===MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    q_and_r = (true === q_and_r);
+    TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     ring = ring || Ring.Q();
     var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
-        heap = Heap([], "max", function(a,b){return TermClass.cmp(a.term, b.term);}),
+        heap = Heap([], "max", function(a,b) {return TermClass.cmp(a.term, b.term);}),
         q = [], r = [], k = 0, d, res, Q, b0;
 
     if (!b.length) return null;
     b0 = b[0].cast(ring);
-    while ((d=heap.peek()) || k<na)
+    while ((d=heap.peek()) || k < na)
     {
-        if ((null == d) || (k<na && 0>TermClass.cmp(d.term, a[k])))
+        if ((null == d) || (k < na && 0 > TermClass.cmp(d.term, a[k])))
         {
             res = a[k].cast(ring);
-            k++;
+            ++k;
         }
-        else if (k<na && 0===TermClass.cmp(d.term, a[k]))
+        else if (k < na && 0 === TermClass.cmp(d.term, a[k]))
         {
             res = a[k].cast(ring).sub(d.term);
-            if (nb>d.n)
+            if (nb > d.n)
                 heap.replace({term:d.Q.mul(b[d.n].cast(ring)), n:d.n+1, Q:d.Q});
             else
                 heap.pop();
-            k++;
+            ++k;
 
             //if (res.equ(O)) continue; // zero coefficient, skip
         }
         else
         {
             res = d.term.neg();
-            if (nb>d.n)
+            if (nb > d.n)
                 heap.replace({term:d.Q.mul(b[d.n].cast(ring)), n:d.n+1, Q:d.Q});
             else
                 heap.pop();
@@ -6400,7 +5834,7 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
         {
             Q = res.div(b0);
             q = addition_sparse(q, [Q], TermClass, false, ring);
-            if (nb>1)
+            if (nb > 1)
                 heap.push({term:Q.mul(b[1].cast(ring)), n:2, Q:Q});
         }
         else if (q_and_r)
@@ -6414,13 +5848,13 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
 }
 function complement(n, item, sort/*, dupl*/)
 {
-    if ((null == item) || (!item.length) || (1>=item.length))
-        return 1===item.length ? array(n-1, function(i){return i<item[0] ? i : i+1;}) : array(n, 0, 1);
+    if ((null == item) || (!item.length) || (1 >= item.length))
+        return 1 === item.length ? array(n-1, function(i) {return i < item[0] ? i : i+1;}) : array(n, 0, 1);
     if (true === sort)
     {
         var d = is_sorted(item);
         if (-1 === d) item = reflection(new Array(item.length), item);
-        else if (0 === d) item = mergesort(item.slice(),1,true);
+        else if (0 === d) item = mergesort(item.slice(), 1, true);
     }
     return difference(null, n, item/*, 1, null, null, null, null, dupl*/);
 }
@@ -6428,27 +5862,28 @@ function subset2binary(item, n)
 {
     if (0 >= n) return [];
     var binary = array(n, 0, 0), i, l = item.length;
-    for (n=n-1,i=0; i<l; i++) binary[n-item[i]] = 1;
+    for (n=n-1,i=0; i<l; ++i) binary[n-item[i]] = 1;
     return binary;
 }
 function binary2subset(item, n)
 {
-    n = stdMath.min(n||item.length, item.length);
-    var subset = [], i;
-    for (n=n-1,i=0; i<=n; i++) if (0 < item[i]) subset.push(n-i);
+    n = stdMath.min(n || item.length, item.length);
+    var subset = new Array(n), i, j;
+    for (n=n-1,i=0,j=0; i<=n; ++i) if (0 < item[i]) subset[j++] = n - i;
+    if (j < subset.length) subset.length = j; // truncate if needed
     return subset;
 }
 function composition2subset(item, n, dir)
 {
     if (null == item) return null;
     n = n || item.length;
-    return psum(new Array(n), item, 1, -1, -1===dir?n-1:0, -1===dir?0:n-1, 0, n-1);
+    return psum(new Array(n), item, 1, -1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
 }
 function subset2composition(item, n, dir)
 {
     if (null == item) return null;
     n = n || item.length;
-    return fdiff(new Array(n), item, 1, 1, -1===dir?n-1:0, -1===dir?0:n-1, 0, n-1);
+    return fdiff(new Array(n), item, 1, 1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
 }
 function conjugatepartition(is_composition, item, dir)
 {
@@ -6458,7 +5893,7 @@ function conjugatepartition(is_composition, item, dir)
     if (is_composition)
     {
         // On Conjugates for Set Partitions and Integer Compositions (arxiv.org/abs/math/0508052v3)
-        n = operate(addn,0,item);
+        n = operate(addn, 0, item);
         if (1 >= n)
         {
             conjugate = item.slice();
@@ -6468,21 +5903,21 @@ function conjugatepartition(is_composition, item, dir)
             // get the associated n-composition of the complement(conjugate) of the associated (n-1)-subset
             conjugate = subset2composition(complement(n-1, composition2subset(item, l-1, dir)));
             // add the remainder
-            if (0 < (n=n-operate(addn,0,conjugate))) conjugate.push(n);
+            if (0 < (n=n-operate(addn, 0, conjugate))) conjugate.push(n);
             // if reflected, get the reflected composition
-            if (0>dir) reflection(conjugate,conjugate);
+            if (0 > dir) reflection(conjugate, conjugate);
         }
     }
     else
     {
         // http://mathworld.wolfram.com/ConjugatePartition.html
         var i, ii, j, jj, p, a = 1, b = 0, d = 0, push = "push";
-        if (0>dir) { a = -a; b = l-1-b; push = "unshift"; }
+        if (0 > dir) {a = -a; b = l-1-b; push = "unshift";}
         if (is_array(item[b]))
         {
             // multiplicity(packed) representation
             p = item[b]; conjugate = [[p[1], p[0]]]; i = 0;
-            for (j=1,jj=a+b; j<l; j++,jj+=a)
+            for (j=1,jj=a+b; j<l; ++j,jj+=a)
             {
                 p = item[jj]; ii = 0>dir ? 0 : i;
                 if (p[1] === conjugate[ii][0])
@@ -6493,7 +5928,7 @@ function conjugatepartition(is_composition, item, dir)
                 else
                 {
                     // swap part with multiplicity
-                    conjugate[push]([p[1], p[0]]); i++;
+                    conjugate[push]([p[1], p[0]]); ++i;
                 }
             }
         }
@@ -6501,11 +5936,11 @@ function conjugatepartition(is_composition, item, dir)
         {
             // standard(unpacked) representation
             n = item[b]; conjugate = array(n, 1, 0);
-            if (0>dir) d = n-1-d;
-            for (j=1,jj=a+b; j<l; j++,jj+=a)
+            if (0 > dir) d = n-1-d;
+            for (j=1,jj=a+b; j<l; ++j,jj+=a)
             {
                 i = 0; ii = d; p = item[jj];
-                while ((i < n) && (p > 0)) { conjugate[ii]++; p--; i++; ii+=a; }
+                while ((i < n) && (p > 0)) {++conjugate[ii]; --p; ++i; ii += a;}
             }
         }
     }
@@ -6525,12 +5960,12 @@ function packpartition(partition, dir)
         b = l-1-b;
         push = "unshift";
     }
-    for (last=partition[b],part=[last, 1],i=1; i<l; i++)
+    for (last=partition[b],part=[last, 1],i=1; i<l; ++i)
     {
         j = a*i+b;
         if (last === partition[j])
         {
-            part[1]++;
+            ++part[1];
         }
         else
         {
@@ -6554,31 +5989,32 @@ function unpackpartition(packed, dir)
         b = l-1-b;
         push = "unshift";
     }
-    for (i=0; i<l; i++)
+    for (i=0; i<l; ++i)
     {
         cmp = packed[a*i+b];
         if (1 === cmp[1])
             partition[push](cmp[0]);
         else
-            for (k=cmp[1],v=cmp[0],j=0; j<k; j++)
+            for (k=cmp[1],v=cmp[0],j=0; j<k; ++j)
                 partition[push](v);
     }
     return partition;
 }
 function singletons(item, n)
 {
-    var i, j, l, S = [];
-    for (i=0,l=item.length; i<l; i++)
+    var i, j, l = item.length, S = new Array(l);
+    for (i=0,j=0; i<l; ++i)
     {
         if (1 === item[i].length)
-            S.push(item[i][0])
+            S[j++] = item[i][0];
     }
+    if (j < S.length) S.length = j; // truncate if needed
     return S;
 }
 function adjInit(item, n)
 {
-    var i, j, l, I = [];
-    for (i=0,l=item.length; i<l; i++)
+    var i, j, k, l = item.length, I = [];
+    for (i=0,k=0; i<l; ++i)
     {
         if (1 === item[i].length)
         {
@@ -6586,12 +6022,12 @@ function adjInit(item, n)
         }
         else
         {
-            for (j=0; j+1<item[i].length; j++)
+            for (j=0,k=item[i].length; j+1<k; ++j)
             {
                 if (item[i][j]+1 === item[i][j+1])
                     I.push(item[i][j]);
             }
-            if ((item[i][j]+1) % n === item[i][0])
+            if (((item[i][j]+1) % n) === item[i][0])
                     I.push(item[i][j]);
         }
     }
@@ -6599,8 +6035,8 @@ function adjInit(item, n)
 }
 function adjTerm(item, n)
 {
-    var i, j, l, T = [];
-    for (i=0,l=item.length; i<l; i++)
+    var i, j, l, k, T = [];
+    for (i=0,l=item.length; i<l; ++i)
     {
         if (1 === item[i].length)
         {
@@ -6608,7 +6044,7 @@ function adjTerm(item, n)
         }
         else
         {
-            for (j=0; j+1<item[i].length; j++)
+            for (j=0,k=item[i].length; j+1<k; ++j)
             {
                 if (item[i][j]+1 === item[i][j+1])
                     T.push(item[i][j+1]);
@@ -6681,10 +6117,10 @@ function permutation2matrix(matrix, permutation, transposed)
     for (i=0,j=0; i<n2;)
     {
         matrix[i+j] = 0;
-        if (++j >= n) { j=0; i+=n; }
+        if (++j >= n) {j = 0; i += n;}
     }
-    if (true === transposed) for (i=0; i<n; i++) matrix[n*permutation[i]+i] = 1;
-    else for (i=0,j=0; j<n; j++,i+=n) matrix[i+permutation[i]] = 1;
+    if (true === transposed) for (i=0; i<n; ++i) matrix[n*permutation[i]+i] = 1;
+    else for (i=0,j=0; j<n; ++j,i+=n) matrix[i+permutation[i]] = 1;
     return matrix;
 }
 function matrix2permutation(permutation, matrix, transposed)
@@ -6696,7 +6132,7 @@ function matrix2permutation(permutation, matrix, transposed)
         for (i=0,j=0; i<n;)
         {
             if (matrix[n*i+j]) permutation[j] = i;
-            if (++j >= n) { j=0; i++; }
+            if (++j >= n) {j = 0; ++i;}
         }
     }
     else
@@ -6704,7 +6140,7 @@ function matrix2permutation(permutation, matrix, transposed)
         for (i=0,j=0; i<n;)
         {
             if (matrix[i+j]) permutation[i] = j;
-            if (++j >= n) { j=0; i++; }
+            if (++j >= n) {j = 0; ++i;}
         }
     }
     return permutation;
@@ -6714,34 +6150,34 @@ function multiset(m, n, dir)
     var nm = m ? m.length : 0, dk = 1, k = 0,
         ki = 0, mk = ki < nm ? m[ki]||1 : 1;
     if (-1 === dir){ dk = -1; k = (nm||n)-1; }
-    return operate(function(p,i){
+    return operate(function(p, i) {
         if (0 >= mk)
         {
-            ki++; k+=dk;
-            mk = ki<nm ? m[ki]||1 : 1;
+            ++ki; k += dk;
+            mk = ki < nm ? (m[ki]||1) : 1;
         }
-        mk--; p[i] = k; return p;
+        --mk; p[i] = k; return p;
     }, new Array(n), null, 0, n-1);
 }
 function multiset2permutation(multiset)
 {
     // O(nlgn) get associated permutation(unique elements) = invpermutation of indices that sorts the multiset
     // from multiset permutation(repeated elements)
-    return permutation2inverse(null, mergesort(multiset,1,false,true/*return indices*/));
+    return permutation2inverse(null, mergesort(multiset, 1, false, true/*return indices*/));
 }
 function permutation2multiset(permutation, multiset)
 {
     // O(n) get associated multiset permutation(repeated elements) = choose elements by permutation
     // from permutation(unique elements=indices)
-    return multiset && multiset.length ? operate(function(p,pi,i){
-        p[i] = pi<multiset.length ? multiset[pi] : pi; return p;
+    return multiset && multiset.length ? operate(function(p, pi, i) {
+        p[i] = pi < multiset.length ? multiset[pi] : pi; return p;
     }, permutation, permutation) : permutation;
 }
 function permutation2inverse(ipermutation, permutation)
 {
-    return operate(function(ip,pi,i){
+    return operate(function(ip, pi, i) {
         ip[pi] = i; return ip;
-    }, ipermutation||new Array(permutation.length), permutation);
+    }, ipermutation || new Array(permutation.length), permutation);
 }
 function permutation2inversion(inversion, permutation, N)
 {
@@ -6750,12 +6186,12 @@ function permutation2inversion(inversion, permutation, N)
     var n = permutation.length, k = stdMath.ceil(log2(N||n)),
         twok = 1 << k, Tl = (1<<(1+k))-1, T = array(Tl, 0, 0);
 
-    return operate(function(inv,ctr,i){
+    return operate(function(inv ,ctr, i) {
         // Starting bottom-up at the leaf associated with pi
-        for (var node=ctr+twok,j=0; j<k; j++)
+        for (var node=ctr+twok,j=0; j<k; ++j)
         {
             // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
-            if (node&1) ctr -= T[(node >>> 1) << 1];
+            if (node & 1) ctr -= T[(node >>> 1) << 1];
             // 2) increase the value stored at the current node.
             T[node] += 1;
             // 3) move-up the tree
@@ -6763,7 +6199,7 @@ function permutation2inversion(inversion, permutation, N)
         }
         T[node] += 1; inv[i] = ctr;
         return inv;
-    }, inversion||new Array(n), permutation);
+    }, inversion || new Array(n), permutation);
 }
 function inversion2permutation(permutation, inversion, N)
 {
@@ -6772,10 +6208,10 @@ function inversion2permutation(permutation, inversion, N)
     var n = inversion.length, k = stdMath.ceil(log2(N||n)),
         i, i2, j, twok = 1 << k, Tl = (1<<(1+k))-1, T = new Array(Tl);
 
-    for (i=0; i<=k; i++)for (j=1,i2=1<<i; j<=i2; j++) T[i2-1+j] = 1 << (k-i);
-    return operate(function(perm,digit,i){
+    for (i=0; i<=k; ++i) for (j=1,i2=1<<i; j<=i2; ++j) T[i2-1+j] = 1 << (k-i);
+    return operate(function(perm, digit, i) {
         // Starting top-down the tree
-        for (var node=1,j=0; j<k; j++)
+        for (var node=1,j=0; j<k; ++j)
         {
             T[node] -= 1;
             node <<= 1;
@@ -6784,12 +6220,12 @@ function inversion2permutation(permutation, inversion, N)
             {
                 // If the next node is the right child, then the value of the left child is subtracted from digit
                 digit -= T[node];
-                node++;
+                ++node;
             }
         }
         T[node] = 0; perm[i] = node - twok;
         return perm;
-    }, permutation||new Array(n), inversion);
+    }, permutation || new Array(n), inversion);
 }
 function permutation2count(count, permutation, dir)
 {
@@ -6826,16 +6262,16 @@ function permutation2count(count, permutation, dir)
     Where the second term is exactly what we are writing in $A[i+1]$.
     */
     var n = permutation.length, A = array(n, 0, 0), i;
-    for (i=0; i<n; i++) A[stdMath.min(i,permutation[i])]++;
-    count = operate(function(count,i){
+    for (i=0; i<n; ++i) ++A[stdMath.min(i,permutation[i])];
+    count = operate(function(count, i) {
         count[i] = i+1 === n ? 0 : count[i+1] + A[i+1];
         return count;
-    }, count||new Array(n), null, n-1, 0, -1);
+    }, count || new Array(n), null, n-1, 0, -1);
     if (-1 === dir)
     {
         // compute complement count K'(\sigma)_i = \#\{j < i : \sigma_j > i\} = n-i-1-K(\sigma)_i-1_{\sigma_i>i}
-        count = operate(function(count,i){
-            count[i] = n-i-1-count[i]-(i<permutation[i]);
+        count = operate(function(count, i) {
+            count[i] = n-i-1-count[i]-(i < permutation[i]);
             return count;
         }, count, null, 0, n-1, 1);
     }
@@ -6878,7 +6314,7 @@ function matchswaps(n, x, y, swaps, i, unvisited)
         for (k=j.prev; k && (k.index>=0); k=k.prev)
         {
             unvisited.rem(k);
-            if (k.index===s0 && j.index===s1)
+            if (k.index === s0 && j.index === s1)
             {
                 c = Arithmetic.add(Arithmetic.add(c, matchswaps(n, k.index, j.index, swaps, i+1, unvisited)), Arithmetic.I);
                 b = true;
@@ -6933,14 +6369,14 @@ function findswaps(n, x, y, index, unvisited)
 function countinvol(n, x, y, unvisited)
 {
     var Arithmetic = Abacus.Arithmetic, c = Arithmetic.I, j, k;
-    for (j=n-1; j>y; j--)
+    for (j=n-1; j>y; --j)
     {
-        for (k=j-1; k>=0; k--)
+        for (k=j-1; k>=0; --k)
         {
             c = Arithmetic.add(c, Arithmetic.add(countswaps(n, k, j, unvisited), j+1<n ? Arithmetic.I : Arithmetic.O));
         }
     }
-    for (k=y-1; k>x; k--)
+    for (k=y-1; k>x; --k)
     {
         c = Arithmetic.add(c, Arithmetic.add(countswaps(n, k, y, unvisited), y+1<n ? Arithmetic.I : Arithmetic.O));
     }
@@ -6956,7 +6392,7 @@ function cycle2swaps(cycle, swaps, slen)
             swaps = new Array(c-1);
             slen = 0;
         }
-        for (j=c-1; j>=1; j--) swaps[slen++] = [cycle[0],cycle[j]];
+        for (j=c-1; j>=1; --j) swaps[slen++] = [cycle[0], cycle[j]];
     }
     else
     {
@@ -6976,7 +6412,7 @@ function permutation2cycles(permutation, strict)
     cycle[clen++] = current;
     while (unvisited.first())
     {
-        current = permutation[ current ];
+        current = permutation[current];
         if (!unvisited.has(current))
         {
             if (clen > min_cycle)
@@ -7000,13 +6436,13 @@ function permutation2cycles(permutation, strict)
 }
 function cycles2permutation(cycles, n)
 {
-    var permutation = array(n || (cycles.reduce(function(s, c){return stdMath.max(s, stdMath.max.apply(null, c)||0);}, 0)+1), 0, 1), i, j, k = cycles.length, ki, cycle;
-    for (i=k-1; i>=0; i--)
+    var permutation = array(n || (cycles.reduce(function(s, c) {return stdMath.max(s, stdMath.max.apply(null, c)||0);}, 0)+1), 0, 1), i, j, k = cycles.length, ki, cycle;
+    for (i=k-1; i>=0; --i)
     {
         cycle = cycles[i]; ki = cycle.length;
         if (1 < ki)
         {
-            for (j=0; j+1<ki; j++) permutation[cycle[j]] = cycle[j+1];
+            for (j=0; j+1<ki; ++j) permutation[cycle[j]] = cycle[j+1];
             permutation[cycle[ki-1]] = cycle[0];
         }
     }
@@ -7017,16 +6453,16 @@ function permutation2swaps(permutation)
     var n = permutation.length, i, l, j, k,
         swaps = new Array(n), slen = 0,
         cycles = permutation2cycles(permutation, true);
-    for (i=0,l=cycles.length; i<l; i++) slen = cycle2swaps(cycles[i], swaps, slen);
+    for (i=0,l=cycles.length; i<l; ++i) slen = cycle2swaps(cycles[i], swaps, slen);
     if (slen < swaps.length) swaps.length = slen; // truncate
     return swaps;
 }
 function swaps2permutation(swaps, n)
 {
-    n = n || (swaps.reduce(function(s, c){return stdMath.max(s, stdMath.max.apply(null, c)||0);}, 0)+1);
+    n = n || (swaps.reduce(function(s, c) {return stdMath.max(s, stdMath.max.apply(null, c)||0);}, 0)+1);
     var i, l = swaps.length, permutation = new Array(n), s, t;
-    for (i=0; i<n; i++) permutation[i] = i;
-    for (i=0; i<l; i++)
+    for (i=0; i<n; ++i) permutation[i] = i;
+    for (i=0; i<l; ++i)
     {
         // swap
         swap = s[i];
@@ -7044,32 +6480,32 @@ function permute(a, p, copy)
         // O(n) time, O(n) space
         return operate((
             n < m
-            ? function(ap, i){ ap[i] = p[i]<n ? a[p[i]] : a[i]; return ap; }
+            ? function(ap, i) {ap[i] = p[i] < n ? a[p[i]] : a[i]; return ap;}
             : (n > m
-            ? function(ap, i){ ap[i] = i<m ? a[p[i]] : a[i]; return ap; }
-            : function(ap, i){ ap[i] = a[p[i]]; return ap; }
+            ? function(ap, i) {ap[i] = i < m ? a[p[i]] : a[i]; return ap;}
+            : function(ap, i) {ap[i] = a[p[i]]; return ap;}
        )), new Array(n), null, 0, n-1, 1);
     }
     else
     {
         // O(n) time, O(n) space
-        for (var aa=a.slice(),i=0; i<n; i++) a[i] = aa[p[i]];
+        for (var aa=a.slice(),i=0; i<n; ++i) a[i] = aa[p[i]];
         return a;
     }
 }
 function permutationproduct(permutations)
 {
-    return operate(function(prod, perm){
+    return operate(function(prod, perm) {
         return permute(prod, perm, true);
-    }, permutations.length?permutations[0].slice():[], permutations, 1, permutations.length-1, 1);
+    }, permutations.length ? permutations[0].slice() : [], permutations, 1, permutations.length-1, 1);
 }
 function permutationdirectsum(permutations)
 {
     var nperms = permutations.length, n=0, k, p, pn;
-    for (p=0; p<nperms; p++) n += permutations[p].length;
+    for (p=0; p<nperms; ++p) n += permutations[p].length;
     k = 0; p = 0; pn = nperms ? permutations[p].length : 0;
-    return array(n, function(i){
-        if (i >= k+pn) { k += pn; pn = permutations[++p].length; }
+    return array(n, function(i) {
+        if (i >= k+pn) {k += pn; pn = permutations[++p].length;}
         return k + permutations[p][i-k];
     });
 }
@@ -7079,25 +6515,25 @@ function is_permutation(perm, n)
     if (n !== perm.length) return false;
     var cnt = array(n, 0, 0), i, pi;
     // O(n)
-    for (i=0; i<n; i++)
+    for (i=0; i<n; ++i)
     {
         pi = perm[i];
         if ((0 > pi) || (pi >= n) || (0 < cnt[pi])) return false;
-        cnt[pi]++;
+        ++cnt[pi];
     }
-    for (i=0; i<n; i++) if (1 !== cnt[i]) return false;
+    for (i=0; i<n; ++i) if (1 !== cnt[i]) return false;
     return true;
 }
 function is_identity(perm)
 {
     // O(n)
-    for (var n=perm.length,i=0; i<n; i++) if (perm[i] !== i) return false;
+    for (var n=perm.length,i=0; i<n; ++i) if (perm[i] !== i) return false;
     return true;
 }
 function is_involution(perm)
 {
     // O(n)
-    for (var n=perm.length,i=0,pi=perm[i]; i<n; i++,pi=perm[i])
+    for (var n=perm.length,i=0,pi=perm[i]; i<n; ++i,pi=perm[i])
         if ((0 > pi) || (n <= pi) || (perm[pi] !== i)) return false;
     return true;
 }
@@ -7106,12 +6542,12 @@ function is_kthroot(perm, k)
     k = k || 1; if (1 > k) return false;
     var i, pi, m, n = perm.length;
     // O(kn) worst case
-    for (i=0; i<n; i++)
+    for (i=0; i<n; ++i)
     {
         pi = perm[i]; m = 1;
-        while (m<=k && i!==pi){ m++; pi=perm[pi]; }
+        while (m <= k && i !== pi) {++m; pi = perm[pi];}
         // either the kth composition is identity or mth composition is identity where m is a factor of k
-        if ((i!==pi) || ((m!==k) && (m>=k || (0 < (k%m))))) return false
+        if ((i !== pi) || ((m !== k) && (m >= k || (0 < (k % m))))) return false
     }
     return true;
 }
@@ -7119,7 +6555,7 @@ function is_derangement(perm, kfixed, strict)
 {
     // O(n)
     kfixed = kfixed|0;
-    for (var nfixed=0,n=perm.length,i=0; i<n; i++)
+    for (var nfixed=0,n=perm.length,i=0; i<n; ++i)
     {
         if (perm[i] === i) if ((++nfixed) > kfixed) return false;
     }
@@ -7128,15 +6564,15 @@ function is_derangement(perm, kfixed, strict)
 function is_cyclic/*_shift*/(perm)
 {
     // O(n)
-    for (var n=perm.length,i=1,i0=perm[0]; i<n; i++)
-        if (perm[i] !== ((i0+i)%n)) return false;
+    for (var n=perm.length,i=1,i0=perm[0]; i<n; ++i)
+        if (perm[i] !== ((i0 + i) % n)) return false;
     return true;
 }
 function is_connected(perm)
 {
     // from: http://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf
     // O(n)
-    for (var n=perm.length-1,m=-1,i=0,pi=perm[i]; i<n; i++,pi=perm[i])
+    for (var n=perm.length-1,m=-1,i=0,pi=perm[i]; i<n; ++i,pi=perm[i])
     {
         // for all proper prefixes, do:
         if (pi > m) m = pi; // update max
@@ -7156,10 +6592,10 @@ function is_kcycle(perm, kcycles, compare, fixed)
     {
         unvisited.rem(i);
         pi = perm[i];
-        if (i===pi || !unvisited.has(pi))
+        if (i === pi || !unvisited.has(pi))
         {
             // close cycle
-            if (fixed || i!==pi) ncycles++;
+            if (fixed || i!==pi) ++ncycles;
             unvisited.rem(pi);
             // start next cycle
             if (unvisited.first())
@@ -7173,15 +6609,15 @@ function is_kcycle(perm, kcycles, compare, fixed)
             i = pi;
         }
     }
-    return "<="===compare||"=<"===compare ? ncycles<=kcycles : (">="===compare||"=>"===compare ? ncycles>=kcycles : ncycles===kcycles);
+    return "<=" === compare || "=<" === compare ? ncycles <= kcycles : (">=" === compare || "=>" === compare ? ncycles >= kcycles : (ncycles === kcycles));
 }
 function is_magic(square)
 {
     if (!square) return false;
     var n = square.length, n2 = n*n, i, j, k,
         summa_row = 0, summa_col = 0, summa_d1 = 0, summa_d2 = 0,
-        summa = (n*n2+n)>>>1, seen = new Array(n2);
-    for (i=0; i<n; i++)
+        summa = (n*n2+n) >>> 1, seen = new Array(n2);
+    for (i=0; i<n; ++i)
     {
         if (n !== square[i].length) return false;
         k = square[i][0];
@@ -7194,7 +6630,7 @@ function is_magic(square)
         summa_col = k;
         summa_d1 += square[i][i];
         summa_d2 += square[i][n-1-i];
-        for (j=1; j<n; j++)
+        for (j=1; j<n; ++j)
         {
             k = square[i][j];
             if (!seen[k-1]) seen[k-1] = [i, j];
@@ -7214,16 +6650,16 @@ function is_latin(square)
 {
     if (!square) return false;
     var n = square.length, i, j, k, m, seen = new Array(n);
-    for (i=0; i<n; i++)
+    for (i=0; i<n; ++i)
     {
         if (n !== square[i].length) return false;
         // rows
-        for (k=0; k<n; k++)
+        for (k=0; k<n; ++k)
         {
             // initialize
             seen[k] = 0;
         }
-        for (j=0; j<n; j++)
+        for (j=0; j<n; ++j)
         {
             m = square[i][j];
             k = square[0].indexOf(m);
@@ -7231,12 +6667,12 @@ function is_latin(square)
             seen[k] = 1;
         }
         // columns
-        for (k=0; k<n; k++)
+        for (k=0; k<n; ++k)
         {
             // initialize
             seen[k] = 0;
         }
-        for (j=0; j<n; j++)
+        for (j=0; j<n; ++j)
         {
             m = square[j][i];
             k = square[0].indexOf(m);
@@ -7252,11 +6688,11 @@ function find(a, b, nested)
     {
         if (!a || !a.length) return -1;
         var index, found, i, j, k, n = a.length, m = b.length;
-        for (i=0; i<n; i++)
+        for (i=0; i<n; ++i)
         {
             k = a[i];
             found = true;
-            for (j=0; j<m; j++)
+            for (j=0; j<m; ++j)
             {
                 if (b[j] !== k[j])
                 {
@@ -7277,7 +6713,7 @@ function remove_duplicates(a, KEY)
 {
     KEY = is_callable(KEY) ? KEY : String;
     var hash = Obj(), dupl = [], k, i, l;
-    for (i=0,l=a.length; i<l; i++)
+    for (i=0,l=a.length; i<l; ++i)
     {
         k = KEY(a[i]);
         if (HAS.call(hash, k)) dupl.push(i);
@@ -7288,5 +6724,5 @@ function remove_duplicates(a, KEY)
 }
 function rndInt(m, M)
 {
-    return stdMath.round((M-m)*Abacus.Math.rnd() + m);
+    return stdMath.round((M-m) * Abacus.Math.rnd() + m);
 }

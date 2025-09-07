@@ -1,47 +1,20 @@
 # Abacus
 
-A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library for Javascript, Python
+Combinatorics and Algebraic Number Theory **Symbolic Computation Library** for Javascript, Python
 
 
-**version 1.0.9 in progress** (~ 331kB minified)
+**version 2.0.0** in progress
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
-[Abacus.js](https://raw.githubusercontent.com/foo123/Abacus/master/src/js/Abacus.js),  [Abacus.min.js](https://raw.githubusercontent.com/foo123/Abacus/master/src/js/Abacus.min.js)
 
-
-`Abacus` is a flexible library containing methods and associated math utilities for (fast) combinatorial object computation and integer / number theoretic computation. It builds on (and extends) a [deprecated previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
+`Abacus` is a versatile library containing methods and associated math utilities for (fast) combinatorial object computation and integer / number theoretic computation. It builds on (and extends) a [deprecated previous project for PHP, Simulacra](https://github.com/foo123/Simulacra).
 
 `Abacus` uses (for the most part) self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
 
 [![Abacus Live](/abacus-live.png)](https://foo123.github.io/examples/abacus)
 
-
-**see also:**
-
-* [Abacus](https://github.com/foo123/Abacus) advanced Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript, Python
-* [TensorView](https://github.com/foo123/TensorView) view array data as multidimensional tensors of various shapes efficiently
-* [Geometrize](https://github.com/foo123/Geometrize) Computational Geometry and Rendering Library for JavaScript
-* [Plot.js](https://github.com/foo123/Plot.js) simple and small library which can plot graphs of functions and various simple charts and can render to Canvas, SVG and plain HTML
-* [CanvasLite](https://github.com/foo123/CanvasLite) an html canvas implementation in pure JavaScript
-* [Rasterizer](https://github.com/foo123/Rasterizer) stroke and fill lines, rectangles, curves and paths, without canvas
-* [Gradient](https://github.com/foo123/Gradient) create linear, radial, conic and elliptic gradients and image patterns without canvas
-* [css-color](https://github.com/foo123/css-color) simple class to parse and manipulate colors in various formats
-* [MOD3](https://github.com/foo123/MOD3) 3D Modifier Library in JavaScript
-* [HAAR.js](https://github.com/foo123/HAAR.js) image feature detection based on Haar Cascades in JavaScript (Viola-Jones-Lienhart et al Algorithm)
-* [HAARPHP](https://github.com/foo123/HAARPHP) image feature detection based on Haar Cascades in PHP (Viola-Jones-Lienhart et al Algorithm)
-* [FILTER.js](https://github.com/foo123/FILTER.js) video and image processing and computer vision Library in pure JavaScript (browser and node)
-* [Xpresion](https://github.com/foo123/Xpresion) a simple and flexible eXpression parser engine (with custom functions and variables support), based on [GrammarTemplate](https://github.com/foo123/GrammarTemplate), for PHP, JavaScript, Python
-* [Regex Analyzer/Composer](https://github.com/foo123/RegexAnalyzer) Regular Expression Analyzer and Composer for PHP, JavaScript, Python
-* [GrammarTemplate](https://github.com/foo123/GrammarTemplate) grammar-based templating for PHP, JavaScript, Python
-* [codemirror-grammar](https://github.com/foo123/codemirror-grammar) transform a formal grammar in JSON format into a syntax-highlight parser for CodeMirror editor
-* [ace-grammar](https://github.com/foo123/ace-grammar) transform a formal grammar in JSON format into a syntax-highlight parser for ACE editor
-* [prism-grammar](https://github.com/foo123/prism-grammar) transform a formal grammar in JSON format into a syntax-highlighter for Prism code highlighter
-* [highlightjs-grammar](https://github.com/foo123/highlightjs-grammar) transform a formal grammar in JSON format into a syntax-highlight mode for Highlight.js code highlighter
-* [syntaxhighlighter-grammar](https://github.com/foo123/syntaxhighlighter-grammar) transform a formal grammar in JSON format to a highlight brush for SyntaxHighlighter code highlighter
-* [SortingAlgorithms](https://github.com/foo123/SortingAlgorithms) implementations of Sorting Algorithms in JavaScript
-* [PatternMatchingAlgorithms](https://github.com/foo123/PatternMatchingAlgorithms) implementations of Pattern Matching Algorithms in JavaScript
 
 
 ### Contents
@@ -95,6 +68,7 @@ A **Combinatorics** and **Algebraic Number Theory** Symbolic Computation library
 * `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`), `Complex` (`test/complex.js`) **supporting arbitrary precision arithmetic**
 * `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate / multivariate with coefficients from a Ring/Field**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
+* `Expr` **general symbolic expressions**
 * Algebraic `Ring`s / `Field`s eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/ratfuncs.js`)
 * `Matrix` (`test/matrices.js`) **with coefficients from a Ring (default: Integer Ring.Z())**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
@@ -155,9 +129,6 @@ See the comments in the code for algorithms and references used.
 * [Fourier's Elimination: Which to Choose?, Jean-Louis Imbert](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.51.493&rep=rep1&type=pdf)
 * [Complexity Estimates for Fourier-Motzkin Elimination, Rui-Juan Jing, Marc Moreno-Maza, Delaram Talaashrafi](https://arxiv.org/abs/1811.01510v2)
 * [Fourier-Motzkin Elimination Extension to Integer Programming Problems , H.P. Williams](https://core.ac.uk/download/pdf/82527959.pdf)
-* [Affine Monoids, Hilbert Bases and Hilbert Functions, Robert Koch (PhD thesis)](https://pdfs.semanticscholar.org/ed79/7e8d8a3316f227cb9f180538d3d2150a900d.pdf)
-* [Numerical algorithms for the computation of the Smith normal form of integral matrices, C. Koukouvinos, M. Mitrouli, J. Seberry](https://ro.uow.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=2173&context=infopapers)
-* [Computational solutions of matrix problems over an integral domain, Erwin H. Bareiss](http://citeseerx.ist.psu.edu/viewdoc/citations;jsessionid=E96A31F468282BD6A13CF5BBE30060DB?doi=10.1.1.909.6404)
 * [Fraction-free matrix factors: new forms for LU and QR factors, Wenqin ZHOU, David J. JEFFREY](http://ftp.cecm.sfu.ca/personal/pborwein/MITACS/papers/FFMatFacs08.pdf)
 * [Fraction-Free Methods for Determinants, Deanna Richelle Leggett (MSc thesis)](https://pdfs.semanticscholar.org/4188/73bbcad4e7bcdcf14475b4616febbdc729f2.pdf)
 * [Moore-Penrose Generalised Inverse, wikipedia](https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse)
@@ -175,15 +146,12 @@ See the comments in the code for algorithms and references used.
 * [Faugère's F4 and F5 algorithms, wikipedia](https://en.wikipedia.org/wiki/Faug%C3%A8re%27s_F4_and_F5_algorithms)
 * [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
 * [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
-* [Algorithms for Normal Forms for Matrices of Polynomials and Ore Polynomials, Howard Cheng (PhD thesis)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.9.4150&rep=rep1&type=pdf)
-* [Fast Methods for Large Scale Singular Value Decomposition, Nela Bosner (PhD thesis)](https://web.math.pmf.unizg.hr/~nela/doktorat.pdf)
 * [Square-free Decomposition, wikipedia](https://en.wikipedia.org/wiki/Square-free_polynomial)
 * [Partial Fraction Decomposition, wikipedia](https://en.wikipedia.org/wiki/Partial_fraction_decomposition)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
 * [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
 * [Aberth method, wikipedia](https://en.wikipedia.org/wiki/Aberth_method)
 * [Numerical computation of polynomial zeros by means of Aberth's method, D. A. Bini](https://www.researchgate.net/publication/225654837_Numerical_computation_of_polynomial_zeros_by_means_of_Aberth's_method)
-* [General Complex Polynomial Root Solver and Its Further Optimization for Binary Microlenses, Jan Skowron and Andrew Gould](http://www.astronomy.ohio-state.edu/~jskowron/paper/paper.pdf)
 
 ### Example API
 
@@ -295,7 +263,7 @@ console.log(m.inv().mul(m).toString());
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * add Rank Factorisation **[DONE]**
 * fix `ginv` (Moore-Penrose Inverse) computation **[DONE]**
-* implement (faster) numeric `EVD/SVD` computation (TODO)
+* implement symbolic/numeric `EVD/SVD` computation (TODO)
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
@@ -314,3 +282,29 @@ console.log(m.inv().mul(m).toString());
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support generation (and counting) of combinatorial objects (including the basic supported ones) based on **generic user-defined symbolic constraints / symmetries / rules** to satisfy, for example `permutations` defined symbolicaly and directly by their *symmetries / constraints* instead of being hardcoded as elementary objects (TODO?, see using `filtering` as a similar alternative to this approach)
 * support *graph-based* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
+
+
+**see also:**
+
+* [Abacus](https://github.com/foo123/Abacus) advanced Combinatorics and Algebraic Number Theory Symbolic Computation Library for JavaScript, Python
+* [TensorView](https://github.com/foo123/TensorView) view array data as multidimensional tensors of various shapes efficiently
+* [Geometrize](https://github.com/foo123/Geometrize) Computational Geometry and Rendering Library for JavaScript
+* [Plot.js](https://github.com/foo123/Plot.js) simple and small library which can plot graphs of functions and various simple charts and can render to Canvas, SVG and plain HTML
+* [CanvasLite](https://github.com/foo123/CanvasLite) a lite canvas implementation in pure JavaScript
+* [Rasterizer](https://github.com/foo123/Rasterizer) stroke and fill lines, rectangles, curves and paths, without canvas
+* [Gradient](https://github.com/foo123/Gradient) create linear, radial, conic and elliptic gradients and image patterns without canvas
+* [css-color](https://github.com/foo123/css-color) simple class to parse and manipulate colors in various formats
+* [MOD3](https://github.com/foo123/MOD3) 3D Modifier Library in JavaScript
+* [HAAR.js](https://github.com/foo123/HAAR.js) image feature detection based on Haar Cascades in JavaScript (Viola-Jones-Lienhart et al Algorithm)
+* [HAARPHP](https://github.com/foo123/HAARPHP) image feature detection based on Haar Cascades in PHP (Viola-Jones-Lienhart et al Algorithm)
+* [FILTER.js](https://github.com/foo123/FILTER.js) video and image processing and computer vision Library in pure JavaScript (browser and node)
+* [Xpresion](https://github.com/foo123/Xpresion) a simple and versatile eXpression parser engine (with custom functions and variables support), based on [GrammarTemplate](https://github.com/foo123/GrammarTemplate), for PHP, JavaScript, Python
+* [Regex Analyzer/Composer](https://github.com/foo123/RegexAnalyzer) Regular Expression Analyzer and Composer for PHP, JavaScript, Python
+* [GrammarTemplate](https://github.com/foo123/GrammarTemplate) grammar-based templating for PHP, JavaScript, Python
+* [codemirror-grammar](https://github.com/foo123/codemirror-grammar) transform a formal grammar in JSON format into a syntax-highlight parser for CodeMirror editor
+* [ace-grammar](https://github.com/foo123/ace-grammar) transform a formal grammar in JSON format into a syntax-highlight parser for ACE editor
+* [prism-grammar](https://github.com/foo123/prism-grammar) transform a formal grammar in JSON format into a syntax-highlighter for Prism code highlighter
+* [highlightjs-grammar](https://github.com/foo123/highlightjs-grammar) transform a formal grammar in JSON format into a syntax-highlight mode for Highlight.js code highlighter
+* [syntaxhighlighter-grammar](https://github.com/foo123/syntaxhighlighter-grammar) transform a formal grammar in JSON format to a highlight brush for SyntaxHighlighter code highlighter
+* [SortingAlgorithms](https://github.com/foo123/SortingAlgorithms) implementations of Sorting Algorithms in JavaScript
+* [PatternMatchingAlgorithms](https://github.com/foo123/PatternMatchingAlgorithms) implementations of Pattern Matching Algorithms in JavaScript
