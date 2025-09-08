@@ -1369,7 +1369,7 @@ function isqrt(n)
     two = Arithmetic.II;
     // Binary Search (O(logn))
     start = I; end = Arithmetic.div(n, two); sqrt = start;
-    while (Arithmetic.lte(start, end))
+    for (;Arithmetic.lte(start, end);)
     {
         mid = Arithmetic.div(Arithmetic.add(start, end), two);
         mid2 = Arithmetic.mul(mid, mid);
@@ -1421,7 +1421,7 @@ function ikthroot(n, k)
     k_1 = Arithmetic.sub(k, I);
     u = n;
     r = Arithmetic.add(n, I);
-    while (Arithmetic.lt(u, r))
+    for (;Arithmetic.lt(u, r);)
     {
         r = u;
         u = Arithmetic.div(Arithmetic.add(Arithmetic.mul(r, k_1), Arithmetic.div(n, Arithmetic.pow(r, k_1))), k);
@@ -1449,14 +1449,14 @@ function polykthroot(p, k, limit)
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
     r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
     deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-    while (!d.equ(O))
+    for (;!d.equ(O);)
     {
         q = d.ttm(true).div(rk.mul(k).ttm(true));
         if (q.equ(O)) break; // no update anymore
         /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
         // compute only up to some terms of power series (truncated power series approximation)
         // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
-        if (r.maxdeg(true)*k > deg) { nterms++; if ((r.terms.length >= limit) || (nterms >= limit)) break; }
+        if (r.maxdeg(true)*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
     }
     // normalise r to have positive lead coeff
     // if k is multiple of 2 (since then both r and -r are roots)
@@ -3108,7 +3108,7 @@ function buchberger_groebner(Basis)
 
         // Build a Groebner basis using Buchberger's algorithm.
         pairs = Combination(Basis.length, 2).mapTo(function(i){return [Basis[i[0]], Basis[i[1]]];});
-        while (1)
+        for (;;)
         {
             newBasis = [];
             while (pairs.hasNext())
@@ -3893,7 +3893,7 @@ function dsc_factorial(n)
         {
             prime = primes[i]; // prime in primes[1:s]
             p = I; q = m;
-            while (1)
+            for (;;)
             {
                 q = Arithmetic.div(q, prime);
                 if (Arithmetic.equ(O, q)) break;

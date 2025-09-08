@@ -390,7 +390,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         merge();
                         continue;
                     }
-                    if ((match = eat('÷')) || (match = eat(/^(\\div)[^a-z]/i, 1)))
+                    if ((match = eat('÷')) || (match = eat(/^(\\over|\\div)[^a-z]/i, 1)))
                     {
                         // alternative div op
                         op = '/';
@@ -532,15 +532,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     throw error(expected ? ('Missing "' + expected.split('').join(" or ") + '"') : ('Unexpected "' + c + '"'));
                 }
                 merge(true);
-                if ((1 < terms.length) || (0 < ops.length)) throw error('Mismatched terms and operators');
+                if ((1 < terms.length) || (0 < ops.length)) throw error('Mismatched terms and operators', ops.length ? ops[0][1] : p);
                 return terms[0] || null;
             }
             return parse_until(false);
         }
 
-        ,gcd: null
-        ,xgcd: null
-        ,lcm: null
         ,cast: null // added below
     }
 
@@ -677,7 +674,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
 
     ,c: function() {
-        var self = this, ast = self.ast, args;
+        var self = this, ast = self.ast;
         if (null == self._c)
         {
             if ('sym' === ast.type)
@@ -749,190 +746,190 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return new Expr('/', [self.den, self.num]);
     }
 
-    ,equ: function(x) {
+    ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (is_instance(x, Expr))
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (is_instance(other, Expr))
         {
-            if (('num' === self.ast.type) && ('num' === x.ast.type))
+            if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
-                self.ast.arg.equ(x.ast.arg);
+                self.ast.arg.equ(other.ast.arg);
             }
-            else if (('sym' === self.ast.type) && ('sym' === x.ast.type))
+            else if (('sym' === self.ast.type) && ('sym' === other.ast.type))
             {
-                return self.ast.arg === x.ast.arg;
+                return self.ast.arg === other.ast.arg;
             }
-            else if (self.isConst() && x.isConst())
+            else if (self.isConst() && other.isConst())
             {
-                return self.c().equ(x.c());
+                return self.c().equ(other.c());
             }
             else
             {
-                return self.expand().toString() === x.expand().toString();
+                return self.expand().toString() === other.expand().toString();
             }
         }
         return false;
     }
-    ,gt: function(x) {
+    ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (is_instance(x, Expr))
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (is_instance(other, Expr))
         {
-            if (('num' === self.ast.type) && ('num' === x.ast.type))
+            if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
-                self.ast.arg.gt(x.ast.arg);
+                self.ast.arg.gt(other.ast.arg);
             }
-            else if (('sym' === self.ast.type) && ('sym' === x.ast.type))
+            else if (('sym' === self.ast.type) && ('sym' === other.ast.type))
             {
                 return false;
             }
-            else if (self.isConst() && x.isConst())
+            else if (self.isConst() && other.isConst())
             {
-                return self.c().gt(x.c());
+                return self.c().gt(other.c());
             }
-            else if ('expr' === x.ast.type)
+            else if ('expr' === other.ast.type)
             {
-                return self.sub(x, true).gt(Expr.Zero());
+                return self.sub(other, true).gt(Expr.Zero());
             }
         }
         return false;
     }
-    ,gte: function(x) {
+    ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (is_instance(x, Expr))
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (is_instance(other, Expr))
         {
-            if (('num' === self.ast.type) && ('num' === x.ast.type))
+            if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
-                self.ast.arg.gte(x.ast.arg);
+                self.ast.arg.gte(other.ast.arg);
             }
-            else if (('sym' === self.ast.type) && ('sym' === x.ast.type))
+            else if (('sym' === self.ast.type) && ('sym' === other.ast.type))
             {
                 return false;
             }
-            else if (self.isConst() && x.isConst())
+            else if (self.isConst() && other.isConst())
             {
-                return self.c().gte(x.c());
+                return self.c().gte(other.c());
             }
-            else if ('expr' === x.ast.type)
+            else if ('expr' === other.ast.type)
             {
-                return self.sub(x, true).gte(Expr.Zero());
+                return self.sub(other, true).gte(Expr.Zero());
             }
         }
         return false;
     }
-    ,lt: function(x) {
+    ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (is_instance(x, Expr))
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (is_instance(other, Expr))
         {
-            if (('num' === self.ast.type) && ('num' === x.ast.type))
+            if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
-                self.ast.arg.lt(x.ast.arg);
+                self.ast.arg.lt(other.ast.arg);
             }
-            else if (('sym' === self.ast.type) && ('sym' === x.ast.type))
+            else if (('sym' === self.ast.type) && ('sym' === other.ast.type))
             {
                 return false;
             }
-            else if (self.isConst() && x.isConst())
+            else if (self.isConst() && other.isConst())
             {
-                return self.c().lt(x.c());
+                return self.c().lt(other.c());
             }
-            else if ('expr' === x.ast.type)
+            else if ('expr' === other.ast.type)
             {
-                return self.sub(x, true).lt(Expr.Zero());
+                return self.sub(other, true).lt(Expr.Zero());
             }
         }
         return false;
     }
-    ,lte: function(x) {
+    ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (is_instance(x, Expr))
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (is_instance(other, Expr))
         {
-            if (('num' === self.ast.type) && ('num' === x.ast.type))
+            if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
-                self.ast.arg.lte(x.ast.arg);
+                self.ast.arg.lte(other.ast.arg);
             }
-            else if (('sym' === self.ast.type) && ('sym' === x.ast.type))
+            else if (('sym' === self.ast.type) && ('sym' === other.ast.type))
             {
                 return false;
             }
-            else if (self.isConst() && x.isConst())
+            else if (self.isConst() && other.isConst())
             {
-                return self.c().lte(x.c());
+                return self.c().lte(other.c());
             }
-            else if ('expr' === x.ast.type)
+            else if ('expr' === other.ast.type)
             {
-                return self.sub(x, true).lte(Expr.Zero());
+                return self.sub(other, true).lte(Expr.Zero());
             }
         }
         return false;
     }
 
-    ,add: function(x, explicit) {
+    ,add: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return self;
-        return ('num' === self.ast.type) && ('num' === x.ast.type) ? Expr('', self.ast.arg.add(x.ast.arg)) : Expr('+', [self, x]);
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return self;
+        return ('num' === self.ast.type) && ('num' === other.ast.type) ? Expr('', self.ast.arg.add(other.ast.arg)) : Expr('+', [self, other]);
     }
-    ,sub: function(x, explicit) {
+    ,sub: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return self;
-        return ('num' === self.ast.type) && ('num' === x.ast.type) ? Expr('', self.ast.arg.sub(x.ast.arg)) : Expr('-', [self, x]);
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return self;
+        return ('num' === self.ast.type) && ('num' === other.ast.type) ? Expr('', self.ast.arg.sub(other.ast.arg)) : Expr('-', [self, other]);
     }
-    ,mul: function(x, explicit) {
+    ,mul: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return self;
-        return ('num' === self.ast.type) && ('num' === x.ast.type) ? Expr('', self.ast.arg.mul(x.ast.arg)) : Expr('*', [self, x]);
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return self;
+        return ('num' === self.ast.type) && ('num' === other.ast.type) ? Expr('', self.ast.arg.mul(other.ast.arg)) : Expr('*', [self, other]);
     }
-    ,div: function(x, explicit) {
+    ,div: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return self;
-        return ('num' === self.ast.type) && ('num' === x.ast.type) ? Expr('', self.ast.arg.div(x.ast.arg)) : Expr('/', [self, x]);
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return self;
+        return ('num' === self.ast.type) && ('num' === other.ast.type) ? Expr('', self.ast.arg.div(other.ast.arg)) : Expr('/', [self, other]);
     }
-    ,mod: function(x, explicit) {
+    ,mod: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return self;
-        return ('num' === self.ast.type) && ('num' === x.ast.type) ? Expr('', self.ast.arg.mod(x.ast.arg)) : Expr('mod()', [self, x]);
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return self;
+        return ('num' === self.ast.type) && ('num' === other.ast.type) ? Expr('', self.ast.arg.mod(other.ast.arg)) : Expr('mod()', [self, other]);
     }
-    ,divmod: function(x, explicit) {
+    ,divmod: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return [self, self];
-        return [self.div(x, explicit), self.mod(x, explicit)];
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return [self, self];
+        return [self.div(other, explicit), self.mod(other, explicit)];
     }
-    ,divides: function(x) {
+    ,divides: function(other) {
         return !this.equ(Expr.Zero());
     }
-    ,pow: function(x, explicit) {
+    ,pow: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (is_instance(x, Expr))
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (is_instance(other, Expr))
         {
-            if (('num' === self.ast.type) && ('num' === x.ast.type))
+            if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
-                return Expr('', self.ast.arg.pow(x.ast.arg));
+                return Expr('', self.ast.arg.pow(other.ast.arg));
             }
-            else if ((true === explicit) && x.isInt())
+            else if ((true === explicit) && other.isInt())
             {
-                var n = Integer.cast(x.ast.arg), b = self, pow = Expr.One();
+                var n = Integer.cast(other.ast.arg), b = self, pow = Expr.One();
                 if (n.lt(0))
                 {
                     b = b.inv();
@@ -956,9 +953,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     else
                     {
                         // exponentiation by squaring
-                        while (0 !== n)
+                        for (;0 !== n;)
                         {
-                            if (n & 1) pow = b.mul(pow, true);
+                            if (n & 1) pow = pow.mul(b, true);
                             n >>= 1;
                             b = b.mul(b, true);
                         }
@@ -966,16 +963,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                 }
             }
-            return Expr('^', [self, x]);
+            return Expr('^', [self, other]);
         }
         return self;
     }
-    ,rad: function(x, explicit) {
+    ,rad: function(other, explicit) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (Arithmetic.isNumber(x) || is_instance(x, Numeric) || is_string(x)) x = Expr('', x);
-        if (!is_instance(x, Expr) && is_callable(x.toExpr)) x = x.toExpr();
-        if (!is_instance(x, Expr)) return self;
-        return ('num' === self.ast.type) && ('num' === x.ast.type) ? Expr('', self.ast.arg.rad(x.ast.arg)) : self.pow(x.inv(), compute);
+        if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
+        if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
+        if (!is_instance(other, Expr)) return self;
+        return ('num' === self.ast.type) && ('num' === other.ast.type) ? Expr('', self.ast.arg.rad(other.ast.arg)) : self.pow(other.inv(), explicit);
     }
     ,compose: function(e, x) {
         var self = this, ast = self.ast;
@@ -1155,6 +1152,70 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
         }
         return self._xpnd;
+    }
+    ,toPoly: function(symbol, ring) {
+        var self = this, symbols = self.expand().symbols('polynomial'), i, s, tc, O = Abacus.Arithmetic.O, terms = {};
+        for (i=symbols.length-1; i>=0; --i)
+        {
+            s = symbols[i]; tc = self.terms[s].c();
+            if (tc.equ(O)) continue;
+            terms[s] = tc;
+        }
+            e = e.expand().collect(x);
+            function extract(ast)
+            {
+                var sym, coeff = Rational.One();
+                if (('sym' === ast.type) && (ast.arg === x))
+                {
+                    return [ast.arg, coeff];
+                }
+                else if (('^' === ast.op) && ('sym' === ast.arg[0].ast.type) && (ast.arg[0].ast.arg === x))
+                {
+                    if (('num' == ast.arg[1].ast.type) && ast.arg[1].ast.arg.isInt() && ast.arg[1].ast.arg.gt(O))
+                    {
+                        return [ast.arg[0].ast.arg + '^' + String(ast.arg[1].ast.arg.valueOf()), coeff];
+                    }
+                }
+                else if ('*' === ast.op)
+                {
+                    for (var i=0,n=ast.arg.length; i<n; ++i)
+                    {
+                        if (!sym && (sym=extract(ast.arg[i].ast)))
+                        {
+                            /*pass*/
+                        }
+                        else
+                        {
+                            coeff = ast.arg[i].mul(coeff);
+                        }
+                    }
+                    if (sym) return [sym, coeff];
+                }
+            }
+            var args = '+' === e.ast.op ? e.ast.arg : [], i, t, s, tc, O = Abacus.Arithmetic.O, terms = {};
+            for (i=args.length-1; i>=0; --i)
+            {
+                t = extract(args[i].ast);
+                if (!t)
+                {
+                    terms['0'] = null == terms['0'] ? args[i] : (terms['0'].add(args[i]));
+                }
+                else
+                {
+                    s = t[0]; tc = t[1];
+                    if (tc.equ(O)) continue;
+                    if (x === s)
+                    {
+                        terms['1'] = null == terms['1'] ? tc : (terms['1'].add(tc));
+                    }
+                    else if ((s.length > x.length+1) && (x + '^' === s.slice(0, x.length+1)))
+                    {
+                        s = s.slice(x.length+1);
+                        terms[s] = null == terms[s] ? tc : (terms[s].add(tc));
+                    }
+                }
+            }
+        return is_string(symbol) ? (new Polynomial(terms, symbol, ring)): (new MultiPolynomial(terms, symbol, ring));
     }
     ,toString: function() {
         var self = this, ast = self.ast, op = ast.op, arg = ast.arg, str, str2, sign, sign2;

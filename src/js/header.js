@@ -36,9 +36,9 @@ var  Abacus = {VERSION: "@@VERSION@@"}, stdMath = Math, PROTO = 'prototype', CLA
     ,Merge = function Merge(/* args */) {
         var args = arguments, l = args.length, a, b, i, p;
         a = (l ? args[0] : {}) || {}; i = 1;
-        while (i<l)
+        for (;i<l;++i)
         {
-            b = args[i++];
+            b = args[i];
             if (null == b) continue;
             for (p in b) if (HAS.call(b,p)) a[p] = b[p];
         }

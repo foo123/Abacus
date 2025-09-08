@@ -1151,7 +1151,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 norm = x.h().mul(x).val[0][0];
                 if (norm.equ(0)) return null;
                 x = x.div(norm.rad(2));
-                while (true)
+                for (;;)
                 {
                     iter++;
                     x0= x;
@@ -1168,7 +1168,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 norm = x.t().mul(x).val[0][0];
                 if (norm.equ(0)) return null;
                 x = x.div(norm.rad(2));
-                while (true)
+                for (;;)
                 {
                     iter++;
                     x0 = x;

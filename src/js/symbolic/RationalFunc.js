@@ -5,8 +5,8 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             num, den, symbol, ring, simplified, simplify = RationalFunc.autoSimplify;
 
         simplified = (4 < args.length) && (true === args[4]);
-        ring = 3<args.length ? (is_instance(args[3], Ring) ? args[3] : null) : null;
-        symbol = 2<args.length ? (is_array(args[2]) ? args[2] : args[2]) : null;
+        ring = 3 < args.length ? (is_instance(args[3], Ring) ? args[3] : null) : null;
+        symbol = 2 < args.length ? (is_array(args[2]) ? args[2] : args[2]) : null;
         if (1 < args.length)
         {
             num = args[0];
@@ -99,12 +99,12 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         ,fromString: function(s, symbol, ring) {
             return RationalFunc.fromExpr(Expr.fromString(s), symbol, ring);
         }
-        ,fromExpr: function(expr, symbol, ring) {
-            if (!is_instance(expr, Expr)) return null;
+        ,fromExpr: function(e, symbol, ring) {
+            if (!is_instance(e, Expr)) return null;
             ring = ring || Ring.Q();
             symbol = symbol || 'x';
             if (!is_array(symbol)) symbol = [String(symbol)];
-            return RationalFunc(MultiPolynomial.fromExpr(expr.num, symbol, ring), MultiPolynomial.fromExpr(expr.den, symbol, ring));
+            return RationalFunc(MultiPolynomial.fromExpr(e.num, symbol, ring), MultiPolynomial.fromExpr(e.den, symbol, ring));
         }
     }
 

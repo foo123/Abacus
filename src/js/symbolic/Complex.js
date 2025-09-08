@@ -77,14 +77,14 @@ Complex = Abacus.Complex = Class(Numeric, {
 
             i = 0;
             while (i < c && (a=args[i++]).equ(O)) ;
-            while (i < c)
+            for (;i < c;)
             {
                 while (i < c && (b=args[i++]).equ(O)) ;
                 if (b.equ(a)) continue;
                 else if (b.equ(O)) break;
                 // swap them (a >= b)
                 if (b.norm().gt(a.norm())) {t = b; b = a; a = t;}
-                while (!b.equ(O))
+                for (;!b.equ(O);)
                 {
                     //a0 = a; b0 = b;
                     r = a.mod(b); a = b; b = r;
@@ -574,7 +574,7 @@ Complex = Abacus.Complex = Class(Numeric, {
         }
         n = Arithmetic.val(n.num);
         e = self; pow = Complex.One();
-        while (0 !== n)
+        for (;0 !== n;)
         {
             // exponentiation by squaring
             if (n & 1) pow = pow.mul(e);

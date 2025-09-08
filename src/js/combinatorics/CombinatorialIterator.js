@@ -10,7 +10,7 @@ Iterator = Abacus.Iterator = Class({
             self.name = "Sequence";
             self.$ = $ || {};
             self.$.seq = slice.call(name);
-            self.$.count = operate(function(count, iter){
+            self.$.count = operate(function(count, iter) {
                 return Arithmetic.add(count, iter.total());
             }, Arithmetic.O, self.$.seq);
             self.rewind();
@@ -70,7 +70,7 @@ Iterator = Abacus.Iterator = Class({
         var self = this;
         if (self.$.seq && self.$.seq.length)
         {
-            operate(function(_,iter){if (iter instanceof Iterator) iter.dispose();}, null, self.$.seq);
+            operate(function(_,iter) {if (iter instanceof Iterator) iter.dispose();}, null, self.$.seq);
             self.$.seq = null;
         }
         self.$ = null;
@@ -119,7 +119,7 @@ Iterator = Abacus.Iterator = Class({
             {
                 // chain them
                 $.output = (function(o1, o2) {
-                    return function(item, n) { return null == item ? null : o2(o1(item, n), n); };
+                    return function(item, n) {return null == item ? null : o2(o1(item, n), n);};
                 })(prev_output, output);
             }
             else
@@ -149,7 +149,7 @@ Iterator = Abacus.Iterator = Class({
         {
             $.sub = iter;
             $.submethod = method;
-            $.subcascade = -1===dir?-1:1;
+            $.subcascade = -1 === dir ? -1 : 1;
             $.subcount = Abacus.Arithmetic.mul($.count, iter.total());
             self.rewind();
         }
@@ -159,7 +159,7 @@ Iterator = Abacus.Iterator = Class({
         return this.fuse(false);
     }
     ,juxtaposeWith: function(iter, dir) {
-        return this.fuse(function(item, subitem){
+        return this.fuse(function(item, subitem) {
             return [].concat(item).concat(subitem);
         }, iter, dir);
     }
@@ -178,7 +178,7 @@ Iterator = Abacus.Iterator = Class({
     ,fusion: function(item, subitem) {
         var self = this, $ = self.$, t;
         if (!$.sub) return item;
-        if (-1 === $.subcascade){ t = item; item = subitem; subitem = t; }
+        if (-1 === $.subcascade) {t = item; item = subitem; subitem = t;}
         if (null == item || null == subitem) return item || subitem || null;
         return $.submethod.call(self, item, subitem);
     }
@@ -190,12 +190,12 @@ Iterator = Abacus.Iterator = Class({
         dir = -1===dir ? -1 : 1;
         if (is_array($.seq))
         {
-            for (i=0,l=$.seq.length; i<l; i++) if ($.seq[i] instanceof Iterator) $.seq[i].rewind(dir);
-            $.seqindex = 0 > dir ? l-1 : 0;
+            for (i=0,l=$.seq.length; i<l; ++i) if ($.seq[i] instanceof Iterator) $.seq[i].rewind(dir);
+            $.seqindex = 0 > dir ? (l-1) : 0;
             do {
-                item = 0<=$.seqindex && $.seqindex<l ? ("List" === self.name ? $.seq[$.seqindex] : $.seq[$.seqindex].next(dir)) : null;
-                if ((0<=$.seqindex && $.seqindex<l) && ("List" === self.name || null == item)) $.seqindex += dir;
-            } while ((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length));
+                item = 0 <= $.seqindex && $.seqindex < l ? ("List" === self.name ? $.seq[$.seqindex] : $.seq[$.seqindex].next(dir)) : null;
+                if ((0 <= $.seqindex && $.seqindex < l) && ("List" === self.name || null == item)) $.seqindex += dir;
+            } while ((null == item) && (0 <= $.seqindex) && ($.seqindex < $.seq.length));
             self.__item = item;
             self._item = self.output(self.__item);
             if ($.sub && (true !== non_recursive))
@@ -240,7 +240,7 @@ Iterator = Abacus.Iterator = Class({
     }
     ,next: function(dir) {
         var self = this, $ = self.$, curr, next, item;
-        dir = -1===dir ? -1 : 1;
+        dir = -1 === dir ? -1 : 1;
         if (is_array($.seq))
         {
             do {
@@ -248,12 +248,12 @@ Iterator = Abacus.Iterator = Class({
                 next = $.sub ? self._subitem : self._item;
                 item = null;
                 //if ("List" === self.name) $.seqindex += dir;
-                while ((null==item) && (0<=$.seqindex) && ($.seqindex<$.seq.length))
+                while ((null == item) && (0 <= $.seqindex) && ($.seqindex < $.seq.length))
                 {
                     item = "List" === self.name ? $.seq[$.seqindex] : ($.seq[$.seqindex].hasNext(dir) ? $.seq[$.seqindex].next(dir) : null);
                     if ("List" === self.name || null == item) $.seqindex += dir;
                 }
-                if ((null == item) && (0>$.seqindex || $.seqindex>=$.seq.length) && $.sub && $.sub.hasNext(dir))
+                if ((null == item) && (0 > $.seqindex || $.seqindex >= $.seq.length) && $.sub && $.sub.hasNext(dir))
                 {
                     self.rewind(dir, true); item = self.__item;
                     self.__subitem = $.sub.next(dir);
@@ -261,7 +261,7 @@ Iterator = Abacus.Iterator = Class({
                 self.__item = item;
                 self._item = self.output(self.__item);
                 self._subitem = $.sub && (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
-            } while ($.filter && (null!=next) && !$.filter.apply(next, self));
+            } while ($.filter && (null != next) && !$.filter.apply(next, self));
             return next;
         }
         else if (is_callable($.generator))
@@ -278,7 +278,7 @@ Iterator = Abacus.Iterator = Class({
                 }
                 self._item = self.output(self.__item);
                 self._subitem = $.sub && (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
-            } while ($.filter && (null!=next) && !$.filter.apply(next, self));
+            } while ($.filter && (null != next) && !$.filter.apply(next, self));
             return next;
         }
         else
@@ -293,7 +293,7 @@ Iterator = Abacus.Iterator = Class({
         // incrementing current index as well
         if (is_callable(up_to))
         {
-            while (self.hasNext())
+            for (;self.hasNext();)
             {
                 next = self.next();
                 if (null == next || !up_to(next)) break;
@@ -302,9 +302,9 @@ Iterator = Abacus.Iterator = Class({
         }
         else
         {
-            all = !arguments.length || null==up_to;
+            all = !arguments.length || (null == up_to);
             if (null != up_to) up_to = +up_to;
-            while ((all || list.length<up_to) && self.hasNext())
+            for (;(all || (list.length < up_to)) && self.hasNext();)
             {
                 next = self.next();
                 if (null == next) break;
@@ -348,13 +348,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             $ = n || {};
             $.seq = is_args(name) ? slice.call(name) : name; name = null;
             self.n = n = $.seq.length;
-            $.type = "sequence";
+            $.type = 'sequence';
             $.rand = $.rand || {};
-            $.rand["sequence"] = 1;
-            var minbase=Infinity, maxbase=-Infinity, mindim=Infinity, maxdim=-Infinity;
-            operate(function(_,iter){
-                var bmin = iter.base(true, "min"), bmax = iter.base(true, "max"),
-                    dmin = iter.dimension(true, "min"), dmax = iter.dimension(true, "max");
+            $.rand['sequence'] = 1;
+            var minbase = Infinity, maxbase = -Infinity, mindim = Infinity, maxdim = -Infinity;
+            operate(function(_,iter) {
+                var bmin = iter.base(true, 'min'), bmax = iter.base(true, 'max'),
+                    dmin = iter.dimension(true, 'min'), dmax = iter.dimension(true, 'max');
                 if (bmax > maxbase) maxbase = bmax;
                 if (bmin < minbase) minbase = bmin;
                 if (dmax > maxdim) maxdim = dmax;
@@ -371,7 +371,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         }
 
         name = name || "CombinatorialIterator";
-        $.type = String($.type || "default").toLowerCase();
+        $.type = String($.type || 'default').toLowerCase();
         $.order = $.order || LEX; // default order is lexicographic ("lex")
         $.rand = $.rand || {};
         $.sub = null;
@@ -389,7 +389,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             }
             else if (is_string(sub.method) && -1 !== ['multiply','add','concat','connect','join','combine','complete','interleave','juxtapose','intersperse','project'].indexOf(sub.method))
             {
-                var submethod = 'project'===sub.method ? 'projectOn' : (sub.method+'With');
+                var submethod = 'project' === sub.method ? 'projectOn' : (sub.method + 'With');
                 self[submethod](sub.iter, sub.pos, sub.cascade);
             }
         }
@@ -398,14 +398,14 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,__static__: {
         // some C-P-T dualities, symmetries & processes at play here :))
-         C: function(item, N, n, dir){
+         C: function(item, N, n, dir) {
             // C process / symmetry, ie Rotation/Complementation/Conjugation, CC = I
-            var reflected = -1===dir, LEN;
-            if (n+1===item.length)
+            var reflected = -1 === dir, LEN;
+            if (n+1 === item.length)
             {
                 // fixed-length item, with effective length as extra last pos
                 LEN = is_array(item[n]) ? item[n][0] : item[n];
-                complementation(item, item, N, reflected ? n-(LEN||1) : 0, reflected ? n-1 : LEN-1);
+                complementation(item, item, N, reflected ? (n-(LEN||1)) : 0, reflected ? (n-1) : (LEN-1));
             }
             else
             {
@@ -416,15 +416,15 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         ,D: function(item, N, n, dir) {
             // C process / symmetry, ie Rotation/Complementation/Conjugation, CC = I
             // (variation based on complement)
-            var itemlen, reflected = -1===dir, INFO, LEN;
-            if (n+1===item.length)
+            var itemlen, reflected = -1 === dir, INFO, LEN;
+            if (n+1 === item.length)
             {
                 // fixed-length item, with effective length as extra last pos
                 INFO = item[n]; LEN = is_array(INFO) ? INFO[0] : INFO;
                 item = reflected ? item.slice(n-LEN,n) : item.slice(0,LEN);
                 item = complement(N, item, true);
                 itemlen = item.length;
-                if (itemlen<n) item[reflected?"unshift":"push"].apply(item, new Array(n-itemlen));
+                if (itemlen < n) item[reflected ? 'unshift' : 'push'].apply(item, new Array(n-itemlen));
                 if (is_array(INFO)) INFO[0] = itemlen;
                 else INFO = itemlen;
                 item.push(INFO);
@@ -438,11 +438,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         ,P: function(item, n, dir) {
             // P process / symmetry, ie Reflection/Parity, PP = I
             var LEN;
-            if (n+1===item.length)
+            if (n+1 === item.length)
             {
                 // fixed-length item, with effective length as extra last pos
                 LEN = is_array(item[n]) ? item[n][0] : item[n];
-                if (-1===dir)
+                if (-1 === dir)
                     item = shift(item, reflection(item, item, n, n-(LEN||1), n-1), -n+LEN, n-(LEN||1), n-1);
                 else
                     item = shift(item, reflection(item, item, n, 0, LEN-1), n-LEN, 0, LEN-1);
@@ -453,41 +453,41 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             }
             return item;
          }
-        ,T: function(item, n, dir){
+        ,T: function(item, n, dir) {
             // T process / symmetry, ie Reversion/Time, TT = I
             return reversion(item, n);
         }
         ,DUAL: function dual(item, n, $, dir) {
             if (null == item) return null;
-            if ($ && "sequence"===$.type) return item;
+            if ($ && ('sequence' === $.type)) return item;
             // some C-P-T dualities, symmetries & processes at play here
-            var klass = this, order = $ && null!=$.order ? $.order : LEX,
-                BASE = $ && (null!=$.base) ? $.base : n,
-                DIM = $ && (null!=$.dimension) ? $.dimension : n;
-            dir = -1===dir ? -1 : 1;
-            if (COLEX & order) item = REFLECTED & order ? klass.C(item,BASE,DIM,$,dir) : klass.P(klass.C(item,BASE,DIM,$,dir),DIM,dir);
-            //else if (RANDOM & order) item = REFLECTED & order ? klass.P(item,DIM,dir) : item;
-            //else if (MINIMAL & order) item = REFLECTED & order ? klass.P(item,DIM,dir) : item;
-            else/*if (LEX & order)*/item = REFLECTED & order ? klass.P(item,DIM,dir) : item;
+            var klass = this, order = $ && (null != $.order) ? $.order : LEX,
+                BASE = $ && (null != $.base) ? $.base : n,
+                DIM = $ && (null != $.dimension) ? $.dimension : n;
+            dir = -1 === dir ? -1 : 1;
+            if (COLEX & order) item = REFLECTED & order ? klass.C(item, BASE, DIM, $, dir) : klass.P(klass.C(item, BASE, DIM, $, dir), DIM, dir);
+            //else if (RANDOM & order) item = REFLECTED & order ? klass.P(item, DIM, dir) : item;
+            //else if (MINIMAL & order) item = REFLECTED & order ? klass.P(item, DIM, dir) : item;
+            else/*if (LEX & order)*/item = REFLECTED & order ? klass.P(item, DIM, dir) : item;
             return item;
         }
         ,count: function(n, $) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
-            return $ && ("sequence"===$.type) && $.seq && $.seq.length ? operate(function(count,iter){return Arithmetic.add(count,iter.total());}, O, $.seq) : O;
+            return $ && ('sequence' === $.type) && $.seq && $.seq.length ? operate(function(count, iter) {return Arithmetic.add(count, iter.total());}, O, $.seq) : O;
         }
         ,initial: function(n, $, dir, as_next) {
-            if ($ && ("sequence"===$.type) && $.seq && $.seq.length)
+            if ($ && ('sequence' === $.type) && $.seq && $.seq.length)
             {
                 if (true === as_next) return this.succ(0, 0, n, $, dir);
                 dir = -1 === dir ? -1 : 1;
-                return 0>dir || (REVERSED&($ && null!=$.order ? $.order : LEX)) ? $.seq[$.seq.length-1].item0(dir) : $.seq[0].item0(dir);
+                return 0 > dir || (REVERSED & ($ && (null != $.order) ? $.order : LEX)) ? ($.seq[$.seq.length-1].item0(dir)) : ($.seq[0].item0(dir));
             }
             return null;
         }
         ,valid: function(item, n, $) {
-            if ((null!=item) && $ && ("sequence"===$.type) && $.seq && $.seq.length)
+            if ((null != item) && $ && ('sequence' === $.type) && $.seq && $.seq.length)
             {
-                for (var i=0; i<$.seq.length; i++)
+                for (var i=0; i<$.seq.length; ++i)
                 {
                     if ($.seq[i][CLASS].valid(item, $.seq[i].n, $.seq[i].$))
                         return true;
@@ -500,11 +500,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             if ((null == n) || (null == item)) return null;
             var klass = this, Arithmetic = Abacus.Arithmetic, a, b, d, i, seq;
             dir = -1 === dir ? -1 : 1;
-            if ($ && ("sequence"===$.type))
+            if ($ && ('sequence' === $.type))
             {
                 seq = $.seq;
                 if (!seq || !seq.length) return null;
-                if (REVERSED & ($ && null!=$.order ? $.order : LEX))
+                if (REVERSED & ($ && (null != $.order) ? $.order : LEX))
                 {
                     a = -1;
                     b = seq.length-1;
@@ -515,12 +515,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     b = 0;
                 }
                 i = a*$.seq_curr+b; d = a*dir;
-                while (0<=i && i<seq.length && !seq[i].hasNext(dir))
+                for (;0 <= i && i < seq.length && !seq[i].hasNext(dir);)
                 {
                     $.seq_curr += dir;
                     i += d;
                 }
-                return 0<=i && i<seq.length ? seq[i].next(dir) : null;
+                return 0 <= i && i < seq.length ? seq[i].next(dir) : null;
             }
             return null == index ? null : klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $);
         }
@@ -528,19 +528,19 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             var item, klass = this, Arithmetic = Abacus.Arithmetic,
                 O = Arithmetic.O, N, index, seq, i, l, tot;
 
-            if ($ && ("sequence"===$.type))
+            if ($ && ('sequence' === $.type))
             {
                 seq = $.seq;
                 if (!seq || !seq.length) return null;
                 // uniform random sampling, taking into account the count of each iterator
-                N = null!=$.last ? $.last : Arithmetic.sub(klass.count(n, $), Arithmetic.I),
+                N = null != $.last ? $.last : Arithmetic.sub(klass.count(n, $), Arithmetic.I),
                 index = Arithmetic.rnd(O, N); i = 0; l = seq.length;
-                while (Arithmetic.gte(index, tot=seq[i].total()))
+                for (;Arithmetic.gte(index, tot=seq[i].total());)
                 {
                     index = Arithmetic.sub(index, tot);
-                    i++; if (i >=l || Arithmetic.lt(index, O)) break;
+                    ++i; if ((i >= l) || Arithmetic.lt(index, O)) break;
                 }
-                return i<l && Arithmetic.gte(index, O) ? seq[i].random() : null;
+                return (i < l) && Arithmetic.gte(index, O) ? seq[i].random() : null;
                 /*
                 // NOTE: NOT uniformly distributed unless all iterators have same count,
                 // needs to take into account counts per iterator to produce uniform random item
@@ -548,7 +548,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 */
             }
 
-            N = $ && null!=$.last ? $.last : Arithmetic.sub(klass.count(n, $), Arithmetic.I),
+            N = $ && (null != $.last) ? $.last : Arithmetic.sub(klass.count(n, $), Arithmetic.I),
             index = Arithmetic.rnd(O, N);
             item = Arithmetic.equ(O, index) ? (
                 klass.initial(n, $, 1)
@@ -561,21 +561,21 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             return item;
         }
         ,rank: function(item, n, $) {
-            if ($ && ("sequence"===$.type))
+            if ($ && ('sequence' === $.type))
             {
                 var klass = this, Arithmetic = Abacus.Arithmetic,
                     O = Arithmetic.O, J = Arithmetic.J,
                     seq = $.seq, i, l, m, index, seq_index, sub, found;
 
-                if (null == item || !seq || !seq.length) return J;
+                if ((null == item) || !seq || !seq.length) return J;
 
                 l = seq.length; i = 0; seq_index = O;
                 m = item.length;
                 found = false;
-                for (i=0; i<l; i++)
+                for (i=0; i<l; ++i)
                 {
                     sub = seq[i];
-                    if ((m === sub.dimension()) || (m>=sub.$.mindimension && m<=sub.$.maxdimension))
+                    if ((m === sub.dimension()) || (m >= sub.$.mindimension && m <= sub.$.maxdimension))
                     {
                         index = sub[CLASS].rank(item, sub.n, sub.$);
                         if (Arithmetic.gt(index,J))
@@ -591,141 +591,141 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             return NotImplemented();
         }
         ,unrank: function(index, n, $) {
-            if ($ && ("sequence"===$.type))
+            if ($ && ('sequence' === $.type))
             {
                 var klass = this, Arithmetic = Abacus.Arithmetic,
                     O = Arithmetic.O, seq = $.seq, i, l;
 
                 if (!seq || !seq.length) return null;
                 index = null == index ? null : Arithmetic.num(index);
-                if (null==index || !Arithmetic.inside(index, Arithmetic.J, null!=$.count ? $.count : klass.count(n, $))) return null;
+                if ((null == index) || !Arithmetic.inside(index, Arithmetic.J, null != $.count ? $.count : klass.count(n, $))) return null;
 
                 l = seq.length; i = 0;
-                while (Arithmetic.gte(index, seq[i].total()))
+                for (;Arithmetic.gte(index, seq[i].total());)
                 {
                     index = Arithmetic.sub(index, seq[i].total());
-                    i++; if (i >=l || Arithmetic.lt(index, O)) break;
+                    ++i; if ((i >= l) || Arithmetic.lt(index, O)) break;
                 }
-                return i<l && Arithmetic.gte(index, O) ? seq[i][CLASS].unrank(index, seq[i].n, seq[i].$) : null;
+                return (i < l) && Arithmetic.gte(index, O) ? seq[i][CLASS].unrank(index, seq[i].n, seq[i].$) : null;
             }
             return NotImplemented();
         }
         ,connect: function(method, item, subitem, DIM, BASE, POS) {
             //if (is_callable(method)) return method(item, subitem, DIM, BASE, POS);
-            if ("multiply" === method)
+            if ('multiply' === method)
             {
                 // O(n1 * n2)
                 return kronecker(true, item, subitem);
             }
-            else if ("intersperse" === method)
+            else if ('intersperse' === method)
             {
                 // O(n1 + n2)
                 var output = subitem.slice(), n = item.length, i;
-                for (i=0; i<n; i++)
+                for (i=0; i<n; ++i)
                 {
                     // POS plays the role of output symbol(s) here, if exists
-                    output.splice(output.length-item[i], 0, POS&&POS.length&&i<POS.length?POS[i]:item[i]);
+                    output.splice(output.length-item[i], 0, POS && POS.length && (i < POS.length) ? POS[i] : item[i]);
                 }
                 return output;
             }
-            /*else if ("conjoin" === method)
+            /*else if ('conjoin' === method)
             {
                 var o = is_array(subitem) && subitem._AGRREGATE_ ? [item].concat(subitem) : [item, subitem];
                 o._AGRREGATE_ = true;
                 return o;
             }*/
-            else if ("juxtapose" === method)
+            else if ('juxtapose' === method)
             {
                 // O(1)
                 // try to produce flat output even if subitem is itself recursively juxtaposed
                 // should work fine for supported comb. objects (with default output) as they always produce 1 flat array of numbers
-                var o = is_array(subitem) && (true===subitem._AGRREGATE_) ? [item].concat(subitem) : [item, subitem];
+                var o = is_array(subitem) && (true === subitem._AGRREGATE_) ? [item].concat(subitem) : [item, subitem];
                 o._AGRREGATE_ = true;
                 return o;
                 //return subitem && is_array(subitem[0]) ? [item].concat(subitem) : [item, subitem];
             }
-            else if (("add" === method) || ("connect" === method) || ("concat" === method))
+            else if (('add' === method) || ('connect' === method) || ('concat' === method))
             {
                 // O(n1 + n2)
                 var max = item.length ? item[0]+1 : 0;
-                return array(item.length+subitem.length, "add" === method ? function(i){
+                return array(item.length+subitem.length, 'add' === method ? function(i) {
                     // add
                     return i < item.length ? item[i] : item.length+subitem[i-item.length];
-                } : ("connect" === method ? function(i){
+                } : ('connect' === method ? function(i) {
                     // connect
                     if (i < item.length)
                     {
                         if (item[i]+1 > max) max = item[i]+1;
                         return item[i];
                     }
-                    return max+subitem[i-item.length];
-                } : function(i){
+                    return max + subitem[i-item.length];
+                } : function(i) {
                     // concat
                     return i < item.length ? item[i] : subitem[i-item.length];
                 }));
             }
-            else if (("complete" === method) || ("interleave" === method) || ("join" === method) || ("combine" === method))
+            else if (('complete' === method) || ('interleave' === method) || ('join' === method) || ('combine' === method))
             {
                 // O(n1 + n2)
                 var n1 = item.length, n2 = subitem.length,
                     n3 = n1+n2, i2 = 0, i1 = 0, nk = 0,
-                    item_i1 = i1<n1 ? item[i1] : -1,
-                    pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1,
-                    compl = "complete" === method ? complement(BASE, item, true) : null/*array(BASE, 0, 1)*/;
-                if ("combine" === method)
+                    item_i1 = i1 < n1 ? item[i1] : -1,
+                    pos_i1 = null != POS ? (i1 < POS.length ? POS[i1] : -1) : item_i1,
+                    compl = 'complete' === method ? complement(BASE, item, true) : null/*array(BASE, 0, 1)*/;
+                if ('combine' === method)
                 {
                     var items = array(n3, 0, 1), output = array(n3);
-                    for (i1=0; i1<n1; i1++) output[item[i1]] = items[item[i1]];
-                    for (i1=n1-1; i1>=0; i1--) items.splice(item[i1], 1);
-                    i1=0; i2=0;
-                    while (i2 < n2)
+                    for (i1=0; i1<n1; ++i1) output[item[i1]] = items[item[i1]];
+                    for (i1=n1-1; i1>=0; --i1) items.splice(item[i1], 1);
+                    i1 = 0; i2 = 0;
+                    for (;i2 < n2;)
                     {
-                        while ((i1 < n3) && (null != output[i1])) i1++;
+                        for (;(i1 < n3) && (null != output[i1]); ++i1);
                         if (i1 < n3) output[i1] = items[subitem[i2]];
-                        i2++;
+                        ++i2;
                     }
                     return output;
                 }
                 else
                 {
-                    return array(n3, "complete" === method ? function(ii){
+                    return array(n3, 'complete' === method ? function(ii) {
                         // complete
                         var v;
                         if (pos_i1 === ii)
                         {
                             v = item_i1;
-                            i1++;
-                            item_i1 = i1<n1 ? item[i1] : -1;
-                            pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1;
+                            ++i1;
+                            item_i1 = i1 < n1 ? item[i1] : -1;
+                            pos_i1 = null != POS ? (i1 < POS.length ? POS[i1] : -1) : item_i1;
                         }
                         else
                         {
                             v = compl[subitem[i2++]];
                         }
                         return v;
-                    } : ("interleave" === method ? function(ii){
+                    } : ('interleave' === method ? function(ii) {
                         // interleave
                         var v;
                         if (pos_i1 === ii)
                         {
                             v = item_i1;
-                            i1++;
-                            item_i1 = i1<n1 ? item[i1] : -1;
-                            pos_i1 = null!=POS ? (i1<POS.length ? POS[i1] : -1) : item_i1;
+                            ++i1;
+                            item_i1 = i1 < n1 ? item[i1] : -1;
+                            pos_i1 = null != POS ? (i1 < POS.length ? POS[i1] : -1) : item_i1;
                         }
                         else
                         {
                             v = subitem[i2++];
                         }
                         return v;
-                    } : function(ii){
+                    } : function(ii) {
                         // join
                         var v;
                         if (item_i1 === ii)
                         {
-                            v = item_i1; i1++;
-                            item_i1 = i1<n1 ? item[i1] : -1;
-                            nk++;
+                            v = item_i1; ++i1;
+                            item_i1 = i1 < n1 ? item[i1] : -1;
+                            ++nk;
                         }
                         else
                         {
@@ -735,11 +735,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     }));
                 }
             }
-            else/*if ("project" === method)*/
+            else/*if ('project' === method)*/
             {
                 // O(n1)
-                return array(item.length, function(i){
-                    return 0<=item[i] && item[i]<subitem.length ? subitem[item[i]] : item[i];
+                return array(item.length, function(i) {
+                    return 0 <= item[i] && item[i] < subitem.length ? subitem[item[i]] : item[i];
                 });
             }
         }
@@ -759,9 +759,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             self.$.sub.dispose();
             self.$.sub = null;
         }
-        if ("sequence" === self.$.type && self.$.seq && self.$.seq.length)
+        if (('sequence' === self.$.type) && self.$.seq && self.$.seq.length)
         {
-            operate(function(_,iter){iter.dispose();}, null, self.$.seq);
+            operate(function(_, iter) {iter.dispose();}, null, self.$.seq);
             self.$.seq = null;
         }
 
@@ -808,10 +808,10 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         }
         else if (is_instance(combIter, CombinatorialIterator) && is_callable(method))
         {
-            if (-1 === pos || 1 === pos){ dir = pos; pos = null; }
+            if (-1 === pos || 1 === pos) {dir = pos; pos = null;}
             $.subpos = pos || self.position();
-            $.subminbase = stdMath.min($.minbase, combIter.base(false, "min"));
-            $.subbase = $.submaxbase = stdMath.max($.maxbase, combIter.base(false, "max"));
+            $.subminbase = stdMath.min($.minbase, combIter.base(false, 'min'));
+            $.subbase = $.submaxbase = stdMath.max($.maxbase, combIter.base(false, 'max'));
             $super.call(self, method, combIter, dir);
         }
         return self;
@@ -821,11 +821,11 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         var self = this, $ = self.$;
         if (is_instance(combIter, CombinatorialIterator))
         {
-            $.subdimension = $.dimension*combIter.dimension();
-            $.submindimension = $.mindimension*combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension*combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("multiply", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension * combIter.dimension();
+            $.submindimension = $.mindimension * combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension * combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('multiply', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -833,13 +833,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,addWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("add", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('add', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -847,13 +847,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,connectWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("connect", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('connect', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -861,12 +861,12 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,concatWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
                 return CombinatorialIterator.connect("concat", item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
@@ -880,8 +880,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             $.subdimension = 1 + (combIter.$.subdimension || 1);
             $.submindimension = 1 + (combIter.$.submindimension || 1);
             $.submaxdimension = 1 + (combIter.$.submaxdimension || 1);
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("juxtapose", item, subitem, DIM, BASE, POS);
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('juxtapose', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -889,13 +889,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,completeWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("complete", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('complete', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -903,13 +903,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,interleaveWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("interleave", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('interleave', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -917,13 +917,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,joinWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("join", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('join', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -931,13 +931,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,combineWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("combine", item, subitem, DIM, BASE, POS);
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('combine', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -946,15 +946,15 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
     ,intersperseWith: function(combIter, pos, dir) {
         var self = this, $ = self.$;
         // used especially for Tensors, to generate recursively
-        if (is_instance(combIter, CombinatorialIterator) && (0<combIter.dimension()))
+        if (is_instance(combIter, CombinatorialIterator) && (0 < combIter.dimension()))
         {
-            if (-1 === pos || 1 === pos){ dir = pos; pos = null; }
-            pos = pos || (1===self.dimension() ? [self.base()-1] : array(self.dimension(), 0, 1));
-            $.subdimension = $.dimension+combIter.dimension();
-            $.submindimension = $.mindimension+combIter.dimension(false, "min");
-            $.submaxdimension = $.maxdimension+combIter.dimension(false, "max");
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("intersperse", item, subitem, DIM, BASE, POS);
+            if (-1 === pos || 1 === pos) {dir = pos; pos = null;}
+            pos = pos || (1 === self.dimension() ? [self.base()-1] : array(self.dimension(), 0, 1));
+            $.subdimension = $.dimension + combIter.dimension();
+            $.submindimension = $.mindimension + combIter.dimension(false, 'min');
+            $.submaxdimension = $.maxdimension + combIter.dimension(false, 'max');
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('intersperse', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -967,8 +967,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             $.subdimension = $.dimension;
             $.submindimension = $.mindimension;
             $.submaxdimension = $.maxdimension;
-            self.fuse(function(item, subitem, DIM, BASE, POS){
-                return CombinatorialIterator.connect("project", item, subitem, DIM, BASE, POS);
+            self.fuse(function(item, subitem, DIM, BASE, POS) {
+                return CombinatorialIterator.connect('project', item, subitem, DIM, BASE, POS);
             }, combIter, pos, dir);
         }
         return self;
@@ -976,15 +976,15 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,base: function(non_recursive, type) {
         var $ = this.$;
-        if ("min" === type) return ($.sub && !non_recursive ? ($.subminbase || $.minbase) : $.minbase) || 0;
-        if ("max" === type) return ($.sub && !non_recursive ? ($.submaxbase || $.maxbase) : $.maxbase) || 0;
+        if ('min' === type) return ($.sub && !non_recursive ? ($.subminbase || $.minbase) : $.minbase) || 0;
+        if ('max' === type) return ($.sub && !non_recursive ? ($.submaxbase || $.maxbase) : $.maxbase) || 0;
         return ($.sub && !non_recursive ? ($.subbase || $.base) : $.base) || 0;
     }
 
     ,dimension: function(non_recursive, type) {
         var $ = this.$;
-        if ("min" === type) return ($.sub && !non_recursive ? ($.submindimension || $.mindimension) : $.mindimension) || 0;
-        if ("max" === type) return ($.sub && !non_recursive ? ($.submaxdimension || $.maxdimension) : $.maxdimension) || 0;
+        if ('min' === type) return ($.sub && !non_recursive ? ($.submindimension || $.mindimension) : $.mindimension) || 0;
+        if ('max' === type) return ($.sub && !non_recursive ? ($.submaxdimension || $.maxdimension) : $.maxdimension) || 0;
         return ($.sub && !non_recursive ? ($.subdimension || $.dimension) : $.dimension) || 0;
     }
 
@@ -1000,17 +1000,17 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,output: function(item) {
         var self = this, n = self.n, $ = self.$, output = $.output || null, type = $.type || null;
-        return null == item ? null : (null == output ? ("sequence"===type ? item : item.slice()) : (is_callable(output) ? output(item,n) : (is_array(output) ? operate(function(a,ii,i){
-            a[i] = 0<=ii && ii<output.length ? output[ii] : ii; return a;
-        },new Array(item.length),item) : (is_string(output) ? operate(function(s,ii,i){
-            s += 0<=ii && ii<output.length ? output.charAt(ii) : String(ii); return s;
-        },"",item) : ("sequence"===type ? item : item.slice())))));
+        return null == item ? null : (null == output ? ('sequence' === type ? item : item.slice()) : (is_callable(output) ? output(item,n) : (is_array(output) ? operate(function(a, ii, i) {
+            a[i] = 0 <= ii && ii < output.length ? output[ii] : ii; return a;
+        }, new Array(item.length), item) : (is_string(output) ? operate(function(s, ii, i) {
+            s += 0 <= ii && ii < output.length ? output.charAt(ii) : String(ii); return s;
+        }, '', item) : ('sequence' === type ? item : item.slice())))));
     }
 
     ,fusion: function(item, subitem) {
         var self = this, $ = self.$, t;
         if (!$.sub) return item;
-        if (-1 === $.subcascade){ t = item; item = subitem; subitem = t; }
+        if (-1 === $.subcascade) {t = item; item = subitem; subitem = t;}
         if (null == item || null == subitem) return item || subitem || null;
         return $.submethod.call(self, item, subitem, self.dimension(), self.base(), $.subpos);
     }
@@ -1025,13 +1025,13 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         self._prev = false; self._next = false;
         tot = $.count; tot_1 = $.last;
 
-        if ("sequence" === $.type)
-            $.seq_curr = $.seq && $.seq.length ? (0>dir ? $.seq.length-1 : 0) : -1;
+        if ('sequence' === $.type)
+            $.seq_curr = $.seq && $.seq.length ? (0 > dir ? $.seq.length - 1 : 0) : -1;
 
         if (RANDOM & order)
         {
             // a uniform random traversal over all traversals of the combinatorial space
-            if (("gen" === Abacus.Options.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.Options.MAXMEM) || (Arithmetic.isDefault() && 0 > tot/*has overflowed*/))
+            if (('gen' === Abacus.Options.RANDOM) || (1 === $.rand[$.type]) || Arithmetic.gt(tot, Abacus.Options.MAXMEM) || (Arithmetic.isDefault() && 0 > tot/*has overflowed*/))
             {
                 // no random unranking supported/enabled
                 // and/or too big to keep in memory
@@ -1048,7 +1048,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 // lazy init
                 if (self._traversed) self._traversed.dispose();
                 self._traversed = null;
-                r = self.random("index", true);
+                r = self.random('index', true);
                 try {
                     self.__item = klass.unrank(r, n, $);
                 } catch (e) {
@@ -1084,8 +1084,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         }
 
         self._item = self.output(self.__item);
-        self._prev = (RANDOM & order) || (0 < dir) ? false : null != self.__item;
-        self._next = (0 > dir) && !(RANDOM & order) ? false : null != self.__item;
+        self._prev = (RANDOM & order) || (0 < dir) ? false : (null != self.__item);
+        self._next = (0 > dir) && !(RANDOM & order) ? false : (null != self.__item);
 
         return self;
     }
@@ -1137,9 +1137,9 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
         dir = -1 === dir ? -1 : 1; // T
         $.order = order;
 
-        if ("sequence" === $.type && $.seq && $.seq.length)
+        if (('sequence' === $.type) && $.seq && $.seq.length)
         {
-            for (i=0,l=$.seq.length; i<l; i++)
+            for (i=0,l=$.seq.length; i<l; ++i)
                 if (rewind) $.seq[i].rewind(dir); else $.seq[i].order(order,dir);
         }
         self._reset(dir);
@@ -1248,7 +1248,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
 
     ,item0: function(dir, raw) {
         var self = this, item;
-        item = self[CLASS].initial(self.n, self.$, -1===dir?-1:1);
+        item = self[CLASS].initial(self.n, self.$, -1 === dir ? -1 : 1);
         return true === raw ? item : self.output(item);
     }
 
@@ -1377,7 +1377,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
     ,random: function(type, m, M, non_recursive) {
         var self = this, klass = self[CLASS], $ = self.$, item, output, o = $.order;
         non_recursive = !!non_recursive;
-        if ("index" === type)
+        if ('index' === type)
         {
             var Arithmetic = Abacus.Arithmetic,
                 N = Arithmetic.num, O = Arithmetic.O, I = Arithmetic.I,
@@ -1423,7 +1423,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             $.order = o;
             item = self.output(item);
             output = $.sub && !non_recursive ? self.fusion(item, is_instance($.sub, CombinatorialProxy) ? $.sub.seed(item).random() : $.sub.random()) : item;
-        } while ($.filter && (null!=output) && !$.filter.apply(output, self)); // if custom filter reject if invalid, try next
+        } while ($.filter && (null != output) && !$.filter.apply(output, self)); // if custom filter reject if invalid, try next
         return output;
     }
 
@@ -1481,7 +1481,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                         {
                             // random unranking
                             // get next un-traversed index, reject if needed
-                            r = self.random("index", true);
+                            r = self.random('index', true);
                             rs = Abacus.Math.rnd() > 0.5 ? J : I;
                             while (traversed.isset(+r)) r = Arithmetic.wrap(Arithmetic.add(r, rs), O, tot_1);
                             traversed.set(+r);
@@ -1533,8 +1533,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     }
                     else
                     {
-                        if ("sequence" === $.type && $.seq && $.seq.length)
-                            for (i=0,l=$.seq.length; i<l; i++) $.seq[i].rewind(dir);
+                        if ('sequence' === $.type && $.seq && $.seq.length)
+                            for (i=0,l=$.seq.length; i<l; ++i) $.seq[i].rewind(dir);
                         self._reset(dir);
                         has_next = null != self.__item;
                     }
@@ -1590,7 +1590,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 if (0 > dir) self._prev = has_next;
                 else self._next = has_next;
             }
-        } while ($.filter && (null!=current) && !$.filter.apply(current, self)); // if custom filter, reject if invalid, try next
+        } while ($.filter && (null != current) && !$.filter.apply(current, self)); // if custom filter, reject if invalid, try next
         return current;
     }
 
@@ -1634,7 +1634,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                  self.$.order
                 ,self.__index
                 ,self._index
-                ,self.__item&&self.__item.slice()
+                ,self.__item && self.__item.slice()
                 ,self._item
                 ,self.__subindex
                 ,self._subindex
@@ -1652,7 +1652,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             range = new Array(count+1);
             k = 0;
             // take into account possible filtering applied
-            while (k<=count)
+            for (;k<=count;)
             {
                 next = self.next();
                 if (null == next) break;
@@ -1733,7 +1733,7 @@ CombinatorialProxy = Abacus.CombinatorialProxy = Class(CombinatorialIterator, {
         $ = $ || {};
         $.factory = is_callable(combIterFactory) ? combIterFactory : null;
         $.iter = null;
-        if ($.factory && (true===$.factory.SINGLETON))
+        if ($.factory && (true === $.factory.SINGLETON))
         {
             iter = $.factory();
             if (is_instance(iter, CombinatorialIterator))
@@ -1781,7 +1781,7 @@ CombinatorialProxy = Abacus.CombinatorialProxy = Class(CombinatorialIterator, {
     }
     ,seed: function(item, dir) {
         var self = this, $ = self.$, prev = $.iter;
-        $.iter = $.factory && (null!=item) ? $.factory(item) : null;
+        $.iter = $.factory && (null != item) ? $.factory(item) : null;
         if (prev && (prev !== $.iter))
         {
             prev.dispose();

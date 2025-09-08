@@ -89,23 +89,21 @@ UniPolyTerm = Class({
     }
     ,toTerm: function(symbol, asTex, monomialOnly, asDec, precision) {
         var t = this, e = t.e, c = t.c, term, Arithmetic = Abacus.Arithmetic;
-        if (true === asDec)
+        term = true === asTex ? (0 < e ? (to_tex(symbol) + (1 < e ? '^{' + Tex(e) + '}' : '')) : '') : (0 < e ? (symbol + (1 < e ? '^' + String(e) : '')) : '');
+        if (true !== monomialOnly)
         {
-            term = 0 < e ? (symbol + (1 < e ? ('^' + String(e)) : '')) : '';
-            if (true === monomialOnly) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
-        }
-        else if (true === asTex)
-        {
-            term = 0 < e ? (to_tex(symbol) + (1 < e ? '^{' + Tex(e) + '}' : '')) : '';
-            if (true === monomialOnly) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toTex() + ')' : c.toTex());
-        }
-        else
-        {
-            term = 0 < e ? (symbol + (1 < e ? '^' + String(e) : '')) : '';
-            if (true === monomialOnly) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I)) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toString() + ')' : c.toString());
+            if (true === asDec)
+            {
+                term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
+            }
+            else if (true === asTex)
+            {
+                term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toTex() + ')' : c.toTex());
+            }
+            else
+            {
+                term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I)) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toString() + ')' : c.toString());
+            }
         }
         return term;
     }
@@ -797,65 +795,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             }, Polynomial.Zero(x, ring), null, 0, n-1);
         }
 
-        ,fromExpr: function(e, x, ring) {
+        ,fromExpr: function(e, symbol, ring) {
             if (!is_instance(e, Expr)) return null;
             ring = ring || Ring.Q();
-            x = String(x || 'x');
-            e = e.expand().collect(x);
-            function extract(ast)
-            {
-                var sym, coeff = Rational.One();
-                if (('sym' === ast.type) && (ast.arg === x))
-                {
-                    return [ast.arg, coeff];
-                }
-                else if (('^' === ast.op) && ('sym' === ast.arg[0].ast.type) && (ast.arg[0].ast.arg === x))
-                {
-                    if (('num' == ast.arg[1].ast.type) && ast.arg[1].ast.arg.isInt() && ast.arg[1].ast.arg.gt(O))
-                    {
-                        return [ast.arg[0].ast.arg + '^' + String(ast.arg[1].ast.arg.valueOf()), coeff];
-                    }
-                }
-                else if ('*' === ast.op)
-                {
-                    for (var i=0,n=ast.arg.length; i<n; ++i)
-                    {
-                        if (!sym && (sym=extract(ast.arg[i].ast)))
-                        {
-                            /*pass*/
-                        }
-                        else
-                        {
-                            coeff = ast.arg[i].mul(coeff);
-                        }
-                    }
-                    if (sym) return [sym, coeff];
-                }
-            }
-            var args = '+' === e.ast.op ? e.ast.arg : [], i, t, s, tc, O = Abacus.Arithmetic.O, terms = {};
-            for (i=args.length-1; i>=0; --i)
-            {
-                t = extract(args[i].ast);
-                if (!t)
-                {
-                    terms['0'] = null == terms['0'] ? args[i] : (terms['0'].add(args[i]));
-                }
-                else
-                {
-                    s = t[0]; tc = t[1];
-                    if (tc.equ(O)) continue;
-                    if (x === s)
-                    {
-                        terms['1'] = null == terms['1'] ? tc : (terms['1'].add(tc));
-                    }
-                    else if ((s.length > x.length+1) && (x + '^' === s.slice(0, x.length+1)))
-                    {
-                        s = s.slice(x.length+1);
-                        terms[s] = null == terms[s] ? tc : (terms[s].add(tc));
-                    }
-                }
-            }
-            return new Polynomial(terms, x, ring);
+            symbol = String((is_array(symbol) ? symbol[0] : symbol) || 'x');
+            return e.toPoly(symbol, ring);
         }
         ,fromString: function(s, symbol, ring) {
             return Polynomial.fromExpr(Expr.fromString(s), symbol, ring);
@@ -1653,7 +1597,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             for (i=t.length-1; i>=0; --i)
             {
                 term = t[i].toTerm(x, false, true);
-                terms.push(term.length ? Expr('*' [t[i].c, (term=term.split('^')) && (1 < term.length ? Expr('^', [term[0], +term[1]]) : Expr('', term[0]))]) : Expr('', t[i].c));
+                if (!t[i].c.equ(O)) terms.push(term.length ? Expr('*' [t[i].c, (term=term.split('^')) && (1 < term.length ? Expr('^', [term[0], +term[1]]) : Expr('', term[0]))]) : Expr('', t[i].c));
             }
             self._expr = terms.length ? Expr('+', terms) : Expr.Zero();
         }
@@ -1807,29 +1751,27 @@ MultiPolyTerm = Class({
     }
     ,toTerm: function(symbol, asTex, monomialOnly, asDec, precision) {
         var t = this, e = t.e, c = t.c, term, Arithmetic = Abacus.Arithmetic;
-        if (true === asDec)
-        {
-            term = symbol.reduce(function(monom, sym, i) {
-                return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1 < e[i] ? '^'+String(e[i]) : '')) : monom;
-            }, '');
-            if (true === monomialOnly) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
+        term = symbol.reduce(true === asTex
+        ? function(monom, sym, i) {
+            return 0 < e[i] ? (monom + to_tex(sym) + (1 < e[i] ? ('^{' + Tex(e[i]) + '}') : '')) : monom;
         }
-        else if (true === asTex)
+        : function(monom, sym, i) {
+            return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1 < e[i] ? ('^' + String(e[i])) : '')) : monom;
+        }, '');
+        if (true !== monomialOnly)
         {
-            term = symbol.reduce(function(monom, sym, i) {
-                return 0 < e[i] ? (monom + to_tex(sym) + (1 < e[i] ? '^{' + Tex(e[i]) + '}' : '')) : monom;
-            }, '');
-            if (true === monomialOnly) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '(' + c.toTex() + ')' : c.toTex());
-        }
-        else
-        {
-            term = symbol.reduce(function(monom, sym, i) {
-                return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1 < e[i] ? '^'+String(e[i]) : '')) : monom;
-            }, '');
-            if (true === monomialOnly) return term;
-            term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? '(' + c.toString() + ')' : c.toString());
+            if (true === asDec)
+            {
+                term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
+            }
+            else if (true === asTex)
+            {
+                term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '(' + c.toTex() + ')' : c.toTex());
+            }
+            else
+            {
+                term = term.length ? ((c.equ(Arithmetic.I) ? '' : (c.equ(Arithmetic.J) ? '-' : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? '(' + c.toString() + ')' : c.toString());
+            }
         }
         return term;
     }
@@ -2096,18 +2038,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return new MultiPolynomial(c || Abacus.Arithmetic.O, x || ['x'], ring || Ring.Q());
         }
 
-        ,fromExpr: function(e, x, ring) {
+        ,fromExpr: function(e, symbol, ring) {
             if (!is_instance(e, Expr)) return null;
             ring = ring || Ring.Q();
-            x = x || ['x'];
-            var symbols = e.expand().symbols('polynomial'), i, s, tc, O = Abacus.Arithmetic.O, terms = {};
-            for (i=symbols.length-1; i>=0; --i)
-            {
-                s = symbols[i]; tc = e.terms[s].c();
-                if (tc.equ(O)) continue;
-                terms[s] = tc;
-            }
-            return new MultiPolynomial(terms, x, ring);
+            symbol = symbol || ['x'];
+            if (is_string(symbol)) symbol = [symbol];
+            return e.toPoly(symbol, ring);
         }
         ,fromString: function(s, symbol, ring) {
             return MultiPolynomial.fromExpr(Expr.fromString(s), symbol, ring);
@@ -3127,7 +3063,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 for (i=t.length-1; i>=0; --i)
                 {
                     ti = t[i]; term = ti.toTerm(x, false, true);
-                    terms.push(term.length ? Expr('*', [ti.c].concat(term.split('*').map(function(x) {
+                    if (!ti.c.equ(O)) terms.push(term.length ? Expr('*', [ti.c].concat(term.split('*').map(function(x) {
                         x = x.split('^');
                         return 1 < x.length ? Expr('^', [x[0], +x[1]]) : Expr('', x[0]);
                     }))) : Expr('', ti.c));

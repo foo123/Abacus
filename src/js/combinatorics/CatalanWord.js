@@ -197,7 +197,7 @@ function next_catalan(item, n, dir, order)
             z = item[j];
             y = 0<j ? item[j-1] : 1;
             d = z - y;
-            while (true)
+            for (;;)
             {
                 if (1 !== d)
                 {
