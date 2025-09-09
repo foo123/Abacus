@@ -49,10 +49,19 @@ Expr = Abacus.Expr = Class(Symbolic, {
             self.ast = {op:'', arg:expr.ast.arg, type:'num'};
         }
 
-        // simulate RationalExpr
+        def(self, 'terms', {
+            get: function() {
+                return self.ast ? self.term() : {};
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+
+        // RationalExpr
         def(self, 'num', {
             get: function() {
-                return self.ast && ('/' === self.ast.op) && (2 === self.ast.arg.length) ? self.ast.arg[0] : self;
+                return self.ast && ('/' === self.ast.op) && (2 === self.ast.arg.length) ? self.ast.arg[0] : Expr.Zero();
             },
             set: NOP,
             enumerable: true,
@@ -61,6 +70,24 @@ Expr = Abacus.Expr = Class(Symbolic, {
         def(self, 'den', {
             get: function() {
                 return self.ast && ('/' === self.ast.op) && (2 === self.ast.arg.length) ? self.ast.arg[1] : Expr.One();
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+
+        // OP, RelOp
+        def(self, 'lhs', {
+            get: function() {
+                return self.ast && (-1 !== ['>=','<=','!=','>','<','='].indexOf(self.ast.op)) ? self.ast.arg[0] : null;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'rhs', {
+            get: function() {
+                return self.ast && (-1 !== ['>=','<=','!=','>','<','='].indexOf(self.ast.op)) ? self.ast.arg[1] : null;
             },
             set: NOP,
             enumerable: true,
@@ -558,6 +585,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_tex: null
     ,_symb: null
     ,_op: null
+    ,_terms: null
     ,_c: null
     ,_xpnd: null
 
@@ -568,6 +596,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         self._tex = null;
         self._symb = null;
         self._op = null;
+        self._terms = null;
         self._c = null;
         self._xpnd = null;
         return self;
@@ -625,6 +654,86 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self._op;
     }
+    ,term: function(t) {
+        var self = this, ast, key, terms, O = Expr.Zero(), I = Expr.One(), one = Rational.One();
+
+        if (null == self._terms)
+        {
+            // collect simple terms only, sums of products of numbers, symbols and powers of symbols
+            ast = self.ast;
+            self._terms = {'1': O};
+
+            if ('sym' === ast.type)
+            {
+                self._terms[ast.arg] = self.clone();
+            }
+            else if ('num' === ast.type)
+            {
+                self._terms['1'] = self.clone();
+            }
+            else if ('expr' === ast.type)
+            {
+                if (('+' === ast.op) || ('-' === ast.op))
+                {
+                    ast.arg.forEach(function(e, i) {
+                        var terms = e.term();
+                        KEYS(terms).forEach(function(key) {
+                            if (!HAS.call(self._terms, key))
+                            {
+                                self._terms[key] = terms[key];
+                            }
+                            else
+                            {
+                                self._terms[key] = (0 < i) && ('-' === ast.op) ? (self._terms[key].sub(terms[key])) : (self._terms[key].add(terms[key]));
+                            }
+                        });
+                    });
+                }
+                else if ('*' === ast.op)
+                {
+                    terms = ast.arg.reduce(function(terms, e) {
+                        if (e.isConst())
+                        {
+                            terms.c = terms.c.mul(e.c());
+                        }
+                        else
+                        {
+                            var key = e.toString();
+                            terms.symbols[key] = (terms.symbols[key] || 0) + 1;
+                        }
+                        return terms;
+                    }, {c:I, symbols:{}});
+                    key = KEYS(terms.symbols).sort().map(function(key) {
+                        return 1 < terms.symbols[key] ? (key + '^' + String(terms.symbols[key])) : key;
+                    }).join('*');
+                    if (key.length)
+                    {
+                        if (!HAS.call(self._terms, key))
+                        {
+                            self._terms[key] = terms.c;
+                        }
+                        else
+                        {
+                            self._terms[key] = self._terms[key].add(terms.c);
+                        }
+                    }
+                    else
+                    {
+                        self._terms['1'] = self.clone();
+                    }
+                }
+                else if ('^' === ast.op)
+                {
+                    self._terms[self.toString()] = self.clone();
+                }
+            }
+        }
+
+        if (null == t) return self._terms;
+
+        t = String(t);
+        return HAS.call(self._terms, t) ? self._terms[t] : O;
+    }
 
     ,isSimple: function() {
         var type = this.ast.type;
@@ -675,8 +784,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
     }
 
-    ,c: function() {
+    ,c: function(type) {
         var self = this, ast = self.ast;
+        if (('symbol' === type) && ('sym' === ast.type))
+        {
+            return Rational.One();
+        }
         if (null == self._c)
         {
             if ('sym' === ast.type)

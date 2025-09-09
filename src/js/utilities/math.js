@@ -34,13 +34,13 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
         return Arithmetic.num(a);
     }
     ,num: function(a) {
-        return is_number(a) ? stdMath.floor(a) : parseInt(a||0, 10);
+        return is_number(a) ? stdMath.floor(a) : parseInt(a || 0, 10);
     }
     ,val: function(a) {
         return stdMath.floor(a.valueOf());
     }
     ,digits: function(a, base) {
-        var s = a.toString(+(base||10)); /* default base 10 */
+        var s = a.toString(+(base || 10)); /* default base 10 */
         if ('-' === s.charAt(0)) s = s.slice(1); // dont include the sign in digits
         return s;
     }
@@ -81,12 +81,22 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
 
 // pluggable arithmetics, eg biginteger Arithmetic
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
-    isDefault: function(){return (0 === this.O) && (this.add === addn);}
-    ,neg: function(a){return Abacus.Arithmetic.mul(Abacus.Arithmetic.J, a);}
-    ,abs: function(a){return Abacus.Arithmetic.gt(Abacus.Arithmetic.O, a) ? Abacus.Arithmetic.neg(a) : a;}
-    ,min: function(a, b){return Abacus.Arithmetic.lt(a, b) ? a : b;}
-    ,max: function(a, b){return Abacus.Arithmetic.gt(a, b) ? a : b;}
-    ,divceil: function(a, b){
+    isDefault: function() {
+        return (0 === this.O) && (this.add === addn);
+    }
+    ,neg: function(a) {
+        return Abacus.Arithmetic.mul(Abacus.Arithmetic.J, a);
+    }
+    ,abs: function(a) {
+        return Abacus.Arithmetic.gt(Abacus.Arithmetic.O, a) ? Abacus.Arithmetic.neg(a) : a;
+    }
+    ,min: function(a, b) {
+        return Abacus.Arithmetic.lt(a, b) ? a : b;
+    }
+    ,max: function(a, b) {
+        return Abacus.Arithmetic.gt(a, b) ? a : b;
+    }
+    ,divceil: function(a, b) {
         if (null == b) return a;
         // https://stackoverflow.com/questions/921180/how-can-i-ensure-that-a-division-of-integers-is-always-rounded-up
         var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
@@ -184,7 +194,7 @@ Abacus.Math = {
     }
     ,divisors: function(n, as_generator) {
         var Arithmetic = Abacus.Arithmetic;
-        return divisors(is_instance(n, Integer) ? n : Arithmetic.num(n), true===as_generator);
+        return divisors(is_instance(n, Integer) ? n : Arithmetic.num(n), true === as_generator);
     }
     ,legendre: function(a, p) {
         var Arithmetic = Abacus.Arithmetic;
@@ -210,9 +220,9 @@ Abacus.Math = {
         if (is_instance(n, Integer))
         {
             f = pollard_rho(n.num, s, a, retries, max_steps||null, F||null);
-            return null==f ? f : new n[CLASS](f);
+            return null == f ? f : (new n[CLASS](f));
         }
-        return pollard_rho(N(n), s, a, retries, max_steps||null, F||null);
+        return pollard_rho(N(n), s, a, retries, max_steps || null, F || null);
     }
     ,factorize: function(n) {
         var Arithmetic = Abacus.Arithmetic;
@@ -228,12 +238,14 @@ Abacus.Math = {
     }
     ,nextPrime: function(n, dir) {
         var Arithmetic = Abacus.Arithmetic;
-        return next_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n), -1===dir?-1:1);
+        return next_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n), -1 === dir ? -1 : 1);
     }
 
     ,gcd: function(/* args */) {
-        var Arithmetic = Abacus.Arithmetic, args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments), res, INT = null;
-        res = gcd(args.map(function(a){
+        var Arithmetic = Abacus.Arithmetic,
+            args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
+            res, INT = null;
+        res = gcd(args.map(function(a) {
             if (is_instance(a, Integer))
             {
                 if (!INT) INT = a[CLASS];
@@ -244,8 +256,10 @@ Abacus.Math = {
         return INT ? new INT(res) : res;
     }
     ,xgcd: function(/* args */) {
-        var Arithmetic = Abacus.Arithmetic, args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments), res, INT = null;
-        res = xgcd(args.map(function(a){
+        var Arithmetic = Abacus.Arithmetic,
+            args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
+            res, INT = null;
+        res = xgcd(args.map(function(a) {
             if (is_instance(a, Integer))
             {
                 if (!INT) INT = a[CLASS];
@@ -253,11 +267,13 @@ Abacus.Math = {
             }
             return Arithmetic.num(a);
         }));
-        return INT && res ? res.map(function(g){return new INT(g);}) : res;
+        return INT && res ? res.map(function(g) {return new INT(g);}) : res;
     }
     ,lcm: function(/* args */) {
-        var Arithmetic = Abacus.Arithmetic, args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments), res, INT = null;
-        res = lcm(args.map(function(a){
+        var Arithmetic = Abacus.Arithmetic,
+            args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
+            res, INT = null;
+        res = lcm(args.map(function(a) {
             if (is_instance(a, Integer))
             {
                 if (!INT) INT = a[CLASS];
@@ -271,7 +287,7 @@ Abacus.Math = {
     ,diophantine: function(a, b, with_param, with_free_vars) {
         var Arithmetic = Abacus.Arithmetic;
         if ((!is_array(a) && !is_args(a)) || !a.length) return null;
-        return solvedioph(Arithmetic.nums(a), Arithmetic.num(b||0), with_param, true===with_free_vars);
+        return solvedioph(Arithmetic.nums(a), Arithmetic.num(b||0), with_param, true === with_free_vars);
     }
     ,diophantines: function(a, b, with_param, with_free_vars) {
         var ring = Ring.Z();
@@ -279,14 +295,17 @@ Abacus.Math = {
         if (is_instance(a, Matrix) && (!a.nr || !a.nc)) return null;
         if (!is_instance(a, Matrix) && !a.length) return null;
         //a = is_instance(a, Matrix) ? a : a;
-        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b)) b = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return b||0;});
+        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b))
+        {
+            b = array(is_instance(a, Matrix) ? a.nr : a.length, function() {return b || 0;});
+        }
         b = is_instance(b, Matrix) ? b : ring.cast(b);
-        return solvediophs(a, b, with_param, true===with_free_vars);
+        return solvediophs(a, b, with_param, true === with_free_vars);
     }
     ,congruence: function(a, b, m, with_param, with_free_vars) {
         var Arithmetic = Abacus.Arithmetic;
         if ((!is_array(a) && !is_args(a)) || !a.length) return null;
-        return solvecongr(Arithmetic.nums(a), Arithmetic.num(b||0), Arithmetic.num(m||0), with_param, true===with_free_vars);
+        return solvecongr(Arithmetic.nums(a), Arithmetic.num(b || 0), Arithmetic.num(m || 0), with_param, true === with_free_vars);
     }
     ,congruences: function(a, b, m, with_param, with_free_vars) {
         var ring = Ring.Z();
@@ -294,11 +313,17 @@ Abacus.Math = {
         if (is_instance(a, Matrix) && (!a.nr || !a.nc)) return null;
         if (!is_instance(a, Matrix) && !a.length) return null;
         a = is_instance(a, Matrix) ? a : ring.cast(a);
-        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b)) b = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return b||0;});
+        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b))
+        {
+            b = array(is_instance(a, Matrix) ? a.nr : a.length, function() {return b || 0;});
+        }
         b = is_instance(b, Matrix) ? b : ring.cast(b);
-        if (!is_instance(m, Matrix) && !is_array(m) && !is_args(m)) m = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return m||0;});
+        if (!is_instance(m, Matrix) && !is_array(m) && !is_args(m))
+        {
+            m = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return m || 0;});
+        }
         m = is_instance(m, Matrix) ? m : ring.cast(m);
-        return solvecongrs(a, b, m, with_param, true===with_free_vars);
+        return solvecongrs(a, b, m, with_param, true === with_free_vars);
     }
     ,pythagorean: function(a, with_param) {
         var Arithmetic = Abacus.Arithmetic;
@@ -311,7 +336,10 @@ Abacus.Math = {
         if (is_instance(a, Matrix) && (!a.nr || !a.nc)) return null;
         if (!is_instance(a, Matrix) && !a.length) return null;
         //a = is_instance(a, Matrix) ? a : a;
-        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b)) b = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return b||0;});
+        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b))
+        {
+            b = array(is_instance(a, Matrix) ? a.nr : a.length, function() {return b || 0;});
+        }
         b = is_instance(b, Matrix) ? b : ring.cast(b);
         return solvelinears(a, b, with_param);
     }
@@ -321,7 +349,10 @@ Abacus.Math = {
         if (is_instance(a, Matrix) && (!a.nr || !a.nc)) return null;
         if (!is_instance(a, Matrix) && !a.length) return null;
         //a = is_instance(a, Matrix) ? a : a;
-        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b)) b = array(is_instance(a, Matrix) ? a.nr : a.length, function(){return b||0;});
+        if (!is_instance(b, Matrix) && !is_array(b) && !is_args(b))
+        {
+            b = array(is_instance(a, Matrix) ? a.nr : a.length, function() {return b || 0;});
+        }
         b = is_instance(b, Matrix) ? b : ring.cast(b);
         return solvelineqs(a, b, param);
     }
@@ -329,10 +360,10 @@ Abacus.Math = {
 
     ,dotp: function(a, b) {
         var Arithmetic = Abacus.Arithmetic;
-        return (is_array(a)||is_args(a)) && (is_array(b)||is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
+        return (is_array(a) || is_args(a)) && (is_array(b) || is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
     }
     ,orthogonalize: function(v) {
-        return (is_array(v)||is_args(v)) && v.length ? gramschmidt(v) : [];
+        return (is_array(v) || is_args(v)) && v.length ? gramschmidt(v) : [];
     }
 };
 
