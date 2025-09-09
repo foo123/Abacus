@@ -293,7 +293,7 @@ Iterator = Abacus.Iterator = Class({
         // incrementing current index as well
         if (is_callable(up_to))
         {
-            for (;self.hasNext();)
+            while (self.hasNext())
             {
                 next = self.next();
                 if (null == next || !up_to(next)) break;
@@ -304,7 +304,7 @@ Iterator = Abacus.Iterator = Class({
         {
             all = !arguments.length || (null == up_to);
             if (null != up_to) up_to = +up_to;
-            for (;(all || (list.length < up_to)) && self.hasNext();)
+            while ((all || (list.length < up_to)) && self.hasNext())
             {
                 next = self.next();
                 if (null == next) break;
@@ -515,7 +515,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     b = 0;
                 }
                 i = a*$.seq_curr+b; d = a*dir;
-                for (;0 <= i && i < seq.length && !seq[i].hasNext(dir);)
+                while ((0 <= i) && (i < seq.length) && !seq[i].hasNext(dir))
                 {
                     $.seq_curr += dir;
                     i += d;
@@ -535,7 +535,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 // uniform random sampling, taking into account the count of each iterator
                 N = null != $.last ? $.last : Arithmetic.sub(klass.count(n, $), Arithmetic.I),
                 index = Arithmetic.rnd(O, N); i = 0; l = seq.length;
-                for (;Arithmetic.gte(index, tot=seq[i].total());)
+                while (Arithmetic.gte(index, tot=seq[i].total()))
                 {
                     index = Arithmetic.sub(index, tot);
                     ++i; if ((i >= l) || Arithmetic.lt(index, O)) break;
@@ -601,7 +601,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 if ((null == index) || !Arithmetic.inside(index, Arithmetic.J, null != $.count ? $.count : klass.count(n, $))) return null;
 
                 l = seq.length; i = 0;
-                for (;Arithmetic.gte(index, seq[i].total());)
+                while (Arithmetic.gte(index, seq[i].total()))
                 {
                     index = Arithmetic.sub(index, seq[i].total());
                     ++i; if ((i >= l) || Arithmetic.lt(index, O)) break;
@@ -678,7 +678,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                     for (i1=0; i1<n1; ++i1) output[item[i1]] = items[item[i1]];
                     for (i1=n1-1; i1>=0; --i1) items.splice(item[i1], 1);
                     i1 = 0; i2 = 0;
-                    for (;i2 < n2;)
+                    while (i2 < n2)
                     {
                         for (;(i1 < n3) && (null != output[i1]); ++i1);
                         if (i1 < n3) output[i1] = items[subitem[i2]];
@@ -1652,7 +1652,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             range = new Array(count+1);
             k = 0;
             // take into account possible filtering applied
-            for (;k<=count;)
+            while (k<=count)
             {
                 next = self.next();
                 if (null == next) break;

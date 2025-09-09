@@ -199,97 +199,97 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         }
         return self._c;
     }
-    ,equ: function(x) {
+    ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        if (is_instance(x, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(x))
-            return self.num.equ(self.den.mul(x));
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return self.num.mul(x.den).equ(self.den.mul(x.num));
-        else if (is_string(x))
-            return (x === self.toString()) || (x === self.toTex());
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        if (is_instance(other, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(other))
+            return self.num.equ(self.den.mul(other));
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return self.num.mul(other.den).equ(self.den.mul(other.num));
+        else if (is_string(other))
+            return (other === self.toString()) || (other === self.toTex());
         return false;
     }
-    ,gt: function(x) {
+    ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        if (is_instance(x, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(x))
-            return self.num.gt(self.den.mul(x));
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return self.num.mul(x.den).gt(self.den.mul(x.num));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        if (is_instance(other, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(other))
+            return self.num.gt(self.den.mul(other));
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return self.num.mul(other.den).gt(self.den.mul(other.num));
         return false;
     }
-    ,gte: function(x) {
+    ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        if (is_instance(x, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(x))
-            return self.num.gte(self.den.mul(x));
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return self.num.mul(x.den).gte(self.den.mul(x.num));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        if (is_instance(other, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(other))
+            return self.num.gte(self.den.mul(other));
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return self.num.mul(other.den).gte(self.den.mul(other.num));
         return false;
     }
-    ,lt: function(x) {
+    ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        if (is_instance(x, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(x))
-            return self.num.lt(self.den.mul(x));
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return self.num.mul(x.den).lt(self.den.mul(x.num));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        if (is_instance(other, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(other))
+            return self.num.lt(self.den.mul(other));
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return self.num.mul(other.den).lt(self.den.mul(other.num));
         return false;
     }
-    ,lte: function(x) {
+    ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        if (is_instance(x, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(x))
-            return self.num.lte(self.den.mul(x));
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return self.num.mul(x.den).lte(self.den.mul(x.num));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        if (is_instance(other, [Integer, IntegerMod, Complex, Poly]) || Arithmetic.isNumber(other))
+            return self.num.lte(self.den.mul(other));
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return self.num.mul(other.den).lte(self.den.mul(other.num));
         return false;
     }
 
-    ,add: function(x) {
+    ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        else if (is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x)) x = Rational(x);
-        if (is_instance(x, [Complex, Poly]))
-            return RationalFunc(self.num.add(self.den.mul(x)), self.den);
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return RationalFunc(self.num.mul(x.den).add(self.den.mul(x.num)), self.den.mul(x.den));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        else if (is_instance(other, [Integer, IntegerMod]) || Arithmetic.isNumber(other)) other = Rational(other);
+        if (is_instance(other, [Complex, Poly]))
+            return RationalFunc(self.num.add(self.den.mul(other)), self.den);
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return RationalFunc(self.num.mul(other.den).add(self.den.mul(other.num)), self.den.mul(other.den));
         return self;
     }
-    ,sub: function(x) {
+    ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        else if (is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x)) x = Rational(x);
-        if (is_instance(x, [Complex, Poly]))
-            return RationalFunc(self.num.sub(self.den.mul(x)), self.den);
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return RationalFunc(self.num.mul(x.den).sub(self.den.mul(x.num)), self.den.mul(x.den));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        else if (is_instance(other, [Integer, IntegerMod]) || Arithmetic.isNumber(other)) other = Rational(other);
+        if (is_instance(other, [Complex, Poly]))
+            return RationalFunc(self.num.sub(self.den.mul(other)), self.den);
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return RationalFunc(self.num.mul(other.den).sub(self.den.mul(other.num)), self.den.mul(other.den));
         return self;
     }
-    ,mul: function(x) {
+    ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        else if (is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x)) x = Rational(x);
-        if (is_instance(x, [Complex, Poly]))
-            return RationalFunc(self.num.mul(x), self.den);
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return RationalFunc(self.num.mul(x.num), self.den.mul(x.den));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        else if (is_instance(other, [Integer, IntegerMod]) || Arithmetic.isNumber(other)) other = Rational(other);
+        if (is_instance(other, [Complex, Poly]))
+            return RationalFunc(self.num.mul(other), self.den);
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return RationalFunc(self.num.mul(other.num), self.den.mul(other.den));
         return self;
     }
-    ,div: function(x) {
+    ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(x, Complex) && x.isReal()) x = x.real();
-        else if (is_instance(x, [Integer, IntegerMod]) || Arithmetic.isNumber(x)) x = Rational(x);
-        if (is_instance(x, [Complex, Poly]))
-            return RationalFunc(self.num, self.den.mul(x));
-        else if (is_instance(x, [Rational, RationalFunc]))
-            return RationalFunc(self.num.mul(x.den), self.den.mul(x.num));
+        if (is_instance(other, Complex) && other.isReal()) other = other.real();
+        else if (is_instance(other, [Integer, IntegerMod]) || Arithmetic.isNumber(other)) other = Rational(other);
+        if (is_instance(other, [Complex, Poly]))
+            return RationalFunc(self.num, self.den.mul(other));
+        else if (is_instance(other, [Rational, RationalFunc]))
+            return RationalFunc(self.num.mul(other.den), self.den.mul(other.num));
         return self;
     }
     ,mod: NotImplemented
     ,divmod: NotImplemented
-    ,divides: function(x) {
+    ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
     }
     ,compose: function(q) {

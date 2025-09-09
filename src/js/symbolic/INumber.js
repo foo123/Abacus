@@ -80,27 +80,27 @@ INUMBER = {
     ,isImag: function() {
         return false;
     }
-    ,equ: function(a) {
-        return is_instance(a, INumber) ? a.equ(this) : (is_string(a) ? (String(this) === a) : (this === a));
+    ,equ: function(other) {
+        return is_instance(other, INumber) ? other.equ(this) : (is_string(other) ? (String(this) === other) : (this === other));
     }
-    ,gt: function(a) {
-        if (is_number(a)) return (this > a);
-        else if (is_instance(a, INumber)) return a.lt(this);
+    ,gt: function(other) {
+        if (is_number(other)) return (this > other);
+        else if (is_instance(other, INumber)) return other.lt(this);
         return false;
     }
-    ,gte: function(a) {
-        if (is_number(a)) return (this >= a);
-        else if (is_instance(a, INumber)) return a.lte(this);
+    ,gte: function(other) {
+        if (is_number(other)) return (this >= other);
+        else if (is_instance(other, INumber)) return other.lte(this);
         return false;
     }
-    ,lt: function(a) {
-        if (is_number(a)) return (this < a);
-        else if (is_instance(a, INumber)) return a.gt(this);
+    ,lt: function(other) {
+        if (is_number(other)) return (this < other);
+        else if (is_instance(other, INumber)) return other.gt(this);
         return false;
     }
-    ,lte: function(a) {
-        if (is_number(a)) return (this <= a);
-        else if (is_instance(a, INumber)) return a.gte(this);
+    ,lte: function(other) {
+        if (is_number(other)) return (this <= other);
+        else if (is_instance(other, INumber)) return other.gte(this);
         return false;
     }
     ,real: function() {
@@ -122,33 +122,33 @@ INUMBER = {
         return 1.0 / this;
     }*/
 
-    ,add: function(a) {
-        return is_instance(a, INumber) ? a.add(this) : (this + a);
+    ,add: function(other) {
+        return is_instance(other, INumber) ? other.add(this) : (this + other);
     }
-    ,sub: function(a) {
-        return is_instance(a, INumber) ? a.neg().add(this) : (this - a);
+    ,sub: function(other) {
+        return is_instance(other, INumber) ? other.neg().add(this) : (this - other);
     }
-    ,mul: function(a) {
-        return is_instance(a, INumber) ? a.mul(this) : (this * a);
+    ,mul: function(other) {
+        return is_instance(other, INumber) ? other.mul(this) : (this * other);
     }
-    ,div: function(a) {
-        if (is_instance(a, Expr)) return Expr('', this).div(a);
-        else if (is_instance(a, Numeric)) return a[CLASS](this).div(a);
-        return is_instance(a, INumber) ? null : stdMath.floor(this / a);
+    ,div: function(other) {
+        if (is_instance(other, Expr)) return Expr('', this).div(other);
+        else if (is_instance(other, Numeric)) return other[CLASS](this).div(other);
+        return is_instance(other, INumber) ? null : stdMath.floor(this / other);
     }
-    ,mod: function(a) {
-        if (is_instance(a, Expr)) return Expr('', this).mod(a);
-        else if (is_instance(a, Numeric)) return a[CLASS](this).mod(a);
-        return is_instance(a, INumber) ? null : (this % a);
+    ,mod: function(other) {
+        if (is_instance(other, Expr)) return Expr('', this).mod(other);
+        else if (is_instance(other, Numeric)) return other[CLASS](this).mod(other);
+        return is_instance(other, INumber) ? null : (this % other);
     }
-    ,divmod: function(a) {
-        return [this.div(a), this.mod(a)];
+    ,divmod: function(other) {
+        return [this.div(other), this.mod(other)];
     }
-    ,divides: function(a) {
+    ,divides: function(other) {
         if (0 === this) return false;
-        if (is_number(a)) return (0 === (a % this));
-        else if (is_instance(a, Integer)) return a.mod(this).equ(0);
-        else if (is_instance(a, [Numeric, Expr])) return true;
+        if (is_number(other)) return (0 === (other % this));
+        else if (is_instance(other, Integer)) return other.mod(this).equ(0);
+        else if (is_instance(other, [Numeric, Expr])) return true;
         return false;
     }
     ,pow: function(n) {
@@ -201,6 +201,9 @@ Numeric = Class(INumber, {
     }
     ,imag: function() {
         return this[CLASS].Zero();
+    }
+    ,toExpr: function() {
+        return Expr('', this);
     }
 });
 

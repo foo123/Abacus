@@ -77,14 +77,14 @@ Complex = Abacus.Complex = Class(Numeric, {
 
             i = 0;
             while (i < c && (a=args[i++]).equ(O)) ;
-            for (;i < c;)
+            while (i < c)
             {
                 while (i < c && (b=args[i++]).equ(O)) ;
                 if (b.equ(a)) continue;
                 else if (b.equ(O)) break;
                 // swap them (a >= b)
                 if (b.norm().gt(a.norm())) {t = b; b = a; a = t;}
-                for (;!b.equ(O);)
+                while (!b.equ(O))
                 {
                     //a0 = a; b0 = b;
                     r = a.mod(b); a = b; b = r;
@@ -221,29 +221,7 @@ Complex = Abacus.Complex = Class(Numeric, {
         }
 
         ,fromString: function(s) {
-            var m, signre, signim, real, imag, O = Complex.Zero(),
-                pattern = /^\(?(?:([\+\-])?\s*\(?((?:\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/-?\d+)?))?\)?(\*?[ij])?)(?:\s*([\+\-])?\s*(?:\(?((?:\\frac\{-?\d+\}\{-?\d+\})|(?:-?\d+(?:\.\d*(?:\[\d+\])?)?(?:e-?\d+)?(?:\/-?\d+)?))\)?\*?)?([ij]))?\)?$/;
-            s = trim(String(s));
-            if (!s.length) return O;
-            m = s.match(pattern);
-            if (!m) return O;
-            if (m[3] && !m[6])
-            {
-                // given in opposite order or imaginary only
-                imag = m[2] ? m[2] : (m[3] ? '1' : '0');
-                real = m[5] || '0';
-                signim = '-' === m[1] ? '-' : '';
-                signre = '-' === m[4] ? '-' : '';
-            }
-            else
-            {
-                // given in correct order or real only
-                imag = m[5] ? m[5] : (m[6] ? '1' : '0');
-                real = m[2] || '0';
-                signim = '-' === m[4] ? '-' : '';
-                signre = '-' === m[1] ? '-' : '';
-            }
-            return Complex(Rational.fromString(signre+real), Rational.fromString(signim+imag));
+            return Expr.fromString(s, Complex.Symbol).c();
         }
     }
 
@@ -308,88 +286,88 @@ Complex = Abacus.Complex = Class(Numeric, {
         return self.re.isInt() && self.im.isInt();
     }
 
-    ,equ: function(a) {
+    ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
-            return self.re.equ(a.re) && self.im.equ(a.im);
-        else if (is_instance(a, Numeric) || Arithmetic.isNumber(a))
-            return self.re.equ(a) && self.im.equ(Arithmetic.O);
-        else if (is_instance(a, INumber))
-            return a.equ(self);
-        else if (is_string(a))
-            return (a === self.toString()) || (a === self.toTex()) || (a === self.toDec());
+        if (is_instance(other, Complex))
+            return self.re.equ(other.re) && self.im.equ(other.im);
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+            return self.re.equ(other) && self.im.equ(Arithmetic.O);
+        else if (is_instance(other, INumber))
+            return other.equ(self);
+        else if (is_string(other))
+            return (other === self.toString()) || (other === self.toTex()) || (other === self.toDec());
 
         return false;
     }
-    ,gt: function(a) {
+    ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (self.isReal() && a.isReal()) return self.re.gt(a.re);
-            else if (self.isImag() && a.isImag()) return self.im.gt(a.im);
-            return self.norm().gt(a.norm());
+            if (self.isReal() && other.isReal()) return self.re.gt(other.re);
+            else if (self.isImag() && other.isImag()) return self.im.gt(other.im);
+            return self.norm().gt(other.norm());
         }
-        else if ((is_instance(a, Numeric) || Arithmetic.isNumber(a)) && self.isReal())
+        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
         {
-            return self.re.gt(a);
+            return self.re.gt(other);
         }
-        else if (is_instance(a, INumber))
+        else if (is_instance(other, INumber))
         {
-            return a.lt(self);
+            return other.lt(self);
         }
         return false;
     }
-    ,gte: function(a) {
+    ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (self.isReal() && a.isReal()) return self.re.gte(a.re);
-            else if (self.isImag() && a.isImag()) return self.im.gte(a.im);
-            return self.norm().gte(a.norm());
+            if (self.isReal() && other.isReal()) return self.re.gte(other.re);
+            else if (self.isImag() && other.isImag()) return self.im.gte(other.im);
+            return self.norm().gte(other.norm());
         }
-        else if ((is_instance(a, Numeric) || Arithmetic.isNumber(a)) && self.isReal())
+        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
         {
-            return self.re.gte(a);
+            return self.re.gte(other);
         }
-        else if (is_instance(a, INumber))
+        else if (is_instance(other, INumber))
         {
-            return a.lte(self);
+            return other.lte(self);
         }
         return false;
     }
-    ,lt: function(a) {
+    ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (self.isReal() && a.isReal()) return self.re.lt(a.re);
-            else if (self.isImag() && a.isImag()) return self.im.lt(a.im);
-            return self.norm().lt(a.norm());
+            if (self.isReal() && other.isReal()) return self.re.lt(other.re);
+            else if (self.isImag() && other.isImag()) return self.im.lt(other.im);
+            return self.norm().lt(other.norm());
         }
-        else if ((is_instance(a, Numeric) || Arithmetic.isNumber(a)) && self.isReal())
+        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
         {
-            return self.re.lt(a);
+            return self.re.lt(other);
         }
-        else if (is_instance(a, INumber))
+        else if (is_instance(other, INumber))
         {
-            return a.gt(self);
+            return other.gt(self);
         }
         return false;
     }
-    ,lte: function(a) {
+    ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (self.isReal() && a.isReal()) return self.re.lte(a.re);
-            else if (self.isImag() && a.isImag()) return self.im.lte(a.im);
-            return self.norm().lte(a.norm());
+            if (self.isReal() && other.isReal()) return self.re.lte(other.re);
+            else if (self.isImag() && other.isImag()) return self.im.lte(other.im);
+            return self.norm().lte(other.norm());
         }
-        else if ((is_instance(a, Numeric) || Arithmetic.isNumber(a)) && self.isReal())
+        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
         {
-            return self.re.lte(a);
+            return self.re.lte(other);
         }
-        else if (is_instance(a, INumber))
+        else if (is_instance(other, INumber))
         {
-            return a.gte(self);
+            return other.gte(self);
         }
         return false;
     }
@@ -447,112 +425,112 @@ Complex = Abacus.Complex = Class(Numeric, {
         return self._i;
     }
 
-    ,add: function(a) {
+    ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
-            return Complex(self.re.add(a.re), self.im.add(a.im));
-        else if (is_instance(a, Numeric) || Arithmetic.isNumber(a))
-            return Complex(self.re.add(a), self.im);
-        else if (is_instance(a, INumber))
-            return a.add(self);
+        if (is_instance(other, Complex))
+            return Complex(self.re.add(other.re), self.im.add(other.im));
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+            return Complex(self.re.add(other), self.im);
+        else if (is_instance(other, INumber))
+            return other.add(self);
 
         return self;
     }
-    ,sub: function(a) {
+    ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
-            return Complex(self.re.sub(a.re), self.im.sub(a.im));
-        else if (is_instance(a, Numeric) || Arithmetic.isNumber(a))
-            return Complex(self.re.sub(a), self.im);
-        else if (is_instance(a, INumber))
-            return a.neg().add(self);
+        if (is_instance(other, Complex))
+            return Complex(self.re.sub(other.re), self.im.sub(other.im));
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+            return Complex(self.re.sub(other), self.im);
+        else if (is_instance(other, INumber))
+            return other.neg().add(self);
 
         return self;
     }
-    ,mul: function(a) {
+    ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, k1, k2, k3, x1, x2, y1, y2;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
             if (self.isReal())
             {
-                return Complex(a.re.mul(self.re), a.im.mul(self.re));
+                return Complex(other.re.mul(self.re), other.im.mul(self.re));
             }
             else if (self.isImag())
             {
-                return Complex(a.im.mul(self.im).neg(), a.re.mul(self.im));
+                return Complex(other.im.mul(self.im).neg(), other.re.mul(self.im));
             }
-            else if (a.isReal())
+            else if (other.isReal())
             {
-                return Complex(self.re.mul(a.re), self.im.mul(a.re));
+                return Complex(self.re.mul(other.re), self.im.mul(other.re));
             }
-            else if (a.isImag())
+            else if (other.isImag())
             {
-                return Complex(self.im.mul(a.im).neg(), self.re.mul(a.im));
+                return Complex(self.im.mul(other.im).neg(), self.re.mul(other.im));
             }
             else
             {
                 // fast complex multiplication
-                x1 = self.re; x2 = a.re; y1 = self.im; y2 = a.im;
+                x1 = self.re; x2 = other.re; y1 = self.im; y2 = other.im;
                 k1 = x1.mul(x2.add(y2)); k2 = y2.mul(x1.add(y1)); k3 = x2.mul(y1.sub(x1));
                 return Complex(k1.sub(k2), k1.add(k3));
             }
         }
-        else if (is_instance(a, Numeric) || Arithmetic.isNumber(a))
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return Complex(self.re.mul(a), self.im.mul(a));
+            return Complex(self.re.mul(other), self.im.mul(other));
         }
-        else if (is_instance(a, INumber))
+        else if (is_instance(other, INumber))
         {
-            return a.mul(self);
+            return other.mul(self);
         }
 
         return self;
     }
-    ,div: function(a) {
+    ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, m, k1, k2, k3, x1, x2, y1, y2;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (a.equ(O))
+            if (other.equ(O))
                 throw new Error('Division by zero in Abacus.Complex!');
 
-            if (a.isReal())
+            if (other.isReal())
             {
-                return Complex(self.re.div(a.re), self.im.div(a.re));
+                return Complex(self.re.div(other.re), self.im.div(other.re));
             }
-            else if (a.isImag())
+            else if (other.isImag())
             {
-                return Complex(self.im.div(a.im), self.re.div(a.im).neg());
+                return Complex(self.im.div(other.im), self.re.div(other.im).neg());
             }
             else
             {
                 // fast complex multiplication for inverse
-                m = a.norm(); x1 = self.re; x2 = a.re.div(m); y1 = self.im; y2 = a.im.div(m).neg();
+                m = other.norm(); x1 = self.re; x2 = other.re.div(m); y1 = self.im; y2 = other.im.div(m).neg();
                 k1 = x1.mul(x2.add(y2)); k2 = y2.mul(x1.add(y1)); k3 = x2.mul(y1.sub(x1));
                 return Complex(k1.sub(k2), k1.add(k3));
             }
         }
-        else if (is_instance(a, Numeric) || Arithmetic.isNumber(a))
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            if ((is_instance(a, Numeric) && a.equ(O)) || (Arithmetic.isNumber(a) && Arithmetic.equ(O, a)))
+            if ((is_instance(other, Numeric) && other.equ(O)) || (Arithmetic.isNumber(other) && Arithmetic.equ(O, other)))
                 throw new Error('Division by zero in Abacus.Complex!');
 
-            return Complex(self.re.div(a), self.im.div(a));
+            return Complex(self.re.div(other), self.im.div(other));
         }
 
         return self;
     }
-    ,mod: function(a, q) {
+    ,mod: function(other, q) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Numeric) || Arithmetic.isNumber(a))
-            return self.sub((is_instance(q, Complex) ? q : self.div(a).round()).mul(a));
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+            return self.sub((is_instance(q, Complex) ? q : self.div(other).round()).mul(other));
 
         return self;
     }
-    ,divmod: function(a) {
-        var self = this, q = self.div(a).round();
-        return [q, self.mod(a, q)];
+    ,divmod: function(other) {
+        var self = this, q = self.div(other).round();
+        return [q, self.mod(other, q)];
     }
-    ,divides: function(a) {
+    ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
     }
 
@@ -574,7 +552,7 @@ Complex = Abacus.Complex = Class(Numeric, {
         }
         n = Arithmetic.val(n.num);
         e = self; pow = Complex.One();
-        for (;0 !== n;)
+        while (0 !== n)
         {
             // exponentiation by squaring
             if (n & 1) pow = pow.mul(e);
@@ -641,6 +619,9 @@ Complex = Abacus.Complex = Class(Numeric, {
     }
     ,valueOf: function() {
         return this.re.valueOf();
+    }
+    ,toExpr: function() {
+        return Expr('+', [self.re.toExpr(), Expr('*', [self.im.toExpr(), Expr('', Complex.Symbol)])]);
     }
     ,toString: function(parenthesized) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr;

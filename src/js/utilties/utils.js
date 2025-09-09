@@ -1369,7 +1369,7 @@ function isqrt(n)
     two = Arithmetic.II;
     // Binary Search (O(logn))
     start = I; end = Arithmetic.div(n, two); sqrt = start;
-    for (;Arithmetic.lte(start, end);)
+    while (Arithmetic.lte(start, end))
     {
         mid = Arithmetic.div(Arithmetic.add(start, end), two);
         mid2 = Arithmetic.mul(mid, mid);
@@ -1421,7 +1421,7 @@ function ikthroot(n, k)
     k_1 = Arithmetic.sub(k, I);
     u = n;
     r = Arithmetic.add(n, I);
-    for (;Arithmetic.lt(u, r);)
+    while (Arithmetic.lt(u, r))
     {
         r = u;
         u = Arithmetic.div(Arithmetic.add(Arithmetic.mul(r, k_1), Arithmetic.div(n, Arithmetic.pow(r, k_1))), k);
@@ -1449,7 +1449,7 @@ function polykthroot(p, k, limit)
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
     r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
     deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-    for (;!d.equ(O);)
+    while (!d.equ(O))
     {
         q = d.ttm(true).div(rk.mul(k).ttm(true));
         if (q.equ(O)) break; // no update anymore

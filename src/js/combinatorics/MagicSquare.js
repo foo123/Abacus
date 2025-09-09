@@ -81,7 +81,7 @@ MagicSquare = Abacus.MagicSquare = Class({
         ,product: function(/* args */) {
             if (1 >= arguments.length) return arguments[0];
             var m = arguments, nm = m.length, m1, m2, mm = m[0], mult, n1, n2, n22, n12, k = 1, i, j, i1, i2, j1, j2;
-            for (;k < nm;)
+            while (k < nm)
             {
                 m1 = mm; m2 = m[k++];
                 n1 = m1.length; n2 = m2.length; n22 = n2*n2; n12 = n1*n2;
@@ -89,7 +89,7 @@ MagicSquare = Abacus.MagicSquare = Class({
                 for (i=0; i<n12; ++i) mm[i] = new Array(n12);
                 i1 = 0; i = 0; j1 = 0; j = 0; i2 = 0; j2 = 0;
                 mult = (m1[i1][j1] - 1) * n22;
-                for (;i1 < n1;)
+                while (i1 < n1)
                 {
                     mm[i+i2][j+j2] = mult + m2[i2][j2];
                     if (++j2 >= n2)

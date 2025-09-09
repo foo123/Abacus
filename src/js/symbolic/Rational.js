@@ -247,67 +247,67 @@ Rational = Abacus.Rational = Class(Numeric, {
         return self._simpl ? Arithmetic.equ(Arithmetic.I, self.den) : Arithmetic.equ(Arithmetic.O, Arithmetic.mod(self.num, self.den));
     }
 
-    ,equ: function(a, strict) {
+    ,equ: function(other, strict) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Rational))
-            return true === strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, a.den)) : Arithmetic.equ(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return true === strict ? (Arithmetic.equ(self.num, a.num) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, INumber))
-            return a.equ(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return true === strict ? (Arithmetic.equ(self.num, a) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(self.den, a));
-        else if (is_string(a))
-            return (a === self.toString()) || (a === self.toTex()) || (a === self.toDec());
+        if (is_instance(other, Rational))
+            return true === strict ? (Arithmetic.equ(self.num, other.num) && Arithmetic.equ(self.den, other.den)) : Arithmetic.equ(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return true === strict ? (Arithmetic.equ(self.num, other.num) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, INumber))
+            return other.equ(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return true === strict ? (Arithmetic.equ(self.num, other) && Arithmetic.equ(self.den, Arithmetic.I)) : Arithmetic.equ(self.num, Arithmetic.mul(self.den, other));
+        else if (is_string(other))
+            return (other === self.toString()) || (other === self.toTex()) || (other === self.toDec());
 
         return false;
     }
-    ,gt: function(a) {
+    ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Rational))
-            return Arithmetic.gt(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.gt(self.num, Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, INumber))
-            return a.lt(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Arithmetic.gt(self.num, Arithmetic.mul(self.den, a));
+        if (is_instance(other, Rational))
+            return Arithmetic.gt(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.gt(self.num, Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, INumber))
+            return other.lt(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Arithmetic.gt(self.num, Arithmetic.mul(self.den, other));
         return false;
     }
-    ,gte: function(a) {
+    ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Rational))
-            return Arithmetic.gte(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.gte(self.num, Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, INumber))
-            return a.lte(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Arithmetic.gte(self.num, Arithmetic.mul(self.den, a));
+        if (is_instance(other, Rational))
+            return Arithmetic.gte(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.gte(self.num, Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, INumber))
+            return other.lte(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Arithmetic.gte(self.num, Arithmetic.mul(self.den, other));
         return false;
     }
-    ,lt: function(a) {
+    ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Rational))
-            return Arithmetic.lt(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.lt(self.num, Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, INumber))
-            return a.gt(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Arithmetic.lt(self.num, Arithmetic.mul(self.den, a));
+        if (is_instance(other, Rational))
+            return Arithmetic.lt(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.lt(self.num, Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, INumber))
+            return other.gt(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Arithmetic.lt(self.num, Arithmetic.mul(self.den, other));
         return false;
     }
-    ,lte: function(a) {
+    ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Rational))
-            return Arithmetic.lte(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.lte(self.num, Arithmetic.mul(a.num, self.den));
-        else if (is_instance(a, INumber))
-            return a.gte(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Arithmetic.lte(self.num, Arithmetic.mul(self.den, a));
+        if (is_instance(other, Rational))
+            return Arithmetic.lte(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.lte(self.num, Arithmetic.mul(other.num, self.den));
+        else if (is_instance(other, INumber))
+            return other.gte(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Arithmetic.lte(self.num, Arithmetic.mul(self.den, other));
         return false;
     }
     ,abs: function() {
@@ -336,94 +336,94 @@ Rational = Abacus.Rational = Class(Numeric, {
         return this.inv();
     }
 
-    ,add: function(a) {
+    ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (!a.isReal()) return a.add(self);
-            a = a.real();
+            if (!other.isReal()) return other.add(self);
+            other = other.real();
         }
-        if (is_instance(a, Rational))
-            return Arithmetic.equ(self.den, a.den) ? Rational(Arithmetic.add(self.num, a.num), self.den) : Rational(Arithmetic.add(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den)), Arithmetic.mul(self.den, a.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.add(self.num, a.num), self.den) : Rational(Arithmetic.add(self.num, Arithmetic.mul(self.den, a.num)), self.den);
-        else if (is_instance(a, INumber))
-            return a.add(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.add(self.num, a), self.den) : Rational(Arithmetic.add(self.num, Arithmetic.mul(self.den, a)), self.den);
+        if (is_instance(other, Rational))
+            return Arithmetic.equ(self.den, other.den) ? Rational(Arithmetic.add(self.num, other.num), self.den) : Rational(Arithmetic.add(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den)), Arithmetic.mul(self.den, other.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.add(self.num, other.num), self.den) : Rational(Arithmetic.add(self.num, Arithmetic.mul(self.den, other.num)), self.den);
+        else if (is_instance(other, INumber))
+            return other.add(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.add(self.num, other), self.den) : Rational(Arithmetic.add(self.num, Arithmetic.mul(self.den, other)), self.den);
 
         return self;
     }
-    ,sub: function(a) {
+    ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (!a.isReal()) return Complex(self).sub(a);
-            a = a.real();
+            if (!other.isReal()) return Complex(self).sub(other);
+            other = other.real();
         }
-        if (is_instance(a, Rational))
-            return Arithmetic.equ(self.den, a.den) ? Rational(Arithmetic.sub(self.num, a.num), self.den) : Rational(Arithmetic.sub(Arithmetic.mul(self.num, a.den), Arithmetic.mul(a.num, self.den)), Arithmetic.mul(self.den, a.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.sub(self.num, a.num), self.den) : Rational(Arithmetic.sub(self.num, Arithmetic.mul(self.den, a.num)), self.den);
-        else if (is_instance(a, INumber))
-            return a.neg().add(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.sub(self.num, a), self.den) : Rational(Arithmetic.sub(self.num, Arithmetic.mul(self.den, a)), self.den);
+        if (is_instance(other, Rational))
+            return Arithmetic.equ(self.den, other.den) ? Rational(Arithmetic.sub(self.num, other.num), self.den) : Rational(Arithmetic.sub(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den)), Arithmetic.mul(self.den, other.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.sub(self.num, other.num), self.den) : Rational(Arithmetic.sub(self.num, Arithmetic.mul(self.den, other.num)), self.den);
+        else if (is_instance(other, INumber))
+            return other.neg().add(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Arithmetic.equ(self.den, Arithmetic.I) ? Rational(Arithmetic.sub(self.num, other), self.den) : Rational(Arithmetic.sub(self.num, Arithmetic.mul(self.den, other)), self.den);
 
         return self;
     }
-    ,mul: function(a) {
+    ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (!a.isReal()) return a.mul(self);
-            a = a.real();
+            if (!other.isReal()) return other.mul(self);
+            other = other.real();
         }
-        if (is_instance(a, Rational))
-            return Rational(Arithmetic.mul(self.num, a.num), Arithmetic.mul(self.den, a.den));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Rational(Arithmetic.mul(self.num, a.num), self.den);
-        else if (is_instance(a, INumber))
-            return a.mul(self);
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Rational(Arithmetic.mul(self.num, a), self.den);
+        if (is_instance(other, Rational))
+            return Rational(Arithmetic.mul(self.num, other.num), Arithmetic.mul(self.den, other.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Rational(Arithmetic.mul(self.num, other.num), self.den);
+        else if (is_instance(other, INumber))
+            return other.mul(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Rational(Arithmetic.mul(self.num, other), self.den);
 
         return self;
     }
-    ,div: function(a) {
+    ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex))
+        if (is_instance(other, Complex))
         {
-            if (!a.isReal()) return Complex(self).div(a);
-            a = a.real();
+            if (!other.isReal()) return Complex(self).div(other);
+            other = other.real();
         }
-        if (is_instance(a, [RationalFunc, Expr]))
-            return a.inv().mul(self);
-        else if (is_instance(a, Rational))
-            return Rational(Arithmetic.mul(self.num, a.den), Arithmetic.mul(self.den, a.num));
-        else if (is_instance(a, [Integer, IntegerMod]))
-            return Rational(self.num, Arithmetic.mul(self.den, a.num));
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return Rational(self.num, Arithmetic.mul(self.den, a));
+        if (is_instance(other, [RationalFunc, Expr]))
+            return other.inv().mul(self);
+        else if (is_instance(other, Rational))
+            return Rational(Arithmetic.mul(self.num, other.den), Arithmetic.mul(self.den, other.num));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Rational(self.num, Arithmetic.mul(self.den, other.num));
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Rational(self.num, Arithmetic.mul(self.den, other));
 
         return self;
     }
-    ,mod: function(a, q) {
+    ,mod: function(other, q) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Complex)) a = a.real();
+        if (is_instance(other, Complex)) other = other.real();
 
-        if (is_instance(a, [Rational, Integer, IntegerMod]))
-            return self.sub(a.mul(is_instance(q, Rational) ? q : self.div(a).round()));
-        else if (Arithmetic.isNumber(a)) // assume integer
-            return self.sub(Arithmetic.mul(a, is_instance(q, Rational) ? q.num : self.div(a).round().num));
+        if (is_instance(other, [Rational, Integer, IntegerMod]))
+            return self.sub(other.mul(is_instance(q, Rational) ? q : self.div(other).round()));
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.sub(Arithmetic.mul(other, is_instance(q, Rational) ? q.num : self.div(other).round().num));
 
         return self;
     }
-    ,divmod: function(a) {
-        var self = this, q = self.div(a).round();
-        return [q, self.mod(a, q)];
+    ,divmod: function(other) {
+        var self = this, q = self.div(other).round();
+        return [q, self.mod(other, q)];
     }
-    ,divides: function(a) {
+    ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
     }
 

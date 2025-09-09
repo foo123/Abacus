@@ -95,60 +95,60 @@ Integer = Abacus.Integer = Class(Numeric, {
         return self._isp;
     }
 
-    ,equ: function(a) {
+    ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.equ(self.num, a.num);
-        else if (is_instance(a, INumber))
-            return a.equ(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Arithmetic.equ(self.num, a);
-        else if (is_string(a))
-            return a === self.toString();
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.equ(self.num, other.num);
+        else if (is_instance(other, INumber))
+            return other.equ(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Arithmetic.equ(self.num, other);
+        else if (is_string(other))
+            return other === self.toString();
 
         return false;
     }
-    ,gt: function(a) {
+    ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.gt(self.num, a.num);
-        else if (is_instance(a, INumber))
-            return a.lt(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Arithmetic.gt(self.num, a);
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.gt(self.num, other.num);
+        else if (is_instance(other, INumber))
+            return other.lt(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Arithmetic.gt(self.num, other);
 
         return false;
     }
-    ,gte: function(a) {
+    ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.gte(self.num, a.num);
-        else if (is_instance(a, INumber))
-            return a.lte(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Arithmetic.gte(self.num, a);
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.gte(self.num, other.num);
+        else if (is_instance(other, INumber))
+            return other.lte(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Arithmetic.gte(self.num, other);
 
         return false;
     }
-    ,lt: function(a) {
+    ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.lt(self.num, a.num);
-        else if (is_instance(a, INumber))
-            return a.gt(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Arithmetic.lt(self.num, a);
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.lt(self.num, other.num);
+        else if (is_instance(other, INumber))
+            return other.gt(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Arithmetic.lt(self.num, other);
 
         return false;
     }
-    ,lte: function(a) {
+    ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Arithmetic.lte(self.num, a.num);
-        else if (is_instance(a, INumber))
-            return a.gte(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Arithmetic.lte(self.num, a);
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Arithmetic.lte(self.num, other.num);
+        else if (is_instance(other, INumber))
+            return other.gte(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Arithmetic.lte(self.num, other);
 
         return false;
     }
@@ -167,78 +167,78 @@ Integer = Abacus.Integer = Class(Numeric, {
     }
     ,inv: NotImplemented
 
-    ,add: function(a) {
+    ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Integer(Arithmetic.add(self.num, a.num));
-        else if (is_instance(a, INumber))
-            return a.add(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Integer(Arithmetic.add(self.num, a));
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Integer(Arithmetic.add(self.num, other.num));
+        else if (is_instance(other, INumber))
+            return other.add(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Integer(Arithmetic.add(self.num, other));
 
         return self;
     }
-    ,sub: function(a) {
+    ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Integer(Arithmetic.sub(self.num, a.num));
-        else if (is_instance(a, INumber))
-            return a.neg().add(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Integer(Arithmetic.sub(self.num, a));
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Integer(Arithmetic.sub(self.num, other.num));
+        else if (is_instance(other, INumber))
+            return other.neg().add(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Integer(Arithmetic.sub(self.num, other));
 
         return self;
     }
-    ,mul: function(a) {
+    ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Integer(Arithmetic.mul(self.num, a.num));
-        else if (is_instance(a, INumber))
-            return a.mul(self.num);
-        else if (Arithmetic.isNumber(a))
-            return Integer(Arithmetic.mul(self.num, a));
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Integer(Arithmetic.mul(self.num, other.num));
+        else if (is_instance(other, INumber))
+            return other.mul(self.num);
+        else if (Arithmetic.isNumber(other))
+            return Integer(Arithmetic.mul(self.num, other));
 
         return self;
     }
-    ,div: function(a) {
+    ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Integer(Arithmetic.div(self.num, a.num));
-        else if (is_instance(a, Complex))
-            return Complex(self).div(a);
-        else if (is_instance(a, Rational))
-            return Rational(self).div(a);
-        else if (Arithmetic.isNumber(a))
-            return Integer(Arithmetic.div(self.num, a));
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Integer(Arithmetic.div(self.num, other.num));
+        else if (is_instance(other, Complex))
+            return Complex(self).div(other);
+        else if (is_instance(other, Rational))
+            return Rational(self).div(other);
+        else if (Arithmetic.isNumber(other))
+            return Integer(Arithmetic.div(self.num, other));
 
         return self;
     }
-    ,mod: function(a) {
+    ,mod: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, [Integer, IntegerMod]))
-            return Integer(Arithmetic.mod(self.num, a.num));
-        else if (is_instance(a, Complex))
-            return Complex(self).mod(a);
-        else if (is_instance(a, Rational))
-            return Rational(self).mod(a);
-        else if (Arithmetic.isNumber(a))
-            return Integer(Arithmetic.mod(self.num, a));
+        if (is_instance(other, [Integer, IntegerMod]))
+            return Integer(Arithmetic.mod(self.num, other.num));
+        else if (is_instance(other, Complex))
+            return Complex(self).mod(other);
+        else if (is_instance(other, Rational))
+            return Rational(self).mod(other);
+        else if (Arithmetic.isNumber(other))
+            return Integer(Arithmetic.mod(self.num, other));
 
         return self;
     }
-    ,divmod: function(a) {
+    ,divmod: function(other) {
         var self = this;
-        return [self.div(a), self.mod(a)];
+        return [self.div(other), self.mod(other)];
     }
-    ,divides: function(a) {
+    ,divides: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
         if (Arithmetic.equ(O, self.num)) return false;
-        if (is_instance(a, Integer))
-            return Arithmetic.equ(O, Arithmetic.mod(a.num, self.num));
-        else if (is_instance(a, INumber))
+        if (Arithmetic.isNumber(other))
+            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.num));
+        else if (is_instance(other, Integer))
+            return Arithmetic.equ(O, Arithmetic.mod(other.num, self.num));
+        else if (is_instance(other, INumber))
             return true;
-        else if (Arithmetic.isNumber(a))
-            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(a), self.num));
 
         return false;
     }
