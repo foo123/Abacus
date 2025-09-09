@@ -97,7 +97,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         }
 
         ,fromString: function(s, symbol, ring) {
-            return RationalFunc.fromExpr(Expr.fromString(s), symbol, ring);
+            return RationalFunc.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
         }
         ,fromExpr: function(e, symbol, ring) {
             if (!is_instance(e, Expr)) return null;
