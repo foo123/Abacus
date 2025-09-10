@@ -624,9 +624,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             if ('expr' === ast.type)
             {
                 self._symb = KEYS(ast.arg.reduce(function(hash, arg) {
-                    arg.symbols().forEach(function(symb) {
-                        hash[symb] = 1;
-                    });
+                    arg.symbols().forEach(function(symb) {hash[symb] = 1;});
                     return hash;
                 }, {})).sort();
             }
@@ -648,9 +646,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             if ('expr' === ast.type)
             {
                 self._op = ast.arg.reduce(function(hash, subexpr) {
-                    subexpr.operators().forEach(function(op) {
-                        hash[op] = 1;
-                    });
+                    subexpr.operators().forEach(function(op) {hash[op] = 1;});
                     return hash;
                 }, {});
                 self._op['()' === ast.op.slice(-2) ? ast.op : (Expr.OP[ast.op].name)] = 1;
@@ -741,8 +737,28 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
 
     ,isSimple: function() {
-        var type = this.ast.type;
-        return ('sym' === type) || ('num' === type);
+        var ast = this.ast, type = ast.type, O, I, J, nontrivial;
+        if (('sym' === type) || ('num' === type)) return true;
+        O = Expr.Zero(); I = Expr.One(); J = Expr.MinusOne();
+        if (('+' === ast.op) || ('-' === ast.op))
+        {
+            nontrivial = ast.arg.filter(function(subexpr) {return !subexpr.equ(O);});
+            return ((1 === nontrivial.length) && nontrivial[0].isSimple()) || !nontrivial.length;
+        }
+        else if ('*' === ast.op)
+        {
+            nontrivial = ast.arg.filter(function(subexpr) {return !subexpr.equ(I) && !subexpr.equ(J);});
+            return ((1 === nontrivial.length) && nontrivial[0].isSimple()) || !nontrivial.length;
+        }
+        else if ('/' === ast.op)
+        {
+            return ast.arg[0].isSimple() && (ast.arg[1].equ(I) || ast.arg[1].equ(J));
+        }
+        else if ('^' === ast.op)
+        {
+            return ast.arg[0].isSimple() && (ast.arg[1].equ(I) || ast.arg[1].equ(O));
+        }
+        return false;
     }
     ,isConst: function() {
         var self = this;
@@ -1152,7 +1168,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             n >>= 1;
                             b = b.mul(b, true);
                         }
-                        return pow;
+                        return pow.expand();
                     }
                 }
             }

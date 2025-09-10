@@ -20,38 +20,22 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
   /* module factory */        function ModuleFactory__Abacus(undef) {
 "use strict";
 
-var  Abacus = {VERSION: "@@VERSION@@"}, stdMath = Math, PROTO = 'prototype', CLASS = 'constructor'
-    ,slice = Array[PROTO].slice, HAS = Object[PROTO].hasOwnProperty, toString = Object[PROTO].toString
+var  Abacus = {VERSION: "@@VERSION@@"}
+
+    ,PROTO = 'prototype', CLASS = 'constructor'
+    ,slice = Array[PROTO].slice
+    ,HAS = Object[PROTO].hasOwnProperty
+    ,KEYS = Object.keys
     ,def = Object.defineProperty
-    ,log2 = stdMath.log2 || function(x) {return stdMath.log(x) / stdMath.LN2;}
+    ,toString = Object[PROTO].toString
+    ,stdMath = Math, log2 = stdMath.log2 || function(x) {return stdMath.log(x) / stdMath.LN2;}
+
     ,trim_re = /^\s+|\s+$/g
     ,trim = String[PROTO].trim ? function(s) {return s.trim();} : function(s) {return s.replace(trim_re, '');}
+
     ,pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/
     ,in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/
     ,dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/
-
-    ,Obj = function() {return Object.create(null);}
-    ,Extend = Object.create, KEYS = Object.keys
-    ,NOP = function() {}
-    ,Merge = function Merge(/* args */) {
-        var args = arguments, l = args.length, a, b, i, p;
-        a = (l ? args[0] : {}) || {}; i = 1;
-        for (;i<l;++i)
-        {
-            b = args[i];
-            if (null == b) continue;
-            for (p in b) if (HAS.call(b,p)) a[p] = b[p];
-        }
-        return a;
-    }
-    ,Class = function Class(s, c) {
-        if (1 === arguments.length) {c = s; s = null;/*Object;*/}
-        s = s || null;
-        var ctor = c[CLASS] || function() {};
-        if (HAS.call(c,'__static__')) {ctor = Merge(ctor, c.__static__); delete c.__static__;}
-        ctor[PROTO] = s ? Merge(Extend(s[PROTO]), c) : c;
-        return ctor;
-    }
 
     ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MAX_SAFE_INTEGER
     ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
@@ -65,14 +49,46 @@ var  Abacus = {VERSION: "@@VERSION@@"}, stdMath = Math, PROTO = 'prototype', CLA
 
     ,LEFT = -2, RIGHT = 2, PREFIX = 2, INFIX = 4, POSTFIX = 8
 
+    ,Obj = function() {return Object.create(null);}
+    ,NOP = function() {}
+
     ,Node, Heap, ListSet
     ,DefaultArithmetic, INUMBER, INumber
+    // numerics
     ,Numeric, Integer, IntegerMod, Rational, Complex
-    ,Symbolic, Expr
-    ,UniPolyTerm, MultiPolyTerm, Poly, PiecewisePolynomial, Polynomial, MultiPolynomial, RationalFunc
+    // symbolics
+    ,Symbolic, Expr, Poly, UniPolyTerm, MultiPolyTerm
+    ,PiecewisePolynomial, Polynomial, MultiPolynomial, RationalFunc
     ,Ring, Matrix
+    // iterators
     ,Iterator, CombinatorialIterator, CombinatorialProxy, Filter
+    // progressions, sieves
     ,Progression, HashSieve, PrimeSieve, Diophantine
-    ,Tensor, Permutation, Combination, Subset, Partition, SetPartition, CatalanWord
+    // combinatorics
+    ,Tensor, Permutation, Combination
+    ,Subset, Partition, SetPartition, CatalanWord
     ,LatinSquare, MagicSquare
 ;
+
+function Merge(/* args */)
+{
+    var args = arguments, l = args.length, a, b, i, p;
+    a = (l ? args[0] : {}) || {}; i = 1;
+    for (;i<l;++i)
+    {
+        b = args[i];
+        if (null == b) continue;
+        for (p in b) if (HAS.call(b, p)) a[p] = b[p];
+    }
+    return a;
+}
+function Class(supr, proto)
+{
+    if (1 === arguments.length) {proto = supr; supr = null;/*Object;*/}
+    supr = supr || null;
+    var klass = proto[CLASS] || function() {};
+    if (!proto[CLASS]) proto[CLASS] = klass;
+    if (HAS.call(proto, '__static__')) {klass = Merge(klass, proto.__static__); delete proto.__static__;}
+    klass[PROTO] = supr ? Merge(Object.create(supr[PROTO]), proto) : proto;
+    return klass;
+}

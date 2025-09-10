@@ -116,7 +116,7 @@ Filter = Abacus.Filter = Class({
             }
             else //if ("==" === comp)
             {
-                return Filter(function(item) {return (0 <= pos) && (pos < item.length) && (item[pos] === val;)});
+                return Filter(function(item) {return (0 <= pos) && (pos < item.length) && (item[pos] === val);});
             }
         }
         ,MAX: function(val, comp) {
