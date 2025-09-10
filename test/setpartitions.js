@@ -1,26 +1,31 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+"use strict";
 
-function print( o )
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
+
+function print(o)
 {
-    if ( o ) echo(o.map(x=>'{'+x.join(',')+'}').join(','));
+    if (o) echo(o.map(x => '{'+x.join(',')+'}').join(','));
 }
-function print_all( o, prev, f )
+function print_all(o, prev, f)
 {
     var count = 0;
-    if ( -1 === prev )
-        while ( o.hasNext(-1) ) {count++; echo( f ? f(o.next(-1)) : o.next(-1).map(x=>'{'+x.join(',')+'}').join(',') );}
+    if (-1 === prev)
+        while (o.hasNext(-1)) {++count; echo(f ? f(o.next(-1)) : o.next(-1).map(x => '{'+x.join(',')+'}').join(','));}
     else
-        //while ( o.hasNext() ) echo( o.next() );
+        //while (o.hasNext()) echo(o.next());
         // iterator/iterable are supported
-        for(let item of o) {count++; echo( f ? f(item) : item.map(x=>'{'+x.join(',')+'}').join(',') );}
+        for (let item of o) {++count; echo(f ? f(item) : item.map(x => '{'+x.join(',')+'}').join(','));}
     echo(count);
 }
 
 // Note: Due to the large number of combinatorial samples,
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
-var o;
+let o;
 
 echo('Abacus.SetPartitions (VERSION = '+Abacus.VERSION+')');
 echo('---');

@@ -57,21 +57,21 @@ Rational = Abacus.Rational = Class(Numeric, {
 
     ,__static__: {
         autoSimplify: true
-        ,O: null
-        ,I: null
-        ,J: null
+
+        ,hasInverse: function() {
+            return true;
+        }
+
         ,Zero: function() {
-            if (null == Rational.O) Rational.O = Rational(Abacus.Arithmetic.O, Abacus.Arithmetic.I, true);
-            return Rational.O;
+            return new Rational(Abacus.Arithmetic.O, Abacus.Arithmetic.I, true);
         }
         ,One: function() {
-            if (null == Rational.I) Rational.I = Rational(Abacus.Arithmetic.I, Abacus.Arithmetic.I, true);
-            return Rational.I;
+            return new Rational(Abacus.Arithmetic.I, Abacus.Arithmetic.I, true);
         }
         ,MinusOne: function() {
-            if (null == Rational.J) Rational.J = Rational(Abacus.Arithmetic.J, Abacus.Arithmetic.I, true);
-            return Rational.J;
+            return new Rational(Abacus.Arithmetic.J, Abacus.Arithmetic.I, true);
         }
+
         ,EPS: null
         ,Epsilon: function(newEpsilon) {
             if (null != newEpsilon)
@@ -85,9 +85,6 @@ Rational = Abacus.Rational = Class(Numeric, {
             return Rational.EPS;
         }
 
-        ,hasInverse: function() {
-            return true;
-        }
         ,cast: null // added below
 
         ,gcd: function rgcd(/* args */) {

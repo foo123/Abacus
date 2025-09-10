@@ -59,6 +59,11 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
 
     ,__static__: {
         autoSimplify: true
+
+        ,hasInverse: function() {
+            return true;
+        }
+
         ,Zero: function(symbol, ring) {
             return new RationalFunc(MultiPolynomial.Zero(symbol, ring), null, null, null, true);
         }
@@ -68,9 +73,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         ,MinusOne: function(symbol, ring) {
             return new RationalFunc(MultiPolynomial.MinusOne(symbol, ring), null, null, null, true);
         }
-        ,hasInverse: function() {
-            return true;
-        }
+
         ,cast: null // added below
 
         ,gcd: function rfgcd(/* args */) {

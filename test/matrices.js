@@ -1,26 +1,28 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+"use strict";
 
-use_biginteger_arithmetic( Abacus );
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
 
-function print_base( m )
+function print_base(m)
 {
-    for(var i=0; i<m.length; i++)
+    for (let i=0; i<m.length; i++)
     {
         echo('Vector '+i+':');
         echo(m[i].toString());
     }
 }
-function print_dots( m )
+function print_dots(m)
 {
-    if ( !m.length ) return;
-    for(var i=0; i<m.length; i++)
-        for(var j=i+1; j<m.length; j++)
+    if (!m.length) return;
+    for (let i=0; i<m.length; i++)
+        for (let j=i+1; j<m.length; j++)
             echo('<'+i+','+j+'> = '+Abacus.Math.dotp(m[i].array(), m[j].array()));
 }
-var o, ring = Abacus.Ring.Z(), field = ring.associatedField(), m;
+let o, ring = Abacus.Ring.Z(), field = ring.associatedField(), m;
 
 echo('Abacus.Matrices (VERSION = '+Abacus.VERSION+')');
 echo('---');

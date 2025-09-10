@@ -1,10 +1,15 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+"use strict";
+
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
 
-var o;
+let o;
 
-function factor( f )
+function factor(f)
 {
     return '(' + String(f[0]) + (1<f[1] ? ('^' + String(f[1])) : '') + ')';
 }
@@ -28,9 +33,9 @@ echo('---');
 
 
 echo('Primality Tests');
-for(var i=1; i<1000; i++)
+for (let i=1; i<1000; i++)
 {
-    if ( Abacus.Math.isProbablePrime(i) )
+    if (Abacus.Math.isProbablePrime(i))
         echo(''+i+' Probable Prime '+(Abacus.Math.isPrime(i) ? '(Prime)' : '(Not Prime)'));
 }
 echo('---');
@@ -50,7 +55,7 @@ echo(o.get(100000).filter(Abacus.Math.isPrime).length);
 o.dispose();
 echo('o=Abacus.PrimeSieve().get(function(p){return p < 1000000;}).length');
 o=Abacus.PrimeSieve();
-echo(o.get(function(p){return p < 1000000;}).length);
+echo(o.get(function(p) {return p < 1000000;}).length);
 o.dispose();
 
 echo('---');

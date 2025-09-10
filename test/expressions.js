@@ -1,19 +1,23 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+"use strict";
 
-use_biginteger_arithmetic( Abacus );
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
+
+const Expr = Abacus.Expr;
 
 
-var o, o2;
+let o, o2;
 
 echo('Abacus.Expressions (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Symbolic Expressions');
 echo('---');
-echo('o=Abacus.Expr()');
-o=Abacus.Expr();
+echo('o=Expr()');
+o=Expr();
 echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
@@ -26,72 +30,49 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('Abacus.Expr.fromString("1+2*x").toString()');
-echo(Abacus.Expr.fromString("1+2*x").toString());
-echo('Abacus.Expr.fromString("1/2+2*x_{1}*x_2^2").toString()');
-echo(Abacus.Expr.fromString("1/2+2*x_{1}*x_2^2").toString());
+echo('Expr.fromString("1+2*x").toString()');
+echo(Expr.fromString("1+2*x").toString());
+echo('Expr.fromString("1+2x^2").toString()');
+echo(Expr.fromString("1+2x^2").toString());
+echo('Expr.fromString("1/2+2*x_{1}*x_2^2").toString()');
+echo(Expr.fromString("1/2+2*x_{1}*x_2^2").toString());
+try {
+    echo('Expr.fromString("1+*2").toString()');
+    echo(Expr.fromString("1+*2").toString());
+} catch (e) {
+    echo(e.message)
+}
 echo('---');
 
-echo('o=Abacus.Expr(1, Abacus.Expr.Term("x", 2))');
-o=Abacus.Expr(1, Abacus.Expr.Term("x", 2));
-echo('o.toString()');
-echo(o.toString());
-echo('o.toTex()');
-echo(o.toTex());
-echo('o.evaluate({"x":1})');
-echo(o.evaluate({"x":1}).toString());
+
+echo('o=Expr.fromString("x+1")');
+o=Expr.fromString("x+1");
+echo('o2=Expr.fromString("(x+1)*(x+a)")');
+o2=Expr.fromString("(x+1)*(x+a)");
+echo('o.toPoly("x")');
+echo(o.toPoly("x").toString());
+echo();
+echo('o2.toPoly("x")');
+echo(o2.toPoly("x").toString());
+echo();
 echo('o.d("x")');
 echo(o.d("x").toString());
-echo('o.d("x",2)');
-echo(o.d("x",2).toString(), o.d("x").d("x").equ(o.d("x",2)));
-echo('o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3))');
-o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3));
-echo(o2.toString());
-o2=o.add(o2);
-echo('o.add(o2)');
-echo(o2.toString());
-echo('o.add(o2).d("x")');
-echo(o2.d("x").toString());
-echo('o.add(o2).d("y")');
-echo(o2.d("y").toString());
-echo('o.add(o2).d("y",2)');
-echo(o2.d("y",2).toString());
-echo('o.rad(2)');
-echo(o.rad(2).toString());
-echo('o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3))');
-o2=Abacus.Expr(Abacus.Expr.Term("y^2", 3));
-echo(o2.toString());
-echo('o.mul(o2)');
-o2=o.mul(o2);
-echo(o2.toString());
-echo('o.mul(o2).d("x")');
-echo(o2.d("x").toString());
-echo('o.mul(o2).d("y")');
-echo(o2.d("y").toString());
-echo('o.mul(o2).d("y",2)');
-echo(o2.d("y",2).toString(), o2.d("y").d("y").equ(o2.d("y",2)));
-echo('o.dispose()');
-o.dispose();
-echo('---');
-
-echo('o2=Abacus.RationalExpr(Abacus.Expr(1, Abacus.Expr.Term("x", 2)))');
-o2=Abacus.RationalExpr(Abacus.Expr(1, Abacus.Expr.Term("x", 2)));
+echo();
+echo('o.toString()');
+echo(o.toString());
+echo();
 echo('o2.toString()');
 echo(o2.toString());
 echo();
-echo('o=Abacus.RationalExpr(Abacus.Expr(1, Abacus.Expr.Term("x", 2)), Abacus.Expr(1, Abacus.Expr.Term("y", 2)))');
-o=Abacus.RationalExpr(Abacus.Expr(1, Abacus.Expr.Term("x", 2)), Abacus.Expr(1, Abacus.Expr.Term("y", 2)));
-echo('o.toString()');
-echo(o.toString());
 echo('o.pow(2)');
 echo(o.pow(2).toString());
-echo('o.rad(2)');
-echo(o.rad(2).toString());
+echo('o.pow(2, true)');
+echo(o.pow(2, true).toString());
 echo('o.add(o2)');
 echo(o.add(o2).toString());
+echo('o.add(o2).expand()');
+echo(o.add(o2).expand().toString());
 echo('o.mul(o2)');
 echo(o.mul(o2).toString());
-echo('o.sub(o2)');
-echo(o.sub(o2).toString());
-echo('o.div(o2)');
-echo(o.div(o2).toString());
+echo('o.mul(o2).expand()');
+echo(o.mul(o2).expand().toString());

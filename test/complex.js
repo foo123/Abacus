@@ -1,13 +1,15 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+"use strict";
 
-use_biginteger_arithmetic( Abacus );
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
-function check_xgcd( args )
+function check_xgcd(args)
 {
-    var out = '', res = Abacus.Complex.Zero(), gcd = Abacus.Complex.xgcd(args), d;
-    for(i=0; i<args.length; i++)
+    let out = '', res = Abacus.Complex.Zero(), gcd = Abacus.Complex.xgcd(args), d;
+    for (i=0; i<args.length; i++)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(args[i].mul(gcd[i+1]));
@@ -18,7 +20,7 @@ function check_xgcd( args )
     echo(out, res.toString(), res.equ(gcd[0]));
 }
 
-var o, i;
+let o, i;
 
 echo('Abacus.Complex (VERSION = '+Abacus.VERSION+')');
 echo('---');

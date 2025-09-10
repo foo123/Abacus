@@ -12,25 +12,20 @@ Integer = Abacus.Integer = Class(Numeric, {
     }
 
     ,__static__: {
-        O: null
-        ,I: null
-        ,J: null
-        ,Zero: function() {
-            if (null == Integer.O) Integer.O = Integer(Abacus.Arithmetic.O);
-            return Integer.O;
-        }
-        ,One: function() {
-            if (null == Integer.I) Integer.I = Integer(Abacus.Arithmetic.I);
-            return Integer.I;
-        }
-        ,MinusOne: function() {
-            if (null == Integer.J) Integer.J = Integer(Abacus.Arithmetic.J);
-            return Integer.J;
-        }
-
-        ,hasInverse: function() {
+         hasInverse: function() {
             return false;
         }
+
+        ,Zero: function() {
+            return new Integer(Abacus.Arithmetic.O);
+        }
+        ,One: function() {
+            return new Integer(Abacus.Arithmetic.I);
+        }
+        ,MinusOne: function() {
+            return new Integer(Abacus.Arithmetic.J);
+        }
+
         ,cast: null // added below
 
         ,gcd: function igcd(/* args */) {
@@ -303,19 +298,20 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     }
 
     ,__static__: {
-        Zero: function(m) {
-            return IntegerMod(Abacus.Arithmetic.O, m, true);
-        }
-        ,One: function(m) {
-            return IntegerMod(Abacus.Arithmetic.I, m);
-        }
-        ,MinusOne: function(m) {
-            return IntegerMod(Abacus.Arithmetic.J, m);
-        }
-
-        ,hasInverse: function() {
+         hasInverse: function() {
             return true;
         }
+
+        ,Zero: function(m) {
+            return new IntegerMod(Abacus.Arithmetic.O, m, true);
+        }
+        ,One: function(m) {
+            return new IntegerMod(Abacus.Arithmetic.I, m);
+        }
+        ,MinusOne: function(m) {
+            return new IntegerMod(Abacus.Arithmetic.J, m);
+        }
+
         ,cast: null // added below
 
         ,gcd: function ngcd(/* args */) {

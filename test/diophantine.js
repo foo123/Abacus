@@ -1,67 +1,72 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+"use strict";
+
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
 
-var o;
+let o;
 
-function print_solution( sol, vars )
+function print_solution(sol, vars)
 {
-    return null == sol ? 'No Integer solution' : sol.map(function(s, i){
+    return null == sol ? 'No Integer solution' : sol.map(function(s, i) {
         return vars[i] + ' = ' + String(s);
     }).join(', ');
 }
-function print_tex( sol, vars )
+function print_tex(sol, vars)
 {
-    return null == sol ? 'No Integer solution' : sol.map(function(s, i){
+    return null == sol ? 'No Integer solution' : sol.map(function(s, i) {
         return vars[i] + ' = ' + (s.toTex ? s.toTex() : String(s));
     }).join(', ');
 }
-function check_solution( sol, coeff, vars, modulo )
+function check_solution(sol, coeff, vars, modulo)
 {
-    if ( null == sol ) return 'No Integer solution';
+    if (null == sol) return 'No Integer solution';
     
     vars = vars || {};
-    var out = '', i, l = sol.length, res = 0;
-    for(i=0; i<l; i++)
+    let out = '', i, l = sol.length, res = 0;
+    for (i=0; i<l; i++)
     {
         res += coeff[i] * sol[i].valueOf(vars);
     }
-    if ( null != modulo )
+    if (null != modulo)
     {
         res = res % modulo;
-        if ( 0 > res ) res += modulo;
+        if (0 > res) res += modulo;
     }
     return res;
 }
-function check_solution_system( sol, coeff, vars, modulo )
+function check_solution_system(sol, coeff, vars, modulo)
 {
-    if ( null == sol ) return 'No Integer solution';
+    if (null == sol) return 'No Integer solution';
     
     vars = vars || {};
-    var out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
-    for(i=0; i<m; i++)
+    let out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
+    for (i=0; i<m; i++)
     {
         res[i] = 0;
-        for(j=0; j<k; j++)
+        for (j=0; j<k; j++)
             res[i] += coeff[i][j] * sol[j].valueOf(vars);
     }
-    if ( null != modulo )
+    if (null != modulo)
     {
-        for(i=0; i<m; i++)
+        for (i=0; i<m; i++)
         {
             res[i] = res[i] % modulo[i];
-            if ( 0 > res[i] ) res[i] += modulo[i];
+            if (0 > res[i]) res[i] += modulo[i];
         }
     }
     return res;
 }
-function check_solution2( sol, coeff, vars )
+function check_solution2(sol, coeff, vars)
 {
-    if ( null == sol ) return 'No Integer solution';
+    if (null == sol) return 'No Integer solution';
     
     vars = vars || {};
-    var out = '', i, l = sol.length, res = 0, s2;
-    for(i=0; i<l; i++)
+    let out = '', i, l = sol.length, res = 0, s2;
+    for (i=0; i<l; i++)
     {
         s2 = sol[i].valueOf(vars);
         res += coeff[i] * s2 * s2;

@@ -192,6 +192,10 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         Term: UniPolyTerm
         ,Piecewise: null
 
+        ,hasInverse: function() {
+            return false;
+        }
+
         ,Zero: function(symbol, ring) {
             return new Polynomial([], symbol || 'x', ring || Ring.Q());
         }
@@ -202,9 +206,6 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         ,MinusOne: function(symbol, ring) {
             ring = ring || Ring.Q();
             return new Polynomial(ring.MinusOne(), symbol || 'x', ring);
-        }
-        ,hasInverse: function() {
-            return false;
         }
 
         ,cast: null // added below
@@ -1889,6 +1890,10 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,__static__: {
         Term: MultiPolyTerm
 
+        ,hasInverse: function() {
+            return false;
+        }
+
         ,Zero: function(symbol, ring) {
             return new MultiPolynomial([], symbol || ['x'], ring || Ring.Q());
         }
@@ -1901,9 +1906,6 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return new MultiPolynomial(ring.MinusOne(), symbol || ['x'], ring);
         }
 
-        ,hasInverse: function() {
-            return false;
-        }
         ,cast: null // added below
 
         ,gcd: Polynomial.gcd

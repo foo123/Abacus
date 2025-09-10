@@ -1,31 +1,36 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+"use strict";
+
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
 
-var o;
+let o;
 
-function print_solution( sol, vars )
+function print_solution(sol, vars)
 {
-    return null == sol ? 'No solution' : sol.map(function(s, i){
+    return null == sol ? 'No solution' : sol.map(function(s, i) {
         return vars[i] + ' = ' + String(s);
     }).join(', ');
 }
-function print_tex( sol, vars )
+function print_tex(sol, vars)
 {
-    return null == sol ? 'No solution' : sol.map(function(s, i){
+    return null == sol ? 'No solution' : sol.map(function(s, i) {
         return vars[i] + ' = ' + (s.toTex ? s.toTex() : String(s));
     }).join(', ');
 }
-function check_solution_system( sol, coeff, vars )
+function check_solution_system(sol, coeff, vars)
 {
-    if ( null == sol ) return 'No solution';
+    if (null == sol) return 'No solution';
     
     vars = vars || {};
-    var out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
-    for(i=0; i<m; i++)
+    let out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
+    for (i=0; i<m; i++)
     {
         res[i] = 0;
-        for(j=0; j<k; j++)
+        for (j=0; j<k; j++)
             res[i] += coeff[i][j] * sol[j].valueOf(vars);
     }
     return res;

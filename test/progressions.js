@@ -1,25 +1,30 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
+"use strict";
+
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
 
-function print_all( o, prev, f )
+function print_all(o, prev, f)
 {
-    if ( -1 === prev )
+    if (-1 === prev)
     {
-        while ( o.hasNext(-1) ) echo( f ? f(o.next(-1)) : o.next(-1) );
+        while (o.hasNext(-1)) echo(f ? f(o.next(-1)) : o.next(-1));
     }
     else
     {
         //while ( o.hasNext() ) echo( o.next() );
         // iterator/iterable are supported
-        for(let item of o) echo( f ? f(item) : item );
+        for (let item of o) echo(f ? f(item) : item);
     }
 }
 
 // Note: Due to the large number of combinatorial samples,
 // Abacus combinatorics use an Iterator pattern to succesively and consistently
 // generate all combinatorial objects without storing all of them in memory at once
-var o;
+let o;
 
 echo('Abacus.Progressions (VERSION = '+Abacus.VERSION+')');
 echo('---');

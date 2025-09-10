@@ -1,18 +1,20 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+"use strict";
 
-use_biginteger_arithmetic( Abacus );
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
 
-function check_div( n, d )
+function check_div(n, d)
 {
-    var nn, qr, q, r;
-    if ( d instanceof Array )
+    let nn, qr, q, r;
+    if (d instanceof Array)
     {
         qr = n.multidivmod(d); q = qr[0]; r = qr[1];
-        nn = q.reduce(function(p, qi, i){return p.add(qi.mul(d[i]));}, r);
-        echo('('+n.toString()+')/['+d.map(String).join(',')+']='+d.map(function(di, i){return '('+di.toString()+')*('+q[i].toString()+')';}).join('+')+'+('+r.toString()+')='+nn.toString(), nn.equ(n));
+        nn = q.reduce(function(p, qi, i) {return p.add(qi.mul(d[i]));}, r);
+        echo('('+n.toString()+')/['+d.map(String).join(',')+']='+d.map(function(di, i) {return '('+di.toString()+')*('+q[i].toString()+')';}).join('+')+'+('+r.toString()+')='+nn.toString(), nn.equ(n));
     }
     else
     {
@@ -21,41 +23,41 @@ function check_div( n, d )
         echo('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
     }
 }
-function check_xgcd( ring, args )
+function check_xgcd(ring, args)
 {
-    var out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
+    let out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
         res = field.Zero(), gcd = ring.xgcd(args);
-    for(i=0; i<args.length; i++)
+    for (i=0; i<args.length; i++)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(gcd[i+1].mul(args[i]));
-        if ( !args[i].mod(gcd[0]).equ(0) ) echo(args[i].toString()+' is not divided!');
+        if (!args[i].mod(gcd[0]).equ(0)) echo(args[i].toString()+' is not divided!');
     }
     out += ' = '+res.toString()+' (gcd: '+gcd[0].toString()+')';
     echo(out, res.equ(gcd[0]));
 }
-function check_factors( p, factors, constant )
+function check_factors(p, factors, constant)
 {
     constant = constant || Abacus.Arithmetic.I;
-    var out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol), i;
-    for(i=0; i<factors.length; i++)
+    let out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol), i;
+    for (i=0; i<factors.length; i++)
     {
         out += '('+factors[i][0].toString()+')'+(1<factors[i][1]?('^'+String(factors[i][1])):'');
         res = res.mul(factors[i][0].pow(factors[i][1]));
     }
     echo(out, res.mul(constant).equ(p));
 }
-function check_primitive( p )
+function check_primitive(p)
 {
-    var prim = p.primitive(true);
+    let prim = p.primitive(true);
     echo(p.toString()+'=('+prim[1].toString()+')*('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
 }
-function check_radical( p, k )
+function check_radical(p, k)
 {
-    var r = p.rad(k);
+    let r = p.rad(k);
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
 }
-var o, d, ring = Abacus.Ring.Q("x");
+let o, d, ring = Abacus.Ring.Q("x");
 
 echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');

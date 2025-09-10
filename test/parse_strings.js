@@ -1,10 +1,12 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('./biginteger/arithmetic.js');
+"use strict";
 
-use_biginteger_arithmetic( Abacus );
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
+use_biginteger_arithmetic(Abacus);
 
-var pring, ring;
+let pring, ring;
 
 ring = Abacus.Ring.C("x");
 echo('ring = Abacus.Ring.'+ring.toString());

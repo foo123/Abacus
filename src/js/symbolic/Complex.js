@@ -36,35 +36,27 @@ Complex = Abacus.Complex = Class(Numeric, {
 
     ,__static__: {
         Symbol: 'i'
-        ,O: null
-        ,I: null
-        ,J: null
-        ,i: null
-        ,j: null
-        ,Zero: function() {
-            if (null == Complex.O) Complex.O = Complex(Rational.Zero(), Rational.Zero());
-            return Complex.O;
-        }
-        ,One: function() {
-            if (null == Complex.I) Complex.I = Complex(Rational.One(), Rational.Zero());
-            return Complex.I;
-        }
-        ,MinusOne: function() {
-            if (null == Complex.J) Complex.J = Complex(Rational.MinusOne(), Rational.Zero());
-            return Complex.J;
-        }
-        ,Img: function() {
-            if (null == Complex.i) Complex.i = Complex(Rational.Zero(), Rational.One());
-            return Complex.i;
-        }
-        ,MinusImg: function() {
-            if (null == Complex.j) Complex.j = Complex(Rational.Zero(), Rational.MinusOne());
-            return Complex.j;
-        }
 
         ,hasInverse: function() {
             return true;
         }
+
+        ,Zero: function() {
+            return new Complex(Rational.Zero(), Rational.Zero());
+        }
+        ,One: function() {
+            return new Complex(Rational.One(), Rational.Zero());
+        }
+        ,MinusOne: function() {
+            return new Complex(Rational.MinusOne(), Rational.Zero());
+        }
+        ,Img: function() {
+            return new Complex(Rational.Zero(), Rational.One());
+        }
+        ,MinusImg: function() {
+            return new Complex(Rational.Zero(), Rational.MinusOne());
+        }
+
         ,cast: null // added below
 
         ,gcd: function cgcd(/* args */) {
