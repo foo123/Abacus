@@ -1,13 +1,14 @@
 // Represents a (univariate) polynomial term with coefficient and exponent in Polynomial non-zero sparse representation
 UniPolyTerm = Class({
+
     constructor: function UniPolyTerm(c, e, ring) {
         var self = this;
         if (!is_instance(self, UniPolyTerm)) return new UniPolyTerm(c, e, ring);
 
         if (is_instance(c, UniPolyTerm)) {ring = ring || c.ring; e = c.e; c = c.c;}
         self.ring = is_instance(ring, Ring) ? ring : Ring.Q();
-        self.c = is_instance(c, RationalFunc) ? c : self.ring.cast(c||0);
-        self.e = +(e||0);
+        self.c = is_instance(c, RationalFunc) ? c : self.ring.cast(c || 0);
+        self.e = +(e || 0);
     }
 
     ,__static__: {
@@ -1624,6 +1625,7 @@ Polynomial.cast = function(a, symbol, ring) {
 
 // Represents a multivariate polynomial term with coefficient and exponents in Polynomial non-zero sparse representation
 MultiPolyTerm = Class({
+
     constructor: function MultiPolyTerm(c, e, ring) {
         var self = this;
         if (!is_instance(self, MultiPolyTerm)) return new MultiPolyTerm(c, e, ring);
@@ -1636,8 +1638,8 @@ MultiPolyTerm = Class({
         {
                 c = MultiPolynomial(c, c.symbol, self.ring);
         }
-        self.c = is_instance(c, [MultiPolynomial, RationalFunc]) ? c : self.ring.cast(c||0);
-        self.e = is_array(e) ? e : [+(e||0)];
+        self.c = is_instance(c, [MultiPolynomial, RationalFunc]) ? c : self.ring.cast(c || 0);
+        self.e = is_array(e) ? e : [+(e || 0)];
     }
 
     ,__static__: {

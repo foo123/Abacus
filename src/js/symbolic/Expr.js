@@ -63,7 +63,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         // RationalExpr
         def(self, 'num', {
             get: function() {
-                return self.ast && ('/' === self.ast.op) && (2 === self.ast.arg.length) ? self.ast.arg[0] : Expr.Zero();
+                return self.ast && ('/' === self.ast.op) && (2 === self.ast.arg.length) ? self.ast.arg[0] : self;
             },
             set: NOP,
             enumerable: true,
@@ -78,7 +78,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             configurable: false
         });
 
-        // OP, RelOp
+        // Op, RelOp
         def(self, 'lhs', {
             get: function() {
                 return self.ast && (-1 !== ['>=','<=','!=','>','<','='].indexOf(self.ast.op)) ? self.ast.arg[0] : null;
@@ -544,6 +544,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         term = Expr('', imagUnit === m ? Complex.Img() : m);
                         terms.unshift(term);
+                        if ((imagUnit === m) && /^\d/.test(s))
+                        {
+                            // directly following number after imaginary symbol, assume implicit multiplication
+                            ops.unshift(['*', i]);
+                            merge();
+                        }
                         continue;
                     }
                     c = s.charAt(0);
@@ -1316,7 +1322,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 if ('+' === ast.op)
                 {
-                    // expand the arguments and combine
+                    // expand the arguments and sum similar terms
                     // eg 3a + (-a) + 2 + 1 -> a + 3
                     args = deep ? ast.arg.map(function(subexpr) {return subexpr.expand();}) : ast.arg;
                     args = args.reduce(function(terms, subexpr) {
@@ -1393,7 +1399,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
                 else if ('-' === ast.op)
                 {
-                    // expand the arguments and combine
+                    // expand the arguments into sums
                     // eg 3a - a + 2 + 1 -> 3a + (-a) + 2 + 1
                     return expand(Expr('+', ast.arg.reduce(function(terms, subexpr, i) {
                         if (deep) subexpr = subexpr.expand();
@@ -1418,7 +1424,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
                 else if ('*' === ast.op)
                 {
-                    // expand the arguments and combine
+                    // expand the arguments into sums
                     // eg: (a-b)*(c+d) -> a*c + a*d + (-b)*c + (-b)*d, ..
                     n = 1;
                     args = ast.arg.reduce(function(terms, subexpr) {
@@ -1452,7 +1458,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
                 else if ('/' === ast.op)
                 {
-                    // expand the arguments and combine
+                    // expand the arguments into sums
                     // eg: (a-b)/(c+d) -> a/(c+d) + (-b)/(c+d), ..
                     args = ast.arg.reduce(function(terms, subexpr, i) {
                         if (deep) subexpr = subexpr.expand();
@@ -1507,23 +1513,26 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else
                     {
-                        // expand the arguments and combine
+                        // expand the arguments into products
                         // eg: (a)^(b+c) -> (a^b) * (a^c), ..
                         // eg: (a*b)^(c) -> (a^c) * (b^c), ..
-                        // eg: (a*d)^(b+c) -> ((a*d)^b) * ((a*d)^c) -> a^b*d^b * a^c*d^c, ..
-                        /*args = deep ? ast.arg.map(function(subexpr) {return subexpr.expand();}) : ast.arg;
-                        return expand(Expr('*', args[1].map(function(exponent) {
-                            return args[0].pow(exponent, true);
-                        })));*/
-                        args = ast.arg.reduce(function(terms, subexpr) {
+                        // eg: (a*d)^(b+c) -> ((a*d)^b) * ((a*d)^c) -> a^b * d^b * a^c * d^c, ..
+                        args = ast.arg.reduce(function(terms, subexpr, i) {
                             if (deep) subexpr = subexpr.expand();
-                            if ('*' === subexpr.ast.op)
+                            if (0 === i)
                             {
-                                terms.push(subexpr.ast.arg);
-                            }
-                            else if ('/' === subexpr.ast.op)
-                            {
-                                terms.push(subexpr.ast.arg.map(function(subexpr2, j) {return 0 < j ? subexpr2.inv() : subexpr2;}));
+                                if ('*' === subexpr.ast.op)
+                                {
+                                    terms.push(subexpr.ast.arg);
+                                }
+                                else if ('/' === subexpr.ast.op)
+                                {
+                                    terms.push(subexpr.ast.arg.map(function(subexpr2, j) {return 0 < j ? subexpr2.inv() : subexpr2;}));
+                                }
+                                else
+                                {
+                                    terms.push([subexpr]);
+                                }
                             }
                             else
                             {
@@ -1559,150 +1568,179 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._xpnd;
     }
     ,toPoly: function(symbol, ring, imagUnit) {
-        var self = this, ast = self.ast, terms, sym, coeff;
-
-        function other_symbols()
-        {
-            return is_array(symbol) ? self.symbols().filter(function(sym) {return ((!imagUnit) || (imagUnit !== sym)) && ('1' !== sym) && (-1 === symbol.indexOf(sym));}) : self.symbols().filter(function(sym) {return ((!imagUnit) || (imagUnit !== sym)) && ('1' !== sym) && (sym !== symbol);})
-        }
+        var self = this, other_symbols, coeff_ring;
 
         symbol = symbol || 'x';
-        ring = is_instance(ring, Ring) ? ring : Ring.Q();
 
-        if ('sym' === ast.type)
+        other_symbols = is_array(symbol) ? self.symbols().filter(function(sym) {return ((!imagUnit) || (imagUnit !== sym)) && ('1' !== sym) && (-1 === symbol.indexOf(sym));}) : self.symbols().filter(function(sym) {return ((!imagUnit) || (imagUnit !== sym)) && ('1' !== sym) && (sym !== symbol);});
+
+        ring = is_instance(ring, Ring) ? ring : (-1 !== self.symbols().indexOf(imagUnit) ? Ring.C() : Ring.Q());
+        coeff_ring = other_symbols.length ? Ring(ring.NumberClass, other_symbols, true) : ring;
+
+        function poly(expr)
         {
-            if (imagUnit === ast.arg)
+            var ast = expr.ast, terms, coeff, exp;
+
+            function is_const(expr)
             {
-                // complex imaginary constant
+                return 0 === expr.symbols().filter(is_array(symbol) ? function(s) {return -1 !== symbol.indexOf(s);} : function(s) {return s === symbol;}).length;
+            }
+
+            if ('sym' === ast.type)
+            {
+                if (imagUnit === ast.arg)
+                {
+                    // complex imaginary constant
+                    terms = {};
+                    coeff = Complex.Img();
+                    if (is_array(symbol))
+                    {
+                        terms['1'] = coeff;
+                        return MultiPolynomial(terms, symbol, coeff_ring);
+                    }
+                    else
+                    {
+                        terms['0'] = coeff;
+                        return Polynomial(terms, symbol, coeff_ring);
+                    }
+                }
+                else if ((is_array(symbol) && (-1 !== symbol.indexOf(ast.arg))) || (is_string(symbol) && (symbol === ast.arg)))
+                {
+                    // polynomial symbol
+                    coeff = ring.One();
+                    terms = {};
+                    if (is_array(symbol))
+                    {
+                        terms[ast.arg] = coeff;
+                        return MultiPolynomial(terms, symbol, coeff_ring);
+                    }
+                    else
+                    {
+                        terms['1'] = coeff;
+                        return Polynomial(terms, symbol, coeff_ring);
+                    }
+                }
+                else
+                {
+                    // symbolic rational constant suitable as polynomial coefficient
+                    terms = {}; terms[ast.arg] = ring.One();
+                    coeff = RationalFunc(MultiPolynomial(terms, other_symbols, ring), null, other_symbols, ring, true);
+                    terms = {};
+                    if (is_array(symbol))
+                    {
+                        terms['1'] = coeff;
+                        return MultiPolynomial(terms, symbol, coeff_ring);
+                    }
+                    else
+                    {
+                        terms['0'] = coeff;
+                        return Polynomial(terms, symbol, coeff_ring);
+                    }
+                }
+            }
+            else if ('num' === ast.type)
+            {
+                // numeric constant
                 terms = {};
-                coeff = Complex.Img();
+                coeff = ast.arg;
                 if (is_array(symbol))
                 {
                     terms['1'] = coeff;
-                    return MultiPolynomial(terms, symbol, ring);
+                    return MultiPolynomial(terms, symbol, coeff_ring);
                 }
                 else
                 {
                     terms['0'] = coeff;
-                    return Polynomial(terms, symbol, ring);
+                    return Polynomial(terms, symbol, coeff_ring);
                 }
             }
-            else if ((is_array(symbol) && (-1 !== symbol.indexOf(ast.arg))) || (is_string(symbol) && (symbol === ast.arg)))
+            else //if ('expr' === ast.type)
             {
-                // polynomial symbol
-                coeff = ring.One();
-                terms = {};
-                if (is_array(symbol))
+                if (('+' === ast.op) || ('-' === ast.op) || ('*' === ast.op))
                 {
-                    terms[ast.arg] = coeff;
-                    return MultiPolynomial(terms, symbol, ring);
+                    // combine subexpression polynomials
+                    return ast.arg.reduce(function(result, subexpr, i) {
+                        if (0 === i)
+                        {
+                            return poly(subexpr);
+                        }
+                        else if (null == result)
+                        {
+                            return result;
+                        }
+                        else
+                        {
+                            subexpr = poly(subexpr);
+                            return null == subexpr ? null : ('*' === ast.op ? result.mul(subexpr) : ('-' === ast.op ? result.sub(subexpr): result.add(subexpr)));
+                        }
+                    }, null);
+                }
+                else if ('/' === ast.op)
+                {
+                    // combine subexpression polynomials
+                    return ast.arg.reduce(function(result, subexpr, i) {
+                        if (0 === i)
+                        {
+                            return poly(subexpr);
+                        }
+                        else if (null == result)
+                        {
+                            return result;
+                        }
+                        else if (is_const(subexpr.num))
+                        {
+                            var coeff = subexpr.num.toPoly(other_symbols, ring, imagUnit);
+                            if (null == coeff) return null;
+                            coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), coeff, other_symbols, ring, true);
+                            subexpr = poly(subexpr.den);
+                            return null == subexpr ? null : result.mul(subexpr.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, coeff_ring) : Polynomial({'0':coeff}, symbol, coeff_ring)));
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }, null);
+                }
+                else if (('^' === ast.op) && ast.arg[1].isInt())
+                {
+                    // raise subexpression polynomial to int pow
+                    terms = null;
+                    exp = ast.arg[1].c();
+                    if (exp.equ(0))
+                    {
+                        return is_array(symbol) ? MultiPolynomial.One(symbol, coeff_ring) : Polynomial.One(symbol, coeff_ring);
+                    }
+                    if (exp.lt(0))
+                    {
+                        if (is_const(ast.arg[0].num))
+                        {
+                            exp = exp.neg();
+                            coeff = ast.arg[0].num.toPoly(other_symbols, ring, imagUnit);
+                            if (null != coeff)
+                            {
+                                coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), coeff, other_symbols, ring, true);
+                                terms = poly(ast.arg[0].den);
+                                if (null != terms)
+                                {
+                                    terms = terms.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, coeff_ring) : Polynomial({'0':coeff}, symbol, coeff_ring));
+                                }
+                            }
+                        }
+                    }
+                    else //if (exp.gt(0))
+                    {
+                        terms = poly(ast.arg[0]);
+                    }
+                    return null == terms ? null : terms.pow(exp);
                 }
                 else
                 {
-                    terms['1'] = coeff;
-                    return Polynomial(terms, symbol, ring);
-                }
-            }
-            else
-            {
-                // symbolic rational constant suitable as polynomial coefficient
-                sym = other_symbols();
-                terms = {}; terms[ast.arg] = ring.One();
-                coeff = RationalFunc(MultiPolynomial(terms, sym, ring), null, sym, ring, true);
-                terms = {};
-                if (is_array(symbol))
-                {
-                    terms['1'] = coeff;
-                    return MultiPolynomial(terms, symbol, ring);
-                }
-                else
-                {
-                    terms['0'] = coeff;
-                    return Polynomial(terms, symbol, ring);
+                    // is not a polynomial
+                    return null;
                 }
             }
         }
-        else if ('num' === ast.type)
-        {
-            // numeric constant
-            terms = {};
-            coeff = ast.arg;
-            if (is_array(symbol))
-            {
-                terms['1'] = coeff;
-                return MultiPolynomial(terms, symbol, ring);
-            }
-            else
-            {
-                terms['0'] = coeff;
-                return Polynomial(terms, symbol, ring);
-            }
-        }
-        else //if ('expr' === ast.type)
-        {
-            if (('+' === ast.op) || ('-' === ast.op) || ('*' === ast.op))
-            {
-                // combine subexpression polynomials
-                return ast.arg.reduce(function(result, subexpr, i) {
-                    if (0 === i)
-                    {
-                        return subexpr.toPoly(symbol, ring);
-                    }
-                    else if (null == result)
-                    {
-                        return result;
-                    }
-                    else
-                    {
-                        subexpr = subexpr.toPoly(symbol, ring);
-                        return null == subexpr ? null : ('*' === ast.op ? result.mul(subexpr) : ('-' === ast.op ? result.sub(subexpr): result.add(subexpr)));
-                    }
-                }, null);
-            }
-            else if ('/' === ast.op)
-            {
-                // combine subexpression polynomials
-                return ast.arg.reduce(function(result, subexpr, i) {
-                    if (0 === i)
-                    {
-                        return subexpr.toPoly(symbol, ring);
-                    }
-                    else if (null == result)
-                    {
-                        return result;
-                    }
-                    else
-                    {
-                        subexpr = subexpr.inv().toPoly(symbol, ring);
-                        return null == subexpr ? null : result.mul(subexpr);
-                    }
-                }, null);
-            }
-            else if (('^' === ast.op) && ast.arg[1].isInt())
-            {
-                // raise subexpression polynomial to int pow
-                coeff = ast.arg[1].c();
-                if (coeff.equ(0))
-                {
-                    return is_array(symbol) ? MultiPolynomial.One(symbol, ring) : Polynomial.One(symbol, ring);
-                }
-                if (coeff.lt(0))
-                {
-                    coeff = coeff.neg();
-                    terms = ast.arg[0].inv().toPoly(symbol, ring);
-                }
-                else //if (coeff.gt(0))
-                {
-                    terms = ast.arg[0].toPoly(symbol, ring);
-                }
-                return null == terms ? null : terms.pow(coeff);
-            }
-            else
-            {
-                // is not a polynomial
-                return null;
-            }
-        }
+        return poly(self);
     }
     ,toString: function() {
         var self = this, ast = self.ast, op = ast.op, arg = ast.arg, str, str2, sign, sign2;

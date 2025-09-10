@@ -1,5 +1,6 @@
 // Abacus.RationalFunc, represents a rational function/fraction of (multivariate) polynomials
 RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
+
     constructor: function RationalFunc(/*num, den, symbol, ring, simplified*/) {
         var self = this, Arithmetic = Abacus.Arithmetic, args = arguments,
             num, den, symbol, ring, simplified, simplify = RationalFunc.autoSimplify;
@@ -425,6 +426,10 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     ,evaluate: function(x) {
         var self = this;
         return self.num.evaluate(x).div(self.den.evaluate(x));
+    }
+    ,toExpr: function() {
+        var self = this;
+        return self.num.toExpr().div(self.den.toExpr());
     }
     ,toString: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;

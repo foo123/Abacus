@@ -171,6 +171,9 @@ INumber = Class(Merge({
     ,valueOf: function() {
         return 0;
     }
+    ,toExpr: function() {
+        return is_instance(this, Expr) ? this : Expr('', this);
+    }
     ,toString: function() {
         return '';
     }
@@ -201,9 +204,6 @@ Numeric = Class(INumber, {
     }
     ,imag: function() {
         return this[CLASS].Zero();
-    }
-    ,toExpr: function() {
-        return Expr('', this);
     }
 });
 
@@ -242,9 +242,10 @@ Symbolic = Class(INumber, {
     ,imag: function() {
         return this[CLASS].Zero();
     }
-    //,abs: NotImplemented
-    //,neg: NotImplemented
-    //,conj: NotImplemented
+
+    ,abs: NotImplemented
+    ,neg: NotImplemented
+    ,conj: NotImplemented
     ,inv: NotImplemented
 
     ,add: NotImplemented

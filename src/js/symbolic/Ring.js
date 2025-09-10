@@ -1,5 +1,6 @@
 // Abacus.Ring represents an algebraic Ring or Field (even Polynomial Ring)
 Ring = Abacus.Ring = Class({
+
     constructor: function Ring(NumberClass, PolynomialSymbol, isFraction) {
         var self = this;
         if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction);
@@ -52,7 +53,7 @@ Ring = Abacus.Ring = Class({
     }
 
     ,__static__: {
-        ZZ: null
+         ZZ: null
         ,QQ: null
         ,CC: null
         ,Z: function(/* "x","y",.. */) {

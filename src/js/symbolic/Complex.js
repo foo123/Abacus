@@ -30,8 +30,8 @@ Complex = Abacus.Complex = Class(Numeric, {
 
         if (!is_instance(self, Complex)) return new Complex(real, imag);
 
-        self.re = Rational.cast(real);
-        self.im = Rational.cast(imag);
+        self.re = is_instance(real, Rational) ? real : Rational.cast(real);
+        self.im = is_instance(imag, Rational) ? imag : Rational.cast(imag);
     }
 
     ,__static__: {
@@ -284,7 +284,7 @@ Complex = Abacus.Complex = Class(Numeric, {
             return self.re.equ(other.re) && self.im.equ(other.im);
         else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
             return self.re.equ(other) && self.im.equ(Arithmetic.O);
-        else if (is_instance(other, INumber))
+        else if (is_instance(other, Symbolic))
             return other.equ(self);
         else if (is_string(other))
             return (other === self.toString()) || (other === self.toTex()) || (other === self.toDec());
@@ -299,11 +299,11 @@ Complex = Abacus.Complex = Class(Numeric, {
             else if (self.isImag() && other.isImag()) return self.im.gt(other.im);
             return self.norm().gt(other.norm());
         }
-        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return self.re.gt(other);
+            return self.isReal() ? self.re.gt(other) : false;
         }
-        else if (is_instance(other, INumber))
+        else if (is_instance(other, Symbolic))
         {
             return other.lt(self);
         }
@@ -317,11 +317,11 @@ Complex = Abacus.Complex = Class(Numeric, {
             else if (self.isImag() && other.isImag()) return self.im.gte(other.im);
             return self.norm().gte(other.norm());
         }
-        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return self.re.gte(other);
+            return self.isReal() ? self.re.gte(other) : false;
         }
-        else if (is_instance(other, INumber))
+        else if (is_instance(other, Symbolic))
         {
             return other.lte(self);
         }
@@ -335,11 +335,11 @@ Complex = Abacus.Complex = Class(Numeric, {
             else if (self.isImag() && other.isImag()) return self.im.lt(other.im);
             return self.norm().lt(other.norm());
         }
-        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return self.re.lt(other);
+            return self.isReal() ? self.re.lt(other) : false;
         }
-        else if (is_instance(other, INumber))
+        else if (is_instance(other, Symbolic))
         {
             return other.gt(self);
         }
@@ -353,11 +353,11 @@ Complex = Abacus.Complex = Class(Numeric, {
             else if (self.isImag() && other.isImag()) return self.im.lte(other.im);
             return self.norm().lte(other.norm());
         }
-        else if ((is_instance(other, Numeric) || Arithmetic.isNumber(other)) && self.isReal())
+        else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return self.re.lte(other);
+            return self.isReal() ? self.re.lte(other) : false;
         }
-        else if (is_instance(other, INumber))
+        else if (is_instance(other, Symbolic))
         {
             return other.gte(self);
         }

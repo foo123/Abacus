@@ -6,10 +6,10 @@ const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
 const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
 use_biginteger_arithmetic(Abacus);
 
-const Expr = Abacus.Expr;
+const Expr = Abacus.Expr, Ring = Abacus.Ring;
 
 
-let o, o2;
+let o, o2, ring;
 
 echo('Abacus.Expressions (VERSION = '+Abacus.VERSION+')');
 echo('---');
@@ -47,13 +47,16 @@ echo('---');
 
 echo('o=Expr.fromString("x+1")');
 o=Expr.fromString("x+1");
-echo('o2=Expr.fromString("(x+1)*(x+a)")');
-o2=Expr.fromString("(x+1)*(x+a)");
+echo('o2=Expr.fromString("(x+1)*(x+a)+1/b")');
+o2=Expr.fromString("(x+1)*(x+a)+1/b");
 echo('o.toPoly("x")');
 echo(o.toPoly("x").toString());
 echo();
 echo('o2.toPoly("x")');
 echo(o2.toPoly("x").toString());
+echo();
+echo('o2.toPoly(["x","a"])');
+echo(o2.toPoly(["x","a"]).toString());
 echo();
 echo('o.d("x")');
 echo(o.d("x").toString());
