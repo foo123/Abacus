@@ -16,8 +16,8 @@ HashSieve = function HashSieve() {
         if (!_hash) return self;
         for (i in _hash)
         {
-            if (!HAS.call(_hash, i) || null == _hash[i]) continue;
-            for (iter=_hash[i],j=0,l=iter.length; j<l; j++)
+            if (!HAS.call(_hash, i) || (null == _hash[i])) continue;
+            for (iter=_hash[i],j=0,l=iter.length; j<l; ++j)
                 if (iter[j]) iter[j].dispose();
         }
         return self;
@@ -64,7 +64,7 @@ HashSieve = function HashSieve() {
 
         delete _hash[key];
 
-        for (i=0,l=iter.length; i<l; i++) self.add(iter[i], number);
+        for (i=0,l=iter.length; i<l; ++i) self.add(iter[i], number);
 
         return number;
     };
@@ -84,7 +84,7 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
         if (!is_instance(self, PrimeSieve)) return new PrimeSieve($);
 
         $ = $ || {};
-        $.type = String($.type || "eratosthenes").toLowerCase();
+        $.type = String($.type || 'eratosthenes').toLowerCase();
         $.NumberClass = is_class($.NumberClass, Integer) ? $.NumberClass : null;
         $.count = Arithmetic.I; // infinite
 
@@ -180,7 +180,7 @@ PrimeSieve = Abacus.PrimeSieve = Class(Iterator, {
             }
 
             output = self.output($.NumBerClass ? new $.NumBerClass(prime) : prime);
-        } while ($.filter && (null!=output) && !$.filter.apply(output, self));
+        } while ($.filter && (null != output) && !$.filter.apply(output, self));
 
         self.__item = prime;
         self._item = output;

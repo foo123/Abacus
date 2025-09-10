@@ -1,8 +1,9 @@
 MagicSquare = Abacus.MagicSquare = Class({
+
     constructor: function MagicSquare(n, s) {
         var self = this;
         if (!is_instance(self, MagicSquare)) return new MagicSquare(n, s);
-        self.n = +(n||0);
+        self.n = +(n || 0);
         self.s = is_array(s) ? s : MagicSquare.make(self.n);
     }
 
@@ -12,7 +13,7 @@ MagicSquare = Abacus.MagicSquare = Class({
         }
         ,make: function magic_square(n) {
             // non-existent
-            if (0 >= n || 2 === n) return null;
+            if ((0 >= n) || (2 === n)) return null;
             // trivial
             if (1 === n) return [[1]];
 

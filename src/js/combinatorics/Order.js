@@ -2,14 +2,14 @@
 // https://oeis.org/wiki/Orderings
 function ORDER(o)
 {
-    if (!arguments.length || null == o) return LEX; // default
+    if (!arguments.length || (null == o)) return LEX; // default
     var order = 0;
     if (is_string(o))
     {
         o = o.toUpperCase().split(',').map(trim);
-        for (var i=0,l=o.length; i<l; i++) order |= o[i].length && HAS.call(ORDER,o[i]) ? ORDER[o[i]] : 0;
+        for (var i=0,l=o.length; i<l; ++i) order |= o[i].length && HAS.call(ORDER, o[i]) ? ORDER[o[i]] : 0;
         //order = ORDERINGS & order;
-        if ((0 < order) && !((LEXICAL|RANDOM) & order)) order |= LEX;
+        if ((0 < order) && !((LEXICAL | RANDOM) & order)) order |= LEX;
         if (0 >= order) order = LEX;
     }
     else

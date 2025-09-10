@@ -8,23 +8,23 @@ Progression = Abacus.Progression = Class(Iterator, {
         if (is_array(min) || is_args(min))
         {
             $ = step || {};
-            step = 1<min.length ? min[1] : null;
-            max = 2<min.length ? min[2] : null;
-            min = 0<min.length ? min[0] : null;
+            step = 1 < min.length ? min[1] : null;
+            max = 2 < min.length ? min[2] : null;
+            min = 0 < min.length ? min[0] : null;
         }
         else
         {
             $ = $ || {};
         }
-        $.type = String($.type || "arithmetic").toLowerCase();
+        $.type = String($.type || 'arithmetic').toLowerCase();
         $.NumberClass = is_class($.NumberClass, Integer) ? $.NumberClass : null;
-        self._min = is_instance(min, Integer) ? min.num : N(min||0);
-        self._step = is_instance(step, Integer) ?  step.num : N(null==step?1:step);
-        self._max = null==max ? Arithmetic.INF : (Arithmetic.INF===max ? max : (is_instance(max, Integer) ?  max.num : N(max)));
+        self._min = is_instance(min, Integer) ? min.num : N(min || 0);
+        self._step = is_instance(step, Integer) ?  step.num : N(null == step ? 1 : step);
+        self._max = null == max ? Arithmetic.INF : (Arithmetic.INF === max ? max : (is_instance(max, Integer) ?  max.num : N(max)));
 
         if (!$.NumberClass && is_instance(min, Integer)) $.NumberClass = min[CLASS];
 
-        if ("geometric" === $.type)
+        if ('geometric' === $.type)
         {
             if (Arithmetic.equ(O, self._min) || Arithmetic.equ(I, self._step))
                 $.count = I;
@@ -33,7 +33,7 @@ Progression = Abacus.Progression = Class(Iterator, {
             else
                 $.count = Arithmetic.INF === self._max ? I : Arithmetic.add(I, ilog(Arithmetic.div(self._max, self._min), Arithmetic.abs(self._step)));
         }
-        else//if ("arithmetic" === $.type)
+        else//if ('arithmetic' === $.type)
         {
             if (Arithmetic.equ(O, self._step))
                 $.count = I;
@@ -58,7 +58,7 @@ Progression = Abacus.Progression = Class(Iterator, {
     }
 
     ,rewind: function(dir, non_recursive) {
-        dir = -1===dir ? -1 : 1;
+        dir = -1 === dir ? -1 : 1;
         var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic;
         if (0 > dir)
         {
@@ -92,13 +92,13 @@ Progression = Abacus.Progression = Class(Iterator, {
     }
 
     ,hasNext: function(dir) {
-        dir = -1===dir ? -1 : 1;
+        dir = -1 === dir ? -1 : 1;
         var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic;
         return Arithmetic.INF === self._max ? ((0 < dir) && ($.sub ? (null != self.__subitem) : true)) : ($.sub ? (null != self._subitem) : (null != self.__item));
     }
 
     ,next: function(dir) {
-        dir = -1===dir ? -1 : 1;
+        dir = -1 === dir ? -1 : 1;
         var self = this, $ = self.$, Arithmetic = Abacus.Arithmetic, current, prev;
 
         do {
@@ -106,7 +106,7 @@ Progression = Abacus.Progression = Class(Iterator, {
 
             if (null != prev)
             {
-                if ("geometric" === $.type)
+                if ('geometric' === $.type)
                 {
                     // geometric progression
                     if (0 > dir)
@@ -142,20 +142,20 @@ Progression = Abacus.Progression = Class(Iterator, {
                             self.__item = Arithmetic.add(prev, self._step);
                     }
                 }
-                if ((null!=self.__item) && (Arithmetic.lt(self.__item, self._min) ||
+                if ((null != self.__item) && (Arithmetic.lt(self.__item, self._min) ||
                     ((Arithmetic.INF !== self._max) && Arithmetic.gt(self.__item, self._max))))
                 {
                     self.__item = null;
                 }
-                self._item = null==self.__item ? null : self.output($.NumberClass ? new $.NumberClass(self.__item) : self.__item);
+                self._item = null == self.__item ? null : self.output($.NumberClass ? new $.NumberClass(self.__item) : self.__item);
             }
             if ((null == self.__item) && $.sub && $.sub.hasNext(dir))
             {
                 self.rewind(dir, true);
                 self.__subitem = $.sub.next(dir);
-                self._subitem = null != self._item && null != self.__subitem ? self.fusion(self._item, self.__subitem) : null;
+                self._subitem = (null != self._item) && (null != self.__subitem) ? self.fusion(self._item, self.__subitem) : null;
             }
-        } while ($.filter && (null!=current) && !$.filter.apply(current, self));
+        } while ($.filter && (null != current) && !$.filter.apply(current, self));
 
         return current;
     }
