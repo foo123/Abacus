@@ -144,14 +144,18 @@ See the comments in the code for algorithms and references used.
 * [Gröbner basis, wikipedia](https://en.wikipedia.org/wiki/Gr%C3%B6bner_basis)
 * [Buchberger's algorithm, wikipedia](https://en.wikipedia.org/wiki/Buchberger%27s_algorithm)
 * [Faugère's F4 and F5 algorithms, wikipedia](https://en.wikipedia.org/wiki/Faug%C3%A8re%27s_F4_and_F5_algorithms)
-* [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
-* [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
-* [Square-free Decomposition, wikipedia](https://en.wikipedia.org/wiki/Square-free_polynomial)
 * [Partial Fraction Decomposition, wikipedia](https://en.wikipedia.org/wiki/Partial_fraction_decomposition)
-* [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
-* [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
+* [A Note on Multivariate Polynomial Division and Gröbner Bases, A. T. Lipkovski and S. Zeada](http://elib.mi.sanu.ac.rs/files/journals/publ/117/n111p043.pdf)
+* [Factorization of polynomials, wikipedia](https://en.wikipedia.org/wiki/Factorization_of_polynomials)
+* [Rational root theorem, wikipedia](https://en.wikipedia.org/wiki/Rational_root_theorem)
+* [Square-free Decomposition, wikipedia](https://en.wikipedia.org/wiki/Square-free_polynomial)
+* [Factorization of polynomials over finite fields, wikipedia](https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields)
+* [Symbolic factoring of polynomials in several variables, Dale E. Jordan, Lewis C. Clapp, Richard Y. Kain, 1966](https://dl.acm.org/doi/abs/10.1145/365758.365809)
 * [Aberth method, wikipedia](https://en.wikipedia.org/wiki/Aberth_method)
 * [Numerical computation of polynomial zeros by means of Aberth's method, D. A. Bini](https://www.researchgate.net/publication/225654837_Numerical_computation_of_polynomial_zeros_by_means_of_Aberth's_method)
+* [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
+* [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
+* [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
 
 ### Example API
 
@@ -268,12 +272,12 @@ console.log(m.inv().mul(m).toString());
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**
 * use optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
-* support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
-* support (multivariate) polynomial (partial) factorisation, (rational) root finding (eg `Kronecker` algorithm) (TODO)
+* support (univariate) polynomial factorization over the integers, rational root finding **[DONE]**
+* support (multivariate) polynomial factorization over the integers, rational root finding (eg `Kronecker` algorithm) (TODO)
+* support polynomial approximate root finding (eg `Aberth` algorithm) (TODO)
 * implement polynomial `RESULTANT` computation (TODO)
-* support multivariate polynomial `GCD`, (approximate) root finding (TODO)
-* support polynomial (approximate) root finding (eg `Aberth` algorithm) (TODO)
+* implement multivariate polynomial `GCD` (TODO)
 * implement `LLL` algorithm (TODO)
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
