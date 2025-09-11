@@ -68,7 +68,7 @@ Combinatorics and Algebraic Number Theory **Symbolic Computation Library** for J
 * `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`), `Complex` (`test/complex.js`) **supporting arbitrary precision arithmetic**
 * `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate / multivariate with coefficients from a Ring/Field**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
-* `Expr` **general symbolic expressions**
+* `Expr` (`test/expressions.js`) **general symbolic expressions**
 * Algebraic `Ring`s / `Field`s eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/ratfuncs.js`)
 * `Matrix` (`test/matrices.js`) **with coefficients from a Ring (default: Integer Ring.Z())**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)

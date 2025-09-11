@@ -3,16 +3,26 @@ Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix(ring, r, c, values) {
         var self = this, k, v, i, j;
-        if (!is_instance(self, Matrix)) return new Matrix(ring, r, c, values);
+        if (!is_instance(self, Matrix))
+        {
+            return 4 > arguments.length ? (new Matrix(arguments[0], arguments[1], arguments[2])) : (new Matrix(ring, r, c, values));
+        }
 
-        if (!is_instance(ring, Ring)) ring = Ring.Z();
-        self.ring = ring;
+        if (4 > arguments.length)
+        {
+            // ring is skipped and implicit in the values
+            values = c;
+            c = r;
+            r = ring;
+            ring = null;
+        }
+        self.ring = is_instance(ring, Ring) ? ring : null;
 
         if (is_instance(r, Matrix))
         {
             self.val = r.val.map(function(row) {return row.slice()});
-            if (self.ring !== r.ring)
-                self.val = self.ring.cast(self.val);
+            if (null == self.ring) self.ring = r.ring;
+            if (self.ring !== r.ring) self.val = self.ring.cast(self.val);
         }
         else if (is_array(r) || is_args(r))
         {
@@ -20,11 +30,11 @@ Matrix = Abacus.Matrix = Class(INumber, {
             {
                 self.val = c ? /*row*/array(1, function(i) {
                     return array(r.length, function(j) {
-                        return self.ring.cast(r[j]);
+                        return r[j];
                     });
                 }) : /*column*/array(r.length, function(i) {
                     return array(1, function(j) {
-                        return self.ring.cast(r[i]);
+                        return r[i];
                     });
                 });
             }
@@ -32,18 +42,20 @@ Matrix = Abacus.Matrix = Class(INumber, {
             {
                 if (is_args(r)) r = slice.call(r);
                 if (is_args(r[0])) r = r.map(function(ri) {return slice.call(ri);});
-                self.val = self.ring.cast(r);
+                self.val = r;
             }
+            if (null == self.ring) self.ring = is_instance(self.val[0][0].ring, Ring) ? self.val[0][0].ring : Ring.Z();
+            self.val = self.ring.cast(self.val);
         }
         else //if (is_number(r) && is_number(c))
         {
             if (null == c) c = r; // square
-            r = (+(r||0))|0; c = (+(c||0))|0;
+            r = (+(r || 0))|0; c = (+(c || 0))|0;
             if (0 > r) r = 0;
             if (0 > c) c = 0;
             self.val = array(r, function(i) {
                 return array(c, function(j) {
-                    return self.ring.Zero();
+                    return 0;
                 });
             });
             if (is_obj(values))
@@ -55,9 +67,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     k = k.split(',').map(function(n) {return parseInt(trim(n), 10);});
                     i = k[0]; j = k[1];
                     if (0 <= i && i < self.val.length && 0 <= j && j < self.val[0].length)
-                        self.val[i][j] = self.ring.cast(v);
+                    {
+                        if (null == self.ring) self.ring = is_instance(v.ring, Ring) ? v.ring : Ring.Z();
+                        self.val[i][j] = v;
+                    }
                 }
             }
+            self.val = self.ring.cast(self.val);
         }
         self.nr = self.val.length;
         self.nc = self.nr ? self.val[0].length : 0;

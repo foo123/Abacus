@@ -30,47 +30,47 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('Expr.fromString("1+2*x").toString()');
-echo(Expr.fromString("1+2*x").toString());
-echo('Expr.fromString("1+2x^2").toString()');
-echo(Expr.fromString("1+2x^2").toString());
-echo('Expr.fromString("1/2+2*x_{1}*x_2^2").toString()');
-echo(Expr.fromString("1/2+2*x_{1}*x_2^2").toString());
+echo('Expr("1+2*x").toString()');
+echo(Expr("1+2*x").toString());
+echo('Expr("1+2x^2").toString()');
+echo(Expr("1+2x^2").toString());
+echo('Expr("1/2+2*x_{1}*x_2^2").toString()');
+echo(Expr("1/2+2*x_{1}*x_2^2").toString());
 try {
-    echo('Expr.fromString("1+*2").toString()');
-    echo(Expr.fromString("1+*2").toString());
+    echo('Expr("1+*2").toString()');
+    echo(Expr("1+*2").toString());
 } catch (e) {
     echo(e.message)
 }
 echo('---');
 
 
-echo('o=Expr.fromString("x+1")');
-o=Expr.fromString("x+1");
-echo('o2=Expr.fromString("(x+1)*(x+a)+1/b")');
-o2=Expr.fromString("(x+1)*(x+a)+1/b");
-echo('o.toPoly("x")');
-echo(o.toPoly("x").toString());
-echo();
-echo('o2.toPoly("x")');
-echo(o2.toPoly("x").toString());
-echo();
-echo('o2.toPoly(["x","a"])');
-echo(o2.toPoly(["x","a"]).toString());
-echo();
-echo('o.d("x")');
-echo(o.d("x").toString());
-echo();
+echo('o=Expr("x+1")');
+o=Expr("x+1");
+echo('o2=Expr("(x+1)*(x+a)+1/b")');
+o2=Expr("(x+1)*(x+a)+1/b");
 echo('o.toString()');
 echo(o.toString());
-echo();
 echo('o2.toString()');
 echo(o2.toString());
-echo();
+echo('o.toPoly("x")');
+echo(o.toPoly("x").toString());
+echo('o2.toPoly("x")');
+echo(o2.toPoly("x").toString());
+echo('o2.toPoly(["x","a"])');
+echo(o2.toPoly(["x","a"]).toString());
+echo('o.d("x")');
+echo(o.d("x").toString());
+echo('o2.d("x")');
+echo(o2.d("x").toString());
+echo('o2.d("a")');
+echo(o2.d("a").toString());
 echo('o.pow(2)');
 echo(o.pow(2).toString());
 echo('o.pow(2, true)');
 echo(o.pow(2, true).toString());
+echo('o.pow(2).rad(2, true)');
+echo(o.pow(2).rad(2, true).toString());
 echo('o.add(o2)');
 echo(o.add(o2).toString());
 echo('o.add(o2).expand()');
