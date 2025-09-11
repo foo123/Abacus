@@ -1215,9 +1215,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             else if ((true === explicit) && other.isInt() && other.c().gt(1))
             {
-                // try to compute explicit rad as polynomial
-                poly = self.toPoly(self.symbols());
-                return poly ? poly.rad(other.c()).toExpr() : self.pow(other.inv(), explicit);
+                // try to compute explicit rad as rational function
+                poly = {num:self.num.toPoly(self.symbols()), den:self.den.toPoly(self.symbols())};
+                return poly.num && poly.den ? RationalFunc(poly.num, poly.den).rad(other.c()).toExpr() : self.pow(other.inv(), explicit);
             }
             return self.pow(other.inv(), explicit);
         }

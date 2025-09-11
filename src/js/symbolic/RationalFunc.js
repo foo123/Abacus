@@ -39,6 +39,11 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             ring = ring || num.ring;
             symbol = symbol || [num.symbol];
         }
+        if (is_instance(num, MultiPolynomial))
+        {
+            ring = ring || num.ring;
+            symbol = symbol || num.symbol;
+        }
         ring = is_instance(ring, Ring) ? ring : Ring.Q();
         symbol = is_array(symbol) ? symbol : [String(symbol || 'x')];
 
@@ -56,6 +61,23 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
 
         if (simplified) self._simpl = true;
         else if (simplify) self.simpl();
+
+        def(self, 'ring', {
+            get: function() {
+                return self.num ? self.num.ring : null;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'symbol', {
+            get: function() {
+                return self.num ? self.num.symbol : null;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {
