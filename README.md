@@ -260,11 +260,13 @@ console.log(m.inv().mul(m).toString());
 * add run-time/lazy custom and/or built-in filtering support (with support for filter composition as well) to generate and select custom and complex combinatorial objects from filtering other combinatorial objects as efficiently as possible **[DONE]**
 * support efficient primality tests and prime sieves **[DONE]**
 * support efficient integer factorization algorithms **[DONE PARTIALY]**
-* support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
+* support general symbolic expressions and computations in `Expr` **[DONE]**
 * add Rank Factorisation **[DONE]**
-* fix `ginv` (Moore-Penrose Inverse) computation **[DONE]**
+* implement `ginv` (Moore-Penrose Inverse) computation **[DONE]**
 * implement symbolic/numeric `EVD/SVD` computation (TODO)
+* support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
+* support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**
 * use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
