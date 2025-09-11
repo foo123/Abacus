@@ -156,7 +156,7 @@ INUMBER = {
     }
     ,rad: function(n) {
         return jskthroot(this, n);
-   }
+    }
 };
 INumber = Class(Merge({
     constructor: function INumber() {
@@ -203,6 +203,9 @@ Numeric = Class(INumber, {
         return this;
     }
     ,imag: function() {
+        return this[CLASS].Zero();
+    }
+    ,d: function() {
         return this[CLASS].Zero();
     }
 });

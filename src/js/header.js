@@ -66,8 +66,8 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,Progression, HashSieve, PrimeSieve, Diophantine
     // combinatorics
     ,Tensor, Permutation, Combination
-    ,Subset, Partition, SetPartition, CatalanWord
-    ,LatinSquare, MagicSquare
+    ,Subset, Partition, SetPartition
+    ,CatalanWord, LatinSquare, MagicSquare
 ;
 
 function Merge(/* args */)
