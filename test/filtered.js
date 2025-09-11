@@ -32,7 +32,7 @@ echo('Get all Permutations filtered from all possible Tuples (an inefficient way
 echo('o = Abacus.Tensor(3,3,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE())');
 o = Abacus.Tensor(3,3,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE());
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -50,7 +50,7 @@ echo('Get all Combinations filtered from all possible Tuples (an inefficient way
 echo('o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<"))');
 o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<"));
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -68,7 +68,7 @@ echo('Get all Combinations filtered from all possible Subsets (an inefficient wa
 echo('o = Abacus.Subset(6).filterBy(Abacus.Filter.LEN(3))');
 o = Abacus.Subset(6).filterBy(Abacus.Filter.LEN(3));
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -86,7 +86,7 @@ echo('Get all Variations filtered from all possible Tuples (an inefficient way t
 echo('o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE()');
 o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.UNIQUE());
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -104,7 +104,7 @@ echo('Get all Repeated Combinations filtered from all possible Tuples (an ineffi
 echo('o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<=")');
 o = Abacus.Tensor(3,6,{"type":"tuple"}).filterBy(Abacus.Filter.SORTED("<="));
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');

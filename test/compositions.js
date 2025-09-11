@@ -38,10 +38,10 @@ return;*/
 echo('o = Abacus.Partition(7,{type:"composition"})');
 o = Abacus.Partition(7,{type:"composition"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -85,10 +85,10 @@ o.dispose();
 echo('o = Abacus.Partition(8,{type:"composition"})');
 o = Abacus.Partition(8,{type:"composition"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -122,13 +122,13 @@ o.dispose();
 echo('o = Abacus.Partition(10,{type:"composition"})');
 o = Abacus.Partition(10,{type:"composition"});
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

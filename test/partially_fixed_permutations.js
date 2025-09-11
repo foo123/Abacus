@@ -33,13 +33,13 @@ echo('6-Permutations where 0th position can have 0,1,2 values and 4th position c
 echo('o = Abacus.Tensor(Abacus.Permutation(6-2),{type:"partial",data:[[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]],position:[0,4]})');
 o = Abacus.Tensor(Abacus.Permutation(6-2),{type:"partial",data:[[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]],position:[0,4]});
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

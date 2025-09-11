@@ -32,10 +32,10 @@ echo('---');
 echo('o = Abacus.Subset(6)');
 o = Abacus.Subset(6);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -98,10 +98,10 @@ o.dispose();
 echo('o = Abacus.Subset(6,{type:"binary"})');
 o = Abacus.Subset(6,{type:"binary"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

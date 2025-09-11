@@ -32,10 +32,10 @@ echo('---');
 echo('o = Abacus.Combination(6,3,{type:"repeated"})');
 o = Abacus.Combination(6,3,{type:"repeated"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

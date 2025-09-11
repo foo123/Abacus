@@ -33,7 +33,7 @@ echo('---');
 echo('o = Abacus.CatalanWord(1)');
 o = Abacus.CatalanWord(1);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -66,7 +66,7 @@ o.dispose();
 echo('o = Abacus.CatalanWord(2)');
 o = Abacus.CatalanWord(2);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -99,7 +99,7 @@ o.dispose();
 echo('o = Abacus.CatalanWord(5)');
 o = Abacus.CatalanWord(5);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -132,7 +132,7 @@ o.dispose();
 echo('o = Abacus.CatalanWord(8)');
 o = Abacus.CatalanWord(8);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');

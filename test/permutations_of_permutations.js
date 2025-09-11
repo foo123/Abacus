@@ -33,10 +33,10 @@ echo('---');
 echo('o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2))');
 o = Abacus.Permutation(2).multiplyWith(Abacus.Permutation(2));
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

@@ -32,7 +32,7 @@ echo('---');
 echo('o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.UNIQUE())');
 o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.UNIQUE());
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -45,7 +45,7 @@ o.dispose();
 // Restricted Compositions to fixed Max value M by filtering
 echo('o = Abacus.Partition(7,{type:"composition"}).filterBy(Abacus.Filter.MAX(4))');
 o = Abacus.Partition(7,{type:"composition"}).filterBy(Abacus.Filter.MAX(4));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(7,{type:"composition","max=":4}).total());
 echo('default order is "lex", lexicographic-order');
@@ -55,7 +55,7 @@ o.dispose();
 // Restricted Compositions to fixed Max value M by filtering
 echo('o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(4))');
 o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(4));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(8,{type:"composition","max=":4}).total());
 echo('default order is "lex", lexicographic-order');
@@ -65,7 +65,7 @@ o.dispose();
 // Restricted Compositions to fixed Max value M by filtering
 echo('o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(3))');
 o = Abacus.Partition(8,{type:"composition"}).filterBy(Abacus.Filter.MAX(3));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(8,{type:"composition","max=":3}).total());
 echo('default order is "lex", lexicographic-order');
@@ -75,7 +75,7 @@ o.dispose();
 // Restricted Compositions to fixed Max value M by filtering
 echo('o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.MAX(5))');
 o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.MAX(5));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(10,{type:"composition","max=":5}).total());
 echo('default order is "lex", lexicographic-order');
@@ -85,7 +85,7 @@ o.dispose();
 // Restricted Compositions to fixed Parts value K by filtering
 echo('o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.LEN(5))');
 o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.LEN(5));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(10,{type:"composition","parts=":5}).total());
 echo('default order is "lex", lexicographic-order');
@@ -115,7 +115,7 @@ o = Abacus.Partition(10,{type:"composition"}).filterBy(function(item){
 });
 */
 
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(10,{type:"composition","max=":3,"parts=":4}).total());
 echo('default order is "lex", lexicographic-order');
@@ -125,7 +125,7 @@ o.dispose();
 // Restricted Compositions to fixed K parts and Max value M by filtering
 echo('o = Abacus.Partition(20,{type:"composition"}).filterBy(Abacus.Filter.LEN(5).AND(Abacus.Filter.MAX(5)))');
 o = Abacus.Partition(20,{type:"composition"}).filterBy(Abacus.Filter.LEN(5).AND(Abacus.Filter.MAX(5)));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(20,{type:"composition","max=":5,"parts=":5}).total());
 echo('default order is "lex", lexicographic-order');
@@ -135,7 +135,7 @@ o.dispose();
 // Restricted Compositions to fixed K parts and Max value M by filtering
 echo('o = Abacus.Partition(23,{type:"composition"}).filterBy(Abacus.Filter.LEN(5).AND(Abacus.Filter.MAX(7)))');
 o = Abacus.Partition(23,{type:"composition"}).filterBy(Abacus.Filter.LEN(5).AND(Abacus.Filter.MAX(7)));
-echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */'); 
+echo('o.total() /* with filtering applied .total() and some other functions still return original data not the filtered ones */');
 echo(o.total());
 echo(Abacus.Partition(23,{type:"composition","max=":7,"parts=":5}).total());
 echo('default order is "lex", lexicographic-order');

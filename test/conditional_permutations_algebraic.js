@@ -36,13 +36,13 @@ o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4],"[4]+1"],orde
 //echo(o.$.position);
 //echo(o.$.data);
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -72,13 +72,13 @@ o = Abacus.Tensor(7,{type:"partial",data:["{0..4}","[0]+1","[1]+1","[3]-1","[4]-
 //echo(o.$.position);
 //echo(o.$.data);
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -104,7 +104,7 @@ o.dispose();
 echo('Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]"},ordering:"<>"}).completeWith(Abacus.Permutation(6-3))');
 o = Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]"},ordering:"<>"}).completeWith(Abacus.Permutation(6-3));
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');
@@ -124,7 +124,7 @@ o.dispose();
 echo('Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]",3:"5"},ordering:"<>"}).completeWith(Abacus.Permutation(6-4))');
 o = Abacus.Tensor(6,{type:"partial",data:{0:"{0..4}",1:"[0]+1",2:"[0]+[1]",3:"5"},ordering:"<>"}).completeWith(Abacus.Permutation(6-4));
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');

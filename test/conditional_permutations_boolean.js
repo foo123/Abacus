@@ -35,13 +35,13 @@ echo('6-Permutations where (unique)values in 0th position ARE (0,1,2) and in 4th
 echo('o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4]],ordering:"<>",position:[0,4]}).completeWith(Abacus.Permutation(6-2))');
 o = Abacus.Tensor(6,{type:"partial",data:[[true,0,1,2],[false,3,4]],ordering:"<>",position:[0,4]}).completeWith(Abacus.Permutation(6-2));
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -71,10 +71,10 @@ echo('6,4-Combinations where values in 0th position ARE (0,1) and in 1st positio
 echo('o = Abacus.Tensor(6,{type:"partial",data:["{0,1}","[0]+1"],ordering:"<",position:[0,1]}).completeWith(Abacus.Combination(6-2,4-2)).filterBy(Abacus.Filter.SORTED("<"))');
 o = Abacus.Tensor(6,{type:"partial",data:["{0,1}","[0]+1"],ordering:"<",position:[0,1]}).completeWith(Abacus.Combination(6-2,4-2)).filterBy(Abacus.Filter.SORTED("<"));
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');

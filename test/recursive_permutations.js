@@ -32,7 +32,7 @@ echo('Another way to generate N-Permutations from appropriate (1,2,..,N-1,N)-Ten
 echo('o = Abacus.Tensor(1,2,3,{"output":"inversion"})');
 o = Abacus.Tensor(1,2,3,{"output":"inversion"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order (for original tensor)');
@@ -50,7 +50,7 @@ echo('Still another way to generate N-Permutations from appropriate Tensors, rec
 echo('o = Abacus.Tensor(3).intersperseWith(Abacus.Tensor(2).intersperseWith(Abacus.Tensor(1)))');
 o = Abacus.Tensor(3).intersperseWith(Abacus.Tensor(2).intersperseWith(Abacus.Tensor(1)));
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order (for original tensor)');
@@ -68,7 +68,7 @@ echo('Still another way to generate N-Permutations incrementaly from appropriate
 echo('o = Abacus.Tensor(3).intersperseWith(Abacus.Permutation(2))');
 o = Abacus.Tensor(3).intersperseWith(Abacus.Permutation(2));
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order (for original tensor)');

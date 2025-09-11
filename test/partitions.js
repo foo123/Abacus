@@ -38,10 +38,10 @@ return;*/
 echo('o = Abacus.Partition(6)');
 o = Abacus.Partition(6);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -85,10 +85,10 @@ o.dispose();
 echo('o = Abacus.Partition(8)');
 o = Abacus.Partition(8);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -122,10 +122,10 @@ o.dispose();
 echo('o = Abacus.Partition(12,{output:"packed"})');
 o = Abacus.Partition(12,{output:"packed"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -157,10 +157,10 @@ o.dispose();
 echo('o = Abacus.Partition(20,{output:"packed"})');
 o = Abacus.Partition(20,{output:"packed"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

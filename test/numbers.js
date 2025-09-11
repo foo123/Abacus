@@ -47,7 +47,7 @@ echo('Factorial numbers');
 echo('-----------------');
 for (i=0; i<=30; i++) echo('Factorial('+i+')='+String(Abacus.Math.factorial(i)));
  echo('Factorial(1000)='+String(Abacus.Math.factorial(1000)));
- 
+
 echo();
 echo('SubFactorial numbers');
 echo('--------------------');

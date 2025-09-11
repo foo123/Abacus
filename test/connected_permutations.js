@@ -32,7 +32,7 @@ echo('---');
 echo('o = Abacus.Permutation(2,{type:"connected"})');
 o = Abacus.Permutation(2,{type:"connected"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');
@@ -61,7 +61,7 @@ o.dispose();
 echo('o = Abacus.Permutation(3,{type:"connected"})');
 o = Abacus.Permutation(3,{type:"connected"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');
@@ -90,7 +90,7 @@ o.dispose();
 echo('o = Abacus.Permutation(4,{type:"connected"})');
 o = Abacus.Permutation(4,{type:"connected"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');
@@ -119,7 +119,7 @@ o.dispose();
 echo('o = Abacus.Permutation(5,{type:"connected"})');
 o = Abacus.Permutation(5,{type:"connected"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');
@@ -148,7 +148,7 @@ o.dispose();
 echo('o = Abacus.Permutation(6,{type:"connected"})');
 o = Abacus.Permutation(6,{type:"connected"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('o.rewind()');

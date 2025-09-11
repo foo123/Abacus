@@ -35,10 +35,10 @@ echo('---');
 echo('o = Abacus.SetPartition(2)');
 o = Abacus.SetPartition(2);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');
@@ -70,7 +70,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(3)');
 o = Abacus.SetPartition(3);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -97,7 +97,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(4, {"parts=":2})');
 o = Abacus.SetPartition(4, {"parts=":2});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -118,7 +118,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(4, {"parts=":3})');
 o = Abacus.SetPartition(4, {"parts=":3});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -139,7 +139,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(5, {"parts=":3})');
 o = Abacus.SetPartition(5, {"parts=":3});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -160,7 +160,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(6, {"parts=":5})');
 o = Abacus.SetPartition(6, {"parts=":5});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -181,7 +181,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(7, {"parts=":5})');
 o = Abacus.SetPartition(7, {"parts=":5});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -202,7 +202,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(9, {"parts=":6})');
 o = Abacus.SetPartition(9, {"parts=":6});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -223,7 +223,7 @@ o.dispose();
 echo('o = Abacus.SetPartition(6)');
 o = Abacus.SetPartition(6);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -250,10 +250,10 @@ o.dispose();
 echo('o = Abacus.SetPartition(9)');
 o = Abacus.SetPartition(9);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

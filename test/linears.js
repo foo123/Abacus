@@ -24,7 +24,7 @@ function print_tex(sol, vars)
 function check_solution_system(sol, coeff, vars)
 {
     if (null == sol) return 'No solution';
-    
+
     vars = vars || {};
     let out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
     for (i=0; i<m; i++)

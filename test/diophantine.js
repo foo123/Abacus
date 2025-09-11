@@ -27,7 +27,7 @@ function check_solution(sol, coeff, vars, modulo)
     
     vars = vars || {};
     let out = '', i, l = sol.length, res = 0;
-    for (i=0; i<l; i++)
+    for (i=0; i<l; ++i)
     {
         res += coeff[i] * sol[i].valueOf(vars);
     }
@@ -44,15 +44,15 @@ function check_solution_system(sol, coeff, vars, modulo)
     
     vars = vars || {};
     let out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
-    for (i=0; i<m; i++)
+    for (i=0; i<m; ++i)
     {
         res[i] = 0;
-        for (j=0; j<k; j++)
+        for (j=0; j<k; ++j)
             res[i] += coeff[i][j] * sol[j].valueOf(vars);
     }
     if (null != modulo)
     {
-        for (i=0; i<m; i++)
+        for (i=0; i<m; ++i)
         {
             res[i] = res[i] % modulo[i];
             if (0 > res[i]) res[i] += modulo[i];
@@ -66,7 +66,7 @@ function check_solution2(sol, coeff, vars)
     
     vars = vars || {};
     let out = '', i, l = sol.length, res = 0, s2;
-    for (i=0; i<l; i++)
+    for (i=0; i<l; ++i)
     {
         s2 = sol[i].valueOf(vars);
         res += coeff[i] * s2 * s2;

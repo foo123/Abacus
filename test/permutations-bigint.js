@@ -18,10 +18,10 @@ echo('---');
 echo('o = Abacus.Permutation(50)');
 o = Abacus.Permutation(50);
 
-echo('o.dimension()'); 
+echo('o.dimension()');
 echo(o.dimension());
 
-echo('o.total()'); 
+echo('o.total()');
 echo(String(o.total()));
 
 echo('o.random()');

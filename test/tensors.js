@@ -32,10 +32,10 @@ echo('---');
 echo('o = Abacus.Tensor(1,2,3)');
 o = Abacus.Tensor(1,2,3);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

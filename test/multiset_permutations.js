@@ -32,10 +32,10 @@ echo('---');
 echo('o = Abacus.Permutation(6,{type:"multiset",multiplicity:[1,2,2,1]})');
 o = Abacus.Permutation(6,{type:"multiset",multiplicity:[1,2,2,1]});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

@@ -36,10 +36,10 @@ echo(Abacus.Permutation(5,{type:"derangement","fixed=":2}).total());*/
 echo('o = Abacus.CombinatorialIterator([Abacus.Combination(5,0),Abacus.Combination(5,1),Abacus.Combination(5,2),Abacus.Combination(5,3),Abacus.Combination(5,4),Abacus.Combination(5,5)])');
 o = Abacus.CombinatorialIterator([Abacus.Combination(5,0),Abacus.Combination(5,1),Abacus.Combination(5,2),Abacus.Combination(5,3),Abacus.Combination(5,4),Abacus.Combination(5,5)]);
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
-echo('o.next()'); 
+echo('o.next()');
 print(o.next());
 
 echo('o.hasNext()');

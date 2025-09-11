@@ -32,7 +32,7 @@ echo('---');
 echo('o = Abacus.Permutation(2,{type:"derangement"})');
 o = Abacus.Permutation(2,{type:"derangement"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -71,7 +71,7 @@ o.dispose();
 echo('o = Abacus.Permutation(3,{type:"derangement"})');
 o = Abacus.Permutation(3,{type:"derangement"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -110,7 +110,7 @@ o.dispose();
 echo('o = Abacus.Permutation(4,{type:"derangement"})');
 o = Abacus.Permutation(4,{type:"derangement"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -150,7 +150,7 @@ o.dispose();
 echo('o = Abacus.Permutation(5,{type:"derangement"})');
 o = Abacus.Permutation(5,{type:"derangement"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
@@ -190,7 +190,7 @@ o.dispose();
 echo('o = Abacus.Permutation(7,{type:"derangement"})');
 o = Abacus.Permutation(7,{type:"derangement"});
 
-echo('o.total()'); 
+echo('o.total()');
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
