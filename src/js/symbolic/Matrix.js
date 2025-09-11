@@ -542,51 +542,51 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return true;
     }
 
-    ,equ: function(a, eq_all) {
+    ,equ: function(other, eq_all) {
         var self = this, i, j, r = self.nr, c = self.nc;
 
-        if (is_instance(a, Matrix))
+        if (is_instance(other, Matrix))
         {
-            if ((r !== a.nr) || (c !== a.nc)) return false;
+            if ((r !== other.nr) || (c !== other.nc)) return false;
             for (i=0; i<r; ++i)
                 for (j=0; j<c; ++j)
-                    if (!self.val[i][j].equ(a.val[i][j]))
+                    if (!self.val[i][j].equ(other.val[i][j]))
                         return false;
             return true;
         }
-        //a = self.ring.cast(a);
+        //other = self.ring.cast(other);
         if (true === eq_all)
         {
             for (i=0; i<r; ++i)
                 for (j=0; j<c; ++j)
-                    if (!self.val[i][j].equ(a))
+                    if (!self.val[i][j].equ(other))
                         return false;
             return true;
         }
         else
         {
-            return (1 === r) && (1 === c) && self.val[0][0].equ(a);
+            return (1 === r) && (1 === c) && self.val[0][0].equ(other);
         }
         return false;
     }
-    ,gt: function(a) {
+    ,gt: function(other) {
         var self = this;
-        if (1 === self.nr && 1 === self.nc) return self.val[0][0].gt(a);
+        if (1 === self.nr && 1 === self.nc) return self.val[0][0].gt(other);
         return false;
     }
-    ,gte: function(a) {
+    ,gte: function(other) {
         var self = this;
-        if (1 === self.nr && 1 === self.nc) return self.val[0][0].gte(a);
+        if (1 === self.nr && 1 === self.nc) return self.val[0][0].gte(other);
         return false;
     }
-    ,lt: function(a) {
+    ,lt: function(other) {
         var self = this;
-        if (1 === self.nr && 1 === self.nc) return self.val[0][0].lt(a);
+        if (1 === self.nr && 1 === self.nc) return self.val[0][0].lt(other);
         return false;
     }
-    ,lte: function(a) {
+    ,lte: function(other) {
         var self = this;
-        if (1 === self.nr && 1 === self.nc) return self.val[0][0].lte(a);
+        if (1 === self.nr && 1 === self.nc) return self.val[0][0].lte(other);
         return false;
     }
 
@@ -805,123 +805,123 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return A._p;
     }
 
-    ,add: function(a) {
+    ,add: function(other) {
         var self = this;
 
-        if (is_instance(a, Matrix))
+        if (is_instance(other, Matrix))
         {
             // NOTE: pads with zeroes if dims do not match
-            return Matrix(self.ring, array(stdMath.max(self.nr, a.nr), function(i) {
-                if (i >= a.nr) return self.val[i].slice();
-                else if (i >= self.nr) return a.val[i].slice();
-                return array(stdMath.max(self.nc, a.nc), function(j) {
-                    if (j >= a.nc) return self.val[i][j];
-                    else if (j >= self.nc) return a.val[i][j];
-                    return self.val[i][j].add(a.val[i][j]);
+            return Matrix(self.ring, array(stdMath.max(self.nr, other.nr), function(i) {
+                if (i >= other.nr) return self.val[i].slice();
+                else if (i >= self.nr) return other.val[i].slice();
+                return array(stdMath.max(self.nc, other.nc), function(j) {
+                    if (j >= other.nc) return self.val[i][j];
+                    else if (j >= self.nc) return other.val[i][j];
+                    return self.val[i][j].add(other.val[i][j]);
                 });
             }));
         }
-        if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-        return self.map(function(vij) {return vij.add(a);});
+        if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+        return self.map(function(vij) {return vij.add(other);});
     }
-    ,sub: function(a) {
+    ,sub: function(other) {
         var self = this;
 
-        if (is_instance(a, Matrix))
+        if (is_instance(other, Matrix))
         {
             // NOTE: pads with zeroes if dims do not match
-            return Matrix(self.ring, array(stdMath.max(self.nr, a.nr), function(i) {
-                if (i >= a.nr) return self.val[i].slice();
-                else if (i >= self.nr) return a.val[i].map(function(aij) {return Arithmetic.neg(aij);});
-                return array(stdMath.max(self.nc, a.nc), function(j) {
-                    if (j >= a.nc) return self.val[i][j];
-                    else if (j >= self.nc) return Arithmetic.neg(a.val[i][j]);
-                    return self.val[i][j].sub(a.val[i][j]);
+            return Matrix(self.ring, array(stdMath.max(self.nr, other.nr), function(i) {
+                if (i >= other.nr) return self.val[i].slice();
+                else if (i >= self.nr) return other.val[i].map(function(aij) {return Arithmetic.neg(aij);});
+                return array(stdMath.max(self.nc, other.nc), function(j) {
+                    if (j >= other.nc) return self.val[i][j];
+                    else if (j >= self.nc) return Arithmetic.neg(other.val[i][j]);
+                    return self.val[i][j].sub(other.val[i][j]);
                 });
             }));
         }
-        if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-        return self.map(function(vij) {return vij.sub(a);});
+        if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+        return self.map(function(vij) {return vij.sub(other);});
     }
-    ,mul: function(a) {
+    ,mul: function(other) {
         var self = this, n, zero;
 
-        if (is_instance(a, Matrix))
+        if (is_instance(other, Matrix))
         {
-            //if (self.nc !== a.nr) return null; // dims do not match for multiplication
-            n = stdMath.min(self.nc, a.nr); // generalise multiplication
+            //if (self.nc !== other.nr) return null; // dims do not match for multiplication
+            n = stdMath.min(self.nc, other.nr); // generalise multiplication
             zero = self.ring.Zero();
             return Matrix(self.ring, array(self.nr, function(i) {
-                return array(a.nc, function(j) {
+                return array(other.nc, function(j) {
                     for (var d=zero,k=0; k<n; ++k)
-                        d = d.add(self.val[i][k].mul(a.val[k][j]));
+                        d = d.add(self.val[i][k].mul(other.val[k][j]));
                     return d;
                 });
             }));
         }
-        if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-        return self.map(function(vij) {return vij.mul(a);});
+        if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+        return self.map(function(vij) {return vij.mul(other);});
     }
-    ,dot: function(a) {
+    ,dot: function(other) {
         var self = this;
         // pointwise multiplication
 
-        if (is_instance(a, Matrix))
+        if (is_instance(other, Matrix))
         {
-            return Matrix(self.ring, array(stdMath.max(self.nr, a.nr), function(i) {
-                if (i >= self.nr) return a.val[i].slice();
-                else if (i >= a.nr) return self.val[i].slice();
-                return array(stdMath.max(self.nc, a.nc), function(j) {
-                    if (j >= self.nc) return a.val[i][j];
-                    else if (j >= a.nc) return self.val[i][j];
-                    return self.val[i][j].mul(a.val[i][j]);
+            return Matrix(self.ring, array(stdMath.max(self.nr, other.nr), function(i) {
+                if (i >= self.nr) return other.val[i].slice();
+                else if (i >= other.nr) return self.val[i].slice();
+                return array(stdMath.max(self.nc, other.nc), function(j) {
+                    if (j >= self.nc) return other.val[i][j];
+                    else if (j >= other.nc) return self.val[i][j];
+                    return self.val[i][j].mul(other.val[i][j]);
                 })
             }));
         }
-        if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-        return self.map(function(vij) {return vij.mul(a);});
+        if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+        return self.map(function(vij) {return vij.mul(other);});
     }
-    ,prod: function(a) {
+    ,prod: function(other) {
         var self = this, r1, c1, r2, c2, r, c;
         // kronecker product
 
-        if (is_instance(a, Matrix))
+        if (is_instance(other, Matrix))
         {
             r1 = self.nr; c1 = self.nc;
-            r2 = a.nr; c2 = a.nc;
+            r2 = other.nr; c2 = other.nc;
             r = r1*r2; c = c1*c2;
             return Matrix(self.ring, array(r, function(i) {
                 var i1 = ~~(i / r2), i2 = i % r2;
                 return array(c, function(j) {
                     var j1 = ~~(j / c2), j2 = j % c2;
-                    return self.val[i1][j1].mul(a.val[i2][j2]);
+                    return self.val[i1][j1].mul(other.val[i2][j2]);
                 });
             }));
         }
-        if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-        return self.map(function(vij) {return vij.mul(a);});
+        if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+        return self.map(function(vij) {return vij.mul(other);});
     }
-    ,div: function(a) {
+    ,div: function(other) {
         var self = this;
-        if (is_instance(a, Numeric) || Abacus.Arithmetic.isNumber(a) || is_string(a))
+        if (is_instance(other, Numeric) || Abacus.Arithmetic.isNumber(other) || is_string(other))
         {
-            if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-            return self.map(function(vij) {return vij.div(a);});
+            if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+            return self.map(function(vij) {return vij.div(other);});
         }
         return self;
     }
-    ,mod: function(a) {
+    ,mod: function(other) {
         var self = this;
-        if (is_instance(a, Numeric) || Abacus.Arithmetic.isNumber(a) || is_string(a))
+        if (is_instance(other, Numeric) || Abacus.Arithmetic.isNumber(other) || is_string(other))
         {
-            if (is_number(a) || is_string(a)) a = self.ring.cast(a);
-            return self.map(function(vij) {return vij.mod(a);});
+            if (is_number(other) || is_string(other)) other = self.ring.cast(other);
+            return self.map(function(vij) {return vij.mod(other);});
         }
         return self;
     }
-    ,divmod: function(a) {
+    ,divmod: function(other) {
         var self = this;
-        return [self.div(a), self.mod(a)];
+        return [self.div(other), self.mod(other)];
     }
     ,pow: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
@@ -1152,491 +1152,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
         // https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix
         // https://en.wikipedia.org/wiki/Diagonalizable_matrix
         // https://en.wikipedia.org/wiki/Power_iteration
-        var self = this, ring = self.ring, m = self.nr, n = self.nc, epsilon, matrixFor1D, e, u, i, j, es, us;
         return null;
-
-        /*if (ring.isSymbolic() || (m !== n) || !self.h().equ(self)) return null; // only for square symmetric/hermitian diagonalisable numeric matrices
-
-        function pow1(A, x, eps, max_iter) {
-            var x0 = null, iter = 0, norm;
-            if (is_class(ring.NumberClass, Complex))
-            {
-                norm = x.h().mul(x).val[0][0];
-                if (norm.equ(0)) return null;
-                x = x.div(norm.rad(2));
-                for (;;)
-                {
-                    iter++;
-                    x0= x;
-                    x = A.mul(x);
-                    norm = x.h().mul(x).val[0][0];
-                    if (norm.equ(0)) return null;
-                    x = x.div(norm.rad(2));
-                    if ((null != max_iter) && (iter >= max_iter)) break;
-                    if (x.h().mul(x0).val[0][0].norm().add(eps).gt(1)) break;
-                }
-            }
-            else
-            {
-                norm = x.t().mul(x).val[0][0];
-                if (norm.equ(0)) return null;
-                x = x.div(norm.rad(2));
-                for (;;)
-                {
-                    iter++;
-                    x0 = x;
-                    x = A.mul(x);
-                    norm = x.t().mul(x).val[0][0];
-                    if (norm.equ(0)) return null;
-                    x = x.div(norm.rad(2));
-                    if ((null != max_iter) && (iter >= max_iter)) break;
-                    if (x.t().mul(x0).val[0][0].abs().add(eps).gt(1)) break;
-                }
-            }
-            return x;
-        }
-
-        if (null == self._evd)
-        {
-            if (!ring.isField())
-            {
-                u = Matrix(ring.associatedField(), self);
-                u.evd();
-                self._evd = u._evd;
-            }
-            else
-            {
-                epsilon = Rational.Epsilon();
-                es = []; us = [];
-                matrixFor1D = self;
-                for (i=0; i<n; i++)
-                {
-                    u = pow1(matrixFor1D, Matrix(ring, self.col(i)), epsilon, 10); // next eigen vector
-                    if (null == u)
-                    {
-                        self._evd = false; // non diagonalisable
-                        break;
-                    }
-                    e = u.h().mul(self.mul(u)).val[0][0].div(u.h().mul(u).val[0][0]); // next eigen value
-                    es.push(e); us.push(u);
-                    matrixFor1D = matrixFor1D.sub(u.mul(u.h()).mul(e));
-                }
-                if (false!==self._evd) self._evd = [Matrix(ring, es), Matrix(ring, Matrix.T(us.map(function(u){return u.col(0);})))/*, Matrix(ring, us).inv||.h()* /];
-            }
-        }
-        return false===self._evd ? null : self._evd.slice();*/
     }
     ,svd: function() {
         // singular value decomposition
         // https://en.wikipedia.org/wiki/Singular_value_decomposition
-        var self = this, ring = self.ring,
-            m = self.nr, n = self.nc, a, nu, ni, s, U, V, e, work, si, i,
-            nct, nrt, mrc, k, j, t, p, pp, iter, eps, kase, alpha, ks,
-            f, cs, sn, scale, sp, spm1, epm1, sk, ek, b, c, shift, g, MIN_VAL,
-            evd, wantu = true, wantv = true, Epsilon, Limit;
-
-        return null;/*
-        // only for real numeric fields (ie Rationals)
-        if (ring.isSymbolic() || !ring.isReal()) return null;
-
-        if (null == self._svd)
-        {
-            // svd from evd of A.T*A or A*A.T
-            if (!ring.isField())
-            {
-                self._svd = Matrix(ring.associatedField(), self).svd();
-            }
-            else if (m > n)
-            {
-                // get svd of transpose and transpose
-                s = self.t().svd();
-                self._svd = [s[0], s[2].t(), s[1].t()];
-            }
-            else
-            {
-                evd = self.mul(self.t()).evd();
-                U = evd[1];
-                V = self.t().mul(U);
-                s = array(V.nc, function(i){var vm = Matrix(ring, V.col(i)); return vm.t().mul(vm).val[0][0].rad(2);});
-                V = V.map(function(vij, ij){return vij.div(s[ij[1]]);});
-                self._svd = [Matrix(ring, s), U.t(), V];
-            }
-        }
-        return self._svd.slice();
-
-        function hypotenuse(a, b) {
-            var r;
-            if (a.abs().gt(b.abs()))
-            {
-                r = b.div(a);
-                return a.abs().mul(r.mul(r).add(ring.One()).rad(2));
-            }
-            if (!b.equ(ring.Zero()))
-            {
-                r = a.div(b);
-                return b.abs().mul(r.mul(r).add(ring.One()).rad(2));
-            }
-            return ring.Zero();
-        }
-
-        if (null == self._svd)
-        {
-            if (!ring.isField())
-            {
-                self._svd = Matrix(ring.associatedField(), self).svd();
-            }
-            else if (m < n)
-            {
-                // get svd of transpose and transpose
-                s = self.t().svd();
-                self._svd = [s[0], s[2].t(), s[1].t()];
-            }
-            else
-            {
-                // this version of svd adapted from https://github.com/mljs/matrix
-                Epsilon = Rational.Epsilon();
-                Limit = Epsilon.inv().integer();
-
-                a = self.clone(true);
-                nu = stdMath.min(m, n);
-                ni = stdMath.min(m + 1, n);
-                s = new Array(ni);
-                U = Matrix(ring, m, nu);
-                V = Matrix(ring, n, n);
-
-                e = new Array(n);
-                work = new Array(m);
-
-                si = new Array(ni);
-                for (i=0; i<ni; i++) si[i] = i;
-
-                nct = stdMath.min(m - 1, n);
-                nrt = stdMath.max(0, stdMath.min(n - 2, m));
-                mrc = stdMath.max(nct, nrt);
-
-                for (k=0; k<mrc; k++)
-                {
-                    if (k<nct)
-                    {
-                        s[k] = ring.Zero();
-                        for (i=k; i<m; i++) s[k] = hypotenuse(s[k], a[i][k]);
-                        if (!s[k].equ(0))
-                        {
-                            if (a[k][k].lt(0)) s[k] = s[k].neg();
-                            for (i=k; i<m; i++) a[i][k] = a[i][k].div(s[k]);
-                            a[k][k] = a[k][k].add(1);
-                        }
-                        s[k] = s[k].neg();
-                    }
-
-                    for (j=k+1; j<n; j++)
-                    {
-                        if (k<nct && !s[k].equ(0))
-                        {
-                            t = ring.Zero();
-                            for (i=k; i<m; i++) t = t.add(a[i][k].mul(a[i][j]));
-                            t = t.neg().div(a[k][k]);
-                            for (i=k; i<m; i++) a[i][j] = a[i][j].add(t.mul(a[i][k]));
-                        }
-                        e[j] = a[k][j];
-                    }
-
-                    if (wantu && k<nct)
-                        for (i=k; i<m; i++) U.val[i][k] = a[i][k];
-
-                    if (k<nrt)
-                    {
-                        e[k] = ring.Zero();
-                        for (i=k+1; i<n; i++) e[k] = hypotenuse(e[k], e[i]);
-                        if (!e[k].equ(0))
-                        {
-                            if (e[k + 1].lt(0)) e[k] = e[k].neg();
-                            for (i=k+1; i<n; i++) e[i] = e[i].div(e[k]);
-                            e[k + 1] = e[k + 1].add(1);
-                        }
-                        e[k] = e[k].neg();
-                        if (k+1<m && !e[k].equ(0))
-                        {
-                            for (i=k+1; i<m; i++) work[i] = ring.Zero();
-                            for (i=k+1; i<m; i++)
-                                for (j=k+1; j<n; j++) work[i] = work[i].add(e[j].mul(a[i][j]));
-
-                            for (j=k+1; j<n; j++)
-                            {
-                                t = e[j].neg().div(e[k + 1]);
-                                for (i=k+1; i<m; i++) a[i][j] = a[i][j].add(t.mul(work[i]));
-                            }
-                        }
-                        if (wantv)
-                        {
-                            for (i=k+1; i<n; i++) V.val[i][k] = e[i];
-                        }
-                    }
-                }
-
-                p = stdMath.min(n, m + 1);
-                if (nct<n) s[nct] = a[nct][nct];
-                if (m<p) s[p - 1] = ring.Zero();
-                if (nrt+1 < p) e[nrt] = a[nrt][p - 1];
-                e[p - 1] = ring.Zero();
-
-                if (wantu)
-                {
-                    for (j=nct; j<nu; j++)
-                    {
-                        for (i=0; i<m; i++) U.val[i][j] = ring.Zero();
-                        U.val[j][j] = ring.One();
-                    }
-                    for (k=nct-1; k>=0; k--)
-                    {
-                        if (!s[k].equ(0))
-                        {
-                            for (j=k+1; j<nu; j++)
-                            {
-                                t = ring.Zero();
-                                for (i=k; i<m; i++) t = t.add(U.val[i][k].mul(U.val[i][j]));
-                                t = t.neg().div(U.val[k][k]);
-                                for (i=k; i<m; i++) U.val[i][j] = U.val[i][j].add(t.mul(U.val[i][k]));
-                            }
-                            for (i=k; i<m; i++) U.val[i][k] = U.val[i][k].neg();
-                            U.val[k][k] = U.val[k][k].add(1);
-                            for (i=0; i<k-1; i++) U.val[i][k] = ring.Zero();
-                        }
-                        else
-                        {
-                            for (i=0; i<m; i++) U.val[i][k] = ring.Zero();
-                            U.val[k][k] = ring.One();
-                        }
-                    }
-                }
-
-                if (wantv)
-                {
-                    for (k=n-1; k>=0; k--)
-                    {
-                        if (k<nrt && !e[k].equ(0))
-                        {
-                            for (j=k+1; j<n; j++)
-                            {
-                                t = ring.Zero();
-                                for (i=k+1; i<n; i++) t = t.add(V.val[i][k].mul(V.val[i][j]));
-                                t = t.neg().div(V.val[k + 1][k]);
-                                for (i=k+1; i<n; i++) V.val[i][j] = V.val[i][j].add(t.mul(V.val[i][k]));
-                            }
-                        }
-                        for (i=0; i<n; i++) V.val[i][k] = ring.Zero();
-                        V.val[k][k] = ring.One();
-                    }
-                }
-
-                pp = p - 1;
-                iter = 0;
-                eps = Epsilon;//ring.cast(Number.EPSILON.toString());
-                MIN_VAL = ring.Zero();//ring.cast(Number.MIN_VALUE.toString());
-                while (p>0)
-                {
-                    for (k=p-2; k>=-1; k--)
-                    {
-                        if (k === -1) break;
-                        alpha = MIN_VAL.add(eps.mul(s[k].add(s[k + 1].abs()).abs()));
-                        if (e[k].abs().lte(alpha) /*|| Number.isNaN(e[k].valueOf())* /)
-                        {
-                            e[k] = ring.Zero();
-                            break;
-                        }
-                    }
-                    if (k===p-2)
-                    {
-                        kase = 4;
-                    }
-                    else
-                    {
-                        for (ks=p-1; ks>=k; ks--)
-                        {
-                            if (ks===k) break;
-                            t = (ks !== p ? e[ks].abs() : ring.Zero()).add(ks !== k + 1 ? e[ks - 1].abs() : ring.Zero());
-                            if (s[ks].abs().lte(eps.mul(t)))
-                            {
-                                s[ks] = ring.Zero();
-                                break;
-                            }
-                        }
-                        if (ks===k)
-                        {
-                            kase = 3;
-                        }
-                        else if (ks===p-1)
-                        {
-                            kase = 1;
-                        }
-                        else
-                        {
-                            kase = 2;
-                            k = ks;
-                        }
-                    }
-
-                    k++;
-                    switch(kase)
-                    {
-                        case 1:
-                            f = e[p - 2];
-                            e[p - 2] = ring.Zero();
-                            for (j=p-2; j>=k; j--)
-                            {
-                                t = hypotenuse(s[j], f);
-                                cs = s[j].div(t);
-                                sn = f.div(t);
-                                s[j] = t;
-                                if (j !== k)
-                                {
-                                    f = sn.neg().mul(e[j - 1]);
-                                    e[j - 1] = cs.mul(e[j - 1]);
-                                }
-                                if (wantv)
-                                {
-                                    for (i=0; i<n; i++)
-                                    {
-                                        t = cs.mul(V.val[i][j]).add(sn.mul(V.val[i][p - 1]));
-                                        V.val[i][p - 1] = sn.neg().mul(V.val[i][j]).add(cs.mul(V.val[i][p - 1]));
-                                        V.val[i][j] = t;
-                                    }
-                                }
-                            }
-                            break;
-                        case 2:
-                            f = e[k - 1];
-                            e[k - 1] = ring.Zero();
-                            for (j=k; j<p; j++)
-                            {
-                                t = hypotenuse(s[j], f);
-                                cs = s[j].div(t);
-                                sn = f.div(t);
-                                s[j] = t;
-                                f = sn.neg().mul(e[j]);
-                                e[j] = cs.mul(e[j]);
-                                if (wantu)
-                                {
-                                    for (i=0; i<m; i++)
-                                    {
-                                        t = cs.mul(U.val[i][j]).add(sn.mul(U.val[i][k - 1]));
-                                        U.val[i][k - 1] = sn.neg().mul(U.val[i][j]).add(cs.mul(U.val[i][k - 1]));
-                                        U.val[i][j] = t;
-                                    }
-                                }
-                            }
-                            break;
-                        case 3:
-                            scale = nmax(
-                                s[p - 1].abs(),
-                                s[p - 2].abs(),
-                                e[p - 2].abs(),
-                                s[k].abs(),
-                                e[k].abs()
-                           );
-                            sp = s[p - 1].div(scale);
-                            spm1 = s[p - 2].div(scale);
-                            epm1 = e[p - 2].div(scale);
-                            sk = s[k].div(scale);
-                            ek = e[k].div(scale);
-                            b = spm1.add(sp).mul(spm1.sub(sp)).add(epm1.mul(epm1)).div(2);
-                            c = sp.mul(epm1).mul(sp.mul(epm1));
-                            shift = ring.Zero();
-                            if (!b.equ(0) || !c.equ(0))
-                            {
-                                if (b.lt(0)) shift = b.mul(b).add(c).rad(2).neg();
-                                else shift = b.mul(b).add(c).rad(2);
-                                shift = c.div(b.add(shift));
-                            }
-                            f = sk.add(sp).mul(sk.sub(sp)).add(shift);
-                            g = sk.mul(ek);
-                            for (j=k; j<p-1; j++)
-                            {
-                                t = hypotenuse(f, g);
-                                if (t.equ(0)) t = MIN_VAL;
-                                cs = f.div(t);
-                                sn = g.div(t);
-                                if (j !== k) e[j - 1] = t;
-                                f = cs.mul(s[j]).add(sn.mul(e[j]));
-                                e[j] = cs.mul(e[j]).sub(sn.mul(s[j]));
-                                g = sn.mul(s[j + 1]);
-                                s[j + 1] = cs.mul(s[j + 1]);
-                                if (wantv)
-                                {
-                                    for (i=0; i<n; i++)
-                                    {
-                                        t = cs.mul(V.val[i][j]).add(sn.mul(V.val[i][j + 1]));
-                                        V.val[i][j + 1] = sn.neg().mul(V.val[i][j]).add(cs.mul(V.val[i][j + 1]));
-                                        V.val[i][j] = t;
-                                    }
-                                }
-                                t = hypotenuse(f, g);
-                                if (t.equ(0)) t = MIN_VAL;
-                                cs = f.div(t);
-                                sn = g.div(t);
-                                s[j] = t;
-                                f = cs.mul(e[j]).add(sn.mul(s[j + 1]));
-                                s[j + 1] = sn.neg().mul(e[j]).add(cs.mul(s[j + 1]));
-                                g = sn.mul(e[j + 1]);
-                                e[j + 1] = cs.mul(e[j + 1]);
-                                if (wantu && j<m-1)
-                                {
-                                    for (i=0; i<m; i++)
-                                    {
-                                        t = cs.mul(U.val[i][j]).add(sn.mul(U.val[i][j + 1]));
-                                        U.val[i][j + 1] = sn.neg().mul(U.val[i][j]).add(cs.mul(U.val[i][j + 1]));
-                                        U.val[i][j] = t;
-                                    }
-                                }
-                            }
-                            e[p - 2] = f;
-                            iter = iter + 1;
-                            break;
-                        case 4:
-                            if (s[k].lte(0))
-                            {
-                                s[k] = s[k].lt(0) ? s[k].neg() : ring.Zero();
-                                if (wantv)
-                                {
-                                    for (i=0; i<=pp; i++) V.val[i][k] = V.val[i][k].neg();
-                                }
-                            }
-                            while (k<pp)
-                            {
-                                if (s[k].gte(s[k + 1])) break;
-                                t = s[k];
-                                s[k] = s[k + 1];
-                                s[k + 1] = t;
-                                if (wantv && k<n-1)
-                                {
-                                    for (i=0; i<n; i++)
-                                    {
-                                        t = V.val[i][k + 1];
-                                        V.val[i][k + 1] = V.val[i][k];
-                                        V.val[i][k] = t;
-                                    }
-                                }
-                                if (wantu && k<m-1)
-                                {
-                                    for (i=0; i<m; i++)
-                                    {
-                                        t = U.val[i][k + 1];
-                                        U.val[i][k + 1] = U.val[i][k];
-                                        U.val[i][k] = t;
-                                    }
-                                }
-                                k++;
-                            }
-                            iter = 0;
-                            p--;
-                            break;
-                        // no default
-                    }
-                }
-                self._svd = [Matrix(ring, s), U, V];
-            }
-        }
-        return self._svd.slice();*/
+        return null;
     }
     ,lu: function() {
         var self = this, ring, O, I, J, n, m, dim, P, L, U, DD,
@@ -2010,6 +1531,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             {
                 self._det = ring.Zero();
             }
+            else if (1 === self.nr)
+            {
+                self._det = self.val[0][0];
+            }
             else
             {
                 ref = self.ref(true);
@@ -2017,6 +1542,66 @@ Matrix = Abacus.Matrix = Class(INumber, {
             }
         }
         return self._det;
+    }
+    ,detr: function() {
+        var self = this, ring = self.ring,
+            O = ring.Zero(), I = ring.One(), J = ring.MinesOne(),
+            m = self.val, n = self.nr, r, c, d;
+
+        // recursive computation of determinant
+        function determinant(m, n)
+        {
+            var i, zr, zc, s, d;
+
+            function del(m, r, c)
+            {
+                var rows = m.slice(0, r);
+                rows.push.apply(rows, m.slice(r+1));
+                return rows.map(function(mc) {
+                    var cols = mc.slice(0, c);
+                    cols.push.apply(cols, mc.slice(c+1));
+                    return cols;
+                });
+            }
+
+            if (1 === n)
+            {
+                d = m[0][0]; // trivial
+            }
+            else
+            {
+                // use row or col with the most zeros
+                for (zr=0,zc=0,i=0; i<n; ++i)
+                {
+                    if (m[0][i].equ(O)) ++zr;
+                    if (m[i][0].equ(O)) ++zc;
+                }
+                s = I; d = O;
+                if (zc > zr)
+                {
+                    // along 1st col
+                    for (i=0; i<n; ++i)
+                    {
+                        if (!m[i][0].equ(O)) d = d.add(determinant(del(m, i, 0), n-1).mul(s));
+                        s = I === s ? J : I;
+                    }
+                }
+                else
+                {
+                    // along 1st row
+                    for (i=0; i<n; ++i)
+                    {
+                        if (!m[0][i].equ(O)) d = d.add(determinant(del(m, 0, i), n-1).mul(s));
+                        s = I === s ? J : I;
+                    }
+                }
+            }
+            return d;
+        }
+
+        d = n !== self.nc ? O : determinant(m, n);
+        if (null == self._det) self._det = d;
+        return d;
     }
     ,rowspace: function() {
         var self = this, ring, pivots;
