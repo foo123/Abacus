@@ -246,9 +246,9 @@ console.log(m.inv().mul(m).toString());
 
 ### Todo
 
-* apply built-in language `iterator`/`iterable` patterns (e.g ES6 `iterator` protocol). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
-* support `biginteger` combinatorial computations e.g large factorials **[DONE]**, arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation to support exact arithmetic with bigintegers, see examples
-* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward **[DONE, `random` ordering may be optimised further]**
+* apply built-in language `iterator`/`iterable` patterns (ES6 `iterator` protocol). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
+* support exact `biginteger` arithmetic computations e.g large factorials **[DONE]**, arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation, see examples
+* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward **[DONE]**, `random` ordering may be optimised further
 * support multiple combinatorial orderings (ie `lex`, `colex`, `reflex`, `refcolex`, `minimal`, ..) **directly in the successor methods**  instead of using post-transformations on object **[DONE]**
 * support **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object **[DONE]**
 * support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings **[DONE]**
@@ -258,8 +258,8 @@ console.log(m.inv().mul(m).toString());
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. **[DONE]**
 * add `LatinSquare`, `MagicSquare` algorithms **[DONE]**
 * add run-time/lazy custom and/or built-in filtering support (with support for filter composition as well) to generate and select custom and complex combinatorial objects from filtering other combinatorial objects as efficiently as possible **[DONE]**
-* support efficient primality tests and prime sieves **[DONE]**
-* support efficient integer factorization algorithms **[DONE PARTIALY]**
+* support efficient primality tests and prime sieves **[DONE PARTIALLY]**
+* support efficient integer factorization algorithms **[DONE PARTIALLY]**
 * support general symbolic expressions and computations in `Expr` **[DONE]**
 * add Rank Factorisation **[DONE]**
 * implement `ginv` (Moore-Penrose Inverse) computation **[DONE]**
@@ -267,7 +267,7 @@ console.log(m.inv().mul(m).toString());
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**
-* use sparse representation for polynomials (univariate and multivariate) instead of the, in general, inefficient dense representation (and optimise associated arithmetic operations) **[DONE]**
+* use optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
 * implement polynomial `RESULTANT` computation (TODO)
@@ -276,8 +276,8 @@ console.log(m.inv().mul(m).toString());
 * implement `LLL` algorithm (TODO)
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
-* use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALY]**
-* full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALY]**
+* use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
+* full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
 * add efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
