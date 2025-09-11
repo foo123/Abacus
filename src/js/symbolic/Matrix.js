@@ -3,12 +3,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix(ring, r, c, values) {
         var self = this, k, v, i, j;
-        if (!is_instance(self, Matrix))
-        {
-            return 4 > arguments.length ? (new Matrix(arguments[0], arguments[1], arguments[2])) : (new Matrix(ring, r, c, values));
-        }
+        if (!is_instance(self, Matrix)) return new Matrix(ring, r, c, values);
 
-        if (4 > arguments.length)
+        if (!is_instance(ring, Ring))
         {
             // ring is skipped and implicit in the values
             values = c;
