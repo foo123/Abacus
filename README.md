@@ -270,9 +270,10 @@ console.log(m.inv().mul(m).toString());
 * use optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
 * support (univariate) polynomial (partial) factorisation, (rational) root finding **[DONE]**
 * support multivariate polynomial, multivariate operations **[DONE]**
+* support (multivariate) polynomial (partial) factorisation, (rational) root finding (eg `Kronecker` algorithm) (TODO)
 * implement polynomial `RESULTANT` computation (TODO)
 * support multivariate polynomial `GCD`, (approximate) root finding (TODO)
-* implement `Aberth` polynomial root finding algorithm (TODO)
+* support polynomial (approximate) root finding (eg `Aberth` algorithm) (TODO)
 * implement `LLL` algorithm (TODO)
 * implement groebner basis computations (`Buchberger` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
