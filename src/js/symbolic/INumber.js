@@ -17,7 +17,7 @@ function nadd(/* args */)
     var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
         args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
     return args.length ? operate(function(result, a) {
-        return result.add(a, explicit);
+        return result.add(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
 function nsub(/* args */)
@@ -25,7 +25,7 @@ function nsub(/* args */)
     var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
         args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
     return args.length ? operate(function(result, a) {
-        return result.sub(a, explicit);
+        return result.sub(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
 function nmul(/* args */)
@@ -33,7 +33,7 @@ function nmul(/* args */)
     var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
         args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
     return args.length ? operate(function(result, a) {
-        return result.mul(a, explicit);
+        return result.mul(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
 function ndiv(/* args */)
@@ -41,7 +41,7 @@ function ndiv(/* args */)
     var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
         args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
     return args.length ? operate(function(result, a) {
-        return result.div(a, explicit);
+        return result.div(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
 function typecast(ClassTypeCheck, toClassType)
