@@ -821,13 +821,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._c;
     }
     ,f: function() {
-        var self = this, ast = self.ast;
+        var self = this, ast = self.ast, I = Rational.One();
         if (null == self._f)
         {
             // factors including constant term
             if ('sym' === ast.type)
             {
-                self._f = {c:Rational.One(), f:[self]};
+                self._f = {c:I, f:[self]};
             }
             else if (self.isConst())
             {
@@ -837,17 +837,17 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 self._f = ast.arg.reduce(function(f, e) {
                     f.c = f.c.mul(e.f().c);
-                    f.f = f.f.concat(e.f().f);
+                    f.f.push.apply(f.f, e.f().f);
                     return f;
-                }, {c:Rational.One(), f:[]});
+                }, {c:I, f:[]});
             }
             else if ('/' === ast.op)
             {
                 self._f = ast.arg.reduce(function(f, e, i) {
                     f.c = f.c.mul(0 < i ? e.f().c.inv() : e.f().c);
-                    f.f = f.f.concat(0 < i ? e.f().f.map(function(e) {return e.inv();}) : e.f().f);
+                    f.f.push.apply(f.f, 0 < i ? e.f().f.map(function(e) {return e.inv();}) : e.f().f);
                     return f;
-                }, {c:Rational.One(), f:[]});
+                }, {c:I, f:[]});
             }
             else if ('^' === ast.op)
             {
@@ -858,12 +858,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
                 else
                 {
-                    self._f = {c:Rational.One(), f:[self]};
+                    self._f = {c:I, f:[self]};
                 }
             }
-            else //if (self.isConst())
+            else
             {
-                self._f = {c:Rational.One(), f:[self]};
+                self._f = {c:I, f:[self]};
             }
         }
         return self._f;
@@ -947,6 +947,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if (self.isConst() && other.isConst())
             {
                 return self.c().equ(other.c());
+            }
+            else if ((('sym' === other.ast.type) && self.isConst()) || (('sym' === self.ast.type) && other.isConst()))
+            {
+                return false;
             }
             else
             {
@@ -1334,7 +1338,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return Rational.Zero();
     }
     ,expand: function() {
-        var self = this, O = Expr.Zero(), I = Expr.One();
+        var self = this, O = Expr.Zero(), I = Expr.One(), J = Expr.MinusOne();
 
         function expand(expr)
         {
@@ -1364,23 +1368,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return Expr(expr.ast.op, expr.ast.arg.map(expand));
             }
         }
-        function key(expr)
-        {
-            return expr.toString();
-        }
-        function add(a, b, do_subtraction)
+        function add(e1, e2, do_subtraction)
         {
             function terms(e)
             {
-                return {c:e.f().c, k:e.f().f.map(key).sort().join('*'), f:e.f().f};
+                var f = e.f().f.filter(function(f) {return !f.equ(I);}).sort(cmp);
+                return {c:e.f().c, k:f.map(key).join('*'), f:f};
             }
-            function cmp(t1, t2)
-            {
-                return t1.k === t2.k ? 0 : (t1.k < t2.k ? -1 : 1);
-            }
-            a = ('+' === a.ast.op ? a.ast.arg : [a]).map(terms).sort(cmp);
-            b = ('+' === b.ast.op ? b.ast.arg : [b]).map(terms).sort(cmp);
             var i = 0, j = 0, k = 0,
+                a = ('+' === e1.ast.op ? e1.ast.arg : [e1]).map(terms).sort(cmp),
+                b = ('+' === e2.ast.op ? e2.ast.arg : [e2]).map(terms).sort(cmp),
                 n1 = a.length, n2 = b.length,
                 c = new Array(n1+n2), res;
             while (i < n1 && j < n2)
@@ -1419,18 +1416,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 ++j;
             }
             if (c.length > k) c.length = k; // truncate if needed
-            return Expr('+', c.map(function(f) {return Expr('*', [f.c].concat(f.f));}));
+            return c.length ? Expr('+', c.map(function(f) {return Expr('*', [f.c].concat(f.f));})) : O;
         }
-        function mul(a, b, do_division)
+        function mul(e1, e2, do_division)
         {
             function factors(e)
             {
                 fac = null == fac ? e.f().c : fac.mul(e.f().c);
-                return e.f().f.map(function(f) {return '^' === f.ast.op ? {b:f.ast.arg[0], e:f.ast.arg[1]} : {b:f, e:I};});
-            }
-            function cmp(t1, t2)
-            {
-                return key(t1.b) === key(t2.b) ? 0 : (key(t1.b) < key(t2.b) ? -1 : 1);
+                var f = e.f().f.filter(function(f) {return !f.equ(I);});
+                return f.map(function(f) {return '^' === f.ast.op ? {b:f.ast.arg[0], e:f.ast.arg[1]} : {b:f, e:I};});
             }
             function merge(res, f)
             {
@@ -1445,22 +1439,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 return res;
             }
 
-            var fac = null;
+            if (('+' === e1.ast.op) || ('-' === e1.ast.op))
+            {
+                return e1.ast.arg.reduce(function(res, f, i) {
+                    return add(res, mul(f, e2, do_division), ('-' === e1.ast.op) && (0 < i));
+                }, O);
+            }
+            if (!do_division && (('+' === e2.ast.op) || ('-' === e2.ast.op)))
+            {
+                return e2.ast.arg.reduce(function(res, f, i) {
+                    return add(res, mul(e1, f), ('-' === e2.ast.op) && (0 < i));
+                }, O);
+            }
 
-            if (('+' === a.ast.op) || ('-' === a.ast.op))
-            {
-                return a.ast.arg.reduce(function(res, f, i) {
-                    return add(res, mul(f, b), ('-' === a.ast.op) && (0 < i));
-                }, O);
-            }
-            if (('+' === b.ast.op) || ('-' === b.ast.op))
-            {
-                return b.ast.arg.reduce(function(res, f, i) {
-                    return add(res, mul(a, f), ('-' === b.ast.op) && (0 < i));
-                }, O);
-            }
-            a = flatten(('*' === a.ast.op ? a.ast.arg : [a]).map(factors));
-            b = flatten(('*' === b.ast.op ? b.ast.arg : [b]).map(factors));
+            var fac = null;
+            var a = flatten(('*' === e1.ast.op ? e1.ast.arg : [e1]).map(factors));
+            var b = flatten(('*' === e2.ast.op ? e2.ast.arg : [e2]).map(factors));
 
             if (fac.equ(0)) return O;
 
@@ -1502,12 +1496,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 ++j;
             }
             if (c.length > k) c.length = k; // truncate if needed
-            return Expr('*', [fac].concat(c.map(function(f) {return f.e.equ(I) ? f.b : f.b.pow(f.e);})));
+            return c.length ? Expr('*', [fac].concat(c.map(function(f) {return f.e.equ(I) ? f.b : (f.e.equ(J) ? f.b.inv() : f.b.pow(f.e));}))) : Expr('', fac);
         }
-        function pow(a, b)
+        function pow(e1, e2)
         {
             function compute_pow(e, n)
             {
+                if ('sym' === e.ast.type) return Expr('^', [e, n]);
+                else if (e.isConst()) return Expr('', e.c().pow(n.c()));
+
                 var Arithmetic = Abacus.Arithmetic, p = Expr.One();
                 n = n.c().real().integer(true);
                 if (0 > n)
@@ -1539,19 +1536,42 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return expand(p);
                 }
             }
-            if (('*' === a.ast.op) || ('/' === a.ast.op))
+            if (('*' === e1.ast.op) || ('/' === e1.ast.op))
             {
-                return a.ast.arg.reduce(function(res, f, i) {
-                    return mul(res, pow(f, b), ('/' === a.ast.op) && (0 < i));
+                return e1.ast.arg.reduce(function(res, f, i) {
+                    return mul(res, pow(f, e2), ('/' === e1.ast.op) && (0 < i));
                 }, I);
             }
-            var base = a, exp = b;
+            var base = e1, exp = e2;
             while ('^' === base.ast.op)
             {
                 exp = exp.mul(base.ast.arg[1]);
                 base = base.ast.arg[0];
             }
             return exp.isInt() ? compute_pow(base, exp) : base.pow(exp);
+        }
+        function key(expr)
+        {
+            return expr.toString();
+        }
+        function cmp(t1, t2)
+        {
+            if (t1.k && t2.k)
+            {
+                t1 = t1.k;
+                t2 = t2.k;
+            }
+            if (t1.b && t2.b)
+            {
+                t1 = key(t1.b);
+                t2 = key(t2.b);
+            }
+            else
+            {
+                t1 = key(t1);
+                t2 = key(t2);
+            }
+            return t1 === t2 ? 0 : (t1 < t2 ? -1 : 1);
         }
 
         if (null == self._xpnd) self._xpnd = expand(self);

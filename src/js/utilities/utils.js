@@ -160,7 +160,7 @@ function array(n, x0, xs)
 function flatten(array)
 {
     return array.reduce(function(flat, item) {
-        if (is_array(item)) flat.push.apply(flatten(item));
+        if (is_array(item)) flat.push.apply(flat, flatten(item));
         else flat.push(item);
         return flat;
     }, []);
