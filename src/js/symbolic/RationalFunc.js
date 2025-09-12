@@ -456,7 +456,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     ,toString: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._str)
-            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + (self.den.isConst(true) && (self.den.isReal()) ? self.den.toString() : ('(' + self.den.toString() + ')')));
+            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + (self.den.isMono() || (self.den.isConst(true) && (self.den.isReal() || self.den.isImag())) ? self.den.toString() : ('(' + self.den.toString() + ')')));
         return self._str;
     }
     ,toTex: function() {

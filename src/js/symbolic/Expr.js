@@ -951,10 +951,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return self.c().equ(other.c());
             }
-            else if (self.isConst() || other.isConst())
+            /*else if (self.isConst() || other.isConst())
             {
                 return false; // const and symbol are not comparable
-            }
+            }*/
             else
             {
                 /*
@@ -981,10 +981,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return self.c().gt(other.c());
             }
-            else if (self.isConst() || other.isConst())
+            /*else if (self.isConst() || other.isConst())
             {
                 return false; // const and symbol are not comparable
-            }
+            }*/
             else if ('expr' === other.ast.type)
             {
                 return self.sub(other).expand().gt(Expr.Zero());
@@ -1006,10 +1006,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return self.c().gte(other.c());
             }
-            else if (self.isConst() || other.isConst())
+            /*else if (self.isConst() || other.isConst())
             {
                 return false; // const and symbol are not comparable
-            }
+            }*/
             else if ('expr' === other.ast.type)
             {
                 return self.sub(other).expand().gte(Expr.Zero());
@@ -1031,10 +1031,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return self.c().lt(other.c());
             }
-            else if (self.isConst() || other.isConst())
+            /*else if (self.isConst() || other.isConst())
             {
                 return false; // const and symbol are not comparable
-            }
+            }*/
             else if ('expr' === other.ast.type)
             {
                 return self.sub(other).expand().lt(Expr.Zero());
@@ -1056,10 +1056,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return self.c().lte(other.c());
             }
-            else if (self.isConst() || other.isConst())
+            /*else if (self.isConst() || other.isConst())
             {
                 return false; // const and symbol are not comparable
-            }
+            }*/
             else if ('expr' === other.ast.type)
             {
                 return self.sub(other).expand().lte(Expr.Zero());
@@ -1401,27 +1401,33 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 return {c:e.f().c, f:f, k:f.map(key).join('*')};
             }
 
-            var a = ('+' === e1.ast.op ? e1.ast.arg : [e1]).map(terms).sort(cmp),
+            var o = Abacus.Arithmetic.O,
+                a = ('+' === e1.ast.op ? e1.ast.arg : [e1]).map(terms).sort(cmp),
                 b = ('+' === e2.ast.op ? e2.ast.arg : [e2]).map(terms).sort(cmp),
-                c = merge_AB(
-                    a,
-                    function(a) {
-                        return a.c.equ(0) ? null : a;
-                    },
-                    b,
-                    function(b) {
-                        if (do_subtraction) b.c = b.c.neg();
-                        return b.c.equ(0) ? null : b;
-                    },
-                    cmp,
+                c = merge_sequences(
+                    a, b,
                     function(a, b) {
-                        a = {c:do_subtraction ? a.c.sub(b.c) : a.c.add(b.c), f:a.f, k:a.k};
-                        return a.c.equ(0) ? null : a;
-                    }
+                        if (null == b)
+                        {
+                            return a.c.equ(o) ? null : a;
+                        }
+                        else if (null == a)
+                        {
+                            if (do_subtraction) b.c = b.c.neg();
+                            return b.c.equ(o) ? null : b;
+                        }
+                        else
+                        {
+                            a.c = do_subtraction ? a.c.sub(b.c) : a.c.add(b.c);
+                            return a.c.equ(o) ? null : a;
+                        }
+                    },
+                    cmp
                 )
             ;
 
-            return c.length ? Expr('+', c.map(function(f) {return Expr('*', [f.c].concat(f.f));})) : O;
+            var res = c.length ? Expr('+', c.map(function(f) {return Expr('*', [f.c].concat(f.f));})) : O;
+            return res;
         }
         function mul(e1, e2, do_division)
         {
@@ -1464,21 +1470,30 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
             if (fac.equ(0)) return O;
 
-            c = merge_AB(
+            c = merge_sequences(
                 a.sort(cmp).reduce(merge, []),
-                ID,
                 b.sort(cmp).reduce(merge, []),
-                function(b) {
-                    if (do_division) b.e = b.e.neg();
-                    return b;
-                },
-                cmp,
                 function(a, b) {
-                    return {b:a.b, e:o_division ? a.e.sub(b.e) : a.e.add(b.e)};
-                }
+                    if (null == b)
+                    {
+                        return a;
+                    }
+                    else if (null == a)
+                    {
+                        if (do_division) b.e = b.e.neg();
+                        return b;
+                    }
+                    else
+                    {
+                        a.e = do_division ? a.e.sub(b.e) : a.e.add(b.e);
+                        return a;
+                    }
+                },
+                cmp
             );
 
-            return c.length ? Expr('*', [fac].concat(c.map(function(f) {return f.e.equ(I) ? f.b : (f.e.equ(J) ? f.b.inv() : (f.e.isConst() && f.e.c().lt(0) ? f.b.inv().pow(f.e.neg()) : f.b.pow(f.e)));}))) : Expr('', fac);
+            var res = c.length ? Expr('*', [fac].concat(c.map(function(f) {return f.e.equ(I) ? f.b : (f.e.equ(J) ? f.b.inv() : (f.e.isConst() && f.e.c().lt(0) ? f.b.inv().pow(f.e.neg()) : f.b.pow(f.e)));}))) : Expr('', fac);
+            return res;
         }
         function pow(e1, e2)
         {
@@ -1521,12 +1536,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
         function cmp(t1, t2)
         {
             var k1, k2;
-            if (t1.k && t2.k)
+            if (is_string(t1.k) && is_string(t2.k))
             {
                 k1 = t1.k;
                 k2 = t2.k;
             }
-            else if (t1.b && t2.b)
+            else if (is_instance(t1.b, Expr) && is_instance(t2.b, Expr))
             {
                 k1 = key(t1.b);
                 k2 = key(t2.b);

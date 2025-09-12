@@ -797,14 +797,14 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             }, Polynomial.Zero(x, ring), null, 0, n-1);
         }
 
+        ,fromString: function(s, symbol, ring) {
+            return Polynomial.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
+        }
         ,fromExpr: function(e, symbol, ring) {
             if (!is_instance(e, Expr)) return null;
             ring = ring || Ring.Q();
             symbol = String((is_array(symbol) ? symbol[0] : symbol) || 'x');
             return e.toPoly(symbol, ring, Complex.Symbol);
-        }
-        ,fromString: function(s, symbol, ring) {
-            return Polynomial.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
         }
     }
 
@@ -2047,15 +2047,15 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return new MultiPolynomial(c || Abacus.Arithmetic.O, x || ['x'], ring || Ring.Q());
         }
 
+        ,fromString: function(s, symbol, ring) {
+            return MultiPolynomial.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
+        }
         ,fromExpr: function(e, symbol, ring) {
             if (!is_instance(e, Expr)) return null;
             ring = ring || Ring.Q();
             symbol = symbol || ['x'];
             if (is_string(symbol)) symbol = [symbol];
             return e.toPoly(symbol, ring, Complex.Symbol);
-        }
-        ,fromString: function(s, symbol, ring) {
-            return MultiPolynomial.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
         }
     }
 

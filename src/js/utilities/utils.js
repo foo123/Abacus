@@ -576,46 +576,49 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
         return union;
     }
 }
-function merge_AB(A, mapA, B, mapB, compareAB, combineAB)
+function merge_sequences(A, B, combine, compare)
 {
-    var i = 0, j = 0, k = 0, cmp, res,
-        nA = A.length, nB = B.length,
-        C = new Array(nA+nB);
+    if (!is_callable(compare)) compare = cmp;
+    if (!is_callable(combine)) combine = null;
+
+    var i = 0, j = 0, k = 0,  nA = A.length, nB = B.length,
+        C = new Array(nA+nB), order, output;
+
     while ((i < nA) && (j < nB))
     {
-        cmp = compareAB(A[i], B[j]);
-        if (0 > cmp)
+        order = compare(A[i], B[j]);
+        if (0 > order)
         {
             // A[i] before B[j]
-            res = mapA(A[i]);
-            if (null != res) C[k++] = res;
+            output = combine ? combine(A[i], null) : A[i];
+            if (null != output) C[k++] = output;
             ++i;
         }
-        else if (0 < cmp)
+        else if (0 < order)
         {
             // B[j] before A[i]
-            res = mapB(B[j]);
-            if (null != res) C[k++] = res;
+            output = combine ? combine(null, B[j]) : B[j];
+            if (null != output) C[k++] = output;
             ++j;
         }
         else
         {
             // equal, combine
-            res = combineAB(A[i], B[j]);
-            if (null != res) C[k++] = res;
+            output = combine ? combine(A[i], B[j]) : A[i];
+            if (null != output) C[k++] = output;
             ++i; ++j;
         }
     }
     while (i < nA)
     {
-        res = mapA(A[i]);
-        if (null != res) C[k++] = res;
+        output = combine ? combine(A[i], null) : A[i];
+        if (null != output) C[k++] = output;
         ++i;
     }
     while (j < nB)
     {
-        res = mapB(B[j]);
-        if (null != res) C[k++] = res;
+        output = combine ? combine(null, B[j]) : B[j];
+        if (null != output) C[k++] = output;
         ++j;
     }
     if (C.length > k) C.length = k; // truncate if needed
