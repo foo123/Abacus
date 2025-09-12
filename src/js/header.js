@@ -57,13 +57,13 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     // numerics
     ,Numeric, Integer, IntegerMod, Rational, Complex
     // symbolics
-    ,Symbolic, Expr, Poly, UniPolyTerm, MultiPolyTerm
-    ,PiecewisePolynomial, Polynomial, MultiPolynomial, RationalFunc
+    ,Symbolic, Expr, Poly
+    ,Polynomial, MultiPolynomial, RationalFunc
     ,Ring, Matrix
     // iterators
     ,Iterator, CombinatorialIterator, CombinatorialProxy, Filter
     // progressions, sieves
-    ,Progression, HashSieve, PrimeSieve, Diophantine
+    ,Progression, PrimeSieve, Diophantine
     // combinatorics
     ,Tensor, Permutation, Combination
     ,Subset, Partition, SetPartition

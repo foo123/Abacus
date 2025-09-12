@@ -1,4 +1,4 @@
-HashSieve = function HashSieve() {
+var HashSieve = function HashSieve() {
     var self = this, _hash = null;
 
     if (!is_instance(self, HashSieve)) return new HashSieve();

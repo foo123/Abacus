@@ -541,6 +541,47 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return true;
     }
+    ,isTriang: function(type, strict) {
+        // https://en.wikipedia.org/wiki/Triangular_matrix
+        var self = this, m = self.val, nr = self.nr, nc = self.nc, n, r, c, O;
+        type = String(type || 'lower').toLowerCase();
+        if (-1 === ['lower', 'upper', 'diagonal'].indexOf(type)) return false;
+        if ((false !== strict) && (nr !== nc)) return false;
+
+        n = stdMath.min(nr, nc);
+        O = ring.Zero();
+        for (r=0; r<n; ++r)
+        {
+            for (c=r+1; c<n; ++c)
+            {
+                if (('lower' === type || 'diagonal' === type) && !m[r][c].equ(O)) return false;
+                if (('upper' === type || 'diagonal' === type) && !m[r][n-1-c].equ(O)) return false;
+            }
+        }
+        if (nr > nc)
+        {
+            // should be all zero
+            for (r=n; r<nr; ++r)
+            {
+                for (c=0; c<nc; ++c)
+                {
+                    if (!m[r][c].equ(O)) return false;
+                }
+            }
+        }
+        else if (nr < nc)
+        {
+            // should be all zero
+            for (c=n; c<nc; ++c)
+            {
+                for (r=0; r<nr; ++r)
+                {
+                    if (!m[r][c].equ(O)) return false;
+                }
+            }
+        }
+        return true;
+    }
 
     ,equ: function(other, eq_all) {
         var self = this, i, j, r = self.nr, c = self.nc;
@@ -1507,9 +1548,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return pivots[1].length;
     }
     ,tr: function() {
-        var self = this, ring, n, i;
         // trace
         // https://en.wikipedia.org/wiki/Trace_(linear_algebra)
+        var self = this, ring, n, i;
         if (null == self._tr)
         {
             ring = self.ring;
@@ -1520,93 +1561,162 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._tr;
     }
     ,det: function() {
-        var self = this, ring, ref;
         // determinant
         // https://en.wikipedia.org/wiki/Determinant
         // https://en.wikipedia.org/wiki/Bareiss_algorithm
+        var self = this, ring = self.ring, n = self.nr, m = self.val;
         if (null == self._det)
         {
-            ring = self.ring;
-            if (self.nr !== self.nc)
+            if (n !== self.nc)
             {
+                // not square, zero
                 self._det = ring.Zero();
             }
-            else if (1 === self.nr)
+            else if (1 === n)
             {
-                self._det = self.val[0][0];
+                // scalar, trivial
+                self._det = m[0][0];
+            }
+            else if (self.isTriang('lower') || self.isTriang('upper'))
+            {
+                // triangular, product of diagonal entries
+                self._det = operate(function(det, i) {
+                    return det.mul(m[i][i]);
+                }, ring.One(), null, 0, n-1, 1);
             }
             else
             {
-                ref = self.ref(true);
-                self._det = ref[2];
+                // compute via ref
+                self._det = self.ref(true)[2];
             }
         }
         return self._det;
     }
     ,detr: function() {
+        // determinant
+        // https://en.wikipedia.org/wiki/Determinant
         var self = this, ring = self.ring,
             O = ring.Zero(), I = ring.One(), J = ring.MinesOne(),
             m = self.val, n = self.nr, r, c, d;
 
         // recursive computation of determinant
-        function determinant(m, n)
+        function det_(m, n)
         {
-            var i, zr, zc, s, d;
+            var ii, zr, zc,
+                s, det;
+                a, b, c,
+                d, e, f,
+                g, h, i;
 
-            function del(m, r, c)
+            function reduce(m, n, row, col)
             {
-                var rows = m.slice(0, r);
-                rows.push.apply(rows, m.slice(r+1));
-                return rows.map(function(mc) {
-                    var cols = mc.slice(0, c);
-                    cols.push.apply(cols, mc.slice(c+1));
-                    return cols;
+                return array(n-1, function(r) {
+                    if (r >= row) ++r;
+                    return array(n-1, function(c) {
+                        if (c >= col) ++c;
+                        return m[r][c];
+                    });
                 });
             }
 
             if (1 === n)
             {
-                d = m[0][0]; // trivial
+                // explicit formula for 1x1, trivial
+                det = m[0][0];
             }
-            else
+            else if (2 === n)
+            {
+                // explicit formula for 2x2
+                a = m[0][0]; b = m[0][1];
+                c = m[1][0]; d = m[1][1];
+                det = (
+                    a.mul(d)
+                    ).sub(
+                    b.mul(c)
+                    );
+            }
+            else if (3 === n)
+            {
+                // explicit formula for 3x3
+                a = m[0][0]; b = m[0][1]; c = m[0][2];
+                d = m[1][0]; e = m[1][1]; f = m[1][2];
+                g = m[2][0]; h = m[2][1]; i = m[2][2];
+                det = (
+                    a.mul(e).mul(i)
+                    ).add(
+                    b.mul(f).mul(g)
+                    ).add(
+                    c.mul(d).mul(h)
+                    ).sub(
+                    c.mul(e).mul(g)
+                    ).sub(
+                    b.mul(d).mul(i)
+                    ).sub(
+                    a.mul(f).mul(h)
+                    );
+            }
+            else //if (3 < n)
             {
                 // use row or col with the most zeros
-                for (zr=0,zc=0,i=0; i<n; ++i)
+                for (zr=0,zc=0,ii=0; ii<n; ++ii)
                 {
-                    if (m[0][i].equ(O)) ++zr;
-                    if (m[i][0].equ(O)) ++zc;
+                    if (m[0][ii].equ(O)) ++zr;
+                    if (m[ii][0].equ(O)) ++zc;
                 }
-                s = I; d = O;
+                s = I; det = O;
                 if (zc > zr)
                 {
-                    // along 1st col
-                    for (i=0; i<n; ++i)
+                    // expand along 1st col
+                    for (ii=0; ii<n; ++ii)
                     {
-                        if (!m[i][0].equ(O)) d = d.add(determinant(del(m, i, 0), n-1).mul(s));
+                        if (!m[ii][0].equ(O)) det = det.add(m[ii][0].mul(s).mul(det_(reduce(m, n, ii, 0), n-1)));
                         s = I === s ? J : I;
                     }
                 }
                 else
                 {
-                    // along 1st row
-                    for (i=0; i<n; ++i)
+                    // expand along 1st row
+                    for (ii=0; ii<n; ++ii)
                     {
-                        if (!m[0][i].equ(O)) d = d.add(determinant(del(m, 0, i), n-1).mul(s));
+                        if (!m[0][ii].equ(O)) det = det.add(m[0][ii].mul(s).mul(det_(reduce(m, n, 0, ii), n-1)));
                         s = I === s ? J : I;
                     }
                 }
             }
-            return d;
+            return det;
         }
 
-        d = n !== self.nc ? O : determinant(m, n);
-        if (null == self._det) self._det = d;
-        return d;
+        if (null == self._det)
+        {
+            if (n !== self.nc)
+            {
+                // not square, zero
+                self._det = O;
+            }
+            else if (1 === n)
+            {
+                // scalar, trivial
+                self._det = m[0][0];
+            }
+            else if (self.isTriang('lower') || self.isTriang('upper'))
+            {
+                // triangular, product of diagonal entries
+                self._det = operate(function(det, i) {
+                    return det.mul(m[i][i]);
+                }, I, null, 0, n-1, 1);
+            }
+            else
+            {
+                // compute recursively
+                self._det = det_(m, n);
+            }
+        }
+        return self._det;
     }
     ,rowspace: function() {
-        var self = this, ring, pivots;
         // row space
         // https://en.wikipedia.org/wiki/Row_and_column_spaces
+        var self = this, ring, pivots;
         if (null == self._rs)
         {
             ring = self.ring;
@@ -1621,9 +1731,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._rs.slice();
     }
     ,colspace: function() {
-        var self = this, ring, pivots;
         // column space
         // https://en.wikipedia.org/wiki/Row_and_column_spaces
+        var self = this, ring, pivots;
         if (null == self._cs)
         {
             ring = self.ring;
@@ -1638,10 +1748,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._cs.slice();
     }
     ,nullspace: function(left_else_right) {
+        // https://en.wikipedia.org/wiki/Kernel_(linear_algebra)
         var self = this, ring, O, I, columns, rref, pivots,
             free_vars, pl, tmp, LCM;
 
-        // https://en.wikipedia.org/wiki/Kernel_(linear_algebra)
         if (left_else_right)
         {
             // left nullspace
@@ -1764,7 +1874,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
     ,valueOf: function(r, c) {
         var self = this, ring = self.ring;
-        r = +(r||0); c = +(c||0);
+        r = +(r || 0); c = +(c || 0);
         return (0 <= r && r < self.nr && 0 <= c && c < self.nc ? self.val[r][c] : ring.Zero()).valueOf();
     }
     ,toString: function() {

@@ -1,5 +1,5 @@
 // Represents a (univariate) polynomial term with coefficient and exponent in Polynomial non-zero sparse representation
-UniPolyTerm = Class({
+var UniPolyTerm = Class({
 
     constructor: function UniPolyTerm(c, e, ring) {
         var self = this;
@@ -1624,7 +1624,7 @@ Polynomial.cast = function(a, symbol, ring) {
 
 
 // Represents a multivariate polynomial term with coefficient and exponents in Polynomial non-zero sparse representation
-MultiPolyTerm = Class({
+var MultiPolyTerm = Class({
 
     constructor: function MultiPolyTerm(c, e, ring) {
         var self = this;
@@ -3100,7 +3100,7 @@ MultiPolynomial.cast = function(a, symbol, ring) {
     return type_cast(a);
 };
 
-PiecewisePolynomial = Class(Poly, {
+var PiecewisePolynomial = Class(Poly, {
     constructor: function PiecewisePolynomial(segments, defaultValue, symbol, ring) {
         var self = this;
         if (!is_instance(self, PiecewisePolynomial)) return new PiecewisePolynomial(segments, defaultValue, symbol, ring);
@@ -3165,3 +3165,150 @@ PiecewisePolynomial = Class(Poly, {
     }
 });
 Polynomial.Piecewise = PiecewisePolynomial;
+
+// polynomial utilities
+function addition_sparse(a, b, TermClass, do_subtraction, ring)
+{
+    // O(n1+n2) ~ O(max(n1,n2))
+    // assume a, b are arrays of **non-zero only** coeffs of PolyTerm class of coefficient and exponent already sorted in exponent decreasing order
+    // merge terms by efficient merging and produce already sorted order c
+    // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
+    // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
+    // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
+    do_subtraction = (true === do_subtraction);
+    TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    ring = ring || Ring.Q();
+    var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
+    while (i < n1 && j < n2)
+    {
+        if (0 < TermClass.cmp(a[i], b[j]))
+        {
+            res = a[i].cast(ring);
+            if (!res.equ(O)) c[k++] = res; // check if zero
+            ++i;
+        }
+        else if (0 < TermClass.cmp(b[j], a[i]))
+        {
+            res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
+            if (!res.equ(O)) c[k++] = res; // check if zero
+            ++j;
+        }
+        else //equal
+        {
+            res = (do_subtraction ? a[i].sub(b[j]) : a[i].add(b[j])).cast(ring);
+            if (!res.equ(O)) c[k++] = res; // check if cancelled
+            ++i; ++j;
+        }
+    }
+    while (i < n1)
+    {
+        res = a[i].cast(ring);
+        if (!res.equ(O)) c[k++] = res; // check if zero
+        ++i;
+    }
+    while (j < n2)
+    {
+        res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
+        if (!res.equ(O)) c[k++] = res; // check if zero
+        ++j;
+    }
+    if (c.length > k) c.length = k; // truncate if needed
+    return c;
+}
+function multiplication_sparse(a, b, TermClass, ring)
+{
+    // O(log(n1)*n1*n2)
+    // assume a, b are arrays of **non-zero only** coeffs of PolyTerm class of coefficient and exponent already sorted in exponent decreasing order
+    // merge terms by efficient merging and produce already sorted order c
+    // eg http://www.cecm.sfu.ca/~mmonagan/teaching/TopicsinCA11/johnson.pdf
+    // and https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic
+    // and https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
+    TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    ring = ring || Ring.Q();
+    var k, t, n1, n2, c, f, max, heap, O = Abacus.Arithmetic.O;
+    if (a.length > b.length) {t = a; a = b; b = t;} // swap to achieve better performance
+    n1 = a.length; n2 = b.length; c = new Array(n1*n2);
+    if (0 < n1 && 0 < n2)
+    {
+        k = 0;
+        c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
+        heap = Heap(array(n1, function(i) {
+            return [a[i].cast(ring).mul(b[0].cast(ring)), i];
+        }), "max", function(a, b) {
+            return TermClass.cmp(a[0], b[0]);
+        });
+        f = array(n1, 0);
+        while (max=heap.peek())
+        {
+            if (0 !== TermClass.cmp(c[k], max[0]))
+            {
+                if (!c[k].equ(O)) c[++k] = TermClass(0, 0, ring);
+                c[k].e = max[0].e;
+            }
+            c[k] = c[k].add(max[0]);
+            ++f[max[1]];
+            if (f[max[1]] < n2) heap.replace([a[max[1]].cast(ring).mul(b[f[max[1]]].cast(ring)), max[1]]);
+            else heap.pop();
+        }
+        heap.dispose();
+        if (c.length > k+1) c.length = k+1; // truncate if needed
+    }
+    return c;
+}
+function division_sparse(a, b, TermClass, q_and_r, ring)
+{
+    // sparse polynomial reduction/long division
+    // https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1
+    q_and_r = (true === q_and_r);
+    TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
+    ring = ring || Ring.Q();
+    var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
+        heap = Heap([], "max", function(a,b) {return TermClass.cmp(a.term, b.term);}),
+        q = [], r = [], k = 0, d, res, Q, b0;
+
+    if (!b.length) return null;
+    b0 = b[0].cast(ring);
+    while ((d=heap.peek()) || k < na)
+    {
+        if ((null == d) || (k < na && 0 > TermClass.cmp(d.term, a[k])))
+        {
+            res = a[k].cast(ring);
+            ++k;
+        }
+        else if (k < na && 0 === TermClass.cmp(d.term, a[k]))
+        {
+            res = a[k].cast(ring).sub(d.term);
+            if (nb > d.n)
+                heap.replace({term:d.Q.mul(b[d.n].cast(ring)), n:d.n+1, Q:d.Q});
+            else
+                heap.pop();
+            ++k;
+
+            //if (res.equ(O)) continue; // zero coefficient, skip
+        }
+        else
+        {
+            res = d.term.neg();
+            if (nb > d.n)
+                heap.replace({term:d.Q.mul(b[d.n].cast(ring)), n:d.n+1, Q:d.Q});
+            else
+                heap.pop();
+        }
+        if (res.equ(O)) continue; // zero coefficient, skip
+
+        if (b0.divides(res))
+        {
+            Q = res.div(b0);
+            q = addition_sparse(q, [Q], TermClass, false, ring);
+            if (nb > 1)
+                heap.push({term:Q.mul(b[1].cast(ring)), n:2, Q:Q});
+        }
+        else if (q_and_r)
+        {
+            r = addition_sparse(r, [res], TermClass, false, ring);
+        }
+    }
+    heap.dispose();
+
+    return q_and_r ? [q, r] : q;
+}
