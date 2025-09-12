@@ -44,6 +44,40 @@ function ndiv(/* args */)
         return result.div(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
+function npow(base, exp)
+{
+    var pow = base[CLASS].One();
+
+    if (0 > exp)
+    {
+        base = base.inv();
+        exp = -exp;
+    }
+
+    if (0 === exp)
+    {
+        /*pass*/
+    }
+    else if (1 === exp)
+    {
+        pow = base;
+    }
+    else if (2 === exp)
+    {
+        pow = base.mul(base);
+    }
+    else
+    {
+        // exponentiation by squaring
+        while (0 !== exp)
+        {
+            if (exp & 1) pow = pow.mul(base);
+            exp >>= 1;
+            base = base.mul(base);
+        }
+    }
+    return pow;
+}
 function typecast(ClassTypeCheck, toClassType)
 {
     var ClassType = null;

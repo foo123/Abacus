@@ -576,6 +576,51 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
         return union;
     }
 }
+function merge_AB(A, mapA, B, mapB, compareAB, combineAB)
+{
+    var i = 0, j = 0, k = 0, cmp, res,
+        nA = A.length, nB = B.length,
+        C = new Array(nA+nB);
+    while ((i < nA) && (j < nB))
+    {
+        cmp = compareAB(A[i], B[j]);
+        if (0 > cmp)
+        {
+            // A[i] before B[j]
+            res = mapA(A[i]);
+            if (null != res) C[k++] = res;
+            ++i;
+        }
+        else if (0 < cmp)
+        {
+            // B[j] before A[i]
+            res = mapB(B[j]);
+            if (null != res) C[k++] = res;
+            ++j;
+        }
+        else
+        {
+            // equal, combine
+            res = combineAB(A[i], B[j]);
+            if (null != res) C[k++] = res;
+            ++i; ++j;
+        }
+    }
+    while (i < nA)
+    {
+        res = mapA(A[i]);
+        if (null != res) C[k++] = res;
+        ++i;
+    }
+    while (j < nB)
+    {
+        res = mapB(B[j]);
+        if (null != res) C[k++] = res;
+        ++j;
+    }
+    if (C.length > k) C.length = k; // truncate if needed
+    return C;
+}
 function sortedrun(a, a0, a1, index, indices, dir)
 {
     // findout already sorted chunks either ascending or descending
