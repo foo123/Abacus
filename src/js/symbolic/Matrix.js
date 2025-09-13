@@ -549,7 +549,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         if ((false !== strict) && (nr !== nc)) return false;
 
         n = stdMath.min(nr, nc);
-        O = ring.Zero();
+        O = self.ring.Zero();
         for (r=0; r<n; ++r)
         {
             for (c=r+1; c<n; ++c)
@@ -1596,14 +1596,16 @@ Matrix = Abacus.Matrix = Class(INumber, {
         // determinant
         // https://en.wikipedia.org/wiki/Determinant
         var self = this, ring = self.ring,
-            O = ring.Zero(), I = ring.One(), J = ring.MinesOne(),
-            m = self.val, n = self.nr, r, c, d;
+            m = self.val, n = self.nr,
+            O = ring.Zero(),
+            I = ring.One(),
+            J = ring.MinusOne();
 
         // recursive computation of determinant
         function det_(m, n)
         {
             var ii, zr, zc,
-                s, det;
+                s, det,
                 a, b, c,
                 d, e, f,
                 g, h, i;

@@ -27,7 +27,7 @@ function check_xgcd(ring, args)
 {
     let out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
         res = field.Zero(), gcd = ring.xgcd(args);
-    for (i=0; i<args.length; i++)
+    for (let i=0; i<args.length; ++i)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(gcd[i+1].mul(args[i]));
@@ -39,8 +39,8 @@ function check_xgcd(ring, args)
 function check_factors(p, factors, constant)
 {
     constant = constant || Abacus.Arithmetic.I;
-    let out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol), i;
-    for (i=0; i<factors.length; i++)
+    let out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol);
+    for (let i=0; i<factors.length; ++i)
     {
         out += '('+factors[i][0].toString()+')'+(1<factors[i][1]?('^'+String(factors[i][1])):'');
         res = res.mul(factors[i][0].pow(factors[i][1]));
@@ -56,6 +56,10 @@ function check_radical(p, k)
 {
     let r = p.rad(k);
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
+}
+function check_resultant(p, q)
+{
+    echo('resultant("' + p.toString() + '", "' + q.toString() + '") -> ' + '"' + Abacus.Polynomial.resultant(p, q).toString() + '"');
 }
 let o, d, ring = Abacus.Ring.Q("x");
 
@@ -471,14 +475,16 @@ echo(o.toString());
 echo('o.primitive()');
 check_primitive(o);
 
-echo('ring.fromString("(1/2)ix^2+(1+(2/3)i)x")');
-o=ring.fromString("(1/2)ix^2+(1+(2/3)i)x");
+echo('ring.fromString("(1/2)*i*x^2+(1+(2/3)*i)*x")');
+o=ring.fromString("(1/2)*i*x^2+(1+(2/3)*i)*x");
 echo(o.toString());
 echo('o.primitive()');
 check_primitive(o);
 
-echo('ring.fromString("(3/2+(1/2)i)x+1+(2/3)i")');
-o=ring.fromString("(3/2+(1/2)i)x+1+(2/3)i");
+echo('ring.fromString("(3/2+(1/2)*i)*x+1+(2/3)*i")');
+o=ring.fromString("(3/2+(1/2)*i)*x+1+(2/3)*i");
 echo(o.toString());
 echo('o.primitive()');
 check_primitive(o);
+
+check_resultant(ring.fromString("(3/2+(1/2)*i)*x+1+(2/3)*i"), ring.fromString("(1/2)*i*x^2+(1+(2/3)*i)*x"));

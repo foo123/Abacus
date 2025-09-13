@@ -613,46 +613,36 @@ Complex = Abacus.Complex = Class(Numeric, {
         return this.re.valueOf();
     }
     ,toExpr: function() {
+        var self = this;
         return Expr('+', [self.re.toExpr(), Expr('*', [self.im.toExpr(), Expr('', Complex.Symbol)])]);
     }
     ,toString: function(parenthesized) {
-        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr;
-        if (null == self._str)
-        {
-            zr = self.re.equ(O);
-            self._str = (zr ? '' : self.re.toString()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toString(true) + '*'))) + Complex.Symbol));
-            if (!self._str.length) self._str = '0';
-            self._strp = (zr ? '' : self.re.toString(true)) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toString(true) + '*'))) + Complex.Symbol));
-            if (!self._strp.length) self._strp = '0';
-        }
+        var self = this;
+        if (null == self._str) self._strp = self._str = self.toExpr().toString();
         return parenthesized ? self._strp : self._str;
     }
     ,toTex: function() {
-        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr;
-        if (null == self._tex)
-        {
-            zr = self.re.equ(O);
-            self._tex = (zr ? '' : self.re.toTex()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : self.im.toTex())) + Complex.Symbol));
-            if (!self._tex.length) self._tex = '0';
-        }
+        var self = this;
+        if (null == self._tex) self._tex = self.toExpr().toTex();
         return self._tex;
     }
     ,toDec: function(precision) {
-        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, zr, dec;
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, zr, dec;
         if (null == self._dec)
         {
             zr = self.re.equ(O);
-            self._dec = (zr ? '' : self.re.toDec()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toDec()))) + Complex.Symbol));
+            self._dec = (zr ? '' : self.re.toDec()) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(I) ? '' : (self.im.equ(J) ? '-' : (self.im.toDec()))) + Complex.Symbol));
             if (!self._dec.length) self._dec = '0';
         }
-        if (is_number(precision) && 0 <= precision)
+        if (is_number(precision) && (0 <= precision))
         {
             zr = self.re.equ(O);
-            dec = (zr ? '' : self.re.toDec(precision)) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(Arithmetic.I) ? '' : (self.im.equ(Arithmetic.J) ? '-' : (self.im.toDec(precision)))) + Complex.Symbol));
+            dec = (zr ? '' : self.re.toDec(precision)) + (self.im.equ(O) ? '' : ((self.im.gt(O) ? (zr ? '' : '+') : '') + (self.im.equ(I) ? '' : (self.im.equ(J) ? '-' : (self.im.toDec(precision)))) + Complex.Symbol));
             if (!dec.length)
             {
                 dec = '0';
-                if (0<precision) dec += '.' + (new Array(precision+1).join('0'));
+                if (0 < precision) dec += '.' + (new Array(precision+1).join('0'));
             }
             return dec;
         }

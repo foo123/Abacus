@@ -454,15 +454,21 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         return self.num.toExpr().div(self.den.toExpr());
     }
     ,toString: function() {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, Arithmetic = Abacus.Arithmetic, I = Arithmetic.I;
         if (null == self._str)
-            self._str = self.den.equ(Arithmetic.I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + (self.den.isMono() || (self.den.isConst(true) && (self.den.isReal() || self.den.isImag())) ? self.den.toString() : ('(' + self.den.toString() + ')')));
+        {
+            //self._str = self.toExpr().expand().toString();
+            self._str = self.den.equ(I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + ((self.den.isMono() && self.den.terms[0].c.equ(I)) || (self.den.isConst(true) && (self.den.isReal() /*|| self.den.isImag()*/)) ? self.den.toString() : ('(' + self.den.toString() + ')')));
+        }
         return self._str;
     }
     ,toTex: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._tex)
+        {
+            //self._tex = self.toExpr().expand().toTex();
             self._tex = self.den.equ(Arithmetic.I) ? self.num.toTex() : ('\\frac{' + self.num.toTex() + '}{' + self.den.toTex() + '}');
+        }
         return self._tex;
     }
     ,toDec: function(precision) {

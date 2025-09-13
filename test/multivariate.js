@@ -26,7 +26,7 @@ function check_xgcd(ring, args)
 {
     let out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
         res = field.Zero(), gcd = ring.xgcd(args);
-    for (i=0; i<args.length; i++)
+    for (let i=0; i<args.length; ++i)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(gcd[i+1].mul(args[i]));
@@ -74,6 +74,10 @@ function check_radical(p, k)
     let r = p.rad(k);
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
 }
+function check_resultant(p, q)
+{
+    echo('resultant("' + p.toString() + '", "' + q.toString() + '") -> ' + '"' + Abacus.MultiPolynomial.resultant(p, q).toString() + '"');
+}
 
 let o, ring = Abacus.Ring.Q("x", "y");
 
@@ -99,71 +103,71 @@ echo(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr().toString());
 echo('ring.fromExpr(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr()).toString()');
 echo(ring.fromExpr(ring.create({"y*x^2":2,"x*y":1,"1":4}).toExpr()).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").toString());
 
-echo('ring.fromString("1 - yx").evaluate({"x":1,"y":2})');
-echo(ring.fromString("1 - yx").evaluate({"x":1,"y":2}).toString());
+echo('ring.fromString("1 - y*x").evaluate({"x":1,"y":2})');
+echo(ring.fromString("1 - y*x").evaluate({"x":1,"y":2}).toString());
 
 echo('ring.fromString("1 - y+x").evaluate({"x":1,"y":2})');
 echo(ring.fromString("1 - y+x").evaluate({"x":1,"y":2}).toString());
 
-echo('ring.fromString("1+xy+xy^2").evaluate({"x":1,"y":2})');
-echo(ring.fromString("1+xy+xy^2").evaluate({"x":1,"y":2}).toString());
+echo('ring.fromString("1+x*y+x*y^2").evaluate({"x":1,"y":2})');
+echo(ring.fromString("1+x*y+x*y^2").evaluate({"x":1,"y":2}).toString());
 
-echo('ring.fromString("1 - yx").compose({"x":ring.fromString("y^2+x")})');
-echo(ring.fromString("1 - yx").compose({"x":ring.fromString("y^2+x")}).toString());
+echo('ring.fromString("1 - y*x").compose({"x":ring.fromString("y^2+x")})');
+echo(ring.fromString("1 - y*x").compose({"x":ring.fromString("y^2+x")}).toString());
 
-echo('ring.fromString("1+xy+xy^2").compose({"x":ring.fromString("y^2+x")})');
-echo(ring.fromString("1+xy+xy^2").compose({"x":ring.fromString("y^2+x")}).toString());
+echo('ring.fromString("1+x*y+x*y^2").compose({"x":ring.fromString("y^2+x")})');
+echo(ring.fromString("1+x*y+x*y^2").compose({"x":ring.fromString("y^2+x")}).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").add(1).toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").add(1).toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").add(1).toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").add(1).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").add(Abacus.Polynomial.fromString("1+x")).toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").add(Abacus.Polynomial.fromString("1+x")).toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").add(Abacus.Polynomial.fromString("1+x")).toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").add(Abacus.Polynomial.fromString("1+x")).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").add(ring.fromString("1 + x")).toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").add(ring.fromString("1 + x")).toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").add(ring.fromString("1 + x")).toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").add(ring.fromString("1 + x")).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").mul(ring.fromString("1 + x")).toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").mul(ring.fromString("1 + x")).toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").mul(ring.fromString("1 + x")).toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").mul(ring.fromString("1 + x")).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").div(ring.fromString("1 + x")).toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").div(ring.fromString("1 + x")).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").div(ring.fromString("1 + x")).toString()');
-check_div(ring.fromString("1 - yx^2 + 3xy"), ring.fromString("1 + x"));
+echo('ring.fromString("1 - y*x^2 + 3x*y").div(ring.fromString("1 + x")).toString()');
+check_div(ring.fromString("1 - y*x^2 + 3x*y"), ring.fromString("1 + x"));
 
-echo('ring.fromString("1 - yx^2 + 3xy + 8x^4y^4").multidiv([ring.fromString("1 + x"),ring.fromString("xy^2")]).toString()');
-check_div(ring.fromString("1 - yx^2 + 3xy + 8x^4y^4"), [ring.fromString("1 + x"),ring.fromString("xy^2")]);
+echo('ring.fromString("1 - y*x^2 + 3x*y + 8x^4*y^4").multidiv([ring.fromString("1 + x"),ring.fromString("xy^2")]).toString()');
+check_div(ring.fromString("1 - y*x^2 + 3x*y + 8x^4*y^4"), [ring.fromString("1 + x"),ring.fromString("xy^2")]);
 
-echo('ring.fromString("1 - yx^2 + 3xy").pow(3).toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").pow(3).toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").pow(3).toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").pow(3).toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").d("x").toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").d("x").toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").d("x").toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").d("x").toString());
 
-echo('ring.fromString("1 - yx^2 + 3xy").d("y").toString()');
-echo(ring.fromString("1 - yx^2 + 3xy").d("y").toString());
+echo('ring.fromString("1 - y*x^2 + 3x*y").d("y").toString()');
+echo(ring.fromString("1 - y*x^2 + 3x*y").d("y").toString());
 echo('---');
 
 echo('ring.fromString("x^2").rad(2)');
 check_radical(ring.fromString("x^2"), 2);
-echo('ring.fromString("x^2y^4").rad(2)');
-check_radical(ring.fromString("x^2y^4"), 2);
+echo('ring.fromString("x^2*y^4").rad(2)');
+check_radical(ring.fromString("x^2*y^4"), 2);
 echo('ring.fromString("x+1").pow(2).rad(2)');
 check_radical(ring.fromString("x+1").pow(2), 2);
 echo('ring.fromString("x+y").pow(5).rad(5)');
 check_radical(ring.fromString("x+y").pow(5), 5);
-echo('ring.fromString("4x^2-12xy+9y^2").rad(2)');
-check_radical(ring.fromString("4x^2-12xy+9y^2"), 2);
+echo('ring.fromString("4x^2-12x*y+9y^2").rad(2)');
+check_radical(ring.fromString("4x^2-12x*y+9y^2"), 2);
 echo('ring.fromString("x+y+1").rad(2)');
 check_radical(ring.fromString("x+y+1"), 2);
 echo('---');
 
-echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")])');
-echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("xy-x"),ring.fromString("y^2-y")]).map(String).join(','));
+echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("x*y-x"),ring.fromString("y^2-y")])');
+echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("x*y-x"),ring.fromString("y^2-y")]).map(String).join(','));
 
 /*
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
@@ -179,25 +183,27 @@ echo('---');
 ring = Abacus.Ring.C("x", "y", "z");
 echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2").recur("x")');
-check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2"), "x" );
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2").recur("y")');
-check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2"), "y" );
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("x")');
-check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy"), "x" );
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur("y")');
-check_recursive( ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy"), "y" );
-echo('ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2").recur("x")');
-check_recursive( ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2"), "x" );
-echo('ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2").recur("y")');
-check_recursive( ring.fromString("(4+2i)x^2y+(2+2i)x^2y^2+2x+4yx+6zyx+(2+4i)zy+2"), "y" );
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").recur(true)');
-o = ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy");
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2").recur("x")');
+check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2"), "x");
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2").recur("y")');
+check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2"), "y");
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur("x")');
+check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), "x");
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur("y")');
+check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), "y");
+echo('ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2").recur("x")');
+check_recursive(ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2"), "x");
+echo('ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2").recur("y")');
+check_recursive(ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2"), "y");
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur(true)');
+o = ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y");
 echo(o.recur(true).toString()+' '+o.recur(true).recur(false).equ(o));
 echo('----');
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2})');
-echo(ring.fromString("x^2y+x^2y^2+x+yx+2").evaluate({"x":1,"y":2}).toString());
-echo('ring.fromString("x^2z+x^2z^2+x+zx+2").evaluate({"x":1,"z":2})');
-echo(ring.fromString("x^2z+x^2z^2+x+zx+2").evaluate({"x":1,"z":2}).toString());
-echo('ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5})');
-echo(ring.fromString("x^2y+x^2y^2+x+yx+2+zyx+zy").evaluate({"x":1,"y":2,"z":5}).toString());
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2").evaluate({"x":1,"y":2})');
+echo(ring.fromString("x^2*y+x^2*y^2+x+y*x+2").evaluate({"x":1,"y":2}).toString());
+echo('ring.fromString("x^2*z+x^2*z^2+x+z*x+2").evaluate({"x":1,"z":2})');
+echo(ring.fromString("x^2*z+x^2*z^2+x+z*x+2").evaluate({"x":1,"z":2}).toString());
+echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5})');
+echo(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5}).toString());
+
+check_resultant(ring.fromString("x^2*y+x^2*y^2+x+y*x+2").recur("x"), ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur("x"));

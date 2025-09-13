@@ -1750,14 +1750,20 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,toString: function(type) {
         var self = this, ast = self.ast,
             op = ast.op, arg = ast.arg,
-            str, str2, sign, sign2,
-            asciimath = 'asciimath' === String(type || '').toLowerCase();
+            str, str2, sign, sign2, _str;
 
         function needs_parentheses(expr)
         {
             return !(expr.isSimple() || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
         }
 
+        type = String(type || '').toLowerCase();
+
+        if ('asciimath' === type)
+        {
+            _str = self._str;
+            self._str = null;
+        }
         if (null == self._str)
         {
             if ('' === op)
@@ -1805,10 +1811,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             self._str = str;
                         }
-                        else if (asciimath && (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1)))
+                        else if (('asciimath' === type) && (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1)))
                         {
                             // radical sqrt
-                            self._str = (arg[1].den.c().equ(2) ? 'sqrt ' : ('root(' + str2 + ')')) + '(' + str + ')';
+                            self._str = (arg[1].den.c().equ(2) ? 'sqrt ' : ('root(' + arg[1].den.c().toString() + ')')) + '(' + str + ')';
                         }
                         else
                         {
@@ -1841,10 +1847,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
+                        sign = '';
                         self._str = arg.reduce(function(out, subexpr) {
                             var str = trim(subexpr.toString()), isNeg, strp;
                             if (('*' === op) && (('0' === str) || ('0' === out[0]))) return ['0'];
                             if (('*' === op) && ('1' === str)) return out;
+                            if (('*' === op) && ('-1' === str))
+                            {
+                                sign = '-' === sign ? '' : '-';
+                                return out;
+                            }
                             if ((('+' === op) || ('-' === op)) && ('0' === str)) return out;
                             if (0 < out.length)
                             {
@@ -1864,11 +1876,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if (self._str.length && is_instance(self._str[0], Expr))
                         {
                             str = trim(self._str[0].toString());
-                            sign = str.charAt(0);
-                            self._str[0] = (1 < self._str.length) && (('-' === sign) || ((('*' === op) && (op !== self._str[0].ast.op)) || needs_parentheses(self._str[0]))) ? ('(' + str + ')') : str;
+                            self._str[0] = (('*' === op) && (op === self._str[0].ast.op)) || !needs_parentheses(self._str[0]) ? str : ('(' + str + ')');
                         }
                         self._str = self._str.join('');
                         if (!self._str.length) self._str = '*' === op ? '1' : '0';
+                        if ('-' === sign)
+                        {
+                            if ('-' === self._str.charAt(0)) self._str = self._str.slice(1);
+                            else self._str = sign + self._str;
+                        }
                     }
                     else //if (('>=' === op) || ('<=' === op) || ('!=' === op) || ('>' === op) || ('<' === op) || ('=' === op))
                     {
@@ -1882,6 +1898,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 self._str = '0';
             }
+        }
+        if ('asciimath' === type)
+        {
+            str = self._str;
+            self._str = _str;
+            return str;
         }
         return self._str;
     }
@@ -1982,10 +2004,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
+                        sign = '';
                         self._tex = arg.reduce(function(out, subexpr) {
                             var tex = trim(subexpr.toTex()), isNeg, texp;
                             if (('*' === op) && (('0' === tex) || ('0' === out[0]))) return ['0'];
                             if (('*' === op) && ('1' === tex)) return out;
+                            if (('*' === op) && ('-1' === tex))
+                            {
+                                sign = '-' === sign ? '' : '-';
+                                return out;
+                            }
                             if ((('+' === op) || ('-' === op)) && ('0' === tex)) return out;
                             if (0 < out.length)
                             {
@@ -2005,11 +2033,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if (self._tex.length && is_instance(self._tex[0], Expr))
                         {
                             tex = trim(self._tex[0].toTex());
-                            sign = tex.charAt(0);
-                            self._tex[0] = (1 < self._tex.length) && (('-' === sign) || ((('*' === op) && (op !== self._tex[0].ast.op)) || needs_parentheses(self._tex[0]))) ? ('\\left(' + tex + '\\right)') : tex;
+                            self._tex[0] = (('*' === op) && (op === self._tex[0].ast.op)) || !needs_parentheses(self._tex[0]) ? tex : ('\\left(' + tex + '\\right)');
                         }
                         self._tex = self._tex.join('');
                         if (!self._tex.length) self._tex = '*' === op ? '1' : '0';
+                        if ('-' === sign)
+                        {
+                            if ('-' === self._tex.charAt(0)) self._tex = self._tex.slice(1);
+                            else self._tex = sign + self._tex;
+                        }
                     }
                     else //if (('>=' === op) || ('<=' === op) || ('!=' === op) || ('>' === op) || ('<' === op) || ('=' === op))
                     {

@@ -36,6 +36,21 @@ echo('Expr("1+2x^2").toString()');
 echo(Expr("1+2x^2").toString());
 echo('Expr("1/2+2*x_{1}*x_2^2").toString()');
 echo(Expr("1/2+2*x_{1}*x_2^2").toString());
+
+/*
+echo("(3/2)/x",
+Expr("(3/2)/x").evaluate({x:10}).valueOf(),
+Expr("(3/2)/x").toString(),
+Expr(Expr("(3/2)/x").toString()).evaluate({x:10}).valueOf(),
+"3/2*x",
+Expr("3/2*x").evaluate({x:10}).valueOf(),
+"3/2*x",
+Expr("3/(2*x)").evaluate({x:10}).valueOf()
+); // 0.15 0.15 15 0.15
+echo(2/1*2, 1/(2/1)*2, Expr("2/1*2").valueOf(), Expr("1/(2/1)*2").valueOf()); // 4 1 4 1
+*/
+echo("-1*x+y", Expr("-1*x+y").toString(), Expr("-1*x+y").toTex());
+
 try {
     echo('Expr("1+*2").toString()');
     echo(Expr("1+*2").toString());
