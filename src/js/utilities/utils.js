@@ -576,54 +576,6 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
         return union;
     }
 }
-function merge_sequences(A, B, combine, compare)
-{
-    if (!is_callable(compare)) compare = cmp;
-    if (!is_callable(combine)) combine = null;
-
-    var i = 0, j = 0, k = 0,  nA = A.length, nB = B.length,
-        C = new Array(nA+nB), order, output;
-
-    while ((i < nA) && (j < nB))
-    {
-        order = compare(A[i], B[j]);
-        if (0 > order)
-        {
-            // A[i] before B[j]
-            output = combine ? combine(A[i], null) : A[i];
-            if (null != output) C[k++] = output;
-            ++i;
-        }
-        else if (0 < order)
-        {
-            // B[j] before A[i]
-            output = combine ? combine(null, B[j]) : B[j];
-            if (null != output) C[k++] = output;
-            ++j;
-        }
-        else
-        {
-            // equal, combine
-            output = combine ? combine(A[i], B[j]) : A[i];
-            if (null != output) C[k++] = output;
-            ++i; ++j;
-        }
-    }
-    while (i < nA)
-    {
-        output = combine ? combine(A[i], null) : A[i];
-        if (null != output) C[k++] = output;
-        ++i;
-    }
-    while (j < nB)
-    {
-        output = combine ? combine(null, B[j]) : B[j];
-        if (null != output) C[k++] = output;
-        ++j;
-    }
-    if (C.length > k) C.length = k; // truncate if needed
-    return C;
-}
 function sortedrun(a, a0, a1, index, indices, dir)
 {
     // findout already sorted chunks either ascending or descending
@@ -1242,6 +1194,57 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
 }
 align.cmp = cmp;
 align.dist = dist;
+function merge_sequences(A, B, combAB, compAB)
+{
+    // combine A and B assumed to be in sorted order
+    if (!is_callable(compAB)) compAB = merge_sequences.cmp;
+    if (!is_callable(combAB)) combAB = null;
+
+    var i = 0, j = 0, k = 0,
+        nA = A.length, nB = B.length,
+        C = new Array(nA+nB), order, output;
+
+    while ((i < nA) && (j < nB))
+    {
+        order = compAB(A[i], B[j]);
+        if (0 > order)
+        {
+            // A[i] before B[j]
+            output = combAB ? combAB(A[i], null) : A[i];
+            if (null != output) C[k++] = output;
+            ++i;
+        }
+        else if (0 < order)
+        {
+            // B[j] before A[i]
+            output = combAB ? combAB(null, B[j]) : B[j];
+            if (null != output) C[k++] = output;
+            ++j;
+        }
+        else
+        {
+            // equal, combine
+            output = combAB ? combAB(A[i], B[j]) : A[i];
+            if (null != output) C[k++] = output;
+            ++i; ++j;
+        }
+    }
+    while (i < nA)
+    {
+        output = combAB ? combAB(A[i], null) : A[i];
+        if (null != output) C[k++] = output;
+        ++i;
+    }
+    while (j < nB)
+    {
+        output = combAB ? combAB(null, B[j]) : B[j];
+        if (null != output) C[k++] = output;
+        ++j;
+    }
+    if (C.length > k) C.length = k; // truncate if needed
+    return C;
+}
+merge_sequences.cmp = cmp;
 function sorter(Arithmetic)
 {
     return true === Arithmetic ? function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);} : (Arithmetic ? function(a, b) {return Arithmetic.equ(a, b) ? 0 : (Arithmetic.lt(a, b) ? -1 : 1);} : function(a, b) {return a === b ? 0 : (a < b ? -1 : 1);});
@@ -1481,109 +1484,6 @@ function ikthroot(n, k)
     {
         r = u;
         u = Arithmetic.div(Arithmetic.add(Arithmetic.mul(r, k_1), Arithmetic.div(n, Arithmetic.pow(r, k_1))), k);
-    }
-    return r;
-}
-function polykthroot(p, k, limit)
-{
-    // Return the (possibly truncated) k-th root of a polynomial
-    // https://math.stackexchange.com/questions/324385/algorithm-for-finding-the-square-root-of-a-polynomial
-    // https://planetmath.org/SquareRootOfPolynomial
-    // https://math.stackexchange.com/questions/3550942/algorithm-to-compute-nth-root-radical-sqrtnpx-of-polynomial
-    // similarities with modified Newton's algorithm adapted for polynomials
-    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        PolynomialClass, k_1, r, rk, d, q, deg, nterms = 0;
-
-    if (k.lt(I)) return null; // undefined
-    else if ((k.equ(I)) || p.equ(O) || p.equ(I)) return p;
-
-    PolynomialClass = p[CLASS];
-
-    if (null == limit) limit = 6;
-    limit = stdMath.abs(+limit);
-    k_1 = k.sub(I);
-    // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
-    r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
-    deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-    while (!d.equ(O))
-    {
-        q = d.ttm(true).div(rk.mul(k).ttm(true));
-        if (q.equ(O)) break; // no update anymore
-        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-        // compute only up to some terms of power series (truncated power series approximation)
-        // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
-        if (r.maxdeg(true)*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
-    }
-    // normalise r to have positive lead coeff
-    // if k is multiple of 2 (since then both r and -r are roots)
-    // and is not a (truncated) power series approximation
-    return (0 === nterms) && k.mod(two).equ(O) ? r.abs() : r;
-}
-function kthroot(x, k, limit)
-{
-    // https://en.wikipedia.org/wiki/Nth_root_algorithm
-    // https://en.wikipedia.org/wiki/Shifting_nth_root_algorithm
-    // Return the approximate k-th root of a rational number by Newton's method
-    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        ObjectClass, r, d, k_1, tries = 0, epsilon = Rational.Epsilon();
-    if (k.equ(O)) return null;
-    if ((is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x)))) return x;
-    ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational :  x[CLASS];
-    x = ObjectClass.cast(x);
-    if (is_class(ObjectClass, Rational) && x.lt(O) && k.mod(two).equ(O))
-    {
-        // square root of negative real number, transform to complex
-        ObjectClass = Complex;
-        x = ObjectClass.cast(x);
-    }
-    if (k.lt(O))
-    {
-        x = x.inv();
-        k = k.neg();
-    }
-    if (k.equ(I)) return x;
-
-    if (is_class(ObjectClass, RationalFunc))
-    {
-        r = new ObjectClass(polykthroot(x.num, k), polykthroot(x.den, k));
-    }
-    else if (is_class(ObjectClass, Rational))
-    {
-        r = new ObjectClass(ikthroot(x.num, k.num), ikthroot(x.den, k.num));
-    }
-    else if (is_class(ObjectClass, Complex))
-    {
-        if (x.isReal() && (x.real().gte(O) || !k.mod(two).equ(O)))
-        {
-            r = new ObjectClass(Rational(ikthroot(x.real().num, k.num), ikthroot(x.real().den, k.num)), Rational.Zero());
-        }
-        else
-        {
-            r = new ObjectClass(I, I); // make sure a complex is used, not strictly real or imag
-        }
-    }
-    else
-    {
-        r = ObjectClass.One();
-    }
-    //if (null == limit) limit = 6; // for up to 6 tries Newton method converges with 64bit precision
-    //limit = stdMath.abs(+limit);
-    k_1 = k.sub(I);
-    if (is_class(ObjectClass, Complex))
-    {
-        do {
-            d = x.div(r.pow(k_1)).sub(r).div(k);
-            if (d.real().abs().lte(epsilon) && d.imag().abs().lte(epsilon)) break;
-            r = r.add(d);
-        } while (1);
-    }
-    else
-    {
-        do {
-            d = x.div(r.pow(k_1)).sub(r).div(k);
-            if (d.abs().lte(epsilon)) break;
-            r = r.add(d);
-        } while (1);
     }
     return r;
 }

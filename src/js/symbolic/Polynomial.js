@@ -1557,10 +1557,18 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 {
                     term = t[i].toTerm(x, false, true);
                     c = c.toExpr();
-                    terms.push(term.length ? Expr('*' [c, (term=term.split('^')) && (1 < term.length ? Expr('^', [term[0], +term[1]]) : Expr('', term[0]))]) : c);
+                    if (term.length)
+                    {
+                        term = term.split('^');
+                        terms.push(c.mul(1 < term.length ? Expr('^', [term[0], +term[1]]) : Expr('', term[0])));
+                    }
+                    else
+                    {
+                        terms.push(c);
+                    }
                 }
             }
-            self._expr = terms.length ? Expr('+', terms) : Expr.Zero();
+            self._expr = 1 < terms.length ? Expr('+', terms)/*.expand()*/ : (1 === terms.length ? terms[0] : Expr.Zero());
         }
         return self._expr;
     }
@@ -3030,13 +3038,21 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                     {
                         term = ti.toTerm(x, false, true);
                         c = c.toExpr();
-                        terms.push(term.length ? Expr('*', [c].concat(term.split('*').map(function(x) {
-                            x = x.split('^');
-                            return 1 < x.length ? Expr('^', [x[0], +x[1]]) : Expr('', x[0]);
-                        }))) : c);
+                        if (term.length)
+                        {
+                            term = term.split('*').map(function(x) {
+                                x = x.split('^');
+                                return 1 < x.length ? Expr('^', [x[0], +x[1]]) : Expr('', x[0]);
+                            });
+                            terms.push(c.mul(1 < term.length ? Expr('*', term) : term[0]));
+                        }
+                        else
+                        {
+                            terms.push(c);
+                        }
                     }
                 }
-                self._expr = terms.length ? Expr('+', terms) : Expr.Zero();
+                self._expr = 1 < terms.length ? Expr('+', terms)/*.expand()*/ : (1 === terms.length ? terms[0] : Expr.Zero());
             }
         }
         return self._expr;
@@ -3178,42 +3194,30 @@ function addition_sparse(a, b, TermClass, do_subtraction, ring)
     do_subtraction = (true === do_subtraction);
     TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     ring = ring || Ring.Q();
-    var i = 0, j = 0, k = 0, n1 = a.length, n2 = b.length, c = new Array(n1+n2), res, O = Abacus.Arithmetic.O;
-    while (i < n1 && j < n2)
-    {
-        if (0 < TermClass.cmp(a[i], b[j]))
-        {
-            res = a[i].cast(ring);
-            if (!res.equ(O)) c[k++] = res; // check if zero
-            ++i;
+    var O = Abacus.Arithmetic.O;
+    return merge_sequences(
+        a, b,
+        function(a, b) {
+            if (null == b)
+            {
+                a = a.cast(ring);
+                return a.equ(O) ? null : a;
+            }
+            else if (null == a)
+            {
+                b = (do_subtraction ? b.neg() : b).cast(ring);
+                return b.equ(O) ? null : b;
+            }
+            else
+            {
+                a = (do_subtraction ? a.sub(b) : a.add(b)).cast(ring);
+                return a.equ(O) ? null : a;
+            }
+        },
+        function(a, b) {
+            return -TermClass.cmp(a, b);
         }
-        else if (0 < TermClass.cmp(b[j], a[i]))
-        {
-            res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
-            if (!res.equ(O)) c[k++] = res; // check if zero
-            ++j;
-        }
-        else //equal
-        {
-            res = (do_subtraction ? a[i].sub(b[j]) : a[i].add(b[j])).cast(ring);
-            if (!res.equ(O)) c[k++] = res; // check if cancelled
-            ++i; ++j;
-        }
-    }
-    while (i < n1)
-    {
-        res = a[i].cast(ring);
-        if (!res.equ(O)) c[k++] = res; // check if zero
-        ++i;
-    }
-    while (j < n2)
-    {
-        res = (do_subtraction ? b[j].neg() : b[j]).cast(ring);
-        if (!res.equ(O)) c[k++] = res; // check if zero
-        ++j;
-    }
-    if (c.length > k) c.length = k; // truncate if needed
-    return c;
+    );
 }
 function multiplication_sparse(a, b, TermClass, ring)
 {
@@ -3228,7 +3232,7 @@ function multiplication_sparse(a, b, TermClass, ring)
     var k, t, n1, n2, c, f, max, heap, O = Abacus.Arithmetic.O;
     if (a.length > b.length) {t = a; a = b; b = t;} // swap to achieve better performance
     n1 = a.length; n2 = b.length; c = new Array(n1*n2);
-    if (0 < n1 && 0 < n2)
+    if ((0 < n1) && (0 < n2))
     {
         k = 0;
         c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
@@ -3263,19 +3267,19 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
     TermClass = TermClass === MultiPolyTerm ? MultiPolyTerm : UniPolyTerm;
     ring = ring || Ring.Q();
     var na = a.length, nb = b.length, O = Abacus.Arithmetic.O,
-        heap = Heap([], "max", function(a,b) {return TermClass.cmp(a.term, b.term);}),
+        heap = Heap([], "max", function(a, b) {return TermClass.cmp(a.term, b.term);}),
         q = [], r = [], k = 0, d, res, Q, b0;
 
     if (!b.length) return null;
     b0 = b[0].cast(ring);
-    while ((d=heap.peek()) || k < na)
+    while ((d=heap.peek()) || (k < na))
     {
-        if ((null == d) || (k < na && 0 > TermClass.cmp(d.term, a[k])))
+        if ((null == d) || ((k < na) && (0 > TermClass.cmp(d.term, a[k]))))
         {
             res = a[k].cast(ring);
             ++k;
         }
-        else if (k < na && 0 === TermClass.cmp(d.term, a[k]))
+        else if ((k < na) && (0 === TermClass.cmp(d.term, a[k])))
         {
             res = a[k].cast(ring).sub(d.term);
             if (nb > d.n)
@@ -3312,3 +3316,39 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
 
     return q_and_r ? [q, r] : q;
 }
+function polykthroot(p, k, limit)
+{
+    // Return the (possibly truncated) k-th root of a polynomial
+    // https://math.stackexchange.com/questions/324385/algorithm-for-finding-the-square-root-of-a-polynomial
+    // https://planetmath.org/SquareRootOfPolynomial
+    // https://math.stackexchange.com/questions/3550942/algorithm-to-compute-nth-root-radical-sqrtnpx-of-polynomial
+    // similarities with modified Newton's algorithm adapted for polynomials
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        PolynomialClass, k_1, r, rk, d, q, deg, nterms = 0;
+
+    if (k.lt(I)) return null; // undefined
+    else if ((k.equ(I)) || p.equ(O) || p.equ(I)) return p;
+
+    PolynomialClass = p[CLASS];
+
+    if (null == limit) limit = 6;
+    limit = stdMath.abs(+limit);
+    k_1 = k.sub(I);
+    // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
+    r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
+    deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
+    while (!d.equ(O))
+    {
+        q = d.ttm(true).div(rk.mul(k).ttm(true));
+        if (q.equ(O)) break; // no update anymore
+        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
+        // compute only up to some terms of power series (truncated power series approximation)
+        // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
+        if (r.maxdeg(true)*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
+    }
+    // normalise r to have positive lead coeff
+    // if k is multiple of 2 (since then both r and -r are roots)
+    // and is not a (truncated) power series approximation
+    return (0 === nterms) && k.mod(two).equ(O) ? r.abs() : r;
+}
+Polynomial.kthroot = MultiPolynomial.kthroot = polykthroot;

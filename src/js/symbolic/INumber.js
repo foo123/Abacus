@@ -1,83 +1,3 @@
-function nmax(/* args */)
-{
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return args.length ? operate(function(max, a) {
-        return a.gt(max) ? a : max;
-    }, args[0], args, 1, args.length-1, 1) : null;
-}
-function nmin(/* args */)
-{
-    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
-    return args.length ? operate(function(min, a) {
-        return a.lt(min) ? a : min;
-    }, args[0], args, 1, args.length-1, 1) : null;
-}
-function nadd(/* args */)
-{
-    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
-        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
-    return args.length ? operate(function(result, a) {
-        return result.add(a);
-    }, args[0], args, 1, args.length-1, 1) : null;
-}
-function nsub(/* args */)
-{
-    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
-        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
-    return args.length ? operate(function(result, a) {
-        return result.sub(a);
-    }, args[0], args, 1, args.length-1, 1) : null;
-}
-function nmul(/* args */)
-{
-    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
-        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
-    return args.length ? operate(function(result, a) {
-        return result.mul(a);
-    }, args[0], args, 1, args.length-1, 1) : null;
-}
-function ndiv(/* args */)
-{
-    var explicit = arguments.length ? (true === arguments[arguments.length-1]) : false,
-        args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : ([].slice.call(arguments, 0, arguments.length-(explicit ? 1 : 0)));
-    return args.length ? operate(function(result, a) {
-        return result.div(a);
-    }, args[0], args, 1, args.length-1, 1) : null;
-}
-function npow(base, exp)
-{
-    var pow = base[CLASS].One();
-
-    if (0 > exp)
-    {
-        base = base.inv();
-        exp = -exp;
-    }
-
-    if (0 === exp)
-    {
-        /*pass*/
-    }
-    else if (1 === exp)
-    {
-        pow = base;
-    }
-    else if (2 === exp)
-    {
-        pow = base.mul(base);
-    }
-    else
-    {
-        // exponentiation by squaring
-        while (0 !== exp)
-        {
-            if (exp & 1) pow = pow.mul(base);
-            exp >>= 1;
-            base = base.mul(base);
-        }
-    }
-    return pow;
-}
 function typecast(ClassTypeCheck, toClassType)
 {
     var ClassType = null;
@@ -304,3 +224,148 @@ Poly = Class(Symbolic, {
 
     }
 });
+
+function nmax(/* args */)
+{
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    return args.length ? operate(function(max, a) {
+        return a.gt(max) ? a : max;
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nmin(/* args */)
+{
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    return args.length ? operate(function(min, a) {
+        return a.lt(min) ? a : min;
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nadd(/* args */)
+{
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    return args.length ? operate(function(result, a) {
+        return result.add(a);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nsub(/* args */)
+{
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    return args.length ? operate(function(result, a) {
+        return result.sub(a);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function nmul(/* args */)
+{
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    return args.length ? operate(function(result, a) {
+        return result.mul(a);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function ndiv(/* args */)
+{
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
+    return args.length ? operate(function(result, a) {
+        return result.div(a);
+    }, args[0], args, 1, args.length-1, 1) : null;
+}
+function npow(base, exp)
+{
+    var pow = base.symbol ? base[CLASS].One(base.symbol, base.ring) : base[CLASS].One();
+
+    if (0 > exp)
+    {
+        base = base.inv();
+        exp = -exp;
+    }
+
+    if (0 === exp)
+    {
+        /*pass*/
+    }
+    else if (1 === exp)
+    {
+        pow = base;
+    }
+    else if (2 === exp)
+    {
+        pow = base.mul(base);
+    }
+    else
+    {
+        // faster explicit exponentiation by squaring
+        while (0 !== exp)
+        {
+            if (exp & 1) pow = pow.mul(base);
+            exp >>= 1;
+            base = base.mul(base);
+        }
+    }
+    return pow;
+}
+function kthroot(x, k, limit)
+{
+    // https://en.wikipedia.org/wiki/Nth_root_algorithm
+    // https://en.wikipedia.org/wiki/Shifting_nth_root_algorithm
+    // Return the approximate k-th root of a rational number by Newton's method
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        ObjectClass, r, d, k_1, tries = 0, epsilon = Rational.Epsilon();
+    if (k.equ(O)) return null;
+    if ((is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x)))) return x;
+    ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational :  x[CLASS];
+    x = ObjectClass.cast(x);
+    if (is_class(ObjectClass, Rational) && x.lt(O) && k.mod(two).equ(O))
+    {
+        // square root of negative real number, transform to complex
+        ObjectClass = Complex;
+        x = ObjectClass.cast(x);
+    }
+    if (k.lt(O))
+    {
+        x = x.inv();
+        k = k.neg();
+    }
+    if (k.equ(I)) return x;
+
+    if (is_class(ObjectClass, RationalFunc))
+    {
+        r = new ObjectClass(MultiPolynomial.kthroot(x.num, k), MultiPolynomial.kthroot(x.den, k));
+    }
+    else if (is_class(ObjectClass, Rational))
+    {
+        r = new ObjectClass(ikthroot(x.num, k.num), ikthroot(x.den, k.num));
+    }
+    else if (is_class(ObjectClass, Complex))
+    {
+        if (x.isReal() && (x.real().gte(O) || !k.mod(two).equ(O)))
+        {
+            r = new ObjectClass(Rational(ikthroot(x.real().num, k.num), ikthroot(x.real().den, k.num)), Rational.Zero());
+        }
+        else
+        {
+            r = new ObjectClass(I, I); // make sure a complex is used, not strictly real or imag
+        }
+    }
+    else
+    {
+        r = ObjectClass.One();
+    }
+    //if (null == limit) limit = 6; // for up to 6 tries Newton method converges with 64bit precision
+    //limit = stdMath.abs(+limit);
+    k_1 = k.sub(I);
+    if (is_class(ObjectClass, Complex))
+    {
+        do {
+            d = x.div(r.pow(k_1)).sub(r).div(k);
+            if (d.real().abs().lte(epsilon) && d.imag().abs().lte(epsilon)) break;
+            r = r.add(d);
+        } while (1);
+    }
+    else
+    {
+        do {
+            d = x.div(r.pow(k_1)).sub(r).div(k);
+            if (d.abs().lte(epsilon)) break;
+            r = r.add(d);
+        } while (1);
+    }
+    return r;
+}

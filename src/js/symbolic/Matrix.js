@@ -41,7 +41,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 if (is_args(r[0])) r = r.map(function(ri) {return slice.call(ri);});
                 self.val = r;
             }
-            if (null == self.ring) self.ring = is_instance(self.val[0][0].ring, Ring) ? self.val[0][0].ring : Ring.Z();
+            if (null == self.ring) self.ring = is_instance(self.val[0][0].ring, Ring) ? self.val[0][0].ring : Ring.Q();
             self.val = self.ring.cast(self.val);
         }
         else //if (is_number(r) && is_number(c))
@@ -65,7 +65,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     i = k[0]; j = k[1];
                     if (0 <= i && i < self.val.length && 0 <= j && j < self.val[0].length)
                     {
-                        if (null == self.ring) self.ring = is_instance(v.ring, Ring) ? v.ring : Ring.Z();
+                        if (null == self.ring) self.ring = is_instance(v.ring, Ring) ? v.ring : Ring.Q();
                         self.val[i][j] = v;
                     }
                 }

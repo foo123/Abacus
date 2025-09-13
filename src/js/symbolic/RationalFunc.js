@@ -62,17 +62,17 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         if (simplified) self._simpl = true;
         else if (simplify) self.simpl();
 
-        def(self, 'ring', {
+        def(self, 'symbol', {
             get: function() {
-                return self.num ? self.num.ring : null;
+                return self.num ? self.num.symbol : null;
             },
             set: NOP,
             enumerable: true,
             configurable: false
         });
-        def(self, 'symbol', {
+        def(self, 'ring', {
             get: function() {
-                return self.num ? self.num.symbol : null;
+                return self.num ? self.num.ring : null;
             },
             set: NOP,
             enumerable: true,

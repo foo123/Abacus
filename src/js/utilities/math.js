@@ -79,7 +79,7 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     ,rnd: rndInt
 };
 
-// pluggable arithmetics, eg biginteger Arithmetic
+// pluggable arithmetics, eg biginteger exact Arithmetic
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
     isDefault: function() {
         return (0 === this.O) && (this.add === addn);
@@ -371,6 +371,7 @@ Abacus.Math = {
 Abacus.Util = {
      array: array
     ,operate: operate
+    ,flatten: flatten
     ,unique: unique
     ,intersection: intersection
     ,difference: difference
@@ -383,6 +384,7 @@ Abacus.Util = {
     ,reversion: reversion
     ,lcs: lcs
     ,align: align
+    ,merge: merge_sequences
     ,gray: gray
     ,igray: igray
     ,grayn: grayn

@@ -113,8 +113,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
 
         ,FN: {
-            'sqrt()': {
-                fn: NOP // handled by Expr.OP['^']
+             'sqrt()': {
+                fn: NOP // -> Expr.OP['^']
              }
              ,'abs()': {
                  fn: function(args, mode) {
@@ -262,15 +262,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             function parse_until(expected)
             {
-                // parse both simple string and tex representations
-                var match, m, c, i0,
-                    op, term, args,
+                // parse only the necessary subset of simple string, asciimath and/or tex notation
+                // https://asciimath.org/
+                // https://the0cp.cc/posts/mathjax/
+                // https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference
+                var match, m, n, c, i0,
+                    op, term, arg,
                     terms = [], ops = [];
                 function eat(pattern, group)
                 {
                     var match = pattern.test ? s.match(pattern) : (pattern === s.slice(0, pattern.length)), offset;
                     if (match)
                     {
+                        if (false === group)
+                        {
+                            return true;
+                        }
                         if (pattern.test) // regexp
                         {
                             offset = match[group || 0].length;
@@ -376,18 +383,20 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
                 while (0 < s.length)
                 {
-                    if (match = eat(/^\s+/))
+                    if (eat(/^\s+/))
                     {
                         // space
                         continue;
                     }
-                    if ('\\left(' === s.slice(0, 6))
+                    if (eat('\\left(', false))
                     {
+                        // \left( -> (
                         s = s.slice(5);
                         i += 5;
                     }
-                    if ('\\right)' === s.slice(0, 7))
+                    if (eat('\\right)', false))
                     {
+                        // \right) -> )
                         s = s.slice(6);
                         i += 6;
                     }
@@ -406,10 +415,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         merge();
                         continue;
                     }
-                    if (match = eat(/^(>=|<=|!=|>|<|=)[^<>!=]/i, 1))
+                    if (match = eat(/^(>=|<=|=<|!=|>|<|=)[^<>!=]/i, 1))
                     {
                         // alternative relational op
-                        op = match[1].toLowerCase();
+                        op = match[1];
+                        if ('=<' === op) op = '<=';
                         ops.unshift([op, i0]);
                         merge();
                         continue;
@@ -417,40 +427,50 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     if (match = eat(/^(\+|-|\*|\/)/i))
                     {
                         // +,-,*,/ op
-                        op = match[0].toLowerCase();
+                        op = match[0];
                         ops.unshift([op, i0]);
                         merge();
                         continue;
                     }
-                    if ((match = eat('⋅')) || (match = eat('×')) || (match = eat(/^(\\times|\\cdot)[^a-z]/i, 1)))
+                    if (eat('⋅') || eat('×') || eat(/^(\\times|\\cdot|xx)[^a-z]/i, 1))
                     {
-                        // alternative mul op
+                        // alternative * op
                         op = '*';
                         ops.unshift([op, i0]);
                         merge();
                         continue;
                     }
-                    if ((match = eat('÷')) || (match = eat(/^(\\over|\\div)[^a-z]/i, 1)))
+                    if (eat('÷') || eat('-:') || eat(/^(\\over|\\div)[^a-z]/i, 1))
                     {
-                        // alternative div op
+                        // alternative / op
                         op = '/';
                         ops.unshift([op, i0]);
                         merge();
                         continue;
                     }
+                    if (eat(/^\\frac\{/))
+                    {
+                        // fraction
+                        arg = [null, null];
+                        if (!(arg[0] = parse_until('}'))) throw error('Missing or invalid numerator in "\\frac"', i0);
+                        if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
+                        if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
+                        term = Expr.OP['/'].fn(arg);
+                        terms.unshift(term);
+                        continue;
+                    }
                     if (match = eat(/^(\^)([\{\(])?/i))
                     {
                         // pow op
-                        op = match[1].toLowerCase();
+                        op = '^';
                         if (match[2])
                         {
                             term = parse_until('(' === match[2] ? ')' : '}');
-                            if (!term) throw error('Invalid exponent in "^"', i0);
+                            if (!term) throw error('Missing or invalid exponent in "^"', i0);
                         }
                         else
                         {
-                            match = eat(/^\d+/);
-                            if (!match) throw error('Invalid exponent in "^"', i0);
+                            if (!(match = eat(/^\d+/))) throw error('Missing or invalid exponent in "^"', i0);
                             term = Expr('', Rational.fromDec(match[0]));
                         }
                         ops.unshift([op, i0]);
@@ -458,44 +478,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         terms.unshift(term);
                         continue;
                     }
-                    if (match = eat('√'))
+                    if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i)))
                     {
-                        // alternative sqrt op
-                        args = null;
-                        if ('(' === s.charAt(0))
-                        {
-                            args = parse_until(')');
-                        }
-                        else if (match = eat(/^\d+(\.\d+)?(e-?\d+)?/i))
-                        {
-                            args = Expr('', Rational.fromDec(match[0]));
-                        }
-                        else if (match = eat(/^[a-z][a-z]*(_\{?[a-z0-9]+\}?)?/i))
-                        {
-                            m = match[0];
-                            if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
-                            if ('}' === m.slice(-1)) m = m.slice(0, -1);
-                            args = Expr('', m);
-                        }
-                        if (!args) throw error('Invalid argument in "√"', i0);
-                        term = Expr.OP['^'].fn([args, Rational(1, 2, true)/*1/2*/]);
-                        terms.unshift(term);
-                        continue;
-                    }
-                    if (match = eat(/^\\frac\{/))
-                    {
-                        // fraction
-                        args = [null, null];
-                        term = parse_until('}');
-                        if (!term) throw error('Invalid numerator in "frac"', i0);
-                        args[0] = term;
-                        if ('{' !== s.charAt(0)) throw error('Missing "{" in "frac"', i0);
-                        s = s.slice(1);
-                        i += 1;
-                        term = parse_until('}');
-                        if (!term) throw error('Invalid denumerator in "frac"', i0);
-                        args[1] = term;
-                        term = Expr.OP['/'].fn(args);
+                        // generalized radical sqrt/root
+                        m = match[1].toLowerCase();
+                        if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
+                        n = parseInt(match[2], 10);
+                        if (!n || (0 >= n)) throw error('Invalid 1st argument in "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
+                        term = parse_until('{' === match[3] ? '}' : ')');
+                        if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
+                        term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
                         terms.unshift(term);
                         continue;
                     }
@@ -504,38 +496,42 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         // function
                         m = match[1].toLowerCase() + '()';
                         if (!HAS.call(Expr.FN, m)) throw error('Unsupported function "' + m + '"', i0);
-                        args = [];
+                        arg = [];
                         do {
                             term = parse_until(',' + ('{' === match[2] ? '}' : ')'));
-                            if (term) args.push(term);
-                            while (/\s/.test(s.charAt(0)))
-                            {
-                                s = s.slice(1);
-                                i += 1;
-                            }
-                            if (',' === s.charAt(0))
-                            {
-                                s = s.slice(1);
-                                i += 1;
-                            }
-                            else
-                            {
-                                break;
-                            }
+                            if (term) arg.push(term);
+                            eat(/^\s+/);
+                            if (!eat(',')) break;
                         } while (1);
-                        term = 'sqrt()' === m ? Expr.OP['^'].fn([args[0], Rational(1, 2, true)/*1/2*/]) : Expr(m, args);
+                        term = 'sqrt()' === m ? Expr.OP['^'].fn([arg[0], Rational(1, 2, true)/*1/2*/]) : Expr(m, arg);
                         terms.unshift(term);
                         continue;
                     }
-                    if (match = eat(/^\\?(sqrt)\[(\n+)\]\s*([\(\{])/i))
+                    if (eat('√') || eat(/^sqrt\s+/i))
                     {
-                        // generalized radical sqrt
+                        // alternative sqrt
                         if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "sqrt()"', i0);
-                        m = parseInt(match[2], 10);
-                        if (!m || (0 >= m)) throw error('Invalid radical in "sqrt[]()"', i0);
-                        term = parse_until('{' === match[3] ? '}' : ')');
-                        if (!term) throw error('Invalid argument in "sqrt['+m+']()"', i0);
-                        term = Expr.OP['^'].fn([term, Rational(1, m, true)/*1/m*/]);
+                        arg = null;
+                        if ('(' === s.charAt(0))
+                        {
+                            // subexpression
+                            arg = parse_until(')');
+                        }
+                        else if (match = eat(/^\d+(\.\d+)?(e-?\d+)?/i))
+                        {
+                            // number
+                            arg = Expr('', Rational.fromDec(match[0]));
+                        }
+                        else if (match = eat(/^[a-z][a-z]*(_\{?[a-z0-9]+\}?)?/i))
+                        {
+                            // symbol
+                            m = match[0];
+                            if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                            if ('}' === m.slice(-1)) m = m.slice(0, -1);
+                            arg = Expr('', m);
+                        }
+                        if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
+                        term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
                         terms.unshift(term);
                         continue;
                     }
@@ -544,7 +540,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         // float or int to rational number
                         term = Expr('', Rational.fromDec(match[0].split(/\s+/).join('')));
                         terms.unshift(term);
-                        if (/^([a-z]|\()/i.test(s))
+                        if (eat(/^([a-z]|\()/i, false))
                         {
                             // directly following symbol or parenthesis, assume implicit multiplication
                             ops.unshift(['*', i]);
@@ -560,7 +556,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         term = Expr('', imagUnit === m ? Complex.Img() : m);
                         terms.unshift(term);
-                        if ((imagUnit === m) && /^\d/.test(s))
+                        if ((imagUnit === m) && eat(/^\d/, false))
                         {
                             // directly following number after imaginary symbol, assume implicit multiplication
                             ops.unshift(['*', i]);
@@ -593,10 +589,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     {
                         break;
                     }
-                    throw error(expected ? ('Missing "' + expected.split('').join(" or ") + '"') : ('Unexpected "' + c + '"'));
+                    throw error(expected ? ('Missing expected "' + expected.split('').join(" or ") + '"') : ('Unexpected "' + c + '"'));
                 }
                 merge(true);
-                if ((1 < terms.length) || (0 < ops.length)) throw error('Mismatched terms and operators', ops.length ? ops[0][1] : p);
+                if ((1 < terms.length) || (0 < ops.length)) throw error('Mismatched terms and operators', ops.length ? ops[0][1] : i);
                 return terms[0] || null;
             }
             return parse_until(false);
@@ -639,10 +635,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if ('expr' === ast.type)
             {
-                self._symb = KEYS(ast.arg.reduce(function(hash, arg) {
-                    arg.symbols().forEach(function(symb) {hash[symb] = 1;});
-                    return hash;
-                }, {})).sort();
+                self._symb = ast.arg.reduce(function(symbols, subexpr) {
+                    // they are in sorted order
+                    return merge_sequences(symbols, subexpr.symbols());
+                }, []);
             }
             else if ('sym' === ast.type)
             {
@@ -661,12 +657,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if ('expr' === ast.type)
             {
-                self._op = ast.arg.reduce(function(hash, subexpr) {
-                    subexpr.operators().forEach(function(op) {hash[op] = 1;});
-                    return hash;
-                }, {});
-                self._op['()' === ast.op.slice(-2) ? ast.op : (Expr.OP[ast.op].name)] = 1;
-                self._op = KEYS(self._op).sort();
+                self._op = ast.arg.reduce(function(operators, subexpr) {
+                    // they are in sorted order
+                    return merge_sequences(operators, subexpr.operators());
+                }, ['()' === ast.op.slice(-2) ? ast.op : Expr.OP[ast.op].name]);
             }
             else
             {
@@ -945,7 +939,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if (('sym' === self.ast.type) && ('sym' === other.ast.type))
             {
-                return self.ast.arg === other.ast.arg;
+                return self.ast.arg === other.ast.arg; // symbol and symbol match
             }
             else if (self.isConst() && other.isConst())
             {
@@ -1389,7 +1383,17 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 case '^':
                     return pow(expand(expr.ast.arg[0]), expand(expr.ast.arg[1]));
                 default:
-                    // by default expand the arguments
+                    if (('min()' === expr.ast.op) || ('max()' === expr.ast.op))
+                    {
+                        // expand and remove duplicates
+                        var hash = expr.ast.arg.reduce(function(hash, subexpr) {
+                            subexpr = subexpr.expand();
+                            hash[key(subexpr)] = subexpr;
+                            return hash;
+                        }, {});
+                        return Expr(expr.ast.op, KEYS(hash).map(function(key) {return hash[key];}));
+                    }
+                    // by default expand only the arguments
                     return Expr(expr.ast.op, expr.ast.arg.map(expand));
             }
         }
@@ -1743,8 +1747,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
         ;
         return num && den ? RationalFunc(num, den) : null;
     }
-    ,toString: function() {
-        var self = this, ast = self.ast, op = ast.op, arg = ast.arg, str, str2, sign, sign2;
+    ,toString: function(type) {
+        var self = this, ast = self.ast,
+            op = ast.op, arg = ast.arg,
+            str, str2, sign, sign2,
+            asciimath = 'asciimath' === String(type || '').toLowerCase();
 
         function needs_parentheses(expr)
         {
@@ -1798,6 +1805,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             self._str = str;
                         }
+                        else if (asciimath && (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1)))
+                        {
+                            // radical sqrt
+                            self._str = (arg[1].den.c().equ(2) ? 'sqrt ' : ('root(' + str2 + ')')) + '(' + str + ')';
+                        }
                         else
                         {
                             sign = str.charAt(0);
@@ -1841,7 +1853,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 if ('*' === op) out.push('*'/*'⋅'*/);
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
-                                out.push('*' === op ? (!needs_parentheses(subexpr) && !isNeg ? str : ('(' + str + ')')) : strp);
+                                out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr)) && !isNeg ? str : ('(' + str + ')')) : strp);
                             }
                             else
                             {
@@ -1853,7 +1865,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             str = trim(self._str[0].toString());
                             sign = str.charAt(0);
-                            self._str[0] = (1 < self._str.length) && (('-' === sign) || needs_parentheses(self._str[0])) ? ('(' + str + ')') : str;
+                            self._str[0] = (1 < self._str.length) && (('-' === sign) || ((('*' === op) && (op !== self._str[0].ast.op)) || needs_parentheses(self._str[0]))) ? ('(' + str + ')') : str;
                         }
                         self._str = self._str.join('');
                         if (!self._str.length) self._str = '*' === op ? '1' : '0';
@@ -1982,7 +1994,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 if ('*' === op) out.push(' \\cdot ');
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
-                                out.push('*' === op ? (!needs_parentheses(subexpr) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);
+                                out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr)) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);
                             }
                             else
                             {
@@ -1994,7 +2006,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             tex = trim(self._tex[0].toTex());
                             sign = tex.charAt(0);
-                            self._tex[0] = (1 < self._tex.length) && (('-' === sign) || needs_parentheses(self._tex[0])) ? ('\\left(' + tex + '\\right)') : tex;
+                            self._tex[0] = (1 < self._tex.length) && (('-' === sign) || ((('*' === op) && (op !== self._tex[0].ast.op)) || needs_parentheses(self._tex[0]))) ? ('\\left(' + tex + '\\right)') : tex;
                         }
                         self._tex = self._tex.join('');
                         if (!self._tex.length) self._tex = '*' === op ? '1' : '0';
