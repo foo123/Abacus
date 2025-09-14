@@ -57,9 +57,15 @@ function check_radical(p, k)
     let r = p.rad(k);
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
 }
-function check_resultant(p, q)
+function check_resultant(p, q, res)
 {
-    echo('resultant("' + p.toString() + '", "' + q.toString() + '") -> ' + '"' + Abacus.Polynomial.resultant(p, q).toString() + '"');
+    let r = Abacus.Polynomial.resultant(p, q);
+    echo('resultant("' + p.toString() + '", "' + q.toString() + '")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
+}
+function check_discriminant(p, res)
+{
+    let d = Abacus.Polynomial.discriminant(p);
+    echo('discriminant("' + p.toString() + '")=' + '"' + d.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(d) ? ' true' : ' false')) : ''));
 }
 let o, d, ring = Abacus.Ring.Q("x");
 
@@ -487,4 +493,7 @@ echo(o.toString());
 echo('o.primitive()');
 check_primitive(o);
 
+echo('------');
+
 check_resultant(ring.fromString("(3/2+(1/2)*i)*x+1+(2/3)*i"), ring.fromString("(1/2)*i*x^2+(1+(2/3)*i)*x"));
+check_discriminant(Abacus.Expr("a*x^2 + b*x + c").toPoly("x"), Abacus.Expr("b^2 - 4a*c"));

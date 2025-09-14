@@ -69,8 +69,8 @@ Combinatorics and Algebraic Number Theory **Symbolic Computation Library** for J
 * `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate / multivariate with coefficients from a Ring/Field**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
 * `Expr` (`test/expressions.js`) **general Symbolic Expressions**
-* Algebraic `Ring`s / `Field`s eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/ratfuncs.js`)
-* `Matrix` (`test/matrices.js`) **with coefficients from a Ring (default: Integer Ring.Z())**
+* Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/ratfuncs.js`)
+* `Matrix` (`test/matrices.js`) **with coefficients from a Ring/Field**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
@@ -278,7 +278,7 @@ console.log(m.inv().mul(m).toString());
 * support polynomial approximate root finding (eg `Aberth` algorithm) (TODO)
 * implement multivariate polynomial `GCD` (TODO)
 * implement `LLL` algorithm (TODO)
-* implement polynomial `RESULTANT` computation **[DONE]**
+* implement polynomial `RESULTANT`, `DISCRIMINANT` computations **[DONE]**
 * implement groebner basis computations (`BUCHBERGER` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**

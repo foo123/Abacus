@@ -74,9 +74,10 @@ function check_radical(p, k)
     let r = p.rad(k);
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
 }
-function check_resultant(p, q)
+function check_resultant(p, q, x, res)
 {
-    echo('resultant("' + p.toString() + '", "' + q.toString() + '") -> ' + '"' + Abacus.MultiPolynomial.resultant(p, q).toString() + '"');
+    let r = Abacus.MultiPolynomial.resultant(p, q, x);
+    echo('resultant("' + p.toString() + '", "' + q.toString() + '", "'+x+'")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
 }
 
 let o, ring = Abacus.Ring.Q("x", "y");
@@ -206,4 +207,8 @@ echo(ring.fromString("x^2*z+x^2*z^2+x+z*x+2").evaluate({"x":1,"z":2}).toString()
 echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5})');
 echo(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5}).toString());
 
-check_resultant(ring.fromString("x^2*y+x^2*y^2+x+y*x+2").recur("x"), ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur("x"));
+echo('------');
+
+//check_resultant(ring.fromString("x^2*y+x^2*y^2+x+y*x+2"), ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), "x");
+check_resultant(ring.fromString("x^2+y"), ring.fromString("x-2*y"), "x", ring.fromString("4*y^2 + y"));
+check_resultant(ring.fromString("x^2+y"), ring.fromString("x-2*y"), "y", ring.fromString("2*x^2 + x"));

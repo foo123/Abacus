@@ -719,9 +719,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
     ,isSimple: function() {
         var ast = this.ast, O, I, J, nontrivial;
-        if (('sym' === ast.type) || ('num' === ast.type))
+        if ('sym' === ast.type)
         {
             return true;
+        }
+        else if ('num' === ast.type)
+        {
+            return true; //ast.arg.isReal() || ast.arg.isImag(); // complex numbers are not simple
         }
         else
         {
@@ -1754,7 +1758,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function needs_parentheses(expr)
         {
-            return !(expr.isSimple() || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
+            return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
         }
 
         type = String(type || '').toLowerCase();
@@ -1912,7 +1916,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function needs_parentheses(expr)
         {
-            return !(expr.isSimple() || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
+            return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
         }
 
         if (null == self._tex)

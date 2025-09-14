@@ -19,7 +19,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
         {
             self.val = r.val.map(function(row) {return row.slice()});
             if (null == self.ring) self.ring = r.ring;
-            if (self.ring !== r.ring) self.val = self.ring.cast(self.val);
         }
         else if (is_array(r) || is_args(r))
         {
@@ -42,7 +41,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self.val = r;
             }
             if (null == self.ring) self.ring = is_instance(self.val[0][0].ring, Ring) ? self.val[0][0].ring : Ring.Q();
-            self.val = self.ring.cast(self.val);
         }
         else //if (is_number(r) && is_number(c))
         {
@@ -70,10 +68,19 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     }
                 }
             }
-            self.val = self.ring.cast(self.val);
         }
         self.nr = self.val.length;
         self.nc = self.nr ? self.val[0].length : 0;
+        if (!is_instance(r, Matrix) || (self.ring !== r.ring))
+        {
+            self.val.forEach(function(row, r) {
+                row.forEach(function(entry, c) {
+                    // if given polynomials and ring is coefficient ring, bypass
+                    if (is_instance(entry, Poly) && !self.ring.PolynomialClass) return;
+                    self.val[r][c] = self.ring.cast(entry);
+                });
+            });
+        }
     }
 
     ,__static__: {
@@ -552,10 +559,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
         O = self.ring.Zero();
         for (r=0; r<n; ++r)
         {
-            for (c=r+1; c<n; ++c)
+            if (('lower' === type) || ('diagonal' === type))
             {
-                if (('lower' === type || 'diagonal' === type) && !m[r][c].equ(O)) return false;
-                if (('upper' === type || 'diagonal' === type) && !m[r][n-1-c].equ(O)) return false;
+                for (c=r+1; c<n; ++c) if (!m[r][c].equ(O)) return false;
+            }
+            if (('upper' === type) || ('diagonal' === type))
+            {
+                for (c=0; c<r; ++c) if (!m[r][c].equ(O)) return false;
             }
         }
         if (nr > nc)
@@ -563,10 +573,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             // should be all zero
             for (r=n; r<nr; ++r)
             {
-                for (c=0; c<nc; ++c)
-                {
-                    if (!m[r][c].equ(O)) return false;
-                }
+                for (c=0; c<nc; ++c) if (!m[r][c].equ(O)) return false;
             }
         }
         else if (nr < nc)
@@ -574,10 +581,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             // should be all zero
             for (c=n; c<nc; ++c)
             {
-                for (r=0; r<nr; ++r)
-                {
-                    if (!m[r][c].equ(O)) return false;
-                }
+                for (r=0; r<nr; ++r) if (!m[r][c].equ(O)) return false;
             }
         }
         return true;

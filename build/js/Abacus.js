@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-09-13 18:09:08)
+*   @version: 2.0.0 (2025-09-14 11:11:03)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-09-13 18:09:08)
+*   @version: 2.0.0 (2025-09-14 11:11:03)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -10496,9 +10496,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
     ,isSimple: function() {
         var ast = this.ast, O, I, J, nontrivial;
-        if (('sym' === ast.type) || ('num' === ast.type))
+        if ('sym' === ast.type)
         {
             return true;
+        }
+        else if ('num' === ast.type)
+        {
+            return true; //ast.arg.isReal() || ast.arg.isImag(); // complex numbers are not simple
         }
         else
         {
@@ -11531,7 +11535,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function needs_parentheses(expr)
         {
-            return !(expr.isSimple() || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
+            return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
         }
 
         type = String(type || '').toLowerCase();
@@ -11689,7 +11693,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function needs_parentheses(expr)
         {
-            return !(expr.isSimple() || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
+            return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
         }
 
         if (null == self._tex)
@@ -15203,46 +15207,122 @@ function polykthroot(p, k, limit)
     return (0 === nterms) && k.mod(two).equ(O) ? r.abs() : r;
 }
 Polynomial.kthroot = MultiPolynomial.kthroot = polykthroot;
-function polyres(p, q)
+function polyres(p, p_deg, q, q_deg, x, normalize)
 {
     // https://en.wikipedia.org/wiki/Resultant
     // assume q poly is of same type and of same ring as p poly
+
     var t1 = p.terms, t2 = q.terms,
         l1 = t1.length, l2 = t2.length,
-        n1 = p.deg(), n2 = q.deg(),
-        n, i, pcol, qcol, ring, O;
+        n, i, ring, O, I,
+        sylvester, p_coeff, q_coeff,
+        p_e, q_e, p_x, q_x;
 
-    if (!n1 || !n2) return O;
-
-    /*
-    | p0  0  ..  q0 0  ..|
-    | p1  p0 ..  q1 q0 ..|
-    | .   .  ..  .  .  ..|
-    | .   .  ..  .  .  ..|
-    | pn  .  ..  qm .  ..|
-    | 0   pn ..  0  qm ..|
-    | .   .  ..  .  .  ..|
-    | .   .  ..  .  .  ..|
-    | 0   0  ..  0  0  ..|
-    */
-    n = n1 + n2;
     ring = p.ring;
     O = ring.Zero();
+    I = ring.One();
+
+    if ((0 >= p_deg) || (0 >= q_deg)) return O;
+
+    n = p_deg + q_deg;
+
+    if (is_array(t1[0].e))
+    {
+        p_x = p.symbol.indexOf(x);
+        p_e = function(t) {return t.e[p_x];};
+    }
+    else
+    {
+        p_e = function(t) {return t.e;};
+    }
+    if (is_array(t2[0].e))
+    {
+        q_x = q.symbol.indexOf(x);
+        q_e = function(t) {return t.e[q_x];};
+    }
+    else
+    {
+        q_e = function(t) {return t.e;};
+    }
     i = 0;
-    pcol = array(n, function(r) {
-        return r <= n1 ? ((i < l1) && (n1-r === t1[i].e) ? t1[i++].c : O) : O;
+    p_coeff = array(n, function(j) {
+        if ((j <= p_deg) && (i < l1) && (p_deg-j === p_e(t1[i])))
+        {
+            if (normalize && (0 === i)) {++i; return I;}
+            return t1[i++].c;
+        }
+        return O;
     });
     i = 0;
-    qcol = array(n, function(r) {
-        return r <= n2 ? ((i < l2) && (n2-r === t2[i].e) ? t2[i++].c : O) : O;
+    q_coeff = array(n, function(j) {
+        if ((j <= q_deg) && (i < l2) && (q_deg-j === q_e(t2[i])))
+        {
+            if (normalize && (0 === i)) return t2[i++].c.div(t1[0].c);
+            return t2[i++].c;
+        }
+        return O;
     });
-    return Matrix(ring, array(n, function(c) {
-        var col = c < n2 ? pcol : qcol, ret = col.slice();
-        col.unshift(col.pop()); // shift
+    /*
+    determinant of sylvester matrix
+    | pn  .. p1  p0 0  ..|
+    | 0   pn ..  p1 p0 ..|
+    | .   .  ..  .  .  ..|
+    | .   .  ..  .  .  ..|
+    | 0   0  ..  0  pn ..|
+    | qm  .. q1  q0 0  ..|
+    | 0   qm ..  q1 q0 ..|
+    | .   .  ..  .  .  ..|
+    | .   .  ..  .  .  ..|
+    | 0   0  ..  0  qm ..|
+    */
+    sylvester = Matrix(ring, array(n, function(i) {
+        var coeffs = i < q_deg ? p_coeff : q_coeff, ret = coeffs.slice(), coeff;
+        if (normalize)
+        {
+            if (0 === i) p_coeff[0] = t1[0].c;
+            else if (q_deg === i) q_coeff[0] = t2[0].c;
+        }
+        coeff = coeffs.pop(); coeffs.unshift(coeff); // shift
         return ret;
-    })).t().detr();
+    }));
+    return sylvester.detr();
 }
-Polynomial.resultant = MultiPolynomial.resultant = polyres;
+Polynomial.resultant = function(p, q) {
+    return polyres(p, p.deg(), q, q.deg(), p.symbol, false);
+};
+Polynomial.discriminant = function(p) {
+    var n = p.deg(), dp = p.d(1), res = polyres(p, n, dp, n-1, p.symbol, true);
+    return (n*(n-1) >> 1) & 1 ? res.neg() : res;
+};
+MultiPolynomial.resultant = function(p, q, x) {
+    x = x || p.symbol[0];
+    p = p.clone().recur(false).recur(x);
+    q = q.clone().recur(false).recur(x);
+    var res = polyres(p, p.deg(x), q, q.deg(x), x, false);
+    /*if (1 < p.symbol.length)
+    {
+        res = MultiPolynomial(res, p.symbol.reduce(function(other_symbols, symbol) {
+            if (symbol !== x) other_symbols.push(symbol);
+            return other_symbols;
+        }, []), p.ring);
+    }*/
+    return res;
+};
+MultiPolynomial.discriminant = function(p, x) {
+    x = x || p.symbol[0];
+    p = p.clone().recur(false).recur(x);
+    var n = p.deg(x), dp = p.d(x, 1),
+        res = polyres(p, n, dp, n-1, x, true);
+    if ((n*(n-1) >> 1) & 1) res = res.neg();
+    /*if (1 < p.symbol.length)
+    {
+        res = MultiPolynomial(res, p.symbol.reduce(function(other_symbols, symbol) {
+            if (symbol !== x) other_symbols.push(symbol);
+            return other_symbols;
+        }, []), p.ring);
+    }*/
+    return res;
+};
 // Abacus.RationalFunc, represents a rational function/fraction of (multivariate) polynomials
 RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
 
@@ -15751,7 +15831,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
         {
             self.val = r.val.map(function(row) {return row.slice()});
             if (null == self.ring) self.ring = r.ring;
-            if (self.ring !== r.ring) self.val = self.ring.cast(self.val);
         }
         else if (is_array(r) || is_args(r))
         {
@@ -15774,7 +15853,6 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 self.val = r;
             }
             if (null == self.ring) self.ring = is_instance(self.val[0][0].ring, Ring) ? self.val[0][0].ring : Ring.Q();
-            self.val = self.ring.cast(self.val);
         }
         else //if (is_number(r) && is_number(c))
         {
@@ -15802,10 +15880,19 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     }
                 }
             }
-            self.val = self.ring.cast(self.val);
         }
         self.nr = self.val.length;
         self.nc = self.nr ? self.val[0].length : 0;
+        if (!is_instance(r, Matrix) || (self.ring !== r.ring))
+        {
+            self.val.forEach(function(row, r) {
+                row.forEach(function(entry, c) {
+                    // if given polynomials and ring is coefficient ring, bypass
+                    if (is_instance(entry, Poly) && !self.ring.PolynomialClass) return;
+                    self.val[r][c] = self.ring.cast(entry);
+                });
+            });
+        }
     }
 
     ,__static__: {
@@ -16284,10 +16371,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
         O = self.ring.Zero();
         for (r=0; r<n; ++r)
         {
-            for (c=r+1; c<n; ++c)
+            if (('lower' === type) || ('diagonal' === type))
             {
-                if (('lower' === type || 'diagonal' === type) && !m[r][c].equ(O)) return false;
-                if (('upper' === type || 'diagonal' === type) && !m[r][n-1-c].equ(O)) return false;
+                for (c=r+1; c<n; ++c) if (!m[r][c].equ(O)) return false;
+            }
+            if (('upper' === type) || ('diagonal' === type))
+            {
+                for (c=0; c<r; ++c) if (!m[r][c].equ(O)) return false;
             }
         }
         if (nr > nc)
@@ -16295,10 +16385,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             // should be all zero
             for (r=n; r<nr; ++r)
             {
-                for (c=0; c<nc; ++c)
-                {
-                    if (!m[r][c].equ(O)) return false;
-                }
+                for (c=0; c<nc; ++c) if (!m[r][c].equ(O)) return false;
             }
         }
         else if (nr < nc)
@@ -16306,10 +16393,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             // should be all zero
             for (c=n; c<nc; ++c)
             {
-                for (r=0; r<nr; ++r)
-                {
-                    if (!m[r][c].equ(O)) return false;
-                }
+                for (r=0; r<nr; ++r) if (!m[r][c].equ(O)) return false;
             }
         }
         return true;
