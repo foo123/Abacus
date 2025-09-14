@@ -100,3 +100,7 @@ echo('o.mul(o2)');
 echo(o.mul(o2).toString());
 echo('o.mul(o2).expand()');
 echo(o.mul(o2).expand().toString());
+echo('o=Expr("(x*y^2 + z)^3")');
+o=Expr("(x*y^2 + z)^3");
+echo(o.expand().toString());
+echo(Expr(o.expand().toString()).toString())

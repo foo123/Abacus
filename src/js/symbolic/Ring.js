@@ -37,7 +37,7 @@ Ring = Abacus.Ring = Class({
                 if (is_instance(ring.PolynomialClass, Polynomial))
                 {
                     // make multivariate by default
-                    self.CoefficientRing = Ring(ring.NumberClass, [ring.PolynomialSymbol]);
+                    self.CoefficientRing = Ring(ring.NumberClass, [ring.PolynomialSymbol], ring.isField());
                     self.CoefficientRing.PolynomialClass = MultiPolynomial;
                     self.CoefficientRing.PolynomialSymbol = [ring.PolynomialSymbol];
                 }
@@ -50,7 +50,7 @@ Ring = Abacus.Ring = Class({
             {
                 self.CoefficientRing = is_class(self.NumberClass, IntegerMod) && self.Modulo ? (IntegerMod === self.NumberClass ? Ring.Zp(self.Modulo)() : Ring([self.NumberClass, self.Modulo])) : (is_class(self.NumberClass, Integer) ? (Integer === self.NumberClass ? Ring.Z() : Ring(self.NumberClass)) : (is_class(self.NumberClass, Rational) ? (Rational === self.NumberClass ? Ring.Q() : Ring(self.NumberClass)) : (Complex === self.NumberClass ? Ring.C() : Ring(self.NumberClass))));
             }
-            }
+
             if (true === isFraction)
             {
                 self.PolynomialClass = RationalFunc;
@@ -80,37 +80,46 @@ Ring = Abacus.Ring = Class({
     }
 
     ,__static__: {
-         ZZ: null
+         getSymbols: function(args) {
+            return args.map(String).filter(function(x) {return 0 < x.length;});
+        }
+
+        ,ZZ: null
         ,QQ: null
         ,CC: null
         ,Z: function(/* "x","y",.. */) {
             if (null == Ring.ZZ) Ring.ZZ = Ring(Integer);
-            var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(String).filter(function(x) {return 0 < x.length;});
+            var args = Ring.getSymbols(slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments));
             return args.length ? Ring(Integer, args) : Ring.ZZ;
         }
         ,Zn: function(N) {
             N = Integer.cast(N);
             return function(/* "x","y",.. */) {
-                var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments).map(String).filter(function(x) {return 0 < x.length;});
+                var args = Ring.getSymbols(slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments));
                 return args.length ? Ring([IntegerMod, N], args) : Ring([IntegerMod, N]);
             };
         }
         ,Q: function(/* "x","y",.. */) {
             if (null == Ring.QQ) Ring.QQ = Ring(Rational);
-            var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments);
-            return args.length ? Ring(Rational, args.map(String).filter(function(x) {return 0 < x.length;})) : Ring.QQ;
+            var args = Ring.getSymbols(slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments));
+            return args.length ? Ring(Rational, args) : Ring.QQ;
         }
         ,C: function(/* "x","y",.. */) {
             if (null == Ring.CC) Ring.CC = Ring(Complex);
-            var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments);
-            return args.length ? Ring(Complex, args.map(String).filter(function(x) {return 0 < x.length;})) : Ring.CC;
+            var args = Ring.getSymbols(slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments));
+            return args.length ? Ring(Complex, args) : Ring.CC;
         }
         ,K: function(/* R, "x","y",.. */) {
-            var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments);
+            // generic Ring/Field
+            var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments),
+                R = null, N = null;
             if (args.length)
             {
-                // K(C("x","y"), "z","w") ring C("z","w") with coeffients from C("x","y")
-                return is_instance(args[0], Ring) ? Ring(args[0], args.slice(1).map(String).filter(function(x) {return 0 < x.length;})) : Ring(Rational, args.map(String).filter(function(x) {return 0 < x.length;}));
+                // K(C("x","y"), "z","w") ring C("z","w") with coefficients from C("x","y")
+                if (is_instance(args[0], Ring)) {R = args[0]; args = args.slice(1);}
+                else if (is_instance(args[0], Numeric)) {N = args[0]; args = args.slice(1);}
+                args = Ring.getSymbols(args);
+                return args.length ? (R || N ? Ring(R || N, args) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
             }
             return Ring.Q();
         }
@@ -163,7 +172,7 @@ Ring = Abacus.Ring = Class({
     }
     ,associatedField: function() {
         var self = this;
-        if (self.CoefficientRing.PolynomialClass)
+        if (self.CoefficientRing && self.CoefficientRing.PolynomialClass)
         {
             return is_class(self.PolynomialClass, RationalFunc) ? self : Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true);
         }
@@ -176,7 +185,7 @@ Ring = Abacus.Ring = Class({
 
     ,hasGCD: function() {
         var self = this;
-        return self.PolynomialClass ? ((is_class(self.PolynomialClass, Polynomial) || 1 === self.PolynomialSymbol.length) && is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? ((is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) && is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
     }
     ,gcd: function(/*args*/) {
         var self = this, args;
@@ -231,7 +240,7 @@ Ring = Abacus.Ring = Class({
         var self = this, subring;
         if (null == self._str)
         {
-            subring = self.CoefficientRing.PolynomialClass ? ('("' + [].concat(self.CoefficientRing.PolynomialSymbol).join('","') + '")') : '';
+            subring = self.CoefficientRing && self.CoefficientRing.PolynomialClass ? ('("' + [].concat(self.CoefficientRing.PolynomialSymbol).join('","') + '")') : '';
             self._str = (is_class(self.NumberClass, IntegerMod) ? ('Zn(' + self.Modulo.toString() + ')'+subring+'(') : ((is_class(self.NumberClass, Integer) ? ('Z'+subring+'(') : (is_class(self.NumberClass, Rational) ? ('Q'+subring+'(') : ('C'+subring+'(')))) + (self.PolynomialSymbol ? ('"' + [].concat(self.PolynomialSymbol).join('","') + '"') : '') + ')');
             if (is_class(self.PolynomialClass, RationalFunc)) self._str += '.associatedField()';
         }
@@ -241,7 +250,7 @@ Ring = Abacus.Ring = Class({
         var self = this, subring;
         if (null == self._tex)
         {
-            subring = self.CoefficientRing.PolynomialClass ? ('(' + [].concat(self.CoefficientRing.PolynomialSymbol).join(',') + ')') : '';
+            subring = self.CoefficientRing && self.CoefficientRing.PolynomialClass ? ('(' + [].concat(self.CoefficientRing.PolynomialSymbol).join(',') + ')') : '';
             self._tex = '\\mathbb' + (is_class(self.NumberClass, IntegerMod) ? ('{Z}_{' + self.Modulo.toTex() + '}') : (is_class(self.NumberClass, Integer) ? '{Z}' : (is_class(self.NumberClass, Rational) ? '{Q}' : '{C}'))) + subring + (self.PolynomialSymbol ? ('[' + [].concat(self.PolynomialSymbol).map(to_tex).join(',') + ']') : '');
             if (is_class(self.PolynomialClass, RationalFunc)) self._tex = '\\mathbf{Fr}[' + self._tex + ']';
         }
