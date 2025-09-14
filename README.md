@@ -231,7 +231,7 @@ for (let item of o)
 ```javascript
 let field = Abacus.Ring.Q("x").associatedField();
 
-let m = Abacus.Matrix([
+let m = Abacus.Matrix(field, [
     ["x-1", "x^2-1"],
     ["x^2-1", "x-1"]
 ]);

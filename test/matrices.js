@@ -573,7 +573,7 @@ echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(field, 2)));
 echo('o.charpoly("y").toString()');
 echo(o.charpoly("y").toString());
 o.dispose();
-echo('o=Abacus.Matrix([["x-1","x^2-1"],["x^2-1","x-1"]])');
+echo('o=Abacus.Matrix(field, [["x-1","x^2-1"],["x^2-1","x-1"]])');
 o=Abacus.Matrix(field, [["x-1","x^2-1"],["x^2-1","x-1"]]);
 echo('o.toString()');
 echo(o.toString());
