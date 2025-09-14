@@ -232,8 +232,8 @@ for (let item of o)
 let field = Abacus.Ring.Q("x").associatedField();
 
 let m = Abacus.Matrix([
-    [field.fromString("x-1"), field.fromString("x^2-1")],
-    [field.fromString("x^2-1"), field.fromString("x-1")]
+    ["x-1", "x^2-1"],
+    ["x^2-1", "x-1"]
 ]);
 
 console.log(m.toString());
