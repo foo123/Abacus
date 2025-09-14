@@ -285,6 +285,7 @@ console.log(m.inv().mul(m).toString());
 * implement polynomial `RESULTANT`, `DISCRIMINANT` computations **[DONE]**
 * implement groebner basis computations (`BUCHBERGER` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
+* support algebraic sub-Rings and sub-Fields (eg **Q(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
