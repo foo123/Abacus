@@ -139,6 +139,7 @@ See the comments in the code for algorithms and references used.
 * [GCDHEU: Heuristic Polynomial GCD Algorithm Based On Integer GCD Computation, B. W. Char, K. O. Geddes and G. H. Gonnet](https://www.researchgate.net/publication/221149887_GCDHEU_Heuristic_Polynomial_GCD_Algorithm_Based_on_Integer_GCD_Computation)
 * [An improved EZ-GCD algorithm for multivariate polynomials, Kuniaki Tsuji](https://core.ac.uk/download/pdf/82335256.pdf)
 * [The EEZ-GCD algorithm, Paul S. Wang](https://www.researchgate.net/publication/316347952_The_EEZ-GCD_algorithm)
+* [Non-modular computation of polynomial GCDS using trial division, Anthony C. Hearn](https://link.springer.com/chapter/10.1007/3-540-09519-5_74)
 * [Three new algorithms for multivariate polynomial GCD, T. Sasaki and M. Suzuki](https://www.sciencedirect.com/science/article/pii/S0747717108801058)
 * [Greedy Algorithms for Optimizing Multivariate Horner Schemes, M. Ceberio and V. Kreinovich](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.330.7430&rep=rep1&type=pdf)
 * [Resultant, wikipedia](https://en.wikipedia.org/wiki/Resultant)
@@ -158,6 +159,7 @@ See the comments in the code for algorithms and references used.
 * [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
 * [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
+* [$olving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
 
 ### Example API
 
