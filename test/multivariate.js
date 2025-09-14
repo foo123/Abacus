@@ -76,7 +76,7 @@ function check_radical(p, k)
 }
 function check_resultant(p, q, x, res)
 {
-    let r = Abacus.MultiPolynomial.resultant(p, q, x);
+    let r = p.resultant(q, x);
     echo('resultant("' + p.toString() + '", "' + q.toString() + '", "'+x+'")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
 }
 

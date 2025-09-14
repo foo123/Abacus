@@ -59,12 +59,12 @@ function check_radical(p, k)
 }
 function check_resultant(p, q, res)
 {
-    let r = Abacus.Polynomial.resultant(p, q);
+    let r = p.resultant(q);
     echo('resultant("' + p.toString() + '", "' + q.toString() + '")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
 }
 function check_discriminant(p, res)
 {
-    let d = Abacus.Polynomial.discriminant(p);
+    let d = p.discriminant();
     echo('discriminant("' + p.toString() + '")=' + '"' + d.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(d) ? ' true' : ' false')) : ''));
 }
 let o, d, ring = Abacus.Ring.Q("x");

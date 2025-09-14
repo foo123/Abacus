@@ -1,26 +1,29 @@
-var isNode = 'undefined' !== typeof global && '[object global]' === {}.toString.call(global);
-var Abacus = isNode ? require('../src/js/Abacus.js') : window.Abacus, echo = console.log;
-var use_biginteger_arithmetic = require('../test/biginteger/arithmetic.js');
+"use strict";
 
-use_biginteger_arithmetic( Abacus );
+const isNode = ('undefined' !== typeof global) && ('[object global]' === {}.toString.call(global));
+const echo = console.log;
+const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
+const use_biginteger_arithmetic = require('../test/biginteger/arithmetic.js');
 
-var N;
+use_biginteger_arithmetic(Abacus);
+
+let N;
 
 // utility methods
-function make_mirror_image( ndigits, first, rest )
+function make_mirror_image(ndigits, first, rest)
 {
-    if ( 1 === ndigits )
+    if (1 === ndigits)
     {
-        return function( item ) {
+        return function(item) {
             return first.charAt(item[0]);
         };
     }
-    else if ( ndigits & 1 )
+    else if (ndigits & 1)
     {
         // odd
-        return function( item ) {
-            var c = first.charAt(item[0]), l = c, r = c, i, n = item.length;
-            for(i=1; i+1<n; i++)
+        return function(item) {
+            let c = first.charAt(item[0]), l = c, r = c, i, n = item.length;
+            for (i=1; i+1<n; ++i)
             {
                 c = rest.charAt(item[i]);
                 l = l + c;
@@ -32,9 +35,9 @@ function make_mirror_image( ndigits, first, rest )
     else
     {
         // even
-        return function( item ) {
-            var c = first.charAt(item[0]), l = c, r = c, i, n = item.length;
-            for(i=1; i<n; i++)
+        return function(item) {
+            let c = first.charAt(item[0]), l = c, r = c, i, n = item.length;
+            for (i=1; i<n; ++i)
             {
                 c = rest.charAt(item[i]);
                 l = l + c;
@@ -44,96 +47,98 @@ function make_mirror_image( ndigits, first, rest )
         };
     }
 }
-function sum_of_two_primes( n )
+function sum_of_two_primes(n)
 {
-    var Arithmetic = Abacus.Arithmetic,
+    let Arithmetic = Abacus.Arithmetic,
         p1 = Arithmetic.div(n, 2), p2 = p1, sum;
-    
-    if ( Abacus.Math.isPrime(p1) )
-        return String(n)+' = '+String(p1)+'+'+String(p2);
-    
+
+    if (Abacus.Math.isPrime(p1))
+        return String(n) + ' = ' + String(p1) + '+' + String(p2);
+
     p1 = Abacus.Math.nextPrime(p1, -1); p2 = Abacus.Math.nextPrime(p2);
-    do{
+    do {
         sum = Arithmetic.add(p1, p2);
-        if ( Arithmetic.equ(sum, n) ) return String(n)+' = '+String(p1)+'+'+String(p2);
-        else if ( Arithmetic.lt(sum, n) ) p2 = Abacus.Math.nextPrime(p2);
-        else if ( Arithmetic.gt(sum, n) ) p1 = Abacus.Math.nextPrime(p1, -1);
-        if ( null == p1 ) return String(n)+' is not the sum of 2 primes!';
-    }while(true);
+        if (Arithmetic.equ(sum, n)) return String(n) + ' = ' + String(p1) + '+' + String(p2);
+        else if (Arithmetic.lt(sum, n)) p2 = Abacus.Math.nextPrime(p2);
+        else if (Arithmetic.gt(sum, n)) p1 = Abacus.Math.nextPrime(p1, -1);
+        if (null == p1) return String(n) + ' is not the sum of 2 primes!';
+    } while(true);
 }
 
 // compute and test prime numbers
-function exhaustive_search1( N )
+function exhaustive_search1(N)
 {
     // try filtering from all possible numbers from infinite arithmetic progression
-    var o = Abacus.Progression(1 /*start*/, 1 /*step*/, Abacus.Arithmetic.INF /*end*/).filterBy(Abacus.Math.isPrime),
-        primes = o.get(N);
+    let o = Abacus.Progression(1 /*start*/, 1 /*step*/, Abacus.Arithmetic.INF /*end*/).filterBy(Abacus.Math.isPrime);
+    let primes = o.get(N);
     o.dispose(); // lets free up the memory
     return primes;
 }
 
-function exhaustive_search2( N )
+function exhaustive_search2(N)
 {
     // try filtering from all odd numbers only (plus 2) combining one constant and one infinite arithmetic progression
-    var o = Abacus.Iterator([Abacus.Progression(2, 0, 2)/*only 2*/, Abacus.Progression(3, 2, Abacus.Arithmetic.INF)/*odds >= 3*/]).filterBy(Abacus.Math.isPrime), primes = o.get(N);
+    let o = Abacus.Iterator([Abacus.Progression(2, 0, 2)/*only 2*/, Abacus.Progression(3, 2, Abacus.Arithmetic.INF)/*odds >= 3*/]).filterBy(Abacus.Math.isPrime);
+    let primes = o.get(N);
     o.dispose(); // lets free up the memory
     return primes;
 }
 
-function sieve( N, filter )
+function sieve(N, filter)
 {
     // try a more efficient prime sieve
-    var o = Abacus.PrimeSieve().filterBy(filter||null), primes = o.get(N);
+    let o = Abacus.PrimeSieve().filterBy(filter || null);
+    let primes = o.get(N);
     o.dispose(); // lets free up the memory
     return primes;
 }
 
-function prime_sequence( p, N )
+function prime_sequence(p, N)
 {
     p = Abacus.Arithmetic.num(p)
-    var primes = Abacus.Math.isPrime(p) ? [p] : [];
-    while( primes.length < N )
+    let primes = Abacus.Math.isPrime(p) ? [p] : [];
+    while (primes.length < N)
     {
         // get next prime from value of previous run and also store it as current value
-        primes.push( p=Abacus.Math.nextPrime(p) );
+        primes.push(p = Abacus.Math.nextPrime(p));
     }
     return primes;
 }
 
-function mirror_image_primes( ndigits, N )
+function mirror_image_primes(ndigits, N)
 {
-    if ( 1 > ndigits ) return []; // none
-    
+    if (1 > ndigits) return []; // none
+
     // since we are looking for mirror images which are also primes
     // and primes are odd, this means the first (and last) digits/symbols
     // can only be one of [1,3,5,7,9], the rest can be anything.
-    var o, first = (1===ndigits?'2':'1')+'3579', rest = '0123456789', primes;
-    
-    if ( 1 === ndigits )
+    let o, first = (1 === ndigits ? '2' : '1') + '3579', rest = '0123456789', primes;
+
+    if (1 === ndigits)
     {
         o = Abacus.Tensor([first.length]);
     }
-    else if ( ndigits & 1 )
+    else if (ndigits & 1)
     {
         // odd
-        o = Abacus.Tensor(Abacus.Util.array((ndigits>>1)+1, function(i){return 0===i?first.length:rest.length;}));
+        o = Abacus.Tensor(Abacus.Util.array((ndigits>>1)+1, function(i) {return 0 === i ? first.length : rest.length;}));
     }
     else
     {
         // even
-        o = Abacus.Tensor(Abacus.Util.array(ndigits>>1, function(i){return 0===i?first.length:rest.length;}));
+        o = Abacus.Tensor(Abacus.Util.array(ndigits>>1, function(i) {return 0 === i ? first.length : rest.length;}));
     }
     o.mapTo(make_mirror_image(ndigits, first, rest)).filterBy(Abacus.Math.isPrime);
     primes = o.get(N);
     o.dispose();
-    
+
     return primes;
 }
 
-function goldbach( N )
+function goldbach(N)
 {
-    var o = Abacus.Progression(4, 2, Abacus.Arithmetic.INF).mapTo(sum_of_two_primes), result;
-    result = o.get(N);
+    let o = Abacus.Progression(4, 2, Abacus.Arithmetic.INF).mapTo(sum_of_two_primes);
+    let result = o.get(N);
     o.dispose();
     return result;
 }
@@ -159,7 +164,7 @@ echo('----');
 
 N = 1000000;
 echo('Prime Sieve: #Primes < '+N);
-echo(sieve(function( prime ){ return Abacus.Arithmetic.lt(prime, N); }).length);
+echo(sieve(function(prime) {return Abacus.Arithmetic.lt(prime, N);}).length);
 echo('----');
 
 

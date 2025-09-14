@@ -351,304 +351,6 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             return new Polynomial(c || Abacus.Arithmetic.O, x || 'x', ring || Ring.Q());
         }
 
-        ,gcd: function polygcd(/* args */) {
-            // Generalization of Euclid GCD Algorithm for polynomials
-            // https://en.wikipedia.org/wiki/Euclidean_algorithm
-            // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
-            // https://en.wikipedia.org/wiki/Euclidean_division_of_polynomials
-            // https://en.wikipedia.org/wiki/Polynomial_long_division
-            // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
-            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-                c = args.length, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
-                O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, a, b, a0, b0, t, r, i, p, q, field;
-
-            if (0 === c) return PolynomialClass.Zero();
-            PolynomialClass = args[0][CLASS];
-
-            for (i=0; i<c; ++i)
-            {
-                if (!args[i].isConst())
-                {
-                    are_const = false;
-                    break;
-                }
-            }
-            // defer to gcd of coefficients and transform back to polynomial
-            if (are_const) return PolynomialClass(args[0].ring.gcd(array(args.length, function(i) {return args[i].cc();})), args[0].symbol, args[0].ring);
-
-            // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
-            // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-            if (is_class(args[0].ring.NumberClass, Integer))
-            {
-                a = args[0];
-                if (1 == c)
-                {
-                    return a.monic();
-                }
-                else //if (2 <= c)
-                {
-                    field = a.ring.associatedField(); // Q[X]
-                    p = PolynomialClass(a, a.symbol, field);
-                    q = PolynomialClass(2 === c ? args[1] : polygcd(slice.call(args, 1)), a.symbol, field);
-                    return PolynomialClass(polygcd(p, q).primitive().mul(field.gcd(p.content(), q.content())), a.symbol, a.ring);
-                }
-            }
-
-            i = 0;
-            while (i < c && (a=args[i++]).equ(O)) ;
-            if (a.lc().lt(O)) a = a.neg();
-            while (i < c)
-            {
-                if (a.equ(I)) return PolynomialClass.One(a.symbol, a.ring);
-                while (i < c && (b=args[i++]).equ(O)) ;
-                if (b.lc().lt(O)) b = b.neg();
-                if (b.equ(I)) return PolynomialClass.One(a.symbol, a.ring);
-                else if (b.equ(a)) continue;
-                else if (b.equ(O)) break;
-                // swap them (a >= b)
-                if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true)) {t = b; b = a; a = t;}
-                while (!b.equ(O))
-                {
-                    //a0 = a; b0 = b;
-                    r = a.mod(b); a = b; b = r;
-                    //if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
-                }
-            }
-            // simplify, positive and monic
-            a = a.monic();
-            return a;
-        }
-        ,xgcd: function polyxgcd(/* args */) {
-            // Generalization of Extended GCD Algorithm for univariate polynomials
-            // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#B%C3%A9zout's_identity_and_extended_GCD_algorithm
-            // should be a generalisation of number xgcd, meaning for constant polynomials should coincide with xgcd of respective numbers
-            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-                k = args.length, i, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
-                O = Arithmetic.O, I = Arithmetic.I, asign, bsign,
-                a, b, a0, b0, a1, b1, a2, b2, lead,
-                qr, gcd, g, f, p, q, field;
-
-            if (0 === k) return;
-
-            a = args[0];
-            PolynomialClass = a[CLASS];
-
-            for (i=0; i<k; ++i)
-            {
-                if (!args[i].isConst())
-                {
-                    are_const = false;
-                    break;
-                }
-            }
-            // defer to xgcd of coefficients and transform back to polynomial
-            if (are_const) return a.ring.xgcd(array(args.length, function(i) {return args[i].cc();})).map(function(g) {return PolynomialClass(g, a.symbol, a.ring);});
-
-
-            // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
-            // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-            if (is_class(a.ring.NumberClass, Integer))
-            {
-                field = a.ring.associatedField(); // Q[X]
-                asign = field.One(); bsign = asign;
-                if (1 == k)
-                {
-                    // normalize it
-                    lead = a.lc();
-                    if (lead.divides(asign))
-                    {
-                        a = a.monic();
-                        if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead);}
-                    }
-                    else if (lead.lt(O))
-                    {
-                        a = a.neg(); asign = asign.neg();
-                    }
-                    return [a, PolynomialClass(asign, a.symbol, field)];
-                }
-                else //if (2 <= k)
-                {
-                    gcd = 2 === k ? [args[1], PolynomialClass.One(a.symbol, field)] : polyxgcd(slice.call(args, 1));
-                    b = gcd[0];
-                    p = PolynomialClass(a, a.symbol, field);
-                    q = PolynomialClass(b, a.symbol, field);
-                    g = polyxgcd(p, q);
-                    f = field.gcd(p.content(), q.content());
-                    // Bezout's Identity for Polynomials works only for polys over a field, not simply a ring, like Z
-                    // thus the coefficients are in general polys over Q ie Q[x]
-                    // https://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity#For_polynomials
-                    g[0] = g[0].primitive().mul(f); g[1] = g[1].mul(f); g[2] = g[2].mul(f);
-                    return array(gcd.length+1, function(i) {
-                        return 0 === i ? PolynomialClass(g[0], a.symbol, a.ring) : (1 === i ? g[1] : gcd[i-1].mul(g[2]));
-                    });
-                }
-            }
-
-            asign = a.ring.One(); bsign = asign;
-            if (1 === k)
-            {
-                // normalize it
-                lead = a.lc();
-                if (lead.divides(asign))
-                {
-                    a = a.monic();
-                    if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead);}
-                }
-                else if (lead.lt(O))
-                {
-                    a = a.neg(); asign = asign.neg();
-                }
-                return [a, PolynomialClass(asign, a.symbol, a.ring)];
-            }
-            else //if (2 <= k)
-            {
-                // recursive on number of arguments
-                // compute xgcd on rest arguments and combine with current
-                // based on recursive property: gcd(a,b,c,..) = gcd(a, gcd(b, c,..))
-                // for coefficients this translates to:
-                // gcd(a,b,c,..) = ax + by + cz + .. =
-                // gcd(a, gcd(b, c, ..)) = ax + k gcd(b,c,..) = (given gcd(b,c,..) = nb + mc + ..)
-                // gcd(a, gcd(b, c, ..)) = ax + k (nb + mc + ..) = ax + b(kn) + c(km) + .. = ax + by +cz + ..
-                // note2: any zero arguments are skipped and do not break xGCD computation
-                // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
-                gcd = 2 === k ? [args[1], PolynomialClass.One(a.symbol, a.ring)] : polyxgcd(slice.call(args, 1));
-                b = gcd[0];
-
-                // gcd with zero factor, take into account
-                if (a.equ(O))
-                {
-                    // normalize it
-                    lead = b.lc();
-                    if (lead.divides(asign) && lead.divides(bsign))
-                    {
-                        b = b.monic();
-                        if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
-                    }
-                    else if (lead.lt(O))
-                    {
-                        b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
-                    }
-                    return array(gcd.length+1,function(i) {
-                        return 0 === i ? b : (1 === i ? PolynomialClass(asign, a.symbol, a.ring) : gcd[i-1].mul(bsign));
-                    });
-                }
-                else if (b.equ(O))
-                {
-                    // normalize it
-                    lead = a.lc();
-                    if (lead.divides(asign) && lead.divides(bsign))
-                    {
-                        a = a.monic();
-                        if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
-                    }
-                    else if (lead.lt(O))
-                    {
-                        a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
-                    }
-                    return array(gcd.length+1,function(i) {
-                        return 0 === i ? a : (1 === i ? PolynomialClass(asign, a.symbol, a.ring) : gcd[i-1].mul(bsign));
-                    });
-                }
-
-                a1 = PolynomialClass.One(a.symbol, a.ring);
-                b1 = PolynomialClass.Zero(a.symbol, a.ring);
-                a2 = Polynomial.Zero(a.symbol, a.ring);
-                b2 = Polynomial.One(a.symbol, a.ring);
-
-                for (;;)
-                {
-                    //a0 = a; b0 = b;
-
-                    qr = a.divmod(b);
-                    a = qr[1];
-                    a1 = a1.sub(qr[0].mul(a2))
-                    b1 = b1.sub(qr[0].mul(b2));
-                    if (a.equ(O))
-                    {
-                        // normalize it
-                        lead = b.lc();
-                        if (lead.divides(asign) && lead.divides(bsign))
-                        {
-                            b = b.monic();
-                            if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
-                        }
-                        else if (lead.lt(O))
-                        {
-                            b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
-                        }
-                        a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                        return array(gcd.length+1,function(i) {
-                            return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
-                        });
-                    }
-
-                    qr = b.divmod(a);
-                    b = qr[1];
-                    a2 = a2.sub(qr[0].mul(a1));
-                    b2 = b2.sub(qr[0].mul(b1));
-                    if (b.equ(O))
-                    {
-                        // normalize it
-                        lead = a.lc();
-                        if (lead.divides(asign) && lead.divides(bsign))
-                        {
-                            a = a.monic();
-                            if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
-                        }
-                        else if (lead.lt(O))
-                        {
-                            a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
-                        }
-                        a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                        return array(gcd.length+1, function(i) {
-                            return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
-                        });
-                    }
-
-                    /*if (a.equ(a0) && b.equ(b0))
-                    {
-                        // will not change anymore
-                        // normalize it
-                        lead = a.lc();
-                        if (lead.divides(asign) && lead.divides(bsign))
-                        {
-                            a = a.monic();
-                            if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
-                        }
-                        else if (lead.lt(O))
-                        {
-                            a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
-                        }
-                        a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                        return array(gcd.length+1, function(i) {
-                            return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
-                        });
-                    }*/
-                }
-            }
-        }
-        ,lcm: function polylcm(/* args */) {
-            // least common multiple
-            // https://en.wikipedia.org/wiki/Least_common_multiple
-            function polylcm2(a, b)
-            {
-                var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = Polynomial.gcd(a, b);
-                return g.equ(O) ? g : a.div(g).mul(b);
-            }
-            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-                i, l = args.length, LCM, O = Abacus.Arithmetic.O, PolynomialClass = Polynomial;
-            if (1 >= l) return 1===l ? args[0] : PolynomialClass.Zero();
-            PolynomialClass = args[0][CLASS];
-            if (args[0].equ(O) || args[1].equ(O)) return PolynomialClass.Zero(args[0].symbol, args[0].ring);
-            LCM = polylcm2(args[0], args[1]);
-            for (i=2; i<l; ++i)
-            {
-                if (args[i].equ(O)) return PolynomialClass.Zero(args[0].symbol, args[0].ring);
-                LCM = polylcm2(LCM, args[i]);
-            }
-            return LCM;
-        }
-
         ,bezier: function(points, symbol) {
             // https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Recursive_definition
             // https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm
@@ -1032,6 +734,12 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,content: function() {
         var p = this.primitive(true);
         return p[1];
+    }
+    ,resultant: function(other) {
+        return is_instance(other, MultiPolynomial) ? MultiPolynomial.Resultant(this, other, this.symbol) : Polynomial.Resultant(this, other);
+    }
+    ,discriminant: function() {
+        return Polynomial.Discriminant(this);
     }
     ,roots: function() {
         // find all rational roots, if any
@@ -1821,9 +1529,17 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         {
             self.ring = ring || terms.ring;
             self.symbol = symbol || terms.symbol;
-            self.terms = (self.ring !== terms.ring) || (self.symbol.length !== terms.symbol.length) ? terms.terms.map(function(t) {
-                return MultiPolyTerm(t.c, self.symbol.length <= terms.symbol.length ? t.e.slice(0, self.symbol.length) : t.e.concat(array(self.symbol.length-terms.symbol.length, 0)), self.ring);
-            }) : terms.terms.slice();
+            if ((self.ring !== terms.ring) || (self.symbol !== terms.symbol))
+            {
+                index = self.symbol.map(function(symbol) {return terms.symbol.indexOf(symbol);});
+                self.terms = terms.terms.map(function(t) {
+                    return MultiPolyTerm(t.c, array(self.symbol.length, function(i) {return -1 === index[i] ? 0 : t.e[index[i]];}), self.ring);
+                }).sort(MultiPolyTerm.sortDecr);
+            }
+            else
+            {
+                self.terms = terms.terms.slice();
+            }
             self._rsym = terms._rsym ? terms._rsym.slice() : null;
         }
         else if (is_instance(terms, Polynomial))
@@ -1833,7 +1549,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             index = self.symbol.indexOf(terms.symbol); if (-1 === index) index = 0;
             self.terms = terms.terms.map(function(t) {
                 return MultiPolyTerm(t.c, array(self.symbol.length, function(i) {return i === index ? t.e : 0;}), self.ring);
-            });
+            }).sort(MultiPolyTerm.sortDecr);
         }
         else
         {
@@ -1927,10 +1643,6 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
 
         ,cast: null // added below
-
-        ,gcd: Polynomial.gcd
-        ,xgcd: Polynomial.xgcd
-        ,lcm: Polynomial.lcm
 
         ,Add: function(x, P, do_sub, recur) {
             var Arithmetic = Abacus.Arithmetic, res, rsym;
@@ -2494,6 +2206,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,content: function() {
         var p = this.primitive(true);
         return p[1];
+    }
+    ,resultant: function(other, x) {
+        return MultiPolynomial.Resultant(this, other, x);
+    }
+    ,discriminant: function(x) {
+        return MultiPolynomial.Discriminant(this, x);
     }
     ,equ: function(other, strict) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -3361,7 +3079,306 @@ function polykthroot(p, k, limit)
     // and is not a (truncated) power series approximation
     return (0 === nterms) && k.mod(two).equ(O) ? r.abs() : r;
 }
-Polynomial.kthroot = MultiPolynomial.kthroot = polykthroot;
+function polygcd(/* args */)
+{
+    // Generalization of Euclid GCD Algorithm for polynomials
+    // https://en.wikipedia.org/wiki/Euclidean_algorithm
+    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
+    // https://en.wikipedia.org/wiki/Euclidean_division_of_polynomials
+    // https://en.wikipedia.org/wiki/Polynomial_long_division
+    // should be a generalisation of number gcd, meaning for constant polynomials should coincide with gcd of respective numbers
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        c = args.length, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
+        O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, a, b, a0, b0, t, r, i, p, q, field;
+
+    if (0 === c) return PolynomialClass.Zero();
+    PolynomialClass = args[0][CLASS];
+
+    for (i=0; i<c; ++i)
+    {
+        if (!args[i].isConst())
+        {
+            are_const = false;
+            break;
+        }
+    }
+    // defer to gcd of coefficients and transform back to polynomial
+    if (are_const) return PolynomialClass(args[0].ring.gcd(array(args.length, function(i) {return args[i].cc();})), args[0].symbol, args[0].ring);
+
+    // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
+    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
+    if (is_class(args[0].ring.NumberClass, Integer))
+    {
+        a = args[0];
+        if (1 == c)
+        {
+            return a.monic();
+        }
+        else //if (2 <= c)
+        {
+            field = a.ring.associatedField(); // Q[X]
+            p = PolynomialClass(a, a.symbol, field);
+            q = PolynomialClass(2 === c ? args[1] : polygcd(slice.call(args, 1)), a.symbol, field);
+            return PolynomialClass(polygcd(p, q).primitive().mul(field.gcd(p.content(), q.content())), a.symbol, a.ring);
+        }
+    }
+
+    i = 0;
+    while (i < c && (a=args[i++]).equ(O)) ;
+    if (a.lc().lt(O)) a = a.neg();
+    while (i < c)
+    {
+        if (a.equ(I)) return PolynomialClass.One(a.symbol, a.ring);
+        while (i < c && (b=args[i++]).equ(O)) ;
+        if (b.lc().lt(O)) b = b.neg();
+        if (b.equ(I)) return PolynomialClass.One(a.symbol, a.ring);
+        else if (b.equ(a)) continue;
+        else if (b.equ(O)) break;
+        // swap them (a >= b)
+        if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true)) {t = b; b = a; a = t;}
+        while (!b.equ(O))
+        {
+            //a0 = a; b0 = b;
+            r = a.mod(b); a = b; b = r;
+            //if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
+        }
+    }
+    // simplify, positive and monic
+    a = a.monic();
+    return a;
+}
+function polyxgcd(/* args */)
+{
+    // Generalization of Extended GCD Algorithm for univariate polynomials
+    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#B%C3%A9zout's_identity_and_extended_GCD_algorithm
+    // should be a generalisation of number xgcd, meaning for constant polynomials should coincide with xgcd of respective numbers
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        k = args.length, i, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
+        O = Arithmetic.O, I = Arithmetic.I, asign, bsign,
+        a, b, a0, b0, a1, b1, a2, b2, lead,
+        qr, gcd, g, f, p, q, field;
+
+    if (0 === k) return;
+
+    a = args[0];
+    PolynomialClass = a[CLASS];
+
+    for (i=0; i<k; ++i)
+    {
+        if (!args[i].isConst())
+        {
+            are_const = false;
+            break;
+        }
+    }
+    // defer to xgcd of coefficients and transform back to polynomial
+    if (are_const) return a.ring.xgcd(array(args.length, function(i) {return args[i].cc();})).map(function(g) {return PolynomialClass(g, a.symbol, a.ring);});
+
+
+    // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
+    // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
+    if (is_class(a.ring.NumberClass, Integer))
+    {
+        field = a.ring.associatedField(); // Q[X]
+        asign = field.One(); bsign = asign;
+        if (1 == k)
+        {
+            // normalize it
+            lead = a.lc();
+            if (lead.divides(asign))
+            {
+                a = a.monic();
+                if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead);}
+            }
+            else if (lead.lt(O))
+            {
+                a = a.neg(); asign = asign.neg();
+            }
+            return [a, PolynomialClass(asign, a.symbol, field)];
+        }
+        else //if (2 <= k)
+        {
+            gcd = 2 === k ? [args[1], PolynomialClass.One(a.symbol, field)] : polyxgcd(slice.call(args, 1));
+            b = gcd[0];
+            p = PolynomialClass(a, a.symbol, field);
+            q = PolynomialClass(b, a.symbol, field);
+            g = polyxgcd(p, q);
+            f = field.gcd(p.content(), q.content());
+            // Bezout's Identity for Polynomials works only for polys over a field, not simply a ring, like Z
+            // thus the coefficients are in general polys over Q ie Q[x]
+            // https://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity#For_polynomials
+            g[0] = g[0].primitive().mul(f); g[1] = g[1].mul(f); g[2] = g[2].mul(f);
+            return array(gcd.length+1, function(i) {
+                return 0 === i ? PolynomialClass(g[0], a.symbol, a.ring) : (1 === i ? g[1] : gcd[i-1].mul(g[2]));
+            });
+        }
+    }
+
+    asign = a.ring.One(); bsign = asign;
+    if (1 === k)
+    {
+        // normalize it
+        lead = a.lc();
+        if (lead.divides(asign))
+        {
+            a = a.monic();
+            if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead);}
+        }
+        else if (lead.lt(O))
+        {
+            a = a.neg(); asign = asign.neg();
+        }
+        return [a, PolynomialClass(asign, a.symbol, a.ring)];
+    }
+    else //if (2 <= k)
+    {
+        // recursive on number of arguments
+        // compute xgcd on rest arguments and combine with current
+        // based on recursive property: gcd(a,b,c,..) = gcd(a, gcd(b, c,..))
+        // for coefficients this translates to:
+        // gcd(a,b,c,..) = ax + by + cz + .. =
+        // gcd(a, gcd(b, c, ..)) = ax + k gcd(b,c,..) = (given gcd(b,c,..) = nb + mc + ..)
+        // gcd(a, gcd(b, c, ..)) = ax + k (nb + mc + ..) = ax + b(kn) + c(km) + .. = ax + by +cz + ..
+        // note2: any zero arguments are skipped and do not break xGCD computation
+        // note3: gcd(0,0,..,0) is conventionaly set to 0 with 1's as factors
+        gcd = 2 === k ? [args[1], PolynomialClass.One(a.symbol, a.ring)] : polyxgcd(slice.call(args, 1));
+        b = gcd[0];
+
+        // gcd with zero factor, take into account
+        if (a.equ(O))
+        {
+            // normalize it
+            lead = b.lc();
+            if (lead.divides(asign) && lead.divides(bsign))
+            {
+                b = b.monic();
+                if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
+            }
+            else if (lead.lt(O))
+            {
+                b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
+            }
+            return array(gcd.length+1,function(i) {
+                return 0 === i ? b : (1 === i ? PolynomialClass(asign, a.symbol, a.ring) : gcd[i-1].mul(bsign));
+            });
+        }
+        else if (b.equ(O))
+        {
+            // normalize it
+            lead = a.lc();
+            if (lead.divides(asign) && lead.divides(bsign))
+            {
+                a = a.monic();
+                if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
+            }
+            else if (lead.lt(O))
+            {
+                a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
+            }
+            return array(gcd.length+1,function(i) {
+                return 0 === i ? a : (1 === i ? PolynomialClass(asign, a.symbol, a.ring) : gcd[i-1].mul(bsign));
+            });
+        }
+
+        a1 = PolynomialClass.One(a.symbol, a.ring);
+        b1 = PolynomialClass.Zero(a.symbol, a.ring);
+        a2 = Polynomial.Zero(a.symbol, a.ring);
+        b2 = Polynomial.One(a.symbol, a.ring);
+
+        for (;;)
+        {
+            //a0 = a; b0 = b;
+
+            qr = a.divmod(b);
+            a = qr[1];
+            a1 = a1.sub(qr[0].mul(a2))
+            b1 = b1.sub(qr[0].mul(b2));
+            if (a.equ(O))
+            {
+                // normalize it
+                lead = b.lc();
+                if (lead.divides(asign) && lead.divides(bsign))
+                {
+                    b = b.monic();
+                    if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
+                }
+                else if (lead.lt(O))
+                {
+                    b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
+                }
+                a2 = a2.mul(asign); b2 = b2.mul(bsign);
+                return array(gcd.length+1,function(i) {
+                    return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
+                });
+            }
+
+            qr = b.divmod(a);
+            b = qr[1];
+            a2 = a2.sub(qr[0].mul(a1));
+            b2 = b2.sub(qr[0].mul(b1));
+            if (b.equ(O))
+            {
+                // normalize it
+                lead = a.lc();
+                if (lead.divides(asign) && lead.divides(bsign))
+                {
+                    a = a.monic();
+                    if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
+                }
+                else if (lead.lt(O))
+                {
+                    a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
+                }
+                a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                return array(gcd.length+1, function(i) {
+                    return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
+                });
+            }
+
+            /*if (a.equ(a0) && b.equ(b0))
+            {
+                // will not change anymore
+                // normalize it
+                lead = a.lc();
+                if (lead.divides(asign) && lead.divides(bsign))
+                {
+                    a = a.monic();
+                    if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
+                }
+                else if (lead.lt(O))
+                {
+                    a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
+                }
+                a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                return array(gcd.length+1, function(i) {
+                    return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
+                });
+            }*/
+        }
+    }
+}
+function polylcm(/* args */)
+{
+    // least common multiple
+    // https://en.wikipedia.org/wiki/Least_common_multiple
+    function polylcm2(a, b)
+    {
+        var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, g = Polynomial.gcd(a, b);
+        return g.equ(O) ? g : a.div(g).mul(b);
+    }
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        i, l = args.length, LCM, O = Abacus.Arithmetic.O, PolynomialClass = Polynomial;
+    if (1 >= l) return 1===l ? args[0] : PolynomialClass.Zero();
+    PolynomialClass = args[0][CLASS];
+    if (args[0].equ(O) || args[1].equ(O)) return PolynomialClass.Zero(args[0].symbol, args[0].ring);
+    LCM = polylcm2(args[0], args[1]);
+    for (i=2; i<l; ++i)
+    {
+        if (args[i].equ(O)) return PolynomialClass.Zero(args[0].symbol, args[0].ring);
+        LCM = polylcm2(LCM, args[i]);
+    }
+    return LCM;
+}
 function polyres(p, p_deg, q, q_deg, x, normalize)
 {
     // https://en.wikipedia.org/wiki/Resultant
@@ -3442,14 +3459,25 @@ function polyres(p, p_deg, q, q_deg, x, normalize)
     }));
     return sylvester.detr();
 }
-Polynomial.resultant = function(p, q) {
+
+MultiPolynomial.kthroot = Polynomial.kthroot = polykthroot;
+MultiPolynomial.gcd = Polynomial.gcd = polygcd;
+MultiPolynomial.xgcd = Polynomial.xgcd = polyxgcd;
+MultiPolynomial.lcm = Polynomial.lcm = polylcm;
+Polynomial.Resultant = function(p, q) {
     return polyres(p, p.deg(), q, q.deg(), p.symbol, false);
 };
-Polynomial.discriminant = function(p) {
+Polynomial.Discriminant = function(p) {
     var n = p.deg(), dp = p.d(1), res = polyres(p, n, dp, n-1, p.symbol, true);
     return (n*(n-1) >> 1) & 1 ? res.neg() : res;
 };
-MultiPolynomial.resultant = function(p, q, x) {
+MultiPolynomial.Resultant = function(p, q, x) {
+    if (is_instance(p, Polynomial) && is_instance(q, Polynomial))
+    {
+        return Polynomial.Resultant(p, q);
+    }
+    else if (is_instance(p, Polynomial)) p = MultiPolynomial(p, q.symbol, q.ring);
+    else if (is_instance(q, Polynomial)) q = MultiPolynomial(q, p.symbol, p.ring);
     x = x || p.symbol[0];
     p = p.clone().recur(false).recur(x);
     q = q.clone().recur(false).recur(x);
@@ -3463,7 +3491,8 @@ MultiPolynomial.resultant = function(p, q, x) {
     }*/
     return res;
 };
-MultiPolynomial.discriminant = function(p, x) {
+MultiPolynomial.Discriminant = function(p, x) {
+    if (is_instance(p, Polynomial)) p = MultiPolynomial(p, [x || p.symbol], p.ring);
     x = x || p.symbol[0];
     p = p.clone().recur(false).recur(x);
     var n = p.deg(x), dp = p.d(x, 1),
