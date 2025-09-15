@@ -1228,7 +1228,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function replace(f, x, g)
         {
-            if (is_instance(gx, Expr))
+            if (is_instance(g, Expr))
             {
                 x = String(x);
                 if (('sym' === f.ast.type) && (f.ast.arg === x))
@@ -1516,7 +1516,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
             while ('^' === base.ast.op)
             {
-                exp = exp.mul(base.ast.arg[1]);
+                exp = expand(exp.mul(base.ast.arg[1]));
                 base = base.ast.arg[0];
             }
 
@@ -1567,25 +1567,75 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._xpnd;
     }
     ,toPoly: function(symbol, ring, imagUnit) {
-        var self = this, other_symbols, coeff_ring;
+        var self = this, other_symbols = null, CoefficientRing = null;
 
         if (!symbol)
         {
             symbol = self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s);});
             if (!symbol.length) symbol = ['x'];
         }
-
-        other_symbols = is_array(symbol) ? self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (-1 === symbol.indexOf(s));}) : self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (s !== symbol);});
-
         ring = is_instance(ring, Ring) ? ring : (-1 !== self.symbols().indexOf(imagUnit) ? Ring.C() : Ring.Q());
-        coeff_ring = other_symbols.length ? Ring(ring.NumberClass, other_symbols, true) : ring;
-
-        function is_const(expr)
+        if (ring.CoefficientRing && ring.CoefficientRing.PolynomialClass)
         {
-            return 0 === expr.symbols().filter(is_array(symbol) ? function(s) {return -1 !== symbol.indexOf(s);} : function(s) {return s === symbol;}).length;
+            if (!is_array(symbol)) symbol = [symbol];
+            symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);});
+            if (!symbol.length) symbol = ring.CoefficientRing.PolynomialSymbol.slice();
         }
-        function poly(expr)
+        other_symbols = is_array(symbol) ? self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (-1 === symbol.indexOf(s));}) : self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (s !== symbol);});
+        if (ring.PolynomialClass)
         {
+            CoefficientRing = ring;
+        }
+        else
+        {
+            CoefficientRing = other_symbols.length ? Ring(ring.NumberClass, other_symbols, true) : ring;
+        }
+
+        function poly(expr, symbol, ring, CoefficientRing)
+        {
+            function get_term(arg, is_own_symbol)
+            {
+                var term = {}, coeff_term = null;
+                if (is_string(arg))
+                {
+                    if (is_own_symbol)
+                    {
+                        // polynomial symbol
+                        term[is_array(symbol) ? arg : '1'] = ring.One();
+                    }
+                    else if (ring.PolynomialClass)
+                    {
+                        coeff_term = {};
+                        if (-1 === ring.PolynomialSymbol.indexOf(arg))
+                        {
+                            // other symbolic term of recursive coeff ring, delegate further
+                            coeff_term['1'] = ring.CoefficientRing.fromString(arg);
+                        }
+                        else
+                        {
+                            // symbolic term of recursive coeff ring
+                            coeff_term[arg] = ring.CoefficientRing.One();
+                        }
+                        term['1'] = MultiPolynomial(coeff_term, ring.PolynomialSymbol.slice(), ring.CoefficientRing);
+                    }
+                    else
+                    {
+                        // symbolic rational constant suitable as polynomial coefficient
+                        coeff_term = {};
+                        coeff_term[arg] = ring.One();
+                        term[is_array(symbol) ? '1' : '0'] = RationalFunc(MultiPolynomial(coeff_term, other_symbols, ring), null, null, null, true);
+                    }
+                }
+                else //if (is_instance(arg, Numeric))
+                {
+                    term[is_array(symbol) ? '1' : '0'] = arg;
+                }
+                return is_array(symbol) ? MultiPolynomial(term, symbol, CoefficientRing) : Polynomial(term, symbol, CoefficientRing);
+            }
+            function is_const(expr)
+            {
+                return 0 === expr.symbols().filter(is_array(symbol) ? function(s) {return -1 !== symbol.indexOf(s);} : function(s) {return s === symbol;}).length;
+            }
             var ast = expr.ast, term, coeff, exp;
 
             if ('sym' === ast.type)
@@ -1593,68 +1643,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 if (imagUnit === ast.arg)
                 {
                     // complex imaginary constant
-                    term = {};
-                    coeff = Complex.Img();
-                    if (is_array(symbol))
-                    {
-                        term['1'] = coeff;
-                        return MultiPolynomial(term, symbol, coeff_ring);
-                    }
-                    else
-                    {
-                        term['0'] = coeff;
-                        return Polynomial(term, symbol, coeff_ring);
-                    }
-                }
-                else if ((is_array(symbol) && (-1 !== symbol.indexOf(ast.arg))) || (is_string(symbol) && (symbol === ast.arg)))
-                {
-                    // polynomial symbol
-                    coeff = ring.One();
-                    term = {};
-                    if (is_array(symbol))
-                    {
-                        term[ast.arg] = coeff;
-                        return MultiPolynomial(term, symbol, coeff_ring);
-                    }
-                    else
-                    {
-                        term['1'] = coeff;
-                        return Polynomial(term, symbol, coeff_ring);
-                    }
+                    return get_term(Complex.Img());
                 }
                 else
                 {
-                    // symbolic rational constant suitable as polynomial coefficient
-                    term = {}; term[ast.arg] = ring.One();
-                    coeff = RationalFunc(MultiPolynomial(term, other_symbols, ring), null, null, null, true);
-                    term = {};
-                    if (is_array(symbol))
-                    {
-                        term['1'] = coeff;
-                        return MultiPolynomial(term, symbol, coeff_ring);
-                    }
-                    else
-                    {
-                        term['0'] = coeff;
-                        return Polynomial(term, symbol, coeff_ring);
-                    }
+                    // polynomial symbol or other symbol as coefficient
+                    return get_term(ast.arg, (is_array(symbol) && (-1 !== symbol.indexOf(ast.arg))) || (is_string(symbol) && (symbol === ast.arg)));
                 }
             }
             else if (expr.isConst())
             {
                 // constant
-                term = {};
-                coeff = expr.c();
-                if (is_array(symbol))
-                {
-                    term['1'] = coeff;
-                    return MultiPolynomial(term, symbol, coeff_ring);
-                }
-                else
-                {
-                    term['0'] = coeff;
-                    return Polynomial(term, symbol, coeff_ring);
-                }
+                return get_term(expr.c());
             }
             else //if ('expr' === ast.type)
             {
@@ -1664,7 +1664,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return ast.arg.reduce(function(result, subexpr, i) {
                         if (0 === i)
                         {
-                            return poly(subexpr);
+                            return poly(subexpr, symbol, ring, CoefficientRing);
                         }
                         else if (null == result)
                         {
@@ -1672,7 +1672,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else
                         {
-                            subexpr = poly(subexpr);
+                            subexpr = poly(subexpr, symbol, ring, CoefficientRing);
                             return null == subexpr ? null : ('*' === ast.op ? result.mul(subexpr) : ('-' === ast.op ? result.sub(subexpr): result.add(subexpr)));
                         }
                     }, null);
@@ -1683,7 +1683,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return ast.arg.reduce(function(result, subexpr, i) {
                         if (0 === i)
                         {
-                            return poly(subexpr);
+                            return poly(subexpr, symbol, ring, CoefficientRing);
                         }
                         else if (null == result)
                         {
@@ -1691,11 +1691,32 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else if (is_const(subexpr.num))
                         {
-                            var coeff = subexpr.num.toPoly(other_symbols, ring, imagUnit);
-                            if (null == coeff) return null;
-                            coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), coeff, null, null, true);
-                            subexpr = poly(subexpr.den);
-                            return null == subexpr ? null : result.mul(subexpr.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, coeff_ring) : Polynomial({'0':coeff}, symbol, coeff_ring)));
+                            var coeff;
+                            if (ring.PolynomialClass)
+                            {
+                                if (subexpr.num.isConst())
+                                {
+                                    coeff = MultiPolynomial({'1':subexpr.num.c()}, ring.PolynomialSymbol, ring.CoefficientRing);
+                                }
+                                else if (!is_class(ring.PolynomialClass, RationalFunc))
+                                {
+                                    return null; // not supported
+                                }
+                                else
+                                {
+                                    coeff = poly(subexpr.num, ring.PolynomialSymbol, ring.CoefficientRing, CoefficientRing.CoefficientRing);
+                                    if (null == coeff) return null;
+                                    coeff = RationalFunc(MultiPolynomial.One(ring.PolynomialSymbol, ring.CoefficientRing), coeff, null, null, true);
+                                }
+                            }
+                            else
+                            {
+                                coeff = subexpr.num.toPoly(other_symbols, ring, imagUnit);
+                                if (null == coeff) return null;
+                                coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), coeff, null, null, true);
+                            }
+                            subexpr = poly(subexpr.den, symbol, ring, CoefficientRing);
+                            return null == subexpr ? null : result.mul(subexpr.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, CoefficientRing) : Polynomial({'0':coeff}, symbol, CoefficientRing)));
                         }
                         else
                         {
@@ -1710,28 +1731,48 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     exp = ast.arg[1].c();
                     if (exp.equ(0))
                     {
-                        return is_array(symbol) ? MultiPolynomial.One(symbol, coeff_ring) : Polynomial.One(symbol, coeff_ring);
+                        return is_array(symbol) ? MultiPolynomial.One(symbol, CoefficientRing) : Polynomial.One(symbol, CoefficientRing);
                     }
                     if (exp.lt(0))
                     {
+                        exp = exp.neg();
+                        coeff = null;
                         if (is_const(ast.arg[0].num))
                         {
-                            term = ast.arg[0].num.toPoly(other_symbols, ring, imagUnit);
-                            if (null != term)
+                            if (ring.PolynomialClass)
                             {
-                                exp = exp.neg();
-                                coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), term, null, null, true);
-                                term = poly(ast.arg[0].den);
+                                if (ast.arg[0].num.isConst())
+                                {
+                                    coeff = MultiPolynomial({'1':ast.arg[0].num.c().inv()}, ring.PolynomialSymbol, ring.CoefficientRing);
+                                }
+                                else if (!is_class(ring.PolynomialClass, RationalFunc))
+                                {
+                                    return null; // not supported
+                                }
+                                else
+                                {
+                                    term = poly(ast.arg[0].num, ring.PolynomialSymbol, ring.CoefficientRing, CoefficientRing.CoefficientRing);
+                                    if (null != term) coeff = RationalFunc(MultiPolynomial.One(ring.PolynomialSymbol, ring.CoefficientRing), term, null, null, true);
+                                }
+                            }
+                            else
+                            {
+                                term = ast.arg[0].num.toPoly(other_symbols, ring, imagUnit);
+                                if (null != term) coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), term, null, null, true);
+                            }
+                            if (null != coeff)
+                            {
+                                term = poly(ast.arg[0].den, symbol, ring, CoefficientRing);
                                 if (null != term)
                                 {
-                                    term = term.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, coeff_ring) : Polynomial({'0':coeff}, symbol, coeff_ring));
+                                    term = term.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, CoefficientRing) : Polynomial({'0':coeff}, symbol, CoefficientRing));
                                 }
                             }
                         }
                     }
                     else //if (exp.gt(0))
                     {
-                        term = poly(ast.arg[0]);
+                        term = poly(ast.arg[0], symbol, ring, CoefficientRing);
                     }
                     return null == term ? null : term.pow(exp);
                 }
@@ -1742,7 +1783,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
             }
         }
-        return poly(self);
+        return poly(self, symbol, ring, CoefficientRing);
     }
     ,toRationalFunc: function() {
         var self = this,

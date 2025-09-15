@@ -1362,7 +1362,7 @@ var MultiPolyTerm = Class({
         {
                 c = MultiPolynomial(c, c.symbol, self.ring);
         }
-        self.c = is_instance(c, [MultiPolynomial, RationalFunc]) ? c : self.ring.cast(c || 0);
+        self.c = is_instance(c, [MultiPolynomial, RationalFunc]) ? c : (/*is_string(c) ? self.ring.fromString(c) :*/ self.ring.cast(c || 0));
         self.e = is_array(e) ? e : [+(e || 0)];
     }
 
@@ -1784,7 +1784,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             if (!is_instance(e, Expr)) return null;
             ring = ring || Ring.Q();
             symbol = symbol || ['x'];
-            if (is_string(symbol)) symbol = [symbol];
+            if (!is_array(symbol)) symbol = [String(symbol || 'x')];
             return e.toPoly(symbol, ring, Complex.Symbol);
         }
     }
@@ -2138,7 +2138,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             {
                 self._prim = [self, field.One()];
             }
-            else if (self.isRecur())
+            else if (self.isRecur() /*|| (0 < terms.filter(function(t) {return is_instance(t.c, MultiPolynomial);}).length)*/)
             {
                 coeffp = terms.reduce(function(coeffp, t) {
                     coeffp.push(is_instance(t.c, MultiPolynomial) ? t.c.primitive(true) : [MultiPolynomial([t], symbol, ring), field.One()]);
@@ -2569,23 +2569,24 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         // composition through variation on recursive Horner scheme
         var self = this, symbol = self.symbol, ring = self.ring, rsym = self._rsym, pq,
             Arithmetic = Abacus.Arithmetic, O = MultiPolynomial.Zero(symbol, ring), horner, memo = Obj();
-        horner = function horner(p, q, index) {
-            index = index || 0;
-            while ((index < symbol.length) && (0 === p.maxdeg(symbol[index], true))) ++index;
-            if (index >= symbol.length) return MultiPolynomial(p.cc(), symbol, ring);
+        horner = function horner(p, q, s, index) {
+            var psymbol = p.symbol, pring = p.ring;
+            index = psymbol !== symbol ? psymbol.indexOf(s) : (index || 0);
+            while ((index < psymbol.length) && (0 === p.maxdeg(psymbol[index], true))) ++index;
+            if (index >= psymbol.length) return MultiPolynomial(p.cc(), psymbol, pring);
             var s, t = p.terms, i, j, pq, qi, tc;
-            if (!t.length) return O;
+            if (!t.length) return MultiPolynomial.Zero(psymbol, pring);
             // memoize, sometimes same subpolynomial is re-evaluated
             s = p.toString(); if (HAS.call(memo, s)) return memo[s];
-            qi = HAS.call(q, symbol[index]) ? MultiPolynomial(q[symbol[index]]||Arithmetic.O, symbol, ring) : MultiPolynomial([MultiPolyTerm(ring.One(), array(symbol.length, function(i) {return i === index ? 1 : 0}), ring)], symbol, ring);
-            tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, q, index+1) : MultiPolynomial(t[0].c, symbol, ring);
+            qi = HAS.call(q, psymbol[index]) ? MultiPolynomial(q[psymbol[index]]||Arithmetic.O, psymbol, pring) : MultiPolynomial([MultiPolyTerm(pring.One(), array(psymbol.length, function(i) {return i === index ? 1 : 0}), pring)], psymbol, pring);
+            tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, q, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : MultiPolynomial(t[0].c, psymbol, pring);
             i = t[0].e[index]; pq = tc; j = 1;
             while (0 < i)
             {
                 --i; pq = MultiPolynomial.Mul(qi, pq, false);
                 if (j < t.length && i === t[j].e[index])
                 {
-                    tc = is_instance(t[j].c, MultiPolynomial) ? horner(t[j].c, q, index+1) : t[j].c;
+                    tc = is_instance(t[j].c, MultiPolynomial) ? horner(t[j].c, q, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[j].c;
                     pq = MultiPolynomial.Add(tc, pq, false, false);
                     ++j;
                 }
@@ -2593,7 +2594,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             memo[s] = pq;
             return pq;
         };
-        pq = horner(self.recur(true), q||{});
+        pq = horner(self.recur(true), q||{}, symbol[0], 0);
         if (rsym) pq = pq.recur(rsym);
         return pq;
     }
@@ -2721,24 +2722,25 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,evaluate: function(x) {
         // recursive Horner scheme
         var self = this, symbol = self.symbol, ring = self.ring, O = Abacus.Arithmetic.O, horner, memo = Obj();
-        horner = function horner(p, x, index) {
-            index = index || 0;
-            while ((index < symbol.length) && (0 === p.maxdeg(symbol[index], true))) ++index;
-            if (index >= symbol.length) return p.cc();
+        horner = function horner(p, x, s, index) {
+            var psymbol = p.symbol, pring = p.ring;
+            index = psymbol !== symbol ? psymbol.indexOf(s) : (index || 0);
+            while ((index < psymbol.length) && (0 === p.maxdeg(psymbol[index], true))) ++index;
+            if (index >= psymbol.length) return p.cc();
             var s, t = p.terms, i, j, v, xi, tc;
-            if (!t.length) return ring.Zero();
+            if (!t.length) return pring.Zero();
             // memoize, sometimes same subpolynomial is re-evaluated
             s = p.toString(); if (HAS.call(memo, s)) return memo[s];
-            xi = (HAS.call(x, symbol[index]) ? x[symbol[index]] : O) || O;
+            xi = (HAS.call(x, psymbol[index]) ? x[psymbol[index]] : O) || O;
             //xi = ring.cast(xi);
-            tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, x, index+1) : t[0].c;
+            tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, x, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[0].c;
             i = t[0].e[index]; v = tc; j = 1;
             while (0 < i)
             {
                 --i; v = v.mul(xi);
                 if (j < t.length && i === t[j].e[index])
                 {
-                    tc = is_instance(t[j].c, MultiPolynomial) ? horner(t[j].c, x, index+1) : t[j].c;
+                    tc = is_instance(t[j].c, MultiPolynomial) ? horner(t[j].c, x, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[j].c;
                     v = tc.add(v);
                     ++j;
                 }
@@ -2746,7 +2748,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             memo[s] = v;
             return v;
         };
-        return horner(self.recur(true), x || {});
+        return horner(self.recur(true), x || {}, symbol[0], 0);
     }
     ,toExpr: function() {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, t, ti, c, x, i, l, term, terms;
@@ -2837,7 +2839,7 @@ MultiPolynomial.cast = function(a, symbol, ring) {
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
     var type_cast = typecast(function(a) {
-        return is_instance(a, MultiPolynomial) && (a.ring === ring);
+        return is_instance(a, MultiPolynomial) && (a.ring === ring) && (a.symbol === symbol);
     }, function(a) {
         return is_string(a) ? MultiPolynomial.fromString(a, symbol, ring) : new MultiPolynomial(a, symbol, ring);
     });
@@ -3401,7 +3403,7 @@ function polyres(p, p_deg, q, q_deg, x, normalize)
     if (is_array(t1[0].e))
     {
         p_x = p.symbol.indexOf(x);
-        p_e = function(t) {return t.e[p_x];};
+        p_e = -1 === p_x ? function(t) {return 0;} : function(t) {return t.e[p_x];};
     }
     else
     {
@@ -3410,7 +3412,7 @@ function polyres(p, p_deg, q, q_deg, x, normalize)
     if (is_array(t2[0].e))
     {
         q_x = q.symbol.indexOf(x);
-        q_e = function(t) {return t.e[q_x];};
+        q_e = -1 === q_x ? function(t) {return 0;} : function(t) {return t.e[q_x];};
     }
     else
     {
@@ -3476,11 +3478,11 @@ MultiPolynomial.Resultant = function(p, q, x) {
     {
         return Polynomial.Resultant(p, q);
     }
-    else if (is_instance(p, Polynomial)) p = MultiPolynomial(p, q.symbol, q.ring);
-    else if (is_instance(q, Polynomial)) q = MultiPolynomial(q, p.symbol, p.ring);
+    p = is_instance(p, Polynomial) ? MultiPolynomial(p, q.symbol, q.ring) : p.clone();
+    q = is_instance(q, Polynomial) ? MultiPolynomial(q, p.symbol, p.ring) : q.clone();
     x = x || p.symbol[0];
-    p = p.clone().recur(false).recur(x);
-    q = q.clone().recur(false).recur(x);
+    p = p.recur(false).recur(x);
+    q = q.recur(false).recur(x);
     var res = polyres(p, p.deg(x), q, q.deg(x), x, false);
     /*if (1 < p.symbol.length)
     {
@@ -3492,9 +3494,9 @@ MultiPolynomial.Resultant = function(p, q, x) {
     return res;
 };
 MultiPolynomial.Discriminant = function(p, x) {
-    if (is_instance(p, Polynomial)) p = MultiPolynomial(p, [x || p.symbol], p.ring);
+    p = is_instance(p, Polynomial) ? MultiPolynomial(p, [x || p.symbol], p.ring) : p.clone();
     x = x || p.symbol[0];
-    p = p.clone().recur(false).recur(x);
+    p = p.recur(false).recur(x);
     var n = p.deg(x), dp = p.d(x, 1),
         res = polyres(p, n, dp, n-1, x, true);
     if ((n*(n-1) >> 1) & 1) res = res.neg();
