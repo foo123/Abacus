@@ -1601,7 +1601,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     if (is_own_symbol)
                     {
                         // polynomial symbol
-                        term[is_array(symbol) ? arg : '1'] = ring.One();
+                        term[is_array(symbol) ? arg : '1'] = CoefficientRing.One();
                     }
                     else if (ring.PolynomialClass)
                     {
@@ -1696,7 +1696,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 if (subexpr.num.isConst())
                                 {
-                                    coeff = MultiPolynomial({'1':subexpr.num.c()}, ring.PolynomialSymbol, ring.CoefficientRing);
+                                    coeff = subexpr.num.c().inv();
                                 }
                                 else if (!is_class(ring.PolynomialClass, RationalFunc))
                                 {
@@ -1720,6 +1720,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else
                         {
+                            // is not a polynomial
                             return null;
                         }
                     }, null);

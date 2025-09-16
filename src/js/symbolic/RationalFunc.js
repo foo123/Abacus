@@ -377,10 +377,10 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             }
             else if (!self.den.equ(Arithmetic.I))
             {
-                // here best if we could use multipolynomial gcd if possible
-                if ((1 === self.num.symbol.length) && (1 === self.den.symbol.length))
+                // use multipolynomial gcd if possible
+                if (is_callable(MultiPolynomial.gcd))
                 {
-                    qr = MultiPolynomial.gcd(self.num, self.den); // works correctly for univariate case only
+                    qr = MultiPolynomial.gcd(self.num, self.den);
                     self.num = self.num.div(qr);
                     self.den = self.den.div(qr);
                 }

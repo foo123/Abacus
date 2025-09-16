@@ -68,11 +68,11 @@ echo((p=ring.fromString("x*y+x+y-2")).toString());
 echo('---');
 
 p1 = ring.fromString("x^2*y + x^3");
-echo(p1.toString());
+echo("x^2*y + x^3", ',', p1.toString());
 p2 = ring.fromString("(x + y)^2");
-echo(p2.toString());
+echo("(x + y)^2", ',', p2.toString());
 p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
-echo(p3.toString());
+echo("x^2 + x*y^2 + x*y + x + y^3 + y", ',', p3.toString());
 //log(p3);
-echo(ring.gcd(p1, p2, p3).toString(), "x + y"); // ans x + y
-echo(ring.xgcd(p1, p2, p3).toString()); // ans x + y
+echo(ring.gcd(p1, p2, p3).toUnivariate(false, ["x", "y"], Ring.Q()).toString(), ',', "x + y");
+echo(ring.xgcd(p3, p1, p2).toString()); // ans x + y
