@@ -160,7 +160,7 @@ Ring = Abacus.Ring = Class({
 
     ,isSymbolic: function() {
         var self = this;
-        return ((null != self.PolynomialClass) && is_class(self.PolynomialClass, [Polynomial, MultiPolynomial, RationalFunc])) || (self.CoefficientRing.PolynomialClass);
+        return (null != self.PolynomialClass) && is_class(self.PolynomialClass, [Polynomial, MultiPolynomial, RationalFunc]);
     }
     ,isReal: function() {
         var self = this;
@@ -172,13 +172,20 @@ Ring = Abacus.Ring = Class({
     }
     ,associatedField: function() {
         var self = this;
-        if (self.CoefficientRing && self.CoefficientRing.PolynomialClass)
+        if (self.PolynomialClass)
         {
-            return is_class(self.PolynomialClass, RationalFunc) ? self : Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true);
-        }
-        else if (self.PolynomialClass)
-        {
-            return is_class(self.PolynomialClass, RationalFunc) ? self : Ring(self.Modulo ? [self.NumberClass, self.Modulo] : self.NumberClass, [].concat(self.PolynomialSymbol), true);
+            if (is_class(self.PolynomialClass, RationalFunc))
+            {
+                return self;
+            }
+            if (self.CoefficientRing.PolynomialClass)
+            {
+                return Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true);
+            }
+            else
+            {
+                return Ring(self.Modulo ? [self.NumberClass, self.Modulo] : self.NumberClass, [].concat(self.PolynomialSymbol), true);
+            }
         }
         return is_class(self.NumberClass, Integer) ? Ring.Q() : (self.isField() ? self : null);
     }

@@ -1383,7 +1383,7 @@ var MultiPolyTerm = Class({
                 return e1[i] - e2[i];
             };
 
-            if ((is_array(t1)||is_args(t1)) && (is_array(t2)||is_args(t2))) return cmp_exp_i(t1, t2, 0);
+            if ((is_array(t1) || is_args(t1)) && (is_array(t2) || is_args(t2))) return cmp_exp_i(t1, t2, 0);
 
             var res = cmp_exp_i(t1.e, t2.e, 0);
             if ((true === full) && (0 === res))
@@ -1875,13 +1875,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         return strict ? (0 !== d) : true;
     }
-    ,isRecur: function(strict) {
+    ,isRecur: function(strict, itself) {
         // is recursive, has coefficients that are multipolynomials on rest variables
         //return (null!=this._rsym) && (0<this._rsym.length);
+        itself = true === itself;
         strict = false !== strict;
-        var terms = this.terms, i;
+        var terms = this.terms, symbol = this.symbol, i;
         for (i=terms.length-1; i>=0; --i)
-            if (is_instance(terms[i].c, MultiPolynomial) && (strict || !terms[i].c.isConst(true))) return true;
+            if (is_instance(terms[i].c, MultiPolynomial) && (!itself || (terms[i].c.symbol === symbol)) && (strict || !terms[i].c.isConst(true))) return true;
         return false;
     }
     ,deg: function(x, recur) {
@@ -2052,7 +2053,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             maxdeg = self.maxdeg(x, true)
             if (0 === maxdeg)
             {
-                self._rsym = (self._rsym||[]).concat(x);
+                self._rsym = (self._rsym || []).concat(x);
                 return self;
             }
             pr = MultiPolynomial(operate(function(terms, t) {
@@ -2107,7 +2108,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     }
     ,monic: function() {
         var self = this, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
-        if (lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O) || is_instance(lc, MultiPolynomial)) return self;
+        if (lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O) /*|| is_instance(lc, MultiPolynomial)*/) return self;
         if (self.ring.isField())
         {
             return MultiPolynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring);
@@ -2138,7 +2139,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             {
                 self._prim = [self, field.One()];
             }
-            else if (self.isRecur() /*|| (0 < terms.filter(function(t) {return is_instance(t.c, MultiPolynomial);}).length)*/)
+            else if (self.isRecur())
             {
                 coeffp = terms.reduce(function(coeffp, t) {
                     coeffp.push(is_instance(t.c, MultiPolynomial) ? t.c.primitive(true) : [MultiPolynomial([t], symbol, ring), field.One()]);
@@ -2572,12 +2573,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         horner = function horner(p, q, s, index) {
             var psymbol = p.symbol, pring = p.ring;
             index = psymbol !== symbol ? psymbol.indexOf(s) : (index || 0);
+            if (-1 === index) index = 0;
             while ((index < psymbol.length) && (0 === p.maxdeg(psymbol[index], true))) ++index;
             if (index >= psymbol.length) return MultiPolynomial(p.cc(), psymbol, pring);
-            var s, t = p.terms, i, j, pq, qi, tc;
+            s = psymbol[index];
+            var str, t = p.terms, i, j, pq, qi, tc;
             if (!t.length) return MultiPolynomial.Zero(psymbol, pring);
             // memoize, sometimes same subpolynomial is re-evaluated
-            s = p.toString(); if (HAS.call(memo, s)) return memo[s];
+            str = p.toString(); if (HAS.call(memo, str)) return memo[str];
             qi = HAS.call(q, psymbol[index]) ? MultiPolynomial(q[psymbol[index]]||Arithmetic.O, psymbol, pring) : MultiPolynomial([MultiPolyTerm(pring.One(), array(psymbol.length, function(i) {return i === index ? 1 : 0}), pring)], psymbol, pring);
             tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, q, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : MultiPolynomial(t[0].c, psymbol, pring);
             i = t[0].e[index]; pq = tc; j = 1;
@@ -2725,12 +2728,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         horner = function horner(p, x, s, index) {
             var psymbol = p.symbol, pring = p.ring;
             index = psymbol !== symbol ? psymbol.indexOf(s) : (index || 0);
+            if (-1 === index) index = 0;
             while ((index < psymbol.length) && (0 === p.maxdeg(psymbol[index], true))) ++index;
             if (index >= psymbol.length) return p.cc();
-            var s, t = p.terms, i, j, v, xi, tc;
+            s = psymbol[index];
+            var str, t = p.terms, i, j, v, xi, tc;
             if (!t.length) return pring.Zero();
             // memoize, sometimes same subpolynomial is re-evaluated
-            s = p.toString(); if (HAS.call(memo, s)) return memo[s];
+            str = p.toString(); if (HAS.call(memo, str)) return memo[str];
             xi = (HAS.call(x, psymbol[index]) ? x[psymbol[index]] : O) || O;
             //xi = ring.cast(xi);
             tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, x, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[0].c;
@@ -3140,9 +3145,9 @@ function polygcd(/* args */)
         if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true)) {t = b; b = a; a = t;}
         while (!b.equ(O))
         {
-            //a0 = a; b0 = b;
+            a0 = a; b0 = b;
             r = a.mod(b); a = b; b = r;
-            //if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
+            if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
         }
     }
     // simplify, positive and monic
@@ -3157,7 +3162,7 @@ function polyxgcd(/* args */)
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         k = args.length, i, Arithmetic = Abacus.Arithmetic, PolynomialClass = Polynomial, are_const = true,
         O = Arithmetic.O, I = Arithmetic.I, asign, bsign,
-        a, b, a0, b0, a1, b1, a2, b2, lead,
+        a, b, a0, b0, a1, b1, a2, b2, t, lead, swapped,
         qr, gcd, g, f, p, q, field;
 
     if (0 === k) return;
@@ -3282,19 +3287,60 @@ function polyxgcd(/* args */)
             });
         }
 
-        a1 = PolynomialClass.One(a.symbol, a.ring);
-        b1 = PolynomialClass.Zero(a.symbol, a.ring);
-        a2 = Polynomial.Zero(a.symbol, a.ring);
-        b2 = Polynomial.One(a.symbol, a.ring);
+        a1 = null;
+        b1 = null;
+        a2 = null;
+        b2 = null;
 
         for (;;)
         {
-            //a0 = a; b0 = b;
+            a0 = a; b0 = b;
 
-            qr = a.divmod(b);
-            a = qr[1];
-            a1 = a1.sub(qr[0].mul(a2))
-            b1 = b1.sub(qr[0].mul(b2));
+            if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true))
+            {
+                // a < b
+                if (null == a1)
+                {
+                    b1 = PolynomialClass.One(a.symbol, a.ring);
+                    a1 = PolynomialClass.Zero(a.symbol, a.ring);
+                    b2 = Polynomial.Zero(a.symbol, a.ring);
+                    a2 = Polynomial.One(a.symbol, a.ring);
+                }
+                qr = b.divmod(a);
+                b = qr[1];
+                a2 = a2.sub(qr[0].mul(a1));
+                b2 = b2.sub(qr[0].mul(b1));
+                if (!b.equ(O))
+                {
+                    qr = a.divmod(b);
+                    a = qr[1];
+                    a1 = a1.sub(qr[0].mul(a2))
+                    b1 = b1.sub(qr[0].mul(b2));
+                }
+            }
+            else
+            {
+                // a > b
+                if (null == a1)
+                {
+                    a1 = PolynomialClass.One(a.symbol, a.ring);
+                    b1 = PolynomialClass.Zero(a.symbol, a.ring);
+                    a2 = Polynomial.Zero(a.symbol, a.ring);
+                    b2 = Polynomial.One(a.symbol, a.ring);
+                }
+                qr = a.divmod(b);
+                a = qr[1];
+                a1 = a1.sub(qr[0].mul(a2))
+                b1 = b1.sub(qr[0].mul(b2));
+                if (!a.equ(O))
+                {
+                    qr = b.divmod(a);
+                    b = qr[1];
+                    a2 = a2.sub(qr[0].mul(a1));
+                    b2 = b2.sub(qr[0].mul(b1));
+                }
+            }
+
             if (a.equ(O))
             {
                 // normalize it
@@ -3314,10 +3360,6 @@ function polyxgcd(/* args */)
                 });
             }
 
-            qr = b.divmod(a);
-            b = qr[1];
-            a2 = a2.sub(qr[0].mul(a1));
-            b2 = b2.sub(qr[0].mul(b1));
             if (b.equ(O))
             {
                 // normalize it
@@ -3337,25 +3379,46 @@ function polyxgcd(/* args */)
                 });
             }
 
-            /*if (a.equ(a0) && b.equ(b0))
+            if (a.equ(a0) && b.equ(b0))
             {
                 // will not change anymore
-                // normalize it
-                lead = a.lc();
-                if (lead.divides(asign) && lead.divides(bsign))
+                if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true))
                 {
-                    a = a.monic();
-                    if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
+                    // normalize it
+                    lead = a.lc();
+                    if (lead.divides(asign) && lead.divides(bsign))
+                    {
+                        a = a.monic();
+                        if (!lead.equ(a.lc())) {asign = asign.mul(a.lc()).div(lead); bsign = bsign.mul(a.lc()).div(lead);}
+                    }
+                    else if (lead.lt(O))
+                    {
+                        a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
+                    }
+                    a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                    return array(gcd.length+1, function(i) {
+                        return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
+                    });
                 }
-                else if (lead.lt(O))
+                else
                 {
-                    a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
+                    // normalize it
+                    lead = b.lc();
+                    if (lead.divides(asign) && lead.divides(bsign))
+                    {
+                        b = b.monic();
+                        if (!lead.equ(b.lc())) {asign = asign.mul(b.lc()).div(lead); bsign = bsign.mul(b.lc()).div(lead);}
+                    }
+                    else if (lead.lt(O))
+                    {
+                        b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
+                    }
+                    a2 = a2.mul(asign); b2 = b2.mul(bsign);
+                    return array(gcd.length+1,function(i) {
+                        return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
+                    });
                 }
-                a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                return array(gcd.length+1, function(i) {
-                    return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
-                });
-            }*/
+            }
         }
     }
 }

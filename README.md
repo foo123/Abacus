@@ -280,12 +280,13 @@ console.log(m.inv().mul(m).toString());
 * support (univariate) polynomial factorization over the integers, rational root finding **[DONE]**
 * support (multivariate) polynomial factorization over the integers, rational root finding (eg `Kronecker` algorithm) (TODO)
 * support polynomial approximate root finding (eg `Aberth` algorithm) (TODO)
-* implement multivariate polynomial `GCD` (TODO)
+* implement recursive multivariate polynomial `GCD` from univariate polynomial `GCD` **[DONE]**
+* implement more efficient multivariate polynomial `GCD` (TODO)
 * implement `LLL` algorithm (TODO)
 * implement polynomial `RESULTANT`, `DISCRIMINANT` computations **[DONE]**
 * implement groebner basis computations (`BUCHBERGER` algorithm) **[DONE]**
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
-* support algebraic sub-Rings and sub-Fields (eg **Q(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
+* support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
 * use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
