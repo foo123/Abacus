@@ -9,55 +9,40 @@ use_biginteger_arithmetic(Abacus);
 function check_xgcd(ring, args)
 {
     let out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
-        res = field.Zero(), gcd = ring.xgcd(args);
+        res = field.Zero(), gcd = ring.xgcd(args), monicgcd = gcd[0].monic();
     for (let i=0; i<args.length; ++i)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(gcd[i+1].mul(args[i]));
-        if (!args[i].mod(gcd[0]).equ(0)) echo(args[i].toString()+' is not divided!');
+        if (!args[i].mod(gcd[0]).equ(0)) echo(args[i].toString()+' is not divided! '+(args[i].mod(monicgcd).equ(0)?'divided by monic':'neither by monic'));
     }
     out += ' = '+res.toString()+' (gcd: '+gcd[0].toString()+')';
     echo(out, res.equ(gcd[0]));
 }
 
-function check_recursive(p, x)
-{
-    let p_x = p.recur(x), p_xx = p_x.recur(x), p_xy = p_x.recur('x'===x?'y':'x'),
-        p_x_x = p_x.d(x), p_x_y = p_x.d('x'===x?'y':'x'),
-        p_x_xx = p_x.d(x, 2), p_x_yy = p_x.d('x'===x?'y':'x', 2),
-        p_xs = p_x.shift(x, -1), p_xys = p_xy.shift('x'===x?'y':'x', -1),
-        pp = p_x.recur(false), ppp = p_xy.recur(false);
-    echo('Recursive representations by '+x+':');
-    echo(p_x.toString()+', again: '+p_xx.toString()+'('+p_xx.equ(p_x)+'), again on other: '+p_xy.toString());
-    echo(p.toString()+'='+pp.toString()+'='+ppp.toString(), p.equ(pp), p.equ(ppp));
-    echo('---------------------------');
-    echo('Primitive (on original, same and other):');
-    check_primitive(p);
-    check_primitive(p_x);
-    check_primitive(p_xy);
-    echo('---------------------------');
-    echo('Derivatives:');
-    echo('on same='+p_x_x.toString()+', on other: '+p_x_y.toString());
-    echo('on same='+p_x_xx.toString()+', on other: '+p_x_yy.toString());
-    echo('---------------------------');
-    echo('Recursive operations:');
-    echo('('+p_xy.toString()+')+('+p_x.toString()+')='+p_xy.add(p_x).toString());
-    echo('('+p_xy.toString()+')*('+p_x.toString()+')='+p_xy.mul(p_x).toString());
-    echo('---------------------------');
-    echo('Negative Shifts:');
-    echo('on same='+p_xs.toString()+', on other: '+p_xys.toString());
-    echo('---------------------------');
-}
 const util = require('util');
 const log = x => echo(util.inspect(x, {showHidden: false, depth: null, colors: false}));
 const Ring = Abacus.Ring;
-let p, p1, p2, p3, ring;
+let p, p1, p2, p3, ring, rring;
 
-echo('Abacus.MultiPolynomials (VERSION = '+Abacus.VERSION+')');
+echo('Abacus.Rings (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Rings / Fields');
 echo('--------------');
+
+ring = Ring.C("x", "y", "z");
+rring = Ring.K(Ring.K(Ring.K(Ring.C()), "y", "z"), "x");
+echo('ring = '+ring.toString()+' ('+ring.toTex()+')'+' rring = '+rring.toString()+' ('+rring.toTex()+')');
+echo('---');
+p1 = ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y");
+p2 = rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y");
+
+//echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"+'->'+p1r.toString()+'='+p2r.toString()+(p1r.equ(p2r) ? ' true' : ' false')+(p1.equ(p2) ? ' true' : ' false'));
+echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.toString()+' = '+p2.toString()+(p1.equ(p2, false) ? ' true' : ' false'));
+echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.recur(false).toString()+' = '+p2.recur(false).toString()+(p1.recur(false).equ(p2.recur(false), true) ? ' true' : ' false'));
+echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.recur(false).recur('x').toString()+' = '+p2.recur(false).recur('x').toString()+(p1.recur(false).recur('x').equ(p2.recur(false).recur('x')) ? ' true' : ' false'));
+echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.recur(true).toString()+' = '+p2.recur(true).toString()+(p1.recur(true).equ(p2.recur(true)) ? ' true' : ' false'));
 
 echo('ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")');
 echo((ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")).toString());
@@ -75,4 +60,4 @@ p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
 echo("x^2 + x*y^2 + x*y + x + y^3 + y", ',', p3.toString());
 //log(p3);
 echo(ring.gcd(p1, p2, p3).toUnivariate(false, ["x", "y"], Ring.Q()).toString(), ',', "x + y");
-echo(ring.xgcd(p3, p1, p2).toString()); // ans x + y
+check_xgcd(ring, [p3, p1, p2]);

@@ -31,7 +31,10 @@ Ring = Abacus.Ring = Class({
 
         if (is_array(PolynomialSymbol) && PolynomialSymbol.length)
         {
-            PolynomialSymbol = remove_duplicates(PolynomialSymbol.map(String));
+            PolynomialSymbol = remove_duplicates(PolynomialSymbol.map(function(x) {
+                if (!is_string(x)) throw new Error('not symbol');
+                return String(x);
+            }));
             if (is_instance(ring, Ring))
             {
                 if (is_class(ring.PolynomialClass, Polynomial))
@@ -117,7 +120,7 @@ Ring = Abacus.Ring = Class({
             {
                 // K(C("x","y"), "z","w") ring C("z","w") with coefficients from C("x","y")
                 if (is_instance(args[0], Ring)) {R = args[0]; args = args.slice(1);}
-                else if (is_instance(args[0], Numeric)) {N = args[0]; args = args.slice(1);}
+                else if (is_class(args[0], Numeric)) {N = args[0]; args = args.slice(1);}
                 args = Ring.getSymbols(args);
                 return args.length ? (R || N ? Ring(R || N, args) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
             }

@@ -800,6 +800,21 @@ Expr = Abacus.Expr = Class(Symbolic, {
             return true;
         }
     }
+    ,isComplex: function() {
+        var ast = this.ast;
+        if ('expr' === ast.type)
+        {
+            for (var i=0,n=ast.arg.length; i<n; ++i)
+            {
+                if (ast.arg[i].isComplex()) return true;
+            }
+        }
+        else if ('num' === ast.type)
+        {
+            return is_instance(ast.arg, Complex);
+        }
+        return false;
+    }
 
     ,c: function() {
         var self = this, ast = self.ast;
@@ -1572,14 +1587,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!symbol)
         {
             symbol = self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s);});
-            if (!symbol.length) symbol = ['x'];
+            //if (!symbol.length) symbol = ['x'];
         }
-        ring = is_instance(ring, Ring) ? ring : (-1 !== self.symbols().indexOf(imagUnit) ? Ring.C() : Ring.Q());
+        ring = is_instance(ring, Ring) ? ring : ((-1 !== self.symbols().indexOf(imagUnit)) || self.isComplex() ? Ring.C() : Ring.Q());
         if (ring.CoefficientRing && ring.CoefficientRing.PolynomialClass)
         {
             if (!is_array(symbol)) symbol = [symbol];
-            symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);});
-            if (!symbol.length) symbol = ring.CoefficientRing.PolynomialSymbol.slice();
+            symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);}); //hmm..?
+            //if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed??
         }
         other_symbols = is_array(symbol) ? self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (-1 === symbol.indexOf(s));}) : self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (s !== symbol);});
         if (ring.PolynomialClass)

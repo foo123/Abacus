@@ -18,7 +18,7 @@ echo('Abacus.RationalFuncs (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Rational Functions and Operations');
-echo('pring = Abacus.Ring.'+pring.toString()+', ring = Abacus.Ring.'+ring.toString());
+echo('pring = '+pring.toString()+', ring = '+ring.toString());
 echo('---');
 
 echo('ring.create().toString()');

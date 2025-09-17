@@ -1,6 +1,6 @@
 # Abacus
 
-Combinatorics and Algebraic Number Theory **Symbolic Computation Library** for Javascript, Python
+**Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for Javascript and Python
 
 
 **version 2.0.0** in progress
@@ -8,7 +8,7 @@ Combinatorics and Algebraic Number Theory **Symbolic Computation Library** for J
 ![abacus combinatorial numbers](/abacus.jpg)
 
 
-`Abacus` is a relatively small and versatile library containing methods and math utilities for (fast) combinatorial object computation and algebraic  / number theoretic computation. It builds on (and extends) a deprecated previous project `Simulacra`.
+`Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for (fast) combinatorial object computation and algebraic / number theoretic computation. It builds on (and extends) a deprecated previous project `Simulacra`.
 
 `Abacus` uses self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
@@ -62,7 +62,7 @@ Combinatorics and Algebraic Number Theory **Symbolic Computation Library** for J
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..) (and with filtering applied, if set). **Note** `unrank` methods have to be implemented for this feature to work
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
 
-**Symbolic Computation**
+**Symbolic Computations**
 * Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
 * Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd` / `groebner`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
 * `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`), `Complex` (`test/complex.js`) **supporting arbitrary precision arithmetic**
