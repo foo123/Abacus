@@ -18,8 +18,8 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
         if ("partial" === $.type)
         {
-            n = is_array(n)&&n.length ? n[0] : n;
-            var nsub = -1, data = $.data||[], pos = $.position||null;
+            n = is_array(n) && n.length ? n[0] : n;
+            var nsub = -1, data = $.data || [], pos = $.position || null;
 
             if (is_instance(n, CombinatorialIterator))
             {
@@ -32,13 +32,13 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             {
                 sub = $.sub;
             }
-            n = (+(n||0))||0;
+            n = (+(n || 0)) || 0;
 
             if (is_obj(data))
             {
                 //eg. {0:"{0..4}",1:"[0]+1",..}
                 pos = [];
-                data = KEYS(data).map(function(p){
+                data = KEYS(data).map(function(p) {
                     p = +p;
                     pos.push(p);
                     return data[p];
@@ -49,20 +49,20 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
             if (data.length && (is_string(data[0]) || (data[0].length && (true === data[0][0] || false === data[0][0]))))
             {
                 // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
-                if (nsub === n) { n += data.length; nsub = -1; }
-                data = Tensor.generate(n, data, pos, $.ordering||null);
+                if (nsub === n) {n += data.length; nsub = -1;}
+                data = Tensor.generate(n, data, pos, $.ordering || null);
             }
-            if (nsub === n) { n += (data.length?data[0].length:0)||0; nsub = -1; }
+            if (nsub === n) {n += (data.length ? data[0].length : 0) || 0; nsub = -1;}
 
-            $.data = data; $.position = pos || array((data.length?data[0].length:0)||0, 0, 1);
+            $.data = data; $.position = pos || array((data.length ? data[0].length : 0)|| 0, 0, 1);
             $.dimension = $.position.length; $.base = n;
-            $.rand["partial"] = 1;
+            $.rand['partial'] = 1;
         }
         else
         {
             if ("tuple" === $.type)
             {
-                n[0] = n[0]||1; n[1] = n[1]||1;
+                n[0] = n[0] || 1; n[1] = n[1] || 1;
                 if (is_instance(n[0], CombinatorialIterator))
                 {
                     sub = n[0];
@@ -79,11 +79,11 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 }
                 $.base = n[1];
                 $.dimension = stdMath.max(0, n[0]);
-                if ("gray" === $.output) $.output = function(item, n){ return Tensor.toGray(item,n[1]); };
+                if ('gray' === $.output) $.output = function(item, n) {return Tensor.toGray(item, n[1]);};
             }
             else
             {
-                var m_M = operate(function(m_M, k){
+                var m_M = operate(function(m_M, k) {
                     if (k < m_M[0]) m_M[0] = k;
                     if (k > m_M[1]) m_M[1] = k;
                     return m_M;
@@ -91,22 +91,22 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 $.base = n;
                 $.minbase = m_M[0]; $.maxbase = m_M[1];
                 $.dimension = n.length;
-                if ("gray" === $.output)
+                if ('gray' === $.output)
                 {
-                    $.output = function(item, n){ return Tensor.toGray(item,n); };
+                    $.output = function(item, n) {return Tensor.toGray(item, n);};
                 }
-                else if ("inversion" === $.output)
+                else if ('inversion' === $.output)
                 {
-                    $.output = function(item, n){ return Tensor.inversion(item); };
+                    $.output = function(item, n) {return Tensor.inversion(item);};
                 }
                 else if (is_array($.output))
                 {
                     var BASE = $.output;
-                    $.output = function(item, n){ return Tensor.component(item,BASE); };
+                    $.output = function(item, n) {return Tensor.component(item, BASE);};
                 }
             }
         }
-        CombinatorialIterator.call(self, "Tensor", n, $, sub?{method:"partial"===$.type?($.submethod||"complete"):$.submethod,iter:sub,pos:"partial"===$.type?($.subpos||$.position):$.subpos,cascade:$.subcascade}:null);
+        CombinatorialIterator.call(self, "Tensor", n, $, sub ? {method:"partial" === $.type ? ($.submethod || 'complete') : $.submethod, iter:sub, pos:"partial"===$.type ? ($.subpos || $.position) : $.subpos, cascade:$.subcascade} : null);
     }
 
     ,__static__: {
@@ -116,7 +116,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,DUAL: CombinatorialIterator.DUAL
         ,count: function(n, $) {
             var O = Abacus.Arithmetic.O, type = $ && $.type ? $.type : "tensor";
-            return "partial"===type ? ($.data&&$.data.length ? Abacus.Arithmetic.num($.data.length) : O) : ("tuple"===type ? (!n || (0 >= n[0]) ? O : exp(n[1], n[0])) : (!n || !n.length ? O : product(n)));
+            return "partial" === type ? ($.data && $.data.length ? Abacus.Arithmetic.num($.data.length) : O) : ("tuple" === type ? (!n || (0 >= n[0]) ? O : exp(n[1], n[0])) : (!n || !n.length ? O : product(n)));
         }
         ,initial: function(n, $, dir) {
             // some C-P-T dualities, symmetries & processes at play here
@@ -126,13 +126,13 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             dir = -1 === dir ? -1 : 1;
 
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+            if ((!(COLEX & order) && (REVERSED & order)) || ((COLEX & order) && !(REVERSED & order)))
                 dir = -dir;
 
             if ("partial" === type)
             {
                 // O(1)
-                item = $.data&&$.data.length ? (0 > dir ? $.data[$.data.length-1] : $.data[0]) : null;
+                item = $.data && $.data.length ? (0 > dir ? $.data[$.data.length-1] : $.data[0]) : null;
             }
             else
             {
@@ -140,7 +140,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 item = "tuple" === type ? (
                     !n[0] ? [] : (0 > dir ? array(n[0], n[1]-1, 0) : array(n[0], 0, 0))
                 ) : (
-                    !n.length ? [] : (0 > dir ? array(n.length, function(i){return n[i]-1;}): array(n.length, 0, 0))
+                    !n.length ? [] : (0 > dir ? array(n.length, function(i) {return n[i]-1;}): array(n.length, 0, 0))
                 );
                 item = klass.DUAL(item, n, $);
             }
@@ -161,19 +161,19 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 if ("tuple" === type)
                 {
                     nd = n[0];
-                    if (!nd || nd !== item.length) return false;
-                    for (n=n[1],i=0; i<nd; i++)
+                    if (!nd || (nd !== item.length)) return false;
+                    for (n=n[1],i=0; i<nd; ++i)
                     {
-                        if (0 > item[i] || item[i] >= n) return false;
+                        if ((0 > item[i]) || (item[i] >= n)) return false;
                     }
                 }
                 else
                 {
                     nd = n.length;
-                    if (!nd || nd !== item.length) return false;
-                    for (i=0; i<nd; i++)
+                    if (!nd || (nd !== item.length)) return false;
+                    for (i=0; i<nd; ++i)
                     {
-                        if (0 > item[i] || item[i] >= n[i]) return false;
+                        if ((0 > item[i]) || (item[i] >= n[i])) return false;
                     }
                 }
             }
@@ -182,7 +182,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,succ: function(item, index, n, $, dir, TI) {
             if (!n || (null == item)) return null;
             var type = $ && $.type ? $.type : "tensor",
-                order = $ && null!=$.order ? $.order : LEX,
+                order = $ && (null != $.order) ? $.order : LEX,
                 Arithmetic = Abacus.Arithmetic, ind;
             dir = -1 === dir ? -1 : 1;
             if ("partial" === type)
@@ -191,11 +191,11 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 if (REVERSED & order)
                 {
                     dir = -dir;
-                    if (null != index) index = Arithmetic.sub(Arithmetic.num($.data.length-1),index);
+                    if (null != index) index = Arithmetic.sub(Arithmetic.num($.data.length-1), index);
                 }
                 if (null == index) index = find($.data, item, true);
                 ind = Arithmetic.val(index);
-                return 0>dir ? (0<=ind-1 ? $.data[ind-1] : null) : (0<=ind && ind+1<$.data.length ? $.data[ind+1] : null);
+                return 0 > dir ? (0 <= ind-1 ? $.data[ind-1] : null) : (0 <= ind && ind+1 < $.data.length ? $.data[ind+1] : null);
             }
             return !n[0] || (0 >= n[0]) ? null : next_tensor(item, n, dir, type, order, TI);
         }
@@ -206,16 +206,16 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
 
             if ("partial" === type)
             {
-                item = $.data&&$.data.length ? $.data[rndInt(0,$.data.length-1)] : null;
+                item = $.data && $.data.length ? $.data[rndInt(0, $.data.length-1)] : null;
             }
             else
             {
                 item = "tuple" === type ? (
                     // p ~ 1 / n^k, O(n)
-                    !n[0] ? [] : array(n[0], function(i){return rndInt(0, n[1]-1);})
+                    !n[0] ? [] : array(n[0], function(i) {return rndInt(0, n[1]-1);})
                 ) : (
                     // p ~ 1 / n1*n2*..nk, O(n)
-                    !n.length ? [] : array(n.length, function(i){return rndInt(0, n[i]-1);})
+                    !n.length ? [] : array(n.length, function(i) {return rndInt(0, n[i]-1);})
                 );
                 item = klass.DUAL(item, n, $);
             }
@@ -226,7 +226,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: function(item, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
-                order = $ && null!=$.order?$.order:LEX,
+                order = $ && (null != $.order) ? $.order : LEX,
                 type = $ && $.type ? $.type : "tensor",
                 add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
                 index = Arithmetic.O, J = Arithmetic.J, nd, i;
@@ -244,50 +244,50 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 if ("tuple" === type)
                 {
                     nd = n[0];
-                    if (!nd || nd !== item.length) return J;
-                    for (n=n[1],i=0; i<nd; i++)
+                    if (!nd || (nd !== item.length)) return J;
+                    for (n=n[1],i=0; i<nd; ++i)
                     {
-                        if (0 > item[i] || item[i] >= n) return J;
+                        if ((0 > item[i]) || (item[i] >= n)) return J;
                         index = add(mul(index, n), item[i]);
                     }
                 }
                 else
                 {
                     nd = n.length;
-                    if (!nd || nd !== item.length) return J;
-                    for (i=0; i<nd; i++)
+                    if (!nd || (nd !== item.length)) return J;
+                    for (i=0; i<nd; ++i)
                     {
-                        if (0 > item[i] || item[i] >= n[i]) return J;
+                        if ((0 > item[i]) || (item[i] >= n[i])) return J;
                         index = add(mul(index, n[i]), item[i]);
                     }
                 }
             }
 
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            if ((!(COLEX & order) && (REVERSED & order)) || ((COLEX & order) && !(REVERSED & order)))
+                index = sub($ && (null != $.last) ? $.last : sub(klass.count(n, $), Arithmetic.I), index);
 
             return index;
         }
         ,unrank: function(index, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
-                order = $ && null!=$.order?$.order:LEX,
+                order = $ && (null != $.order) ? $.order : LEX,
                 type = $ && $.type ? $.type : "tensor",
                 sub = Arithmetic.sub, mod = Arithmetic.mod,
                 div = Arithmetic.div, val = Arithmetic.val,
                 r, b, i, t, item, nd;
 
             index = null == index ? null : Arithmetic.num(index);
-            if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
+            if ((null == index) || !Arithmetic.inside(index, Arithmetic.J, $ && (null != $.count) ? $.count : klass.count(n, $)))
                 return null;
 
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            if ((!(COLEX & order) && (REVERSED & order)) || ((COLEX & order) && !(REVERSED & order)))
+                index = sub($ && (null != $.last) ? $.last : sub(klass.count(n, $), Arithmetic.I), index);
 
             if ("partial" === type)
             {
                 if (!$.data || !$.data.length) return null;
                 index = val(index);
-                item = 0<=index && index<$.data.length ? $.data[index] : null;
+                item = 0 <= index && index < $.data.length ? $.data[index] : null;
             }
             else
             {
@@ -297,7 +297,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                     nd = n[0];
                     if (!nd) return [];
                     item = new Array(nd); b = n[1];
-                    for (r=index,i=nd-1; i>=0; i--)
+                    for (r=index,i=nd-1; i>=0; --i)
                     {
                         t = mod(r, b); r = div(r, b);
                         item[i] = val(t);
@@ -308,7 +308,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                     nd = n.length;
                     if (!nd) return [];
                     item = new Array(nd);
-                    for (r=index,i=nd-1; i>=0; i--)
+                    for (r=index,i=nd-1; i>=0; --i)
                     {
                         b = n[i]; t = mod(r, b); r = div(r, b);
                         item[i] = val(t);
@@ -329,25 +329,25 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
         ,inversion: function(inv) {
             // assume inv is tensor component of dimensions: (1,2,..,n-1,n) in this order
             var i, n = inv.length, perm = n ? [0] : [];
-            for (i=1; i<n; i++) perm.splice(i-inv[i], 0, i);
+            for (i=1; i<n; ++i) perm.splice(i-inv[i], 0, i);
             return perm;
         }
         ,product: kronecker
         ,directsum: cartesian
         ,component: function(comp, base) {
-            return null == comp ? null : (null == base ? comp : array(comp.length, function(i){
-                return i<base.length && 0<=comp[i] && comp[i]<base[i].length ? base[i][comp[i]] : comp[i];
+            return null == comp ? null : (null == base ? comp : array(comp.length, function(i) {
+                return (i < base.length) && (0 <= comp[i]) && (comp[i] < base[i].length) ? base[i][comp[i]] : comp[i];
             }));
         },
         affine: function(/* args */) {
             // do an affine transformation on each item dimension
             // an affine transform T(x) = T0*x + T1
-            var affine = 1===arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
+            var affine = 1 === arguments.length && is_array(arguments[0]) ? arguments[0] : arguments;
             return affine ? function(item) {
-                return array(item.length, function(i){
-                    if (i >= affine.length || null == affine[i]) return item[i];
+                return array(item.length, function(i) {
+                    if ((i >= affine.length) || (null == affine[i])) return item[i];
                     var T = affine[i];
-                    return is_number(T) ? item[i]+T : T[0]*item[i]+(T[1]||0);
+                    return is_number(T) ? (item[i]+T) : (T[0]*item[i]+(T[1] || 0));
                 });
             } : ID;
         }
@@ -359,8 +359,8 @@ function next_tensor(item, N, dir, type, order, TI)
 {
     //maybe "use asm"
     var n = N, k, i, j, i0, i1, DI, a, b, MIN, MAX;
-    if ("tuple" === type) { k=n[0]; n=n[1]; }
-    else { k=n.length; }
+    if ("tuple" === type) {k = n[0]; n = n[1];}
+    else {k = n.length;}
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
     MIN = 0; MAX = k-1;
@@ -390,8 +390,8 @@ function next_tensor(item, N, dir, type, order, TI)
         if ("tuple" === type)
         {
             i = i0;
-            while (MIN<=i && MAX>=i && item[i]===0) i-=DI;
-            if (MIN<=i && MAX>=i)
+            while ((MIN <= i) && (MAX >= i) && (0 === item[i])) i -= DI;
+            if ((MIN <= i) && (MAX >= i))
                 for (n=n-1,item[i]=item[i]-1,j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = n;
             //else last item
             else item = null;
@@ -399,8 +399,8 @@ function next_tensor(item, N, dir, type, order, TI)
         else
         {
             i = i0;
-            while (MIN<=i && MAX>=i && item[i]===0) i-=DI;
-            if (MIN<=i && MAX>=i)
+            while ((MIN <= i) && (MAX >= i) && (0 === item[i])) i -= DI;
+            if ((MIN <= i) && (MAX >= i))
                 for (item[i]=item[i]-1,j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = n[a*j+b]-1;
             //else last item
             else item = null;
@@ -411,8 +411,8 @@ function next_tensor(item, N, dir, type, order, TI)
         if ("tuple" === type)
         {
             i = i0;
-            while (MIN<=i && MAX>=i && item[i]+1===n) i-=DI;
-            if (MIN<=i && MAX>=i)
+            while ((MIN <= i) && (MAX >= i) && (item[i]+1 === n)) i -= DI;
+            if ((MIN <= i) && (MAX >= i))
                 for (item[i]=item[i]+1,j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = 0;
             //else last item
             else item = null;
@@ -420,8 +420,8 @@ function next_tensor(item, N, dir, type, order, TI)
         else
         {
             i = i0;
-            while (MIN<=i && MAX>=i && item[i]+1===n[a*i+b]) i-=DI;
-            if (MIN<=i && MAX>=i)
+            while ((MIN <= i) && (MAX >= i) && (item[i]+1 === n[a*i+b])) i -= DI;
+            if ((MIN <= i) && (MAX >= i))
                 for (item[i]=item[i]+1,j=i+DI; MIN<=j && MAX>=j; j+=DI) item[j] = 0;
             //else last item
             else item = null;

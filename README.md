@@ -1,6 +1,6 @@
 # Abacus
 
-**Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for Javascript and Python
+**Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
 **version 2.0.0** in progress
