@@ -517,7 +517,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             // subexpression
                             arg = parse_until(')');
                         }
-                        else if (match = eat(/^\d+(\.\d+)?(e-?\d+)?/i))
+                        else if (match = eat(/^\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                         {
                             // number
                             arg = Expr('', Rational.fromDec(match[0]));
@@ -535,12 +535,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         terms.unshift(term);
                         continue;
                     }
-                    if (match = eat(/^-?\s*\d+(\.\d+)?(e-?\d+)?/i))
+                    if (match = eat(/^-?\s*\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                     {
                         // float or int to rational number
                         term = Expr('', Rational.fromDec(match[0].split(/\s+/).join('')));
                         terms.unshift(term);
-                        if (eat(/^([a-z]|\()/i, false))
+                        if (eat(/^\s*[a-z\(]/i, false))
                         {
                             // directly following symbol or parenthesis, assume implicit multiplication
                             ops.unshift(['*', i]);
@@ -556,9 +556,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         term = Expr('', imagUnit === m ? Complex.Img() : m);
                         terms.unshift(term);
-                        if ((imagUnit === m) && eat(/^\d/, false))
+                        if ((imagUnit === m) && eat(/^\s*[\d\(]/, false))
                         {
-                            // directly following number after imaginary symbol, assume implicit multiplication
+                            // directly following number or parenthesis after imaginary symbol, assume implicit multiplication
                             ops.unshift(['*', i]);
                             merge();
                         }

@@ -16,7 +16,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        $.type = $.type || 'subset';
+        $.type = $.type || "subset";
         $.rand = $.rand || {};
         $.base = n;
         $.mindimension = 0;
@@ -33,9 +33,9 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         ,DUAL: function(item, n, $, dir) {
             if (null == item) return null;
             // some C-P-T dualities, symmetries & processes at play here
-            var klass = this, type = $ && $.type ? $.type : 'subset',
+            var klass = this, type = $ && $.type ? $.type : "subset",
                 order = $ && (null != $.order) ? $.order : LEX, order0 = null;
-            if ('binary' === type)
+            if ("binary" === type)
             {
                 order = LEX;
                 order0 = $.order;
@@ -62,7 +62,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
             var item, klass = this,
-                type = $ && $.type ? $.type : 'subset',
+                type = $ && $.type ? $.type : "subset",
                 order = $ && (null != $.order) ? $.order : LEX;
 
             if (0 > n) return null;
@@ -75,7 +75,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             item = [];
             if (0 < n)
             {
-                if ((('binary' === type) || (COLEX & order)) && !(MINIMAL & order))
+                if ((("binary" === type) || (COLEX & order)) && !(MINIMAL & order))
                 {
                     //item = 0 > dir ? array(n, 0, 1) : [];
                     if (0 > dir) item = array(n, 0, 1);
@@ -90,7 +90,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, is_binary = 'binary' === ($ || {}).type, i, x, l, dict;
+            var klass = this, is_binary = "binary" === ($ || {}).type, i, x, l, dict;
 
             if (!item || (0 > n)) return false;
 
@@ -149,7 +149,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 }
                 return null;
             }
-            else if ((COLEX & order) || ('binary' === type))
+            else if ((COLEX & order) || ("binary" === type))
             {
                 dir = -1 === dir ? -1 : 1;
                 //if (REVERSED & order) dir = -dir;
@@ -180,7 +180,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 add = Arithmetic.add, sub = Arithmetic.sub,
                 type = $ && $.type ? $.type : "subset",
                 order = $ && (null != $.order) ? $.order : LEX,
-                is_binary = 'binary' === type,
+                is_binary = "binary" === type,
                 is_reflected = REFLECTED & order,
                 index = J, x, y, i, j, k, l, dict;
 
@@ -303,7 +303,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                         ++i; index = shr(index, 1);
                     }
                 }
-                else if ('binary' === type)
+                else if ("binary" === type)
                 {
                     if (REVERSED & order)
                         index = sub($ && (null != $.last) ? $.last : sub(count, I), index);
@@ -355,7 +355,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
 
     ,_update: function() {
         var self = this, $ = self.$, n = self.n, item = self.__item, itemlen,
-            order = $.order || LEX, is_binary = 'binary' === $.type,
+            order = $.order || LEX, is_binary = "binary" === $.type,
             is_reflected = REFLECTED & order;
         if ((null != item) && (n+1 !== item.length))
         {
@@ -378,7 +378,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         var n = this.n;
         if (n+1 === item.length)
         {
-            var $ = this.$, order = $.order || LEX, is_binary = 'binary' === $.type,
+            var $ = this.$, order = $.order || LEX, is_binary = "binary" === $.type,
                 is_reflected = REFLECTED & order;
             item = ((is_binary) && !is_reflected) || (is_reflected && !(is_binary)) ? item.slice(n-item[n], n) : item.slice(0, item[n]);
         }
@@ -481,4 +481,60 @@ function next_subset(item, N, dir, order)
         else item = null;
     }
     return item;
+}
+function subset2binary(item, n)
+{
+    if (0 >= n) return [];
+    var binary = array(n, 0, 0), i, l = item.length;
+    for (n=n-1,i=0; i<l; ++i) binary[n-item[i]] = 1;
+    return binary;
+}
+function binary2subset(item, n)
+{
+    n = stdMath.min(n || item.length, item.length);
+    var subset = new Array(n), i, j;
+    for (n=n-1,i=0,j=0; i<=n; ++i) if (0 < item[i]) subset[j++] = n - i;
+    if (j < subset.length) subset.length = j; // truncate if needed
+    return subset;
+}
+function subset_lex_rank(n, x, y)
+{
+    var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
+        O = Arithmetic.O, I = Arithmetic.I,
+        k, j, index = O, key;
+    key = String(n) + ',' + String(x) + ',' + String(null == y ? null : x-y);
+    if (null == subset_lex_rank.mem[key])
+    {
+        if (null == y)
+        {
+            for (k = I,j = 0; j < x; ++j) k = add(k, pow2(n-j-1));
+            index = add(index, k);
+            subset_lex_rank.mem[key] = index;
+        }
+        else
+        {
+            if (x === y+1)
+            {
+                index = add(index, I);
+                subset_lex_rank.mem[key] = index;
+            }
+            else if (x > y+1)
+            {
+                for (k = I,j = y+1; j < x; ++j) k = add(k, pow2(n-j-1));
+                index = add(index, k);
+                subset_lex_rank.mem[key] = index;
+            }
+        }
+    }
+    else
+    {
+        index = subset_lex_rank.mem[key];
+    }
+    return index;
+}
+subset_lex_rank.mem = Obj();
+function subset_bin_rank(n, x, y)
+{
+    var Arithmetic = Abacus.Arithmetic;
+    return n > x && 0 <= x ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
 }

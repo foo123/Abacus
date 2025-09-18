@@ -351,8 +351,8 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 });
             } : ID;
         }
-        ,conditional: conditional_combinatorial_tensor
-        ,generate: gen_combinatorial_data
+        ,conditional: null
+        ,generate: null
     }
 });
 function next_tensor(item, N, dir, type, order, TI)
@@ -429,3 +429,336 @@ function next_tensor(item, N, dir, type, order, TI)
     }
     return item;
 }
+function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
+{
+    var k, kl, a, r, l, i, vv, nv = v.length, v0, v1,
+        tensor, t0, t1, ok, nvalid, product, p, pv, pe, pea, pl, npv,
+        seen = null, valid = null, invalid, expr, e, el;
+
+    if (!nv) return [];
+
+    if (is_callable(extra_conditions))
+    {
+        valid = extra_conditions;
+        extra_conditions = true;
+    }
+    else
+    {
+        extra_conditions = false;
+    }
+
+    if (!(V_EQU === value_conditions || V_DIFF === value_conditions || V_INC === value_conditions || V_DEC === value_conditions || V_NONINC === value_conditions || V_NONDEC === value_conditions))
+    {
+        value_conditions = false;
+    }
+
+    pe = new Array(nv); pea = []; pl = 0; pv = [];
+    for (kl=1,k=0; k<nv; ++k)
+    {
+        if (is_callable(v[k][0]))
+        {
+            // fixed expression for position k, store it to be added after actual values are added
+            if (!v[k][1].length)
+            {
+                // autonomous expression, which does not depend on any position
+                pea.push([v[k][0],k]);
+            }
+            else
+            {
+                // depends on one or multiple other positions
+                // expr v[k][0] for pos k, depends on value at positions v[k][1][]
+                for (e=0,el=v[k][1].length; e<el; ++e)
+                {
+                    if (null == pe[v[k][1][e]]) pe[v[k][1][e]] = [[v[k][0],k,v[k][1]]];
+                    else pe[v[k][1][e]].push([v[k][0],k,v[k][1]]);
+                }
+            }
+            // this makes the computation faster, since fixed/expression values
+            // are not counted as extra and then checked if valid, but generated directly validly
+        }
+        else
+        {
+            // values for position k, count them
+            pv.push(k);
+            kl *= v[k].length;
+            if (!kl || 0>=kl) return [];
+        }
+    }
+    if (!pv.length) return [];
+
+    product = new Array(kl); nvalid = 0;
+    t1 = nv-1; npv = pv.length-1;
+    // O(kl), count only necessary values, minus any outliers (as few as possible)
+    for (k=0; k<kl; ++k)
+    {
+        // O(nv)
+        tensor = new Array(nv); invalid = false;
+        // explicit tensor values, not expressions
+        for (r=k,a=npv; a>=0; --a)
+        {
+            p = pv[a];
+            l = v[p].length;
+            i = r % l;
+            r = ~~(r / l);
+            tensor[p] = v[p][i];
+        }
+        // evaluate expressions which are autonomous, do not depend on any position
+        for (a=0,pl=pea.length; a<pl; ++a)
+        {
+            expr = pea[a];
+            tensor[expr[1]] = expr[0]();
+        }
+        // evaluate expressions now after any explicit tensor values were calculated previously
+        for (a=0; a<nv; ++a)
+        {
+            // if expression and not already avaluated (eg by previous expression)
+            if (null != pe[a])
+            {
+                // fill-up any pos values which are expressions based on this pos value
+                expr = pe[a];
+                for (e=0,el=expr.length; e<el; ++e)
+                {
+                    p = expr[e][1];
+                    if (null == tensor[p])
+                    {
+                        // not computed already
+                        ok = true;
+                        vv = expr[e][2].map(function(k) {
+                            if ((null == tensor[k]) || isNaN(tensor[k])) ok = false; // not computed already, abort
+                            return tensor[k];
+                        });
+                        if (ok) tensor[p] = expr[e][0].apply(null, vv);
+                    }
+                }
+            }
+        }
+        if (value_conditions || extra_conditions)
+        {
+            if ((null == tensor[t1]) || isNaN(tensor[t1]) || extra_conditions && !valid(tensor,t1,t1))
+            {
+                invalid = true;
+            }
+            else
+            {
+                v1 = tensor[t1];
+                if (V_DIFF === value_conditions) {seen = {}; seen[v1] = 1;}
+                for (t0=t1-1; t0>=0; --t0)
+                {
+                    v0 = tensor[t0];
+                    if (
+                        (null == v0) || isNaN(v0) ||
+                        (V_EQU === value_conditions && v1 !== v0) ||
+                        (V_DIFF === value_conditions && 1 === seen[v0]) ||
+                        (V_INC === value_conditions && v0 >= v1) ||
+                        (V_DEC === value_conditions && v0 <= v1) ||
+                        (V_NONINC === value_conditions && v0 < v1) ||
+                        (V_NONDEC === value_conditions && v0 > v1) ||
+                        (extra_conditions && !valid(tensor,t0,t1))
+                   )
+                    {
+                        invalid = true;
+                        break;
+                    }
+                    if (V_DIFF === value_conditions) seen[v0] = 1;
+                    v1 = v0;
+                }
+            }
+        }
+        if (invalid) continue;
+        product[nvalid++] = tensor;
+    }
+    // truncate if needed
+    if (product.length > nvalid) product.length = nvalid;
+    return product;
+}
+function gen_combinatorial_data(n, data, pos, value_conditions, options)
+{
+    options = options || {};
+    pos = pos || array(data.length||0, 0, 1);
+    // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
+    // NOTE: needs at least one non-autonomous expression or one range of values, else will return empty set
+    var min = null == options.min ? 0 : options.min,
+        max = null == options.max ? n-1 : options.max,
+        nn = max-min+1, D = data, m, d, i, a, j, pi, l = D.length, none = false,
+        pos_ref, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
+        in_range = function in_range(x) {return min <= x && x <= max;}, additional_conditions;
+
+    data = []; none = false;
+    for (pi=0,i=0; i<l; ++i,++pi)
+    {
+        d = D[i];
+        if (is_string(d))
+        {
+            if (m=d.match(not_in_set_re))
+            {
+                if (0 < m[1].indexOf('..'))
+                {
+                    m = m[1].split('..').map(Number);
+                    if (m[0] > m[1])
+                        a = complement(n, array(m[0]-m[1]+1, m[1], 1).filter(in_range)).reverse();
+                    else
+                        a = complement(n, array(m[1]-m[0]+1, m[0], 1).filter(in_range));
+                }
+                else
+                {
+                    a = complement(n, m[1].split(',').map(Number).filter(in_range));
+                }
+                if (!a.length) {none = true; break;}
+                data.push(a);
+            }
+            else if (m=d.match(in_set_re))
+            {
+                if (0 < m[1].indexOf('..'))
+                {
+                    m = m[1].split('..').map(Number);
+                    a = (m[0] > m[1] ? array(m[0]-m[1]+1, m[0], -1) : array(m[1]-m[0]+1, m[0], 1)).filter(in_range);
+                }
+                else
+                {
+                    a = m[1].split(',').map(Number).filter(in_range);
+                }
+                if (!a.length) {none = true; break;}
+                data.push(a);
+            }
+            else
+            {
+                is_valid = true; pos_ref = []; expr = null;
+                d = d.replace(pos_re, function(m, d) {
+                    var posref = parseInt(d, 10), varname = 'v' + String(posref);
+                    if (isNaN(posref) || !in_range(posref)) is_valid = false;
+                    if (is_valid && (-1 === pos_ref.indexOf(posref))) pos_ref.push(posref);
+                    return varname;
+                });
+                if (!is_valid)
+                {
+                    if (pos) pos.splice(pi--, 1);
+                    continue;
+                }
+                pos_ref.sort(sorter());
+                try {
+                    expr = new Function(pos_ref.map(function(p) {return 'v' + String(p);}).join(','),'return Math.floor('+d+');');
+                } catch(e) {
+                    expr = null;
+                }
+                if (!is_callable(expr))
+                {
+                    if (pos) pos.splice(pi--, 1);
+                    continue;
+                }
+                for (j=0; j<pos_ref.length; ++j)
+                {
+                    if (!ref[pos_ref[j]]) ref[pos_ref[j]] = [expr];
+                    else ref[pos_ref[j]].push(expr);
+                    if ((-1 === pos.indexOf(pos_ref[j])) && (-1 === missing.indexOf(pos_ref[j]))) missing.push(pos_ref[j]);
+                }
+                algebraic.push([expr,null,null,pos_ref,pos[pi]]);
+                data.push(algebraic[algebraic.length-1]);
+            }
+        }
+        else if (is_array(d))
+        {
+            a = false === d[0] ? complement(n, d.slice(1).filter(in_range)) : (true === d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
+            if (!a.length) {none = true; break;}
+            data.push(a);
+        }
+    }
+    if (none) data = [];
+
+    if (missing.length)
+    {
+        for (i=0,l=missing.length; i<l; ++i)
+        {
+            // add any missing references
+            pos.push(missing[i]);
+            if (!none) data.push(array(nn, min, 1));
+        }
+    }
+
+    // sort positions ascending if needed and re-arrange data
+    // two parameters change here, adjust [pos] array IN-PLACE, while simply return the new computed [data]
+    i = is_sorted(pos);
+    if (-1 === i)
+    {
+        reflection(pos, pos);
+        if (!none) reflection(data, data);
+    }
+    else if (0 === i)
+    {
+        d = mergesort(pos, 1, false, true);
+        permute(pos, d);
+        if (!none) permute(data, d);
+    }
+    if (none) return [];
+    if (algebraic.length)
+    {
+        for (i=0,l=algebraic.length; i<l; ++i)
+        {
+            m = algebraic[i];
+            // adjust relative positions in algebraic expressions used in data (same reference)
+            m[1] = m[3].map(function(m3) {return pos.indexOf(m3);});
+            m[2] = pos.indexOf(m[4]);
+            for (j=0; j<m[3].length; ++j)
+            {
+                // by the way, filter out some invalid values here for all expr on the same pos ref
+                // for expr that depend on single position only, else leave for actual combinatorial generation later on
+                expr = ref[m[3][j]];
+                if (!is_callable(data[m[1][j]][0]) /*expression does not reference another expression*/)
+                {
+                    a = data[m[1][j]].filter(function(x) {
+                        for (var ex,i=0,l=expr.length; i<l; ++i)
+                        {
+                            // for expr that depend on single position only
+                            if (1 !== expr[i].length /*num of func args*/) continue;
+                            ex = expr[i](x);
+                            if (isNaN(ex) || min > ex || ex > max) return false;
+                        }
+                        return true;
+                    });
+                    if (!a.length) {none = true; break;}
+                    else data[m[1][j]] = a;
+                }
+            }
+            if (none) break;
+        }
+    }
+    if (none) return [];
+
+    // check value conditions
+    if ('=' === value_conditions) value_conditions = V_EQU;
+    else if (('!=' === value_conditions) || ('<>' === value_conditions)) value_conditions = V_DIFF;
+    else if ('<' === value_conditions) value_conditions = V_INC;
+    else if (('<=' === value_conditions) || ('=<' === value_conditions)) value_conditions = V_NONDEC;
+    else if ('>' === value_conditions) value_conditions = V_DEC;
+    else if (('>=' === value_conditions) || ('=>' === value_conditions)) value_conditions = V_NONINC;
+    else value_conditions = false;
+
+    // check additional conditions
+    additional_conditions = is_callable(options.extra_conditions) ? function(v, i0, i1) {
+        var v0 = v[i0];
+        if (
+            // check in range
+            (min > v0 || v0 > max) ||
+            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
+            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
+            (V_INC === value_conditions && pos[i0] > v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
+       ) return false
+        return options.extra_conditions(v ,i0, i1);
+    } : function(v, i0, i1) {
+        var v0 = v[i0];
+        if (
+            // check in range
+            (min > v0 || v0 > max) ||
+            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
+            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
+            (V_INC === value_conditions && pos[i0] > v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
+       ) return false
+        return true;
+    };
+
+    // compute valid combinatorial data satisfying conditions
+    return true === options.lazy ? data : conditional_combinatorial_tensor(data, value_conditions, additional_conditions);
+}
+Tensor.conditional = conditional_combinatorial_tensor;
+Tensor.generate = gen_combinatorial_data;

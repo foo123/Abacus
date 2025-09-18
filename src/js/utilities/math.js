@@ -116,9 +116,8 @@ Abacus.Math = {
     ,rndInt: rndInt
 
     ,factorial: factorial
+    ,binomial: factorial
     ,stirling: stirling
-    ,partitions: partitions
-    ,compositions: compositions
     ,bell: bell
     ,catalan: catalan
     ,fibonacci: fibonacci
@@ -383,7 +382,8 @@ Abacus.Util = {
     ,reflection: reflection
     ,reversion: reversion
     ,lcs: lcs
-    ,align: align
+    ,levenshtein: damerau_levenshtein
+    ,align: align_sequences
     ,merge: merge_sequences
     ,gray: gray
     ,igray: igray

@@ -6,7 +6,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
     constructor: function SetPartition(n, $) {
         var self = this, sub = null, K;
         if (!is_instance(self, SetPartition)) return new SetPartition(n, $);
-        $ = $ || {}; $.type = 'partition';
+        $ = $ || {}; $.type = "partition";
         n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
@@ -17,7 +17,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        K = null != $["parts="] ? ($["parts="]|0) : null;
+        K = null != $['parts='] ? ($['parts=']|0) : null;
         $.base = n;
         $.mindimension = stdMath.max(0, null != K ? K : 1);
         $.maxdimension = stdMath.max(0, null != K ? K : n);
@@ -34,12 +34,12 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             return item;
         }
         ,count: function(n, $) {
-            var K = $ && (null != $["parts="]) ? ($["parts="]|0) : null;
+            var K = $ && (null != $['parts=']) ? ($['parts=']|0) : null;
             return 0 < n ? (null == K ? bell(n) : ((0 >= K) || (K > n) ? Abacus.Arithmetic.O : stirling(n, K, 2))) : Abacus.Arithmetic.O;
         }
         ,initial: function(n, $, dir) {
-            var klass = this, item, order = $ && null!=$.order ? $.order : LEX,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null;
+            var klass = this, item, order = $ && (null != $.order) ? $.order : LEX,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null;
 
             if ((0 > n) || ((null != K) && ((0 >= K) || (K > n)))) return null;
 
@@ -102,7 +102,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, K = $ && (null != $["parts="]) ? ($["parts="]|0) : null, l, k, i, j, s, x, m, dict, d0, d1;
+            var klass = this, K = $ && (null != $['parts=']) ? ($['parts=']|0) : null, l, k, i, j, s, x, m, dict, d0, d1;
             if (!item || (0 > n)) return false;
             d0 = stdMath.max(0, null != K ? K : 1);
             d1 = stdMath.max(0, null != K ? K : n);
@@ -123,10 +123,10 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_setpartition(item, n, $ && (null != $["parts="]) ? ($["parts="]|0) : null, dir, $ && (null != $.order) ? $.order : LEX);
+            return next_setpartition(item, n, $ && (null != $['parts=']) ? ($['parts=']|0) : null, dir, $ && (null != $.order) ? $.order : LEX);
         }
         ,rand: function(n, $) {
-            var klass = this, K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 rnd = Abacus.Math.rnd, Arithmetic = Abacus.Arithmetic, q, m, l, i, k, prob, cdf;
             if ((0 > n) || ((null != K) && (0 >= K || K > n))) return null;
             q = array(n, 0); m = n; l = 0;
@@ -137,7 +137,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
                 k = 1;
                 while (k <= m)
                 {
-                    cdf = cdf.add(Rational(Arithmetic.mul(factorial(m-1, k-1), klass.count(m-k, {"parts=":K})), klass.count(m, {"parts=":K})));
+                    cdf = cdf.add(Rational(Arithmetic.mul(factorial(m-1, k-1), klass.count(m-k, {'parts=':K})), klass.count(m, {'parts=':K})));
                     if (cdf.gte(prob)) break;
                     ++k;
                 }
@@ -159,10 +159,10 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
-        ,toConjugate: conjugatesetpartition
+        ,toConjugate: null
     }
     ,_update: function() {
-        var self = this, n = self.n, $ = self.$, K = (null != $["parts="]) ? ($["parts="]|0) : null, item = self.__item, i, j, s, k;
+        var self = this, n = self.n, $ = self.$, K = (null != $['parts=']) ? ($['parts=']|0) : null, item = self.__item, i, j, s, k;
         if (item && (n+1 !== item.length))
         {
             self.__item = new Array(n+1); self.__item[n] = [n, new Array(n)];
@@ -183,7 +183,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         if (null == item) return null;
         var self = this, $ = self.$, n = self.n,
             order = (null != $.order) ? $.order : LEX,
-            K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
             is_reflected = REFLECTED & order;
         if (item && (n+1 === item.length))
         {
@@ -311,3 +311,114 @@ function next_setpartition(item, n, K, dir, order)
     }
     return item;
 }
+/*function separateIS(item, S, I)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function separateST(item, S, T)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function combineIS(item, S, I)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function combineST(item, S, T)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function singletons(item, n)
+{
+    var i, j, l = item.length, S = new Array(l);
+    for (i=0,j=0; i<l; ++i)
+    {
+        if (1 === item[i].length)
+            S[j++] = item[i][0];
+    }
+    if (j < S.length) S.length = j; // truncate if needed
+    return S;
+}
+function adjInit(item, n)
+{
+    var i, j, k, l = item.length, I = [];
+    for (i=0,k=0; i<l; ++i)
+    {
+        if (1 === item[i].length)
+        {
+            I.push(item[i][0]);
+        }
+        else
+        {
+            for (j=0,k=item[i].length; j+1<k; ++j)
+            {
+                if (item[i][j]+1 === item[i][j+1])
+                    I.push(item[i][j]);
+            }
+            if (((item[i][j]+1) % n) === item[i][0])
+                    I.push(item[i][j]);
+        }
+    }
+    return I;
+}
+function adjTerm(item, n)
+{
+    var i, j, l, k, T = [];
+    for (i=0,l=item.length; i<l; ++i)
+    {
+        if (1 === item[i].length)
+        {
+            T.push(item[i][0]);
+        }
+        else
+        {
+            for (j=0,k=item[i].length; j+1<k; ++j)
+            {
+                if (item[i][j]+1 === item[i][j+1])
+                    T.push(item[i][j+1]);
+            }
+            if ((item[i][j]+1) % n === item[i][0])
+                    T.push(item[i][0]);
+        }
+    }
+    return T;
+}*/
+function conjugatesetpartition(item, n)
+{
+    // adapted from https://arxiv.org/abs/math/0508052
+    if (null == item) return null;
+    var congugate = null;
+    return conjugate;
+}
+SetPartition.toConjugate = conjugatesetpartition;

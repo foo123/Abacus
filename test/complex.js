@@ -26,7 +26,6 @@ echo('Abacus.Complex (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 //Abacus.Rational.autoSimplify = true; // default
-
 echo('o=Abacus.Complex()');
 o=Abacus.Complex();
 echo('o.toString()');
@@ -64,14 +63,14 @@ echo(Abacus.Complex(27).rad(3).toString());
 
 echo();
 
-echo('Abacus.Complex.fromString("+i")');
-echo(Abacus.Complex.fromString("+i").toString());
+echo('Abacus.Complex.fromString("i")');
+echo(Abacus.Complex.fromString("i").toString());
 
 echo('Abacus.Complex.fromString("-i")');
 echo(Abacus.Complex.fromString("-i").toString());
 
-echo('Abacus.Complex.fromString("(2/3)i")');
-echo(Abacus.Complex.fromString("(2/3)i").toString());
+echo('Abacus.Complex.fromString("(2/3)*i")');
+echo(Abacus.Complex.fromString("(2/3)*i").toString());
 
 echo('Abacus.Complex.fromString("1+i")');
 echo(Abacus.Complex.fromString("1+i").toString());
@@ -97,8 +96,8 @@ echo(Abacus.Complex.fromString("-0.2[8]+(1/2)*i").toString());
 echo('Abacus.Complex.fromString("-0.[8]+(1/2)*i")');
 echo(Abacus.Complex.fromString("-0.[8]+(1/2)*i").toString());
 
-echo('Abacus.Complex.fromString("-\\frac{3}{2}+\\frac{1}{2}i")');
-echo(Abacus.Complex.fromString("-\\frac{3}{2}+\\frac{1}{2}i").toString());
+echo('Abacus.Complex.fromString("-\\frac{3}{2}+\\frac{1}{2}*i")');
+echo(Abacus.Complex.fromString("-\\frac{3}{2}+\\frac{1}{2}*i").toString());
 
 echo('o=Abacus.Complex(Abacus.Arithmetic.I)');
 o=Abacus.Complex(Abacus.Arithmetic.I);

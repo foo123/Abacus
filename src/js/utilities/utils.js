@@ -1,12 +1,36 @@
 // utility methods
-function NotImplemented() {throw new Error("Method not implemented!");}
-function ID(x) {return x;}
-function is_array(x) {return (x instanceof Array) || ('[object Array]' === toString.call(x));}
-function is_args(x) {return ('[object Arguments]' === toString.call(x)) && (null != x.length);}
-function is_obj(x) {return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));}
-function is_string(x) {return (x instanceof String) || ('[object String]' === toString.call(x));}
-function is_number(x) {return "number" === typeof x;}
-function is_callable(x) {return "function" === typeof x;}
+function NotImplemented()
+{
+    throw new Error("Method not implemented!");
+}
+function ID(x)
+{
+    return x;
+}
+function is_array(x)
+{
+    return (x instanceof Array) || ('[object Array]' === toString.call(x));
+}
+function is_args(x)
+{
+    return ('[object Arguments]' === toString.call(x)) && (null != x.length);
+}
+function is_obj(x)
+{
+    return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));
+}
+function is_string(x)
+{
+    return (x instanceof String) || ('[object String]' === toString.call(x));
+}
+function is_number(x)
+{
+    return "number" === typeof x;
+}
+function is_callable(x)
+{
+    return "function" === typeof x;
+}
 function is_class(C1, C2)
 {
     // C1 is same class as C2, or is a subclass of C2
@@ -16,14 +40,14 @@ function is_class(C1, C2)
         {
             for (var i=0,n=C2.length; i<n; ++i)
             {
-                if (is_callable(C2[i]) && ((C1===C2[i]) || (C1[PROTO] instanceof C2[i])))
+                if (is_callable(C2[i]) && ((C1 === C2[i]) || is_instance(C1[PROTO], C2[i])))
                     return true;
 
             }
         }
         else if (is_callable(C2))
         {
-            return (C1===C2) || (C1[PROTO] instanceof C2);
+            return (C1 === C2) || is_instance(C1[PROTO], C2);
         }
     }
     return false;
@@ -56,7 +80,10 @@ function to_tex(s)
     var p = String(s).split('_');
     return p[0] + (p.length > 1 ? ('_{' + p[1] + '}') : '');
 }
-function Tex(s) {return is_callable(s.toTex) ? s.toTex() : String(s);}
+function Tex(s)
+{
+    return is_callable(s.toTex) ? s.toTex() : String(s);
+}
 
 // https://github.com/foo123/FnList.js
 function operate(F, F0, x, i0, i1, ik, strict)
@@ -90,52 +117,52 @@ function operate(F, F0, x, i0, i1, ik, strict)
 
     if (x_array)
     {
-        i00 = stdMath.max(0,i00); i11 = stdMath.min(x.length-1,i11);
-        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,x[i],i);
+        i00 = stdMath.max(0, i00); i11 = stdMath.min(x.length-1, i11);
+        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv, x[i], i);
         for (ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
         {
-            i =ii; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
+            i =ii; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
         }
-        if ((true===strict) && (null!==last) && (0<=last && last<x.length)) Fv = F(Fv,x[last],last);
+        if ((true === strict) && (null !== last) && (0 <= last && last < x.length)) Fv = F(Fv, x[last], last);
     }
     else
     {
-        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,i,i);
+        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv, i, i);
         for (ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
         {
-            i =ii; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
+            i =ii; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
         }
-        if ((true===strict) && (null!==last)) Fv = F(Fv,last,last);
+        if ((true === strict) && (null !== last)) Fv = F(Fv, last, last);
     }
     return Fv;
 }
@@ -195,7 +222,7 @@ function reversion(n, n0)
         return n0[i]-1-n[n.length-1-i];
     } : function(i) {
         return n0-n[i];
-    }) : ((n === +n) && (n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.num(n0),n));
+    }) : ((n === +n) && (n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.num(n0), n));
 }
 function gray(b, a, n, a0, a1)
 {
@@ -578,7 +605,7 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
 }
 function sortedrun(a, a0, a1, index, indices, dir)
 {
-    // findout already sorted chunks either ascending or descending
+    // find already sorted chunks either ascending or descending
     var ap, ai, i, i0, i1, d0, i2, i3, d1;
     index[0] = -1; index[1] = -1; index[2] = 0;
     index[3] = -1; index[4] = -1; index[5] = 0;
@@ -698,7 +725,7 @@ function is_sorted(a, dir, a0, a1)
     // O(n)
     if (null == dir || 0 === dir)
     {
-        // findout if and how it is sorted
+        // find out if and how it is sorted
         dir = 0;
         for (ap=a[a0],i=a0+1; i<=a1; ++i)
         {
@@ -1022,6 +1049,42 @@ function lcs(a, b, contiguous, ret, eq)
     }
     return sizeOnly ? s : out;
 }
+function damerau_levenshtein(a, b, with_transpositions, eq)
+{
+    // https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
+    var i, j, n = a.length, m = b.length, d, c;
+    if (!n || !m) return 0;
+    eq = eq || default_eq;
+
+    //let d[0..length(a), 0..length(b)] be a 2-d array of integers, dimensions length(a)+1, length(b)+1
+    // note that d is zero-indexed, while a and b are one-indexed.
+    d = array(n+1, function(i) {
+        return array(m+1, function(j) {
+            return 0 === j ? i : (0 === i ? j : 0);
+        });
+    });
+
+    for (i=1; i<=n; ++i)
+    {
+        for (j=1; j<=m; ++j)
+        {
+            c = eq(a[i-1], b[j-1]) ? 0 : 1;
+            d[i][j] = stdMath.min(
+                d[i-1][j  ] + 1,        // deletion
+                d[i  ][j-1] + 1,        // insertion
+                d[i-1][j-1] + c         // substitution
+            );
+            if ((false !== with_transpositions) && (i > 1) && (j > 1) && eq(a[i-1], b[j-2]) && eq(a[i-2], b[j-1]))
+            {
+                d[i][j] = stdMath.min(
+                    d[i  ][j  ],
+                    d[i-2][j-2] + c     // transposition
+                );
+            }
+        }
+    }
+    return d[n][m];
+}
 function cmp_with_indices(cmp)
 {
     return function(a, b) {
@@ -1069,7 +1132,7 @@ function dist(a, b)
 {
     return stdMath.abs(a - b);
 }
-function align(A, B, dist_AB, cmp_AA, cmp_BB)
+function align_sequences(A, B, dist_AB, cmp_AA, cmp_BB)
 {
     // https://stackoverflow.com/a/78740257/3591273
     /*
@@ -1192,8 +1255,8 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     }
     return [];
 }
-align.cmp = cmp;
-align.dist = dist;
+align_sequences.cmp = cmp;
+align_sequences.dist = dist;
 function merge_sequences(A, B, combAB, compAB)
 {
     // combine A and B assumed to be in sorted order
@@ -2325,7 +2388,7 @@ function trial_div_fac(n, maxlimit)
 
         p2 = Arithmetic.mul(p, p);
 
-        if (Arithmetic.gt(p2, n) || (null!=maxlimit && Arithmetic.gt(p2, maxlimit))) break;
+        if (Arithmetic.gt(p2, n) || ((null != maxlimit) && Arithmetic.gt(p2, maxlimit))) break;
 
         if (Arithmetic.equ(O, Arithmetic.mod(n, p)))
         {
@@ -2346,7 +2409,7 @@ function trial_div_fac(n, maxlimit)
     if (i >= l)
     {
         p = Arithmetic.add(p, two); p2 = Arithmetic.mul(p, p);
-        while (Arithmetic.lte(p2, n) && (null==maxlimit || Arithmetic.lte(p2, maxlimit)))
+        while (Arithmetic.lte(p2, n) && ((null == maxlimit) || Arithmetic.lte(p2, maxlimit)))
         {
             e = O;
             while (Arithmetic.equ(O, Arithmetic.mod(n, p)))
@@ -2831,7 +2894,7 @@ function divisors(n, as_generator)
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         list = null, D2 = null, D1 = null, L1 = 0, L2 = 0, node, sqrn, i, n_i, next, factors, INT = null;
 
-    if (is_instance(n, Integer)) { INT = n[CLASS]; n = n.num; }
+    if (is_instance(n, Integer)) {INT = n[CLASS]; n = n.num;}
 
     n = Arithmetic.abs(n);
     if (true === as_generator)
@@ -2873,7 +2936,7 @@ function divisors(n, as_generator)
                     return INT ? new INT(k) : k;
                 }
                 i = Arithmetic.add(i, I);
-                while (Arithmetic.lte(i,sqrn))
+                while (Arithmetic.lte(i, sqrn))
                 {
                     if (Arithmetic.equ(O, Arithmetic.mod(n, i)))
                     {
@@ -3030,7 +3093,7 @@ function indexOf(item, set)
 {
     var i, l = set.length, eq;
     if (!l) return -1;
-    eq = is_instance(item, INumber) ? function(it, si) {return it.equ(si);} : function(it, si) {return it === si;};
+    eq = is_instance(item, INumber) ? function(it, si) {return it.equ(si);} : default_eq;
     for (i=0; i<l; ++i)
         if (eq(item, set[i]))
             return i;
@@ -3057,13 +3120,13 @@ function buchberger_groebner(Basis)
     var Arithmetic = Abacus.Arithmetic, PolynomialClass = MultiPolynomial,
         pairs, pair, extraBasis, newBasis, s, f, g, i, n, found, others, lt, lts;
 
-    Basis = Basis.map(function(b){return b.monic();});
+    Basis = Basis.map(function(b) {return b.monic();});
     if (1 < Basis.length)
     {
         PolynomialClass = Basis[0][CLASS];
 
         // Build a Groebner basis using Buchberger's algorithm.
-        pairs = Combination(Basis.length, 2).mapTo(function(i){return [Basis[i[0]], Basis[i[1]]];});
+        pairs = Combination(Basis.length, 2).mapTo(function(i) {return [Basis[i[0]], Basis[i[1]]];});
         for (;;)
         {
             newBasis = [];
@@ -3121,7 +3184,7 @@ function buchberger_groebner(Basis)
         }
 
         // Sort it.
-        Basis = Basis.sort(function(a, b){
+        Basis = Basis.sort(function(a, b) {
             return PolynomialClass.Term.cmp(b.ltm(), a.ltm(), true);
         });
     }
@@ -3733,47 +3796,6 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
-function subset_lex_rank(n, x, y)
-{
-    var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
-        O = Arithmetic.O, I = Arithmetic.I,
-        k, j, index = O, key;
-    key = String(n) + ',' + String(x) + ',' + String(null == y ? null : x-y);
-    if (null == subset_lex_rank.mem[key])
-    {
-        if (null == y)
-        {
-            for (k = I,j = 0; j < x; ++j) k = add(k, pow2(n-j-1));
-            index = add(index, k);
-            subset_lex_rank.mem[key] = index;
-        }
-        else
-        {
-            if (x === y+1)
-            {
-                index = add(index, I);
-                subset_lex_rank.mem[key] = index;
-            }
-            else if (x > y+1)
-            {
-                for (k = I,j = y+1; j < x; ++j) k = add(k, pow2(n-j-1));
-                index = add(index, k);
-                subset_lex_rank.mem[key] = index;
-            }
-        }
-    }
-    else
-    {
-        index = subset_lex_rank.mem[key];
-    }
-    return index;
-}
-subset_lex_rank.mem = Obj();
-function subset_bin_rank(n, x, y)
-{
-    var Arithmetic = Abacus.Arithmetic;
-    return n > x && 0 <= x ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
-}
 function pow2(n)
 {
     if (is_instance(n, Integer))
@@ -4204,723 +4226,6 @@ function stirling(n, k, s)
 stirling.mem1 = Obj();
 stirling.mem2 = Obj();
 stirling.mem3 = Obj();
-function p_nkab(n, k, a, b)
-{
-    // recursively compute the partition count using the recursive relation:
-    // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
-    // http://www.programminglogic.com/integer-partition-algorithm/
-    // compute number of integer partitions of n
-    // into exactly k parts having summands between a and b (inclusive)
-    // k*a <= n <= k*b
-    var Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        p = O, key, j0, j1;
-
-    if (
-        Arithmetic.lt(n, O)
-        || Arithmetic.lte(k, O)
-        || Arithmetic.lte(a, O)
-        || Arithmetic.gt(a, b)
-        || Arithmetic.gt(mul(k, a), n)
-        || Arithmetic.lt(mul(k, b), n)
-    ) return p;
-
-    if (Arithmetic.gt(a, I)) {n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I); a = I;}
-
-    //if ((Arithmetic.equ(b, n) && Arithmetic.equ(k, I)) || (Arithmetic.equ(k, n) && Arithmetic.equ(b, I))) return I;
-    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.lte(n, b) ? I : p;
-    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.gte(b, I) ? I : p;
-    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : p;
-    if (Arithmetic.equ(add(a, I), b)) return Arithmetic.lte(sub(n, mul(k, a)), k) ? I : p;
-
-    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
-    if (null == p_nkab.mem[key])
-    {
-        // compute it directly
-        j0 = Arithmetic.max(I, Arithmetic.divceil(n, k));
-        k = sub(k, I);
-        j1 = Arithmetic.min(b, sub(n, k));
-        while (Arithmetic.lte(j0, j1))
-        {
-            p = add(p, p_nkab(sub(n, j0), k, I, j0));
-            j0 = add(j0, I);
-        }
-        p_nkab.mem[key] = p;
-    }
-    return p_nkab.mem[key];
-}
-p_nkab.mem = Obj();
-function part_rank(n, limit, min, max, k)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](part_rank(n.num, limit, min, max, k));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, p = O, key,
-        add = Arithmetic.add, sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod;
-
-    if (is_instance(limit, Integer)) limit = limit.num;
-    if (is_instance(min, Integer)) min = min.num;
-    //if (is_instance(max, Integer)) max = max.num;
-    key = String(n) + ',' + String(limit) + ',' + String(min)/* + ',' + String(max)*/ + ',' + String(k);
-    if (null == part_rank.mem[key])
-    {
-        n = N(n);
-        limit = sub(N(limit), I);
-        //max = null == max ? n : N(max);
-        min = null == min ? I : N(min);
-
-        if (null == k)
-        {
-            k = I;
-            while (Arithmetic.lte(k, n))
-            {
-                p = add(p, p_nkab(n, k, min, limit));
-                k = add(k, I);
-            }
-        }
-        else
-        {
-            p = p_nkab(n, N(k), min, limit);
-        }
-        part_rank.mem[key] = p;
-    }
-    return part_rank.mem[key];
-}
-part_rank.mem = Obj();
-function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](partitions(n.num, K, M, W));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul, mod = Arithmetic.mod,
-        k0, k1, p = O, k, w, m, key;
-
-    if (is_instance(K, Integer)) K = K.num;
-    if (is_instance(M, Integer)) M = M.num;
-    if (is_instance(W, Integer)) W = W.num;
-    K = null == K ? null : Arithmetic.abs(N(K));
-    M = null == M ? null : Arithmetic.abs(N(M));
-    W = null == W ? null : Arithmetic.abs(N(W));
-    n = N(n);
-    k0 = null!=K ? K : I;
-    k1 = null!=K ? K : n;
-    w = null!=W ? W : I;
-    m = null!=M ? M : n;
-
-    if (Arithmetic.equ(n, O))
-        return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
-    if (
-        Arithmetic.lt(n, O)
-        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
-    ) return p;
-
-    if (null != M && null == K && null == W) {m = n; k0 = M; k1 = M; K = M; M = null;} // count the conjugates, same
-
-    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
-    if (null == partitions.mem[key])
-    {
-        if (null != M && null != W)
-        {
-            n = Arithmetic.equ(M, W) ? sub(n, M) : sub(n, add(M, W));
-            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, Arithmetic.equ(M, W) ? I : two))) return I;
-            if (null != K)
-            {
-                k1 = sub(k1, two);
-                k0 = sub(k0, two);
-            }
-        }
-        else if (null != W)
-        {
-            n = sub(n, W);
-            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, I))) return I;
-            if (null != K)
-            {
-                k1 = sub(k1, I);
-                k0 = sub(k0, I);
-            }
-        }
-        else if (null != M)
-        {
-            n = sub(n, M);
-            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, I))) return I;
-            if (null != K)
-            {
-                k1 = sub(k1, I);
-                k0 = sub(k0, I);
-            }
-        }
-        k = k0;
-        while (Arithmetic.lte(k, k1))
-        {
-            p = add(p, p_nkab(n, k, w, m));
-            k = add(k, I);
-        }
-        partitions.mem[key] = p;
-    }
-    return partitions.mem[key];
-}
-partitions.mem = Obj();
-function c_nkab(n, k, a, b)
-{
-    // recursively compute the composition count using the recursive relation:
-    // CLOSED FORM FORMULA FOR THE NUMBER OF RESTRICTED COMPOSITIONS (http://www.fmf.uni-lj.si/~jaklicg/papers/compositions_revision.pdf)
-    // compute number of integer compositions of n
-    // into exactly k parts having summands between a and b (inclusive)
-    var Arithmetic = Abacus.Arithmetic,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        O = Arithmetic.O, I = Arithmetic.I, c = O, m, m1, key;
-    if (
-        Arithmetic.lt(n, O)
-        || Arithmetic.lte(k, O)
-        || Arithmetic.lte(a, O)
-        || Arithmetic.gt(a, b)
-        || Arithmetic.gt(mul(k, a), n)
-        || Arithmetic.lt(mul(k, b), n)
-    ) return c;
-
-    if (Arithmetic.gt(a, I)) {n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I); a = I;}
-
-    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.gte(b, n) ? I : c;
-    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.gte(b, I) ? I : c;
-    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : c;
-    if (Arithmetic.equ(n, b)) return factorial(add(sub(n, mul(k, a)), sub(k, I)), sub(k, I));
-    if (Arithmetic.equ(add(a, I), b)) return factorial(k, sub(n, mul(k, a)));
-
-    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
-    if (null == c_nkab.mem[key])
-    {
-        // compute it directly
-        m1 = sub(n, a);
-        m = Arithmetic.max(I, sub(n, b));
-        k = sub(k, I);
-        while (Arithmetic.lte(m, m1))
-        {
-            c = add(c, c_nkab(m, k, a, b));
-            m = add(m, I);
-        }
-        c_nkab.mem[key] = c;
-    }
-    return c_nkab.mem[key];
-}
-c_nkab.mem = Obj();
-function comp_rank(n, limit, min, max, k, nmin, nmax)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](comp_rank(n.num, limit, min, max, k, nmin, nmax));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II, c = O, key,
-        W, M, i, j, nn, mm, nm, m, w, l, r, k0, kk,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        div = Arithmetic.div, divceil = Arithmetic.divceil, mod = Arithmetic.mod;
-
-    if (is_instance(limit, Integer)) limit = limit.num;
-    if (is_instance(min, Integer)) min = min.num;
-    if (is_instance(max, Integer)) max = max.num;
-    key = String(n) + ',' + String(limit) + ',' + String(min) + ',' + String(max) + ',' + String(k) + ',' + String(0<nmin) + ',' + String(0<nmax);
-    if (null == comp_rank.mem[key])
-    {
-        n = N(n);
-        limit = N(limit);
-        M = null == max ? n : N(max);
-        W = null == min ? I : N(min);
-
-        if (null == min && null == max)
-        {
-            Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I
-            if (null == k)
-            {
-                mm = W;
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    c = add(c, Arithmetic.gte(nn, I) ? pow2(sub(nn, I)) : O);
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    c = add(c, c_nkab(sub(n, mm), k, W, M));
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else if (
-            (0 < nmin && 0 < nmax)
-            || (0 < nmin && null == max)
-            || (0 < nmax && null == min)
-        )
-        {
-            if (null == k)
-            {
-                mm = W;
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm); k = I;
-                    while (Arithmetic.lte(k, nn))
-                    {
-                        c = add(c, c_nkab(nn, k, W, M));
-                        k = add(k, I);
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    c = add(c, c_nkab(sub(n, mm), k, W, M));
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else if (null != max && (0 < nmin || null == min))
-        {
-            if (null == k)
-            {
-                mm = W; m = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(M, nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-
-                        if (Arithmetic.equ(O, mod(nn, M))) c = add(c, I);
-                        j = I; nm = M;
-                        while (Arithmetic.lte(nm, nn))
-                        {
-                            i = I; k = sub(nn, nm);
-                            while (Arithmetic.lte(i, k))
-                            {
-                                kk = c_nkab(k, i, W, m);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
-                                i = add(i, I);
-                            }
-                            nm = add(nm, M); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I); m = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(mul(k, M), nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-                        j = I; nm = M;
-                        while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
-                        {
-                            kk = c_nkab(sub(nn, nm), sub(k, j), W, m);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
-                            nm = add(nm, M); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else if (null != min && (0 < nmax || null == max))
-        {
-            if (null == k)
-            {
-                mm = W; w = add(W, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(W, nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-                        if (Arithmetic.equ(O, mod(nn, W))) c = add(c, I);
-                        if (Arithmetic.equ(W, mm))
-                        {
-                            j = O;
-                            nm = O;
-                        }
-                        else
-                        {
-                            j = I;
-                            nm = W;
-                        }
-                        while (Arithmetic.lte(nm, nn))
-                        {
-                            i = I; l = sub(nn, nm); k = div(l, W);
-                            while (Arithmetic.lte(i, k))
-                            {
-                                kk = c_nkab(l, i, w, M);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
-                                i = add(i, I);
-                            }
-                            nm = add(nm, W); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I); w = add(W, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(mul(k, W), nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-                        if (Arithmetic.equ(W, mm))
-                        {
-                            j = O;
-                            nm = O;
-                        }
-                        else
-                        {
-                            j = I;
-                            nm = W;
-                        }
-                        while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
-                        {
-                            kk = c_nkab(sub(nn, nm), sub(k, j), w, M);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
-                            nm = add(nm, W); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else
-        {
-            if (null == k)
-            {
-                mm = W; l = add(W, I); r = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(M, W))
-                    {
-                        c = add(c, Arithmetic.equ(O, mod(nn, M)) ? I : O);
-                    }
-                    else
-                    {
-                        m = Arithmetic.max(I, div(nn, M));
-                        w = Arithmetic.max(I, div(nn, W));
-                        j = I;
-                        while (Arithmetic.lte(j, m))
-                        {
-                            i = Arithmetic.equ(W, mm) ? O : I;
-                            while (Arithmetic.lte(i, w))
-                            {
-                                nm = sub(nn, add(mul(j, M), mul(i, W)));
-                                if (Arithmetic.equ(O, nm))
-                                {
-                                    c = add(c, factorial(add(j, i), [j, i]));
-                                }
-                                else if (Arithmetic.gt(nm, O))
-                                {
-                                    k0 = I; k = div(nm, W);
-                                    while (Arithmetic.lte(k0, k))
-                                    {
-                                        kk = c_nkab(nm, k0, l, r);
-                                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k0, add(j, i)), [[j, i]])));
-                                        k0 = add(k0, I);
-                                    }
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                                i = add(i, I);
-                            }
-                            j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I);
-                l = add(W, I); r = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(M, W))
-                    {
-                        c = add(c, Arithmetic.equ(mul(k, M), nn) ? I : O);
-                    }
-                    else
-                    {
-                        m = Arithmetic.max(I, div(nn, M));
-                        w = Arithmetic.max(I, div(nn, W));
-                        j = I;
-                        while (Arithmetic.lte(j, m))
-                        {
-                            i = Arithmetic.equ(W, mm) ? O : I;
-                            while (Arithmetic.lte(i, w))
-                            {
-                                k0 = sub(k, add(j, i));
-                                nm = sub(nn, add(mul(j, M), mul(i, W)));
-                                if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k0))
-                                {
-                                    c = add(c, factorial(k, [j, i]));
-                                }
-                                else if (Arithmetic.gt(k0, O) && Arithmetic.gt(nm, O))
-                                {
-                                    kk = c_nkab(nm, k0, l, r);
-                                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, [[j, i]])));
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                                i = add(i, I);
-                            }
-                            j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-        }
-        comp_rank.mem[key] = c;
-    }
-    return comp_rank.mem[key];
-}
-comp_rank.mem = Obj();
-function compositions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](compositions(n.num, K, M, W));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        add = Arithmetic.add, sub = Arithmetic.sub,
-        mul = Arithmetic.mul, div = Arithmetic.div, mod = Arithmetic.mod,
-        c = O, j, i, k, l, r, m, w, kk, k0, nm, mm, p, prod, key;
-
-    if (is_instance(K, Integer)) K = K.num;
-    if (is_instance(M, Integer)) M = M.num;
-    if (is_instance(W, Integer)) W = W.num;
-    K = null == K ? null : Arithmetic.abs(N(K));
-    M = null == M ? null : Arithmetic.abs(N(M));
-    W = null == W ? null : Arithmetic.abs(N(W));
-    n = N(n);
-
-    if (Arithmetic.equ(n, O))
-        return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
-    if (
-        Arithmetic.lt(n, O)
-        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
-    ) return c;
-
-    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
-    if (null == compositions.mem[key])
-    {
-        if (null != K && null != M && null != W)
-        {
-            if (Arithmetic.equ(M, W))
-            {
-                c = Arithmetic.equ(mul(K, M), n) ? I : O;
-            }
-            else
-            {
-                m = Arithmetic.max(I, div(n, M));
-                w = Arithmetic.max(I, div(n, W));
-                l = add(W, I); r = sub(M, I);
-                j = I;
-                while (Arithmetic.lte(j, m))
-                {
-                    i = I;
-                    while (Arithmetic.lte(i, w))
-                    {
-                        k = sub(K, add(j, i));
-                        nm = sub(n, add(mul(j, M), mul(i, W)));
-                        if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k))
-                        {
-                            c = add(c, factorial(K, [j, i]));
-                        }
-                        else if (Arithmetic.gt(k, O) && Arithmetic.gt(nm, O))
-                        {
-                            kk = c_nkab(nm, k, l, r);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, [[i, j]])));
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        i = add(i, I);
-                    }
-                    j = add(j, I);
-                }
-            }
-        }
-        else if (null != W && null != M)
-        {
-            if (Arithmetic.equ(M, W))
-            {
-                c = Arithmetic.equ(O, mod(n, M)) ? I : O;
-            }
-            else
-            {
-                m = Arithmetic.max(I, div(n, M));
-                w = Arithmetic.max(I, div(n, W));
-                l = add(W, I); r = sub(M, I);
-                j = I;
-                while (Arithmetic.lte(j, m))
-                {
-                    i = I;
-                    while (Arithmetic.lte(i, w))
-                    {
-                        nm = sub(n, add(mul(j, M), mul(i, W)));
-                        if (Arithmetic.equ(O, nm))
-                        {
-                            c = add(c, factorial(add(j, i), [j, i]));
-                        }
-                        else if (Arithmetic.gt(nm, O))
-                        {
-                            k = I; K = div(nm, W);
-                            while (Arithmetic.lte(k, K))
-                            {
-                                kk = c_nkab(nm, k, l, r);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, add(j, i)), [[j, i]])));
-                                k = add(k, I);
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        i = add(i, I);
-                    }
-                    j = add(j, I);
-                }
-            }
-        }
-        else if (null != K && null != W)
-        {
-            if (Arithmetic.equ(mul(K, W), n))
-            {
-                c = I;
-            }
-            else
-            {
-                j = I; nm = W; w = add(W, I);
-                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
-                {
-                    kk = c_nkab(sub(n, nm), sub(K, j), w, n);
-                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
-                    nm = add(nm, W); j = add(j, I);
-                }
-            }
-        }
-        else if (null != K && null != M)
-        {
-            if (Arithmetic.equ(mul(K, M), n))
-            {
-                c = I;
-            }
-            else
-            {
-                j = I; nm = M; m = sub(M, I);
-                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
-                {
-                    kk = c_nkab(sub(n, nm), sub(K, j), I, m);
-                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
-                    nm = add(nm, M); j = add(j, I);
-                }
-            }
-        }
-        else if (null != K)
-        {
-            c = c_nkab(n, K, I, n);
-        }
-        else if (null != W)
-        {
-            if (Arithmetic.equ(W, n))
-            {
-                c = I;
-            }
-            else
-            {
-                if (Arithmetic.equ(O, mod(n, W))) c = I;
-                j = I; nm = W; w = add(W, I);
-                while (Arithmetic.lte(nm, n))
-                {
-                    k = I; l = sub(n, nm); K = div(l, W);
-                    while (Arithmetic.lte(k, K))
-                    {
-                        kk = c_nkab(l, k, w, n);
-                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
-                        k = add(k, I);
-                    }
-                    nm = add(nm, W); j = add(j, I);
-                }
-            }
-        }
-        else if (null != M)
-        {
-            if (Arithmetic.equ(M, n))
-            {
-                c = I;
-            }
-            else
-            {
-
-                if (Arithmetic.equ(O, mod(n, M))) c = I;
-                j = I; nm = M; m = sub(M, I);
-                while (Arithmetic.lte(nm, n))
-                {
-                    k = I; K = sub(n, nm);
-                    while (Arithmetic.lte(k, K))
-                    {
-                        kk = c_nkab(K, k, I, m);
-                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
-                        k = add(k, I);
-                    }
-                    nm = add(nm, M); j = add(j, I);
-                }
-            }
-        }
-        else
-        {
-            c = Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I;
-        }
-        compositions.mem[key] = c;
-    }
-    return compositions.mem[key];
-}
-compositions.mem = Obj();
 function catalan(n)
 {
     var Arithmetic = Abacus.Arithmetic,
@@ -5202,337 +4507,6 @@ function cartesian(/* var args here */)
         return k + v[j][i-k];
     });
 }
-function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
-{
-    var k, kl, a, r, l, i, vv, nv = v.length, v0, v1,
-        tensor, t0, t1, ok, nvalid, product, p, pv, pe, pea, pl, npv,
-        seen = null, valid = null, invalid, expr, e, el;
-
-    if (!nv) return [];
-
-    if (is_callable(extra_conditions))
-    {
-        valid = extra_conditions;
-        extra_conditions = true;
-    }
-    else
-    {
-        extra_conditions = false;
-    }
-
-    if (!(V_EQU === value_conditions || V_DIFF === value_conditions || V_INC === value_conditions || V_DEC === value_conditions || V_NONINC === value_conditions || V_NONDEC === value_conditions))
-    {
-        value_conditions = false;
-    }
-
-    pe = new Array(nv); pea = []; pl = 0; pv = [];
-    for (kl=1,k=0; k<nv; ++k)
-    {
-        if (is_callable(v[k][0]))
-        {
-            // fixed expression for position k, store it to be added after actual values are added
-            if (!v[k][1].length)
-            {
-                // autonomous expression, which does not depend on any position
-                pea.push([v[k][0],k]);
-            }
-            else
-            {
-                // depends on one or multiple other positions
-                // expr v[k][0] for pos k, depends on value at positions v[k][1][]
-                for (e=0,el=v[k][1].length; e<el; ++e)
-                {
-                    if (null == pe[v[k][1][e]]) pe[v[k][1][e]] = [[v[k][0],k,v[k][1]]];
-                    else pe[v[k][1][e]].push([v[k][0],k,v[k][1]]);
-                }
-            }
-            // this makes the computation faster, since fixed/expression values
-            // are not counted as extra and then checked if valid, but generated directly validly
-        }
-        else
-        {
-            // values for position k, count them
-            pv.push(k);
-            kl *= v[k].length;
-            if (!kl || 0>=kl) return [];
-        }
-    }
-    if (!pv.length) return [];
-
-    product = new Array(kl); nvalid = 0;
-    t1 = nv-1; npv = pv.length-1;
-    // O(kl), count only necessary values, minus any outliers (as few as possible)
-    for (k=0; k<kl; ++k)
-    {
-        // O(nv)
-        tensor = new Array(nv); invalid = false;
-        // explicit tensor values, not expressions
-        for (r=k,a=npv; a>=0; --a)
-        {
-            p = pv[a];
-            l = v[p].length;
-            i = r % l;
-            r = ~~(r / l);
-            tensor[p] = v[p][i];
-        }
-        // evaluate expressions which are autonomous, do not depend on any position
-        for (a=0,pl=pea.length; a<pl; ++a)
-        {
-            expr = pea[a];
-            tensor[expr[1]] = expr[0]();
-        }
-        // evaluate expressions now after any explicit tensor values were calculated previously
-        for (a=0; a<nv; ++a)
-        {
-            // if expression and not already avaluated (eg by previous expression)
-            if (null != pe[a])
-            {
-                // fill-up any pos values which are expressions based on this pos value
-                expr = pe[a];
-                for (e=0,el=expr.length; e<el; ++e)
-                {
-                    p = expr[e][1];
-                    if (null == tensor[p])
-                    {
-                        // not computed already
-                        ok = true;
-                        vv = expr[e][2].map(function(k) {
-                            if ((null == tensor[k]) || isNaN(tensor[k])) ok = false; // not computed already, abort
-                            return tensor[k];
-                        });
-                        if (ok) tensor[p] = expr[e][0].apply(null, vv);
-                    }
-                }
-            }
-        }
-        if (value_conditions || extra_conditions)
-        {
-            if ((null == tensor[t1]) || isNaN(tensor[t1]) || extra_conditions && !valid(tensor,t1,t1))
-            {
-                invalid = true;
-            }
-            else
-            {
-                v1 = tensor[t1];
-                if (V_DIFF === value_conditions) {seen = {}; seen[v1] = 1;}
-                for (t0=t1-1; t0>=0; --t0)
-                {
-                    v0 = tensor[t0];
-                    if (
-                        (null == v0) || isNaN(v0) ||
-                        (V_EQU === value_conditions && v1 !== v0) ||
-                        (V_DIFF === value_conditions && 1 === seen[v0]) ||
-                        (V_INC === value_conditions && v0 >= v1) ||
-                        (V_DEC === value_conditions && v0 <= v1) ||
-                        (V_NONINC === value_conditions && v0 < v1) ||
-                        (V_NONDEC === value_conditions && v0 > v1) ||
-                        (extra_conditions && !valid(tensor,t0,t1))
-                   )
-                    {
-                        invalid = true;
-                        break;
-                    }
-                    if (V_DIFF === value_conditions) seen[v0] = 1;
-                    v1 = v0;
-                }
-            }
-        }
-        if (invalid) continue;
-        product[nvalid++] = tensor;
-    }
-    // truncate if needed
-    if (product.length > nvalid) product.length = nvalid;
-    return product;
-}
-function gen_combinatorial_data(n, data, pos, value_conditions, options)
-{
-    options = options || {};
-    pos = pos || array(data.length||0, 0, 1);
-    // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
-    // NOTE: needs at least one non-autonomous expression or one range of values, else will return empty set
-    var min = null == options.min ? 0 : options.min,
-        max = null == options.max ? n-1 : options.max,
-        nn = max-min+1, D = data, m, d, i, a, j, pi, l = D.length, none = false,
-        pos_ref, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
-        in_range = function in_range(x) {return min <= x && x <= max;}, additional_conditions;
-
-    data = []; none = false;
-    for (pi=0,i=0; i<l; ++i,++pi)
-    {
-        d = D[i];
-        if (is_string(d))
-        {
-            if (m=d.match(not_in_set_re))
-            {
-                if (0 < m[1].indexOf('..'))
-                {
-                    m = m[1].split('..').map(Number);
-                    if (m[0] > m[1])
-                        a = complement(n, array(m[0]-m[1]+1, m[1], 1).filter(in_range)).reverse();
-                    else
-                        a = complement(n, array(m[1]-m[0]+1, m[0], 1).filter(in_range));
-                }
-                else
-                {
-                    a = complement(n, m[1].split(',').map(Number).filter(in_range));
-                }
-                if (!a.length) {none = true; break;}
-                data.push(a);
-            }
-            else if (m=d.match(in_set_re))
-            {
-                if (0 < m[1].indexOf('..'))
-                {
-                    m = m[1].split('..').map(Number);
-                    a = (m[0] > m[1] ? array(m[0]-m[1]+1, m[0], -1) : array(m[1]-m[0]+1, m[0], 1)).filter(in_range);
-                }
-                else
-                {
-                    a = m[1].split(',').map(Number).filter(in_range);
-                }
-                if (!a.length) {none = true; break;}
-                data.push(a);
-            }
-            else
-            {
-                is_valid = true; pos_ref = []; expr = null;
-                d = d.replace(pos_re, function(m, d) {
-                    var posref = parseInt(d, 10), varname = 'v' + String(posref);
-                    if (isNaN(posref) || !in_range(posref)) is_valid = false;
-                    if (is_valid && (-1 === pos_ref.indexOf(posref))) pos_ref.push(posref);
-                    return varname;
-                });
-                if (!is_valid)
-                {
-                    if (pos) pos.splice(pi--, 1);
-                    continue;
-                }
-                pos_ref.sort(sorter());
-                try {
-                    expr = new Function(pos_ref.map(function(p) {return 'v' + String(p);}).join(','),'return Math.floor('+d+');');
-                } catch(e) {
-                    expr = null;
-                }
-                if (!is_callable(expr))
-                {
-                    if (pos) pos.splice(pi--, 1);
-                    continue;
-                }
-                for (j=0; j<pos_ref.length; ++j)
-                {
-                    if (!ref[pos_ref[j]]) ref[pos_ref[j]] = [expr];
-                    else ref[pos_ref[j]].push(expr);
-                    if ((-1 === pos.indexOf(pos_ref[j])) && (-1 === missing.indexOf(pos_ref[j]))) missing.push(pos_ref[j]);
-                }
-                algebraic.push([expr,null,null,pos_ref,pos[pi]]);
-                data.push(algebraic[algebraic.length-1]);
-            }
-        }
-        else if (is_array(d))
-        {
-            a = false === d[0] ? complement(n, d.slice(1).filter(in_range)) : (true === d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
-            if (!a.length) {none = true; break;}
-            data.push(a);
-        }
-    }
-    if (none) data = [];
-
-    if (missing.length)
-    {
-        for (i=0,l=missing.length; i<l; ++i)
-        {
-            // add any missing references
-            pos.push(missing[i]);
-            if (!none) data.push(array(nn, min, 1));
-        }
-    }
-
-    // sort positions ascending if needed and re-arrange data
-    // two parameters change here, adjust [pos] array IN-PLACE, while simply return the new computed [data]
-    i = is_sorted(pos);
-    if (-1 === i)
-    {
-        reflection(pos, pos);
-        if (!none) reflection(data, data);
-    }
-    else if (0 === i)
-    {
-        d = mergesort(pos, 1, false, true);
-        permute(pos, d);
-        if (!none) permute(data, d);
-    }
-    if (none) return [];
-    if (algebraic.length)
-    {
-        for (i=0,l=algebraic.length; i<l; ++i)
-        {
-            m = algebraic[i];
-            // adjust relative positions in algebraic expressions used in data (same reference)
-            m[1] = m[3].map(function(m3) {return pos.indexOf(m3);});
-            m[2] = pos.indexOf(m[4]);
-            for (j=0; j<m[3].length; ++j)
-            {
-                // by the way, filter out some invalid values here for all expr on the same pos ref
-                // for expr that depend on single position only, else leave for actual combinatorial generation later on
-                expr = ref[m[3][j]];
-                if (!is_callable(data[m[1][j]][0]) /*expression does not reference another expression*/)
-                {
-                    a = data[m[1][j]].filter(function(x) {
-                        for (var ex,i=0,l=expr.length; i<l; ++i)
-                        {
-                            // for expr that depend on single position only
-                            if (1 !== expr[i].length /*num of func args*/) continue;
-                            ex = expr[i](x);
-                            if (isNaN(ex) || min > ex || ex > max) return false;
-                        }
-                        return true;
-                    });
-                    if (!a.length) {none = true; break;}
-                    else data[m[1][j]] = a;
-                }
-            }
-            if (none) break;
-        }
-    }
-    if (none) return [];
-
-    // check value conditions
-    if ('=' === value_conditions) value_conditions = V_EQU;
-    else if (('!=' === value_conditions) || ('<>' === value_conditions)) value_conditions = V_DIFF;
-    else if ('<' === value_conditions) value_conditions = V_INC;
-    else if (('<=' === value_conditions) || ('=<' === value_conditions)) value_conditions = V_NONDEC;
-    else if ('>' === value_conditions) value_conditions = V_DEC;
-    else if (('>=' === value_conditions) || ('=>' === value_conditions)) value_conditions = V_NONINC;
-    else value_conditions = false;
-
-    // check additional conditions
-    additional_conditions = is_callable(options.extra_conditions) ? function(v, i0, i1) {
-        var v0 = v[i0];
-        if (
-            // check in range
-            (min > v0 || v0 > max) ||
-            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
-            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
-            (V_INC === value_conditions && pos[i0] > v0) ||
-            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
-       ) return false
-        return options.extra_conditions(v ,i0, i1);
-    } : function(v, i0, i1) {
-        var v0 = v[i0];
-        if (
-            // check in range
-            (min > v0 || v0 > max) ||
-            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
-            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
-            (V_INC === value_conditions && pos[i0] > v0) ||
-            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
-       ) return false
-        return true;
-    };
-
-    // compute valid combinatorial data satisfying conditions
-    return true === options.lazy ? data : conditional_combinatorial_tensor(data, value_conditions, additional_conditions);
-}
 function summation(a, b, Arithmetic, do_subtraction)
 {
     // O(max(n1,n2))
@@ -5603,306 +4577,6 @@ function complement(n, item, sort/*, dupl*/)
         else if (0 === d) item = mergesort(item.slice(), 1, true);
     }
     return difference(null, n, item/*, 1, null, null, null, null, dupl*/);
-}
-function subset2binary(item, n)
-{
-    if (0 >= n) return [];
-    var binary = array(n, 0, 0), i, l = item.length;
-    for (n=n-1,i=0; i<l; ++i) binary[n-item[i]] = 1;
-    return binary;
-}
-function binary2subset(item, n)
-{
-    n = stdMath.min(n || item.length, item.length);
-    var subset = new Array(n), i, j;
-    for (n=n-1,i=0,j=0; i<=n; ++i) if (0 < item[i]) subset[j++] = n - i;
-    if (j < subset.length) subset.length = j; // truncate if needed
-    return subset;
-}
-function composition2subset(item, n, dir)
-{
-    if (null == item) return null;
-    n = n || item.length;
-    return psum(new Array(n), item, 1, -1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
-}
-function subset2composition(item, n, dir)
-{
-    if (null == item) return null;
-    n = n || item.length;
-    return fdiff(new Array(n), item, 1, 1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
-}
-function conjugatepartition(is_composition, item, dir)
-{
-    if (null == item) return null;
-    var conjugate = null, l = item.length, n;
-    dir = -1 === dir ? -1 : 1;
-    if (is_composition)
-    {
-        // On Conjugates for Set Partitions and Integer Compositions (arxiv.org/abs/math/0508052v3)
-        n = operate(addn, 0, item);
-        if (1 >= n)
-        {
-            conjugate = item.slice();
-        }
-        else
-        {
-            // get the associated n-composition of the complement(conjugate) of the associated (n-1)-subset
-            conjugate = subset2composition(complement(n-1, composition2subset(item, l-1, dir)));
-            // add the remainder
-            if (0 < (n=n-operate(addn, 0, conjugate))) conjugate.push(n);
-            // if reflected, get the reflected composition
-            if (0 > dir) reflection(conjugate, conjugate);
-        }
-    }
-    else
-    {
-        // http://mathworld.wolfram.com/ConjugatePartition.html
-        var i, ii, j, jj, p, a = 1, b = 0, d = 0, push = "push";
-        if (0 > dir) {a = -a; b = l-1-b; push = "unshift";}
-        if (is_array(item[b]))
-        {
-            // multiplicity(packed) representation
-            p = item[b]; conjugate = [[p[1], p[0]]]; i = 0;
-            for (j=1,jj=a+b; j<l; ++j,jj+=a)
-            {
-                p = item[jj]; ii = 0>dir ? 0 : i;
-                if (p[1] === conjugate[ii][0])
-                {
-                    // same part increase multiplicity
-                    conjugate[ii][1] += p[0];
-                }
-                else
-                {
-                    // swap part with multiplicity
-                    conjugate[push]([p[1], p[0]]); ++i;
-                }
-            }
-        }
-        else
-        {
-            // standard(unpacked) representation
-            n = item[b]; conjugate = array(n, 1, 0);
-            if (0 > dir) d = n-1-d;
-            for (j=1,jj=a+b; j<l; ++j,jj+=a)
-            {
-                i = 0; ii = d; p = item[jj];
-                while ((i < n) && (p > 0)) {++conjugate[ii]; --p; ++i; ii += a;}
-            }
-        }
-    }
-    return conjugate;
-}
-function packpartition(partition, dir)
-{
-    if (null == partition) return null;
-    var packed = [], i, j, l = partition.length,
-        reflected = -1 === dir,
-        a = 1, b = 0, push = "push",
-        last, part;
-
-    if (reflected)
-    {
-        a = -a;
-        b = l-1-b;
-        push = "unshift";
-    }
-    for (last=partition[b],part=[last, 1],i=1; i<l; ++i)
-    {
-        j = a*i+b;
-        if (last === partition[j])
-        {
-            ++part[1];
-        }
-        else
-        {
-            packed[push](part);
-            last = partition[j];
-            part = [last, 1];
-        }
-    }
-    packed[push](part);
-    return packed;
-}
-function unpackpartition(packed, dir)
-{
-    if (null == packed) return null;
-    var partition = [], i, j, k, v, l = packed.length,
-        cmp, reflected = -1 === dir,
-        a = 1, b = 0, push = "push";
-    if (reflected)
-    {
-        a = -a;
-        b = l-1-b;
-        push = "unshift";
-    }
-    for (i=0; i<l; ++i)
-    {
-        cmp = packed[a*i+b];
-        if (1 === cmp[1])
-            partition[push](cmp[0]);
-        else
-            for (k=cmp[1],v=cmp[0],j=0; j<k; ++j)
-                partition[push](v);
-    }
-    return partition;
-}
-function singletons(item, n)
-{
-    var i, j, l = item.length, S = new Array(l);
-    for (i=0,j=0; i<l; ++i)
-    {
-        if (1 === item[i].length)
-            S[j++] = item[i][0];
-    }
-    if (j < S.length) S.length = j; // truncate if needed
-    return S;
-}
-function adjInit(item, n)
-{
-    var i, j, k, l = item.length, I = [];
-    for (i=0,k=0; i<l; ++i)
-    {
-        if (1 === item[i].length)
-        {
-            I.push(item[i][0]);
-        }
-        else
-        {
-            for (j=0,k=item[i].length; j+1<k; ++j)
-            {
-                if (item[i][j]+1 === item[i][j+1])
-                    I.push(item[i][j]);
-            }
-            if (((item[i][j]+1) % n) === item[i][0])
-                    I.push(item[i][j]);
-        }
-    }
-    return I;
-}
-function adjTerm(item, n)
-{
-    var i, j, l, k, T = [];
-    for (i=0,l=item.length; i<l; ++i)
-    {
-        if (1 === item[i].length)
-        {
-            T.push(item[i][0]);
-        }
-        else
-        {
-            for (j=0,k=item[i].length; j+1<k; ++j)
-            {
-                if (item[i][j]+1 === item[i][j+1])
-                    T.push(item[i][j+1]);
-            }
-            if ((item[i][j]+1) % n === item[i][0])
-                    T.push(item[i][0]);
-        }
-    }
-    return T;
-}
-/*function separateIS(item, S, I)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}
-function separateST(item, S, T)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}
-function combineIS(item, S, I)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}
-function combineST(item, S, T)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}*/
-function conjugatesetpartition(item, n)
-{
-    // adapted from https://arxiv.org/abs/math/0508052
-    if (null == item) return null;
-    var congugate = null;
-    return conjugate;
-}
-function permutation2inversion(inversion, permutation, N)
-{
-    // O(n log n) inversion computation
-    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
-    var n = permutation.length, k = stdMath.ceil(log2(N||n)),
-        twok = 1 << k, Tl = (1<<(1+k))-1, T = array(Tl, 0, 0);
-
-    return operate(function(inv ,ctr, i) {
-        // Starting bottom-up at the leaf associated with pi
-        for (var node=ctr+twok,j=0; j<k; ++j)
-        {
-            // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
-            if (node & 1) ctr -= T[(node >>> 1) << 1];
-            // 2) increase the value stored at the current node.
-            T[node] += 1;
-            // 3) move-up the tree
-            node >>>= 1;
-        }
-        T[node] += 1; inv[i] = ctr;
-        return inv;
-    }, inversion || new Array(n), permutation);
-}
-function inversion2permutation(permutation, inversion, N)
-{
-    // O(n log n) inversion computation
-    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
-    var n = inversion.length, k = stdMath.ceil(log2(N||n)),
-        i, i2, j, twok = 1 << k, Tl = (1<<(1+k))-1, T = new Array(Tl);
-
-    for (i=0; i<=k; ++i) for (j=1,i2=1<<i; j<=i2; ++j) T[i2-1+j] = 1 << (k-i);
-    return operate(function(perm, digit, i) {
-        // Starting top-down the tree
-        for (var node=1,j=0; j<k; ++j)
-        {
-            T[node] -= 1;
-            node <<= 1;
-            // next node as the left or right child whether digit is less than the stored value at the left child
-            if (digit >= T[node])
-            {
-                // If the next node is the right child, then the value of the left child is subtracted from digit
-                digit -= T[node];
-                ++node;
-            }
-        }
-        T[node] = 0; perm[i] = node - twok;
-        return perm;
-    }, permutation || new Array(n), inversion);
 }
 function permute(a, p, copy)
 {

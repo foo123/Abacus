@@ -8,9 +8,9 @@
 ![abacus combinatorial numbers](/abacus.jpg)
 
 
-`Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for (fast) combinatorial object computation and algebraic / number theoretic computation. It builds on (and extends) a deprecated previous project `Simulacra`.
+`Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
 
-`Abacus` uses self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
+`Abacus` uses mostly self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
 
 [![Abacus Live](/abacus-live.png)](https://foo123.github.io/examples/abacus)
@@ -68,20 +68,20 @@
 * `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`), `Complex` (`test/complex.js`) **supporting arbitrary precision arithmetic**
 * `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate / multivariate with coefficients from a Ring/Field**
 * `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
-* `Expr` (`test/expressions.js`) **general Symbolic Expressions**
 * Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/ratfuncs.js`)
 * `Matrix` (`test/matrices.js`) **with coefficients from a Ring/Field**
+* `Expr` (`test/expressions.js`) **general Symbolic Expressions**
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
 
-* `big-integer arithmetic`, `PRNG`s and other `math` utilities are **dynamicaly pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators (examples use the excellent [BigInteger.js](https://github.com/peterolson/BigInteger.js))
+* `big-integer arithmetic`, `PRNG`s and other `math` utilities are **pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators (examples use the excellent [BigInteger.js](https://github.com/peterolson/BigInteger.js))
 
 
 ### Performance
 
 * `first`/`last`, `random`, `rank`/`unrank` methods use **efficient linear** `O(n)` (or **log-linear** `O(nlgn)`) **time and space** algorithms (**note** a couple of rank/unrank methods are of `O(n^2)` or higher order)
-* `random` methods are **statisticaly unbiased** (ie uniform sampling methods, see below as well)
+* `random` methods are **statistically unbiased** (ie uniform sampling methods, see below as well)
 * `successor` methods use **efficient CAT (ie constant amortized time) or Loopless (ie strictly constant time)** algorithms to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above) (**note** a couple of methods are **linear time** algorithms because the lib does not use extra space to store information between successive runs and also support static random access to successors so any extra is computed at `run-time`, but can easily be made `CAT` or even `Loopless` by storing extra information, eg current index position)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit `ranking` / `unranking` is needed and objects are large)
 * symbolic polynomials use efficient sparse representation
@@ -255,12 +255,12 @@ console.log(m.inv().mul(m).toString());
 ### Todo
 
 * apply built-in language `iterator`/`iterable` patterns (ES6 `iterator` protocol). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
-* support exact `biginteger` arithmetic computations e.g large factorials **[DONE]**, arithmetic routines have been made **dynamicaly pluggable** and one can use an external implementation, see examples
+* support exact `biginteger` arithmetic computations e.g large factorials **[DONE]**, arithmetic routines have been made **pluggable** and one can use an external implementation, see examples
 * support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward **[DONE]**, `random` ordering may be optimised further
 * support multiple combinatorial orderings (ie `lex`, `colex`, `reflex`, `refcolex`, `minimal`, ..) **directly in the successor methods**  instead of using post-transformations on object **[DONE]**
 * support **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object **[DONE]**
 * support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings **[DONE]**
-* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) **[DONE]**, see reference, used as custom iterator ordering, see above, may be optimised further
+* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) **[DONE]**, used as custom iterator ordering, may be optimised further
 * make sure the `random()` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) **[DONE]**
 * support algebraic composition/cascading of combinatorial objects to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) **[DONE]**
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. **[DONE]**
@@ -269,8 +269,8 @@ console.log(m.inv().mul(m).toString());
 * support efficient primality tests and prime sieves **[DONE PARTIALLY]**
 * support efficient integer factorization algorithms **[DONE PARTIALLY]**
 * support general symbolic expressions and computations in `Expr` **[DONE]**
-* add Rank Factorisation **[DONE]**
-* implement `ginv` (Moore-Penrose Inverse) computation **[DONE]**
+* add `Rank Factorisation` **[DONE]**
+* implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
 * implement symbolic/numeric `EVD/SVD` computation (TODO)
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
@@ -283,11 +283,12 @@ console.log(m.inv().mul(m).toString());
 * implement recursive multivariate polynomial `GCD` from univariate polynomial `GCD` **[DONE]**
 * implement more efficient multivariate polynomial `GCD` (TODO)
 * implement `LLL` algorithm (TODO)
-* implement polynomial `RESULTANT`, `DISCRIMINANT` computations **[DONE]**
-* implement groebner basis computations (`BUCHBERGER` algorithm) **[DONE]**
+* implement polynomial `Resultant`, `Discriminant` computations **[DONE]**
+* implement `Groebner Basis` computations (`Buchberger` algorithm) **[DONE]**
+* implement more efficient `Groebner Basis` computations (TODO)
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
-* use faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
+* implement faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
 * add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
 * add efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**

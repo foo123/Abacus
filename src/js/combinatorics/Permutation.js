@@ -1329,6 +1329,54 @@ function permutation2inverse(ipermutation, permutation)
         ip[pi] = i; return ip;
     }, ipermutation || new Array(permutation.length), permutation);
 }
+function permutation2inversion(inversion, permutation, N)
+{
+    // O(n log n) inversion computation
+    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
+    var n = permutation.length, k = stdMath.ceil(log2(N||n)),
+        twok = 1 << k, Tl = (1<<(1+k))-1, T = array(Tl, 0, 0);
+
+    return operate(function(inv ,ctr, i) {
+        // Starting bottom-up at the leaf associated with pi
+        for (var node=ctr+twok,j=0; j<k; ++j)
+        {
+            // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
+            if (node & 1) ctr -= T[(node >>> 1) << 1];
+            // 2) increase the value stored at the current node.
+            T[node] += 1;
+            // 3) move-up the tree
+            node >>>= 1;
+        }
+        T[node] += 1; inv[i] = ctr;
+        return inv;
+    }, inversion || new Array(n), permutation);
+}
+function inversion2permutation(permutation, inversion, N)
+{
+    // O(n log n) inversion computation
+    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
+    var n = inversion.length, k = stdMath.ceil(log2(N||n)),
+        i, i2, j, twok = 1 << k, Tl = (1<<(1+k))-1, T = new Array(Tl);
+
+    for (i=0; i<=k; ++i) for (j=1,i2=1<<i; j<=i2; ++j) T[i2-1+j] = 1 << (k-i);
+    return operate(function(perm, digit, i) {
+        // Starting top-down the tree
+        for (var node=1,j=0; j<k; ++j)
+        {
+            T[node] -= 1;
+            node <<= 1;
+            // next node as the left or right child whether digit is less than the stored value at the left child
+            if (digit >= T[node])
+            {
+                // If the next node is the right child, then the value of the left child is subtracted from digit
+                digit -= T[node];
+                ++node;
+            }
+        }
+        T[node] = 0; perm[i] = node - twok;
+        return perm;
+    }, permutation || new Array(n), inversion);
+}
 function permutation2count(count, permutation, dir)
 {
     // O(n) count computation K(\sigma)_i = \#\{j > i : \sigma_j > i\}
