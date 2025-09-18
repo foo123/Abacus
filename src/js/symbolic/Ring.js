@@ -195,7 +195,7 @@ Ring = Abacus.Ring = Class({
 
     ,hasGCD: function() {
         var self = this;
-        return self.PolynomialClass ? ((is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) && is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? (/*(is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) &&*/ is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
     }
     ,gcd: function(/*args*/) {
         var self = this, args;

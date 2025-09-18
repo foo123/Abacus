@@ -706,7 +706,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 }
                 else
                 {
-                    // full-rank, has inverse, generaly in the field of fractions
+                    // full-rank, has inverse, generally in the field of fractions
                     field = ring.associatedField();
                     self._i = Matrix(field, rref[3].map(function(aug_ij, ij) {
                         return field.cast(aug_ij).div(field.cast(rref[0].val[ij[0]][ij[0]]));
