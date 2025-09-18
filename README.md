@@ -271,7 +271,7 @@ console.log(m.inv().mul(m).toString());
 * support general symbolic expressions and computations in `Expr` **[DONE]**
 * add `Rank Factorisation` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
-* implement symbolic/numeric `EVD/SVD` computation (TODO)
+* implement symbolic/numeric `EVD / SVD` computation (TODO)
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**

@@ -34,6 +34,9 @@ INUMBER = {
     ,isImag: function() {
         return false;
     }
+    ,isComplex: function() {
+        return false;
+    }
     ,equ: function(other) {
         return is_instance(other, INumber) ? other.equ(this) : (is_string(other) ? (String(this) === other) : (this === other));
     }

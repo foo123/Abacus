@@ -34,7 +34,9 @@ echo('--------------');
 ring = Ring.C("x", "y", "z");
 rring = Ring.K(Ring.K(Ring.K(Ring.C()), "y", "z"), "x");
 echo('ring = '+ring.toString()+' ('+ring.toTex()+')'+' rring = '+rring.toString()+' ('+rring.toTex()+')');
+
 echo('---');
+
 p1 = ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y");
 p2 = rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y");
 
@@ -44,12 +46,22 @@ echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.recur(false).toString()+' = '+p2.r
 echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.recur(false).recur('x').toString()+' = '+p2.recur(false).recur('x').toString()+(p1.recur(false).recur('x').equ(p2.recur(false).recur('x')) ? ' true' : ' false'));
 echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y -> "+p1.recur(true).toString()+' = '+p2.recur(true).toString()+(p1.recur(true).equ(p2.recur(true)) ? ' true' : ' false'));
 
+echo('---');
+
+echo(p1.toString()+' + (x + y) = '+p1.add(ring.fromString('x+y')).toString())
+echo(p2.toString()+' + (x + y) = '+p2.add(ring.fromString('x+y')).toString())
+echo(p1.toString()+' + (x + y) = '+p1.add(rring.fromString('x+y')).toString())
+echo(p2.toString()+' + (x + y) = '+p2.add(rring.fromString('x+y')).toString())
+
+echo('---');
+
 echo('ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")');
 echo((ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")).toString());
 //log(ring)
 echo('ring.fromString("x*y+x+y-2").toString()');
 echo((p=ring.fromString("x*y+x+y-2")).toString());
 //log(p);
+
 echo('---');
 
 p1 = ring.fromString("x^2*y + x^3");

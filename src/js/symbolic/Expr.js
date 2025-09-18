@@ -1243,13 +1243,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function replace(f, x, g)
         {
-            if (is_instance(g, Expr))
+            if (is_instance(g, Expr) || is_string(g))
             {
                 x = String(x);
                 if (('sym' === f.ast.type) && (f.ast.arg === x))
                 {
                     // substitute x -> g()
-                    return g;
+                    return is_string(g) ? Expr('', g) : g;
                 }
                 else if (('expr' === f.ast.type) && (-1 !== f.symbols().indexOf(x)))
                 {
@@ -1584,6 +1584,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,toPoly: function(symbol, ring, imagUnit) {
         var self = this, other_symbols = null, CoefficientRing = null;
 
+        if (is_instance(ring, Ring) && !is_class(ring.NumberClass, Complex))
+        {
+            imagUnit = null; // ring does not support Complex
+        }
         if (!symbol)
         {
             symbol = self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s);});
@@ -1594,7 +1598,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if (!is_array(symbol)) symbol = [symbol];
             symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);}); //hmm..?
-            //if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed??
+            if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed
         }
         other_symbols = is_array(symbol) ? self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (-1 === symbol.indexOf(s));}) : self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (s !== symbol);});
         if (ring.PolynomialClass)

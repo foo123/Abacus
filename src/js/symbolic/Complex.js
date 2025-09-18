@@ -268,6 +268,9 @@ Complex = Abacus.Complex = Class(Numeric, {
         var self = this, O = Abacus.Arithmetic.O;
         return self.re.equ(O) && !self.im.equ(O);
     }
+    ,isComplex: function() {
+        return true;
+    }
     ,isInt: function() {
         var self = this;
         return self.isReal() && self.re.isInt();
