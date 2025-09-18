@@ -22,25 +22,9 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
 
 var  Abacus = {VERSION: "@@VERSION@@"}
 
-    ,PROTO = 'prototype', CLASS = 'constructor'
-    ,slice = Array[PROTO].slice
-    ,HAS = Object[PROTO].hasOwnProperty
-    ,KEYS = Object.keys
-    ,def = Object.defineProperty
-    ,toString = Object[PROTO].toString
-    ,stdMath = Math, log2 = stdMath.log2 || function(x) {return stdMath.log(x) / stdMath.LN2;}
-
-    ,trim_re = /^\s+|\s+$/g
-    ,trim = String[PROTO].trim ? function(s) {return s.trim();} : function(s) {return s.replace(trim_re, '');}
-
-    ,pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/
-    ,in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/
-    ,dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/
-
+    ,stdMath = Math
     ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MAX_SAFE_INTEGER
     ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
-
-    ,V_EQU = 1, V_DIFF = -1, V_INC = 3, V_DEC = -3, V_NONINC = -2, V_NONDEC = 2
 
     ,REVERSED = 1, REFLECTED = 2
     ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32
@@ -48,9 +32,6 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,LEFT = -2, RIGHT = 2, PREFIX = 2, INFIX = 4, POSTFIX = 8
-
-    ,Obj = function() {return Object.create(null);}
-    ,NOP = function() {}
 
     ,Node, Heap, ListSet
     ,DefaultArithmetic, INUMBER, INumber
@@ -69,26 +50,3 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,Subset, Partition, SetPartition
     ,CatalanWord, LatinSquare, MagicSquare
 ;
-
-function Merge(/* args */)
-{
-    var args = arguments, l = args.length, a, b, i, p;
-    a = (l ? args[0] : {}) || {}; i = 1;
-    for (;i<l;++i)
-    {
-        b = args[i];
-        if (null == b) continue;
-        for (p in b) if (HAS.call(b, p)) a[p] = b[p];
-    }
-    return a;
-}
-function Class(supr, proto)
-{
-    if (1 === arguments.length) {proto = supr; supr = null;/*Object;*/}
-    supr = supr || null;
-    var klass = proto[CLASS] || function() {};
-    if (!proto[CLASS]) proto[CLASS] = klass;
-    if (HAS.call(proto, '__static__')) {klass = Merge(klass, proto.__static__); delete proto.__static__;}
-    klass[PROTO] = supr ? Merge(Object.create(supr[PROTO]), proto) : proto;
-    return klass;
-}

@@ -5,7 +5,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
     constructor: function CatalanWord(n, $) {
         var self = this, sub = null, K;
         if (!is_instance(self, CatalanWord)) return new CatalanWord(n, $);
-        $ = $ || {}; $.type = 'catalan';
+        $ = $ || {}; $.type = "catalan";
         n = n || 0;
         if (is_instance(n, CombinatorialIterator))
         {

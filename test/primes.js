@@ -33,7 +33,7 @@ echo('---');
 
 
 echo('Primality Tests');
-for (let i=1; i<1000; i++)
+for (let i=1; i<1000; ++i)
 {
     if (Abacus.Math.isProbablePrime(i))
         echo(''+i+' Probable Prime '+(Abacus.Math.isPrime(i) ? '(Prime)' : '(Not Prime)'));

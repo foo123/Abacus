@@ -235,7 +235,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 for (index=O,i=0; i<l; ++i)
                 {
                     x = item[i];
-                    if ((0 > x) || (x >= n) || (1 === dict[x]) || ((i+1 < l) && (x <= item[i+1]))) return J;
+                    if ((0 > x) || (x >= n) || (1 === dict[x]) || ((i+1 < l) && (x >= item[i+1])/*item is in increasing order*/)) return J;
                     index = add(index, subset_bin_rank(n, x));
                     dict[x] = 1;
                 }
@@ -507,7 +507,7 @@ function subset_lex_rank(n, x, y)
     {
         if (null == y)
         {
-            for (k = I,j = 0; j < x; ++j) k = add(k, pow2(n-j-1));
+            for (k=I,j=0; j<x; ++j) k = add(k, pow2(n-j-1));
             index = add(index, k);
             subset_lex_rank.mem[key] = index;
         }
@@ -520,7 +520,7 @@ function subset_lex_rank(n, x, y)
             }
             else if (x > y+1)
             {
-                for (k = I,j = y+1; j < x; ++j) k = add(k, pow2(n-j-1));
+                for (k=I,j=y+1; j<x; ++j) k = add(k, pow2(n-j-1));
                 index = add(index, k);
                 subset_lex_rank.mem[key] = index;
             }
@@ -536,5 +536,5 @@ subset_lex_rank.mem = Obj();
 function subset_bin_rank(n, x, y)
 {
     var Arithmetic = Abacus.Arithmetic;
-    return n > x && 0 <= x ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
+    return (n > x) && (0 <= x) ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
 }

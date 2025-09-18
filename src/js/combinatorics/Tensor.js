@@ -429,6 +429,9 @@ function next_tensor(item, N, dir, type, order, TI)
     }
     return item;
 }
+var pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/,
+    in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/,
+    V_EQU = 1, V_DIFF = -1, V_INC = 3, V_DEC = -3, V_NONINC = -2, V_NONDEC = 2;
 function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
 {
     var k, kl, a, r, l, i, vv, nv = v.length, v0, v1,

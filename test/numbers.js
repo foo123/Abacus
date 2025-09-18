@@ -25,33 +25,33 @@ echo('---');
 
 echo('Triangular numbers');
 echo('-----------------');
-for (i=0; i<=100; i++) echo('Triangular('+i+')='+String(Abacus.Math.polygonal(i,3)));
+for (i=0; i<=100; ++i) echo('Triangular('+i+')='+String(Abacus.Math.polygonal(i,3)));
 
 echo();
 echo('Fibonacci numbers');
 echo('-----------------');
-for (i=0; i<=100; i++) echo('Fibonacci('+i+')='+String(Abacus.Math.fibonacci(i)));
+for (i=0; i<=100; ++i) echo('Fibonacci('+i+')='+String(Abacus.Math.fibonacci(i)));
 
 echo();
 echo('Catalan numbers');
 echo('---------------');
-for (i=0; i<=30; i++) echo('Catalan('+i+')='+String(Abacus.Math.catalan(i)));
+for (i=0; i<=30; ++i) echo('Catalan('+i+')='+String(Abacus.Math.catalan(i)));
 
 echo();
 echo('Bell numbers');
 echo('------------');
-for (i=0; i<=30; i++) echo('Bell('+i+')='+String(Abacus.Math.bell(i)));
+for (i=0; i<=30; ++i) echo('Bell('+i+')='+String(Abacus.Math.bell(i)));
 
 echo();
 echo('Factorial numbers');
 echo('-----------------');
-for (i=0; i<=30; i++) echo('Factorial('+i+')='+String(Abacus.Math.factorial(i)));
+for (i=0; i<=30; ++i) echo('Factorial('+i+')='+String(Abacus.Math.factorial(i)));
  echo('Factorial(1000)='+String(Abacus.Math.factorial(1000)));
 
 echo();
 echo('SubFactorial numbers');
 echo('--------------------');
-for (i=0; i<=30; i++) echo('Subfactorial('+i+')='+String(Abacus.Math.factorial(i,false)));
+for (i=0; i<=30; ++i) echo('Subfactorial('+i+')='+String(Abacus.Math.factorial(i,false)));
 
 echo();
 echo('Large factorization');

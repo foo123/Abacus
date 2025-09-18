@@ -1,4 +1,42 @@
 // utility methods
+var  PROTO = 'prototype', CLASS = 'constructor'
+    ,slice = Array[PROTO].slice
+    ,HAS = Object[PROTO].hasOwnProperty
+    ,KEYS = Object.keys
+    ,def = Object.defineProperty
+    ,toString = Object[PROTO].toString
+    ,log2 = stdMath.log2 || function(x) {return stdMath.log(x) / stdMath.LN2;}
+
+    ,trim_re = /^\s+|\s+$/g
+    ,trim = String[PROTO].trim ? function(s) {return s.trim();} : function(s) {return s.replace(trim_re, '');}
+;
+function Merge(/* args */)
+{
+    var args = arguments, l = args.length, a, b, i, p;
+    a = (l ? args[0] : {}) || {}; i = 1;
+    for (;i<l;++i)
+    {
+        b = args[i];
+        if (null == b) continue;
+        for (p in b) if (HAS.call(b, p)) a[p] = b[p];
+    }
+    return a;
+}
+function Class(supr, proto)
+{
+    if (1 === arguments.length) {proto = supr; supr = null;/*Object;*/}
+    supr = supr || null;
+    var klass = proto[CLASS] || function() {};
+    if (!proto[CLASS]) proto[CLASS] = klass;
+    if (HAS.call(proto, '__static__')) {klass = Merge(klass, proto.__static__); delete proto.__static__;}
+    klass[PROTO] = supr ? Merge(Object.create(supr[PROTO]), proto) : proto;
+    return klass;
+}
+function NOP() {}
+function Obj()
+{
+    return Object.create(null);
+}
 function NotImplemented()
 {
     throw new Error("Method not implemented!");
@@ -2558,6 +2596,7 @@ function factorize(n)
     }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
 }
+var dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/;
 function dec2frac(dec, simplify)
 {
     // compute fraction (num/denom) for given decimal number (can include repeating decimals through special notation)
