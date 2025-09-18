@@ -19,9 +19,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        M = null != $["max="] ? ($["max="]|0) : null;
-        W = null != $["min="] ? ($["min="]|0) : null;
-        K = null != $["parts="] ? ($["parts="]|0) : null;
+        M = null != $['max='] ? ($['max=']|0) : null;
+        W = null != $['min='] ? ($['min=']|0) : null;
+        K = null != $['parts='] ? ($['parts=']|0) : null;
         k1 = null != K ? K : (null != W && null != M ? (M === W ? stdMath.ceil(n/W) : stdMath.max(1, stdMath.ceil((n-M)/W))+1) : (null != W ? stdMath.ceil(n/W) : (null != M ? stdMath.max(0, n-M)+1 : n)));
         k0 = null != K ? K : (null != W && null != M ? (M === W ? stdMath.ceil(n/M) : stdMath.max(1, stdMath.ceil((n-W)/M))+1) : (null != W ? 2 : (null != M ? stdMath.ceil(n/M) : 1)));
         $.base = n;
@@ -40,10 +40,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,__static__: {
          C: function(item, N, LEN, $, dir) {
             // C process / symmetry, ie Rotation/Complementation/Conjugation, CC = I
-            var klass = this, is_composition = 'composition' === ($ && $.type ? $.type : 'partition'),
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, is_composition = "composition" === ($ && $.type ? $.type : "partition"),
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 reflected = -1 === dir, itemlen;
             if ((null != K) || (null != M) || (null != W)) return item; // TODO
             if (LEN+1 === item.length)
@@ -64,7 +64,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         ,DUAL: function(item, n, $, dir) {
             if (null == item) return null;
-            var klass = this, type = $ && $.type ? $.type : 'partition',
+            var klass = this, type = $ && $.type ? $.type : "partition",
                 order = $ && (null != $.order) ? $.order : LEX, order0 = null;
             if (/*('composition' !== type) &&*/ (COLEX & order))
             {
@@ -77,10 +77,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
         ,count: function(n, $) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
-                type = $ && $.type ? $.type : 'partition';
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
+                type = $ && $.type ? $.type : "partition";
             if (0 > n)
             {
                 return O;
@@ -91,20 +91,20 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             }
             else
             {
-                return 'composition' === type ? compositions(n, K, M, W) : partitions(n, K, M, W);
+                return "composition" === type ? compositions(n, K, M, W) : partitions(n, K, M, W);
             }
         }
         ,initial: function(n, $, dir) {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
             var klass = this, item, i, k, l, r, w, m,
-                type = $ && $.type ? $.type : 'partition',
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+                type = $ && $.type ? $.type : "partition",
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 order = $ && (null != $.order) ? $.order : LEX,
                 LEN = $ && $.dimension ? $.dimension : 1,
-                is_composition = 'composition' === type, conj = false;
+                is_composition = "composition" === type, conj = false;
 
             if (0 === n)
             {
@@ -113,12 +113,12 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             else if (
                 (0 > n)
                 || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || /*(W+(K-1)*(n-W) < n) ||*/ (K*W > n)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
                 || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || ((null != W) && (0 >= W || W > n || (W < n && W+W > n)))
-                || ((null != M) && (0 >= M || M > n))
-                || ((null != K) && (0 >= K || K > n))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return null;
@@ -493,22 +493,22 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, type = $ && $.type ? $.type : 'partition',
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, type = $ && $.type ? $.type : "partition",
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 i, l, x, k0, k1, d0, d1;
 
             if (
                 !item || !item.length
                 || (0 > n)
                 || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || K*W > n))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
                 || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || ((null != W) && (0 >= W || W > n || (W < n && W+W > n)))
-                || ((null != M) && (0 >= M || M > n))
-                || ((null != K) && (0 >= K || K > n))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
                 return false;
 
@@ -519,7 +519,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             if (d0 > item.length || d1 < item.length) return false;
 
             item = klass.DUAL(item.slice(), n, $, -1);
-            if ('composition' === type)
+            if ("'composition" === type)
             {
                 if ((null != W) && (M === W))
                 {
@@ -551,58 +551,87 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
         ,succ: function(item, index, n, $, dir, PI) {
             if ((null == n) || (null == item)) return null;
-            var type = $ && $.type ? $.type : 'partition',
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
+                type = $ && $.type ? $.type : "partition",
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 dim = $ && $.dimension ? $.dimension : 1,
                 order = $ && (null != $.order) ? $.order : LEX;
 
             if (
                 (0 >= n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             ) return null;
 
+            function next_item(item, n, $, dir)
+            {
+                return klass.unrank(Arithmetic.add(klass.rank(item, n, $), 0 > dir ? Arithmetic.J : Arithmetic.I), n, $);
+            }
+
             dir = -1 === dir ? -1 : 1;
-            return 'composition' === type ? next_composition(item, n, dir, K, M, W, dim, order, PI) : next_partition(item, n, dir, K, M, W, dim, order, PI);
+            if ("composition" === type)
+            {
+                if ((null != W) && (null == K))
+                {
+                    // succ not working correctly, use default rank/unrank
+                    return next_item(item, n, $, dir);
+                }
+                else
+                {
+                    return next_composition(item, n, dir, K, M, W, dim, order, PI);
+                }
+            }
+            else
+            {
+                if ((null != W) && (null == K))
+                {
+                    // succ not working correctly, use default rank/unrank
+                    return next_item(item, n, $, dir);
+                }
+                else
+                {
+                    return next_partition(item, n, dir, K, M, W, dim, order, PI);
+                }
+            }
         }
         ,rand: function(n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
-                type = $ && $.type ? $.type : 'partition',
+                type = $ && $.type ? $.type : "partition",
                 order = $ && (null != $.order) ? $.order : LEX,
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 O = Arithmetic.O, I = Arithmetic.I,
                 item = null, index, total, last;
 
             if (0 === n)
             {
-                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                item = ((null == K) || (0 < K)) && ((null == M) || (0 === M)) && ((null == W) || (0 === W)) ? array(K || 1, 0, 0) : null;
             }
             else if (
                 (0 > n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return null;
             }
             else
             {
-                total = $ && null!=$.count ? $.count : klass.count(n, $);
+                total = $ && (null != $.count) ? $.count : klass.count(n, $);
                 if (Arithmetic.gt(total, O))
                 {
                     last = Arithmetic.sub(total, I);
@@ -624,70 +653,70 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,rank: function(item, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
-                order = $ && null!=$.order ? $.order : LEX,
-                M = $ && null!=$["max="] ? $["max="]|0 : null,
-                W = $ && null!=$["min="] ? $["min="]|0 : null,
-                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+                order = $ && (null != $.order) ? $.order : LEX,
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 index, J = Arithmetic.J, O = Arithmetic.O,
-                i, x, w, m, c, total, last;
+                i, x, w, m, l, c, total, last;
 
             if (item && (0 === n))
             {
-                if (LEN+1===item.length)
+                if (LEN+1 === item.length)
                 {
-                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0], LEN) : item.slice(0, item[LEN][0]);
                 }
                 //if (REFLECTED & order) item = item.slice().reverse();
                 item = klass.DUAL(item.slice(), n, $, -1);
 
-                index = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) && (K||1)===item.length && item.length===item.filter(function(x){return 0===x;}).length ? O : J;
+                index = ((null == K) || (0 < K)) && ((null == M) || (0 === M)) && ((null == W) || (0 === W)) && ((K||1) === item.length) && (item.length === item.filter(function(x) {return 0 === x;}).length) ? O : J;
             }
             else if (
                 !item || !item.length
                 || (0 > n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return J;
             }
             else
             {
-                if (LEN+1===item.length)
+                if (LEN+1 === item.length)
                 {
-                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0], LEN) : item.slice(0, item[LEN][0]);
                 }
-                if ($.mindimension > item.length || $.maxdimension < item.length) return J;
+                if (($.mindimension > item.length) || ($.maxdimension < item.length)) return J;
 
                 //if (REFLECTED & order) item = item.slice().reverse();
                 item = klass.DUAL(item.slice(), n, $, -1);
 
-                total = $ && null!=$.count ? $.count : klass.count(n, $);
+                total = $ && (null != $.count) ? $.count : klass.count(n, $);
                 last = Arithmetic.sub(total, 1);
 
                 if ("composition" === type)
                 {
                     index = O;
-                    if (W && M === W)
+                    if (W && (M === W))
                     {
-                        return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? O : J;
+                        return ((null == K) || (n === K*M)) && (0 === item.filter(function(x) {return x !== M;}).length) ? O : J;
                     }
-                    for (w=0,m=0,i=0; i<item.length; i++)
+                    for (w=0,m=0,i=0,l=item.length; i<l; ++i)
                     {
                         x = item[i];
-                        if (0 >= x || x > n || (W && x < W) || (M && x > M)) return J;
+                        if ((0 >= x) || (x > n) || (W && (x < W)) || (M && (x > M))) return J;
                         index = Arithmetic.add(index, W === x ? O : comp_rank(n, x, W, M, K ? K-i : null, w, m));
-                        if (W === x) w++;
-                        if (M === x) m++;
+                        if (W === x) ++w;
+                        if (M === x) ++m;
                         n -= x;
                     }
-                    if (0 !== n || i !== item.length) return J;
+                    if ((0 !== n) || (i !== l)) return J;
                     if (REVERSED & order) index = Arithmetic.sub(last, index);
                 }
                 else
@@ -695,18 +724,18 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     index = last;
                     if (W)
                     {
-                        if (M === W) return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? O : J;
-                        n -= W; if (K) K--;
+                        if (M === W) return ((null == K) || (n === K*M)) && (0 === item.filter(function(x) {return x !== M;}).length) ? O : J;
+                        n -= W; if (K) --K;
                     }
-                    for (i=0; i<item.length; i++)
+                    for (i=0,l=item.length; i<l; ++i)
                     {
                         x = item[i];
-                        if (W && i+1===item.length && W===x && 0===n) continue;
-                        if (0 >= x || x > n || (W && x < W) || (M && x > M) || (i+1<item.length && x < item[i+1])) return J;
-                        index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
+                        if (W && (i+1 === l) && (W === x) && (0 === n)) continue;
+                        if ((0 >= x) || (x > n) || (W && (x < W)) || (M && (x > M)) || ((i+1 < l) && (x < item[i+1]))) return J;
+                        index = Arithmetic.sub(index, M && (0 === i) ? O : part_rank(n, x, W, M, K ? K-i : null));
                         n -= x;
                     }
-                    if (0 !== n || i !== item.length) return J;
+                    if ((0 !== n) || (i !== l)) return J;
                     if (!(REVERSED & order)) index = Arithmetic.sub(last, index);
                 }
             }
@@ -715,32 +744,32 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,unrank: function(index, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
-                order = $ && null!=$.order ? $.order : LEX,
-                M = $ && null!=$["max="] ? $["max="]|0 : null,
-                W = $ && null!=$["min="] ? $["min="]|0 : null,
-                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+                order = $ && (null != $.order) ? $.order : LEX,
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 item = [], O = Arithmetic.O, i, x, w, m, c, total, last,
                 LEN = $ && $.dimension ? $.dimension : 1;
 
             index = null == index ? null : Arithmetic.num(index);
-            total = $ && null!=$.count ? $.count : klass.count(n, $);
+            total = $ && (null != $.count) ? $.count : klass.count(n, $);
             last = Arithmetic.sub(total, 1);
 
             if ((0 === n) && (null != index))
             {
-                item = Arithmetic.equ(O, index) && (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                item = Arithmetic.equ(O, index) && ((null == K) || (0 < K)) && ((null == M) || (0 === M)) && ((null == W) || (0 === W)) ? array(K || 1, 0, 0) : null;
             }
             else if (
                 (null == index)
                 || Arithmetic.lt(index, O) || Arithmetic.gt(index, last)
                 || (0 > n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return null;
@@ -750,20 +779,20 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 if (REVERSED & order) index = Arithmetic.sub(last, index);
                 if ("composition" === type)
                 {
-                    if (W && M === W)
+                    if (W && (M === W))
                     {
-                        item = null == K || stdMath.floor(n/M) === K ? array(stdMath.floor(n/M), M) : null;
+                        item = (null == K) || (stdMath.floor(n/M) === K) ? array(stdMath.floor(n/M), M) : null;
                     }
                     if (item && !item.length)
                     {
-                        for (w=0,m=0,i=0; 0<n; i++)
+                        for (w=0,m=0,i=0; 0<n; ++i)
                         {
-                            x = W && 0 === i ? n-W : n;
+                            x = W && (0 === i) ? n-W : n;
                             x = M ? stdMath.min(M, x) : x;
-                            while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=comp_rank(n, x, W, M, K ? K-i : null, w, m), index)) x--;
-                            if (0 >= x || (W && W > x)) break;
-                            if (W === x) w++;
-                            if (M === x) m++;
+                            while ((!W || (W <= x)) && (1 <= x) && Arithmetic.gt(c=comp_rank(n, x, W, M, K ? K-i : null, w, m), index)) --x;
+                            if ((0 >= x) || (W && (W > x))) break;
+                            if (W === x) ++w;
+                            if (M === x) ++m;
                             item.push(x);
                             index = Arithmetic.sub(index, c);
                             n -= x;
@@ -776,24 +805,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     {
                         if (M === W)
                         {
-                            item = null == K || stdMath.floor(n/M) === K ? array(stdMath.floor(n/M), M) : null;
+                            item = (null == K) || (stdMath.floor(n/M) === K) ? array(stdMath.floor(n/M), M) : null;
                         }
                         else
                         {
-                            n -= W; if (K) K--;
+                            n -= W; if (K) --K;
                         }
                     }
                     if (M)
                     {
-                        n -= M; if (K) K--;
+                        n -= M; if (K) --K;
                     }
                     if (item && !item.length)
                     {
-                        for (i=0; 0<n; i++)
+                        for (i=0; 0<n; ++i)
                         {
                             x = M ? stdMath.min(M, n) : n;
-                            while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=part_rank(n, x, W, M, K ? K-i : null), index)) x--;
-                            if (0 >= x || (W && W > x)) break;
+                            while ((!W || (W <= x)) && (1 <= x) && Arithmetic.gt(c=part_rank(n, x, W, M, K ? K-i : null), index)) --x;
+                            if ((0 >= x) || (W && (W > x))) break;
                             item.push(x);
                             index = Arithmetic.sub(index, c);
                             n -= x;
@@ -807,7 +836,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return item;
         }
         ,toConjugate: function(item, type) {
-            return conjugatepartition("composition"===type, item);
+            return conjugatepartition("composition" === type, item);
         }
         ,toSubset: function(item) {
             return composition2subset(item);
@@ -825,24 +854,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,_update: function() {
         var self = this, $ = self.$, n = self.n, item = self.__item,
             type = $ && $.type ? $.type : "partition",
-            order = $ && null!=$.order ? $.order : LEX,
-            M = $ && null!=$["max="] ? $["max="]|0 : null,
-            W = $ && null!=$["min="] ? $["min="]|0 : null,
-            K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+            order = $ && (null != $.order) ? $.order : LEX,
+            M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+            W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+            K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
             LEN = $.dimension, itemlen, x, y = 0, z = 0;
         if ((null != item) && (LEN+1 !== item.length))
         {
             itemlen = item.length;
             item = item.slice();
-            if (null != M || null != W)
+            if ((null != M) || (null != W))
             {
-                for (x=0,y=0,z=0; x<itemlen; x++)
+                for (x=0,y=0,z=0; x<itemlen; ++x)
                 {
-                    if (M === item[x]) y++;
-                    if (W === item[x]) z++;
+                    if (M === item[x]) ++y;
+                    if (W === item[x]) ++z;
                 }
             }
-            if (itemlen<LEN)
+            if (itemlen < LEN)
             {
                 if (REFLECTED & order) item.unshift.apply(item, new Array(LEN-itemlen));
                 else item.push.apply(item, new Array(LEN-itemlen));
@@ -855,26 +884,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,output: function(item) {
         if (null == item) return null;
         var self = this, $ = self.$, n = self.n,
-            M = null!=$["max="] ? $["max="]|0 : null,
-            W = null!=$["min="] ? $["min="]|0 : null,
-            K = null!=$["parts="] ? $["parts="]|0 : null,
-            order = null!=$.order ? $.order : LEX, LEN = $.dimension;
-        if (LEN+1===item.length)
+            M = null != $['max='] ? ($['max=']|0) : null,
+            W = null != $['min='] ? ($['min=']|0) : null,
+            K = null != $['parts='] ? ($['parts=']|0) : null,
+            order = null != $.order ? $.order : LEX, LEN = $.dimension;
+        if (LEN+1 === item.length)
         {
-            item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+            item = REFLECTED & order ? item.slice(LEN-item[LEN][0], LEN) : item.slice(0, item[LEN][0]);
         }
         return CombinatorialIterator[PROTO].output.call(self, item);
     }
 });
-// aliases
-Partition.transpose = Partition.conjugate;
 function next_partition(item, N, dir, K, M, W, LN, order, PI)
 {
     //maybe "use asm"
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
 
-    if (0 >= n || (null != K && 0 >= K) || (null != W && 0 >= W) || (null != M && 0 >= M)) return null;
+    if ((0 >= n) || (null != K && 0 >= K) || (null != W && 0 >= W) || (null != M && 0 >= M)) return null;
 
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
@@ -926,27 +953,27 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 if ((w < item[j]) && (d+(k<m) < item[j] || stdMath.floor(rem/(K-l-r-k))+(0<(rem%(K-l-r-k))) < item[j])) i = j;
                 k++; rem -= item[j];
             }
-            if (-1 === i || MAX < i+r*DI || MIN > i-l*DI)
+            if ((-1 === i) || (MAX < i+r*DI) || (MIN > i-l*DI))
             {
                 item = null;
             }
             else
             {
-                if (M === item[i]) item[INFO][NMAX]--;
-                item[i]--;
-                if (W === item[i]) item[INFO][NMIN]++;
+                if (M === item[i]) --item[INFO][NMAX];
+                --item[i];
+                if (W === item[i]) ++item[INFO][NMIN];
                 i += DI;
                 rem = 1; k = 0; j = i;
-                while (MIN<=j-l*DI && j+r*DI<=MAX) {k++; rem += item[j]; j += DI;}
-                while (0<k && 0<rem && MIN<=i-l*DI && i+r*DI<=MAX)
+                while ((MIN <= j-l*DI) && (j+r*DI <= MAX)) {++k; rem += item[j]; j += DI;}
+                while ((0 < k) && (0 < rem) && (MIN <= i-l*DI) && (i+r*DI <= MAX))
                 {
-                    k--;
-                    if (M === item[i]) item[INFO][NMAX]--;
-                    if (W === item[i]) item[INFO][NMIN]--;
+                    --k;
+                    if (M === item[i]) --item[INFO][NMAX];
+                    if (W === item[i]) --item[INFO][NMIN];
                     item[i] = stdMath.min(MIN <= i-DI && i-DI <= MAX ? item[i-DI] : n, stdMath.max(w, rem-w*k));
                     rem -= item[i];
-                    if (M === item[i]) item[INFO][NMAX]++;
-                    if (W === item[i]) item[INFO][NMIN]++;
+                    if (M === item[i]) ++item[INFO][NMAX];
+                    if (W === item[i]) ++item[INFO][NMIN];
                     i += DI;
                 }
             }
@@ -964,43 +991,43 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
             }
 
             j = M ? i0+DI : i0;
-            if ((MIN <= j && j <= MAX) && (item[j] > w))
+            if (((MIN <= j) && (j <= MAX)) && (item[j] > w))
             {
                 i = i1; rem = 0; l = 0; r = 0;
-                while ((MIN<=i && i<=MAX) && (DI*(i-j) >= 0) && (w === item[i]))
+                while (((MIN <= i) && (i <= MAX)) && (DI*(i-j) >= 0) && (w === item[i]))
                 {
-                    rem+=item[i];
-                    if (M === item[i]) l++;
-                    if (W === item[i]) r++;
-                    i-=DI;
+                    rem += item[i];
+                    if (M === item[i]) ++l;
+                    if (W === item[i]) ++r;
+                    i -= DI;
                 }
-                if (M === item[i]) item[INFO][NMAX]--;
-                m = item[i]-1; rem++; item[i] = m;
+                if (M === item[i]) --item[INFO][NMAX];
+                m = item[i]-1; ++rem; item[i] = m;
                 item[INFO][LEN] = (0 > DI ? LN-i : i+1) + (W ? 1 : 0);
                 item[INFO][NMAX] -= l;
                 item[INFO][NMIN] -= r;
-                if (W === item[i]) item[INFO][NMIN]++;
+                if (W === item[i]) ++item[INFO][NMIN];
                 if (m < rem)
                 {
                     j = rem % m;
                     rem = stdMath.floor(rem/m);
                     while (0 < rem--)
                     {
-                        i+=DI;
+                        i += DI;
                         item[i] = m;
-                        item[INFO][LEN]++;
-                        if (M === item[i]) item[INFO][NMAX]++;
-                        if (W === item[i]) item[INFO][NMIN]++;
+                        ++item[INFO][LEN];
+                        if (M === item[i]) ++item[INFO][NMAX];
+                        if (W === item[i]) ++item[INFO][NMIN];
                     }
                     rem = j;
                 }
                 if (w <= rem)
                 {
-                    i+=DI;
+                    i += DI;
                     item[i] = rem; rem = 0;
-                    item[INFO][LEN]++;
-                    if (M === item[i]) item[INFO][NMAX]++;
-                    if (W === item[i]) item[INFO][NMIN]++;
+                    ++item[INFO][LEN];
+                    if (M === item[i]) ++item[INFO][NMAX];
+                    if (W === item[i]) ++item[INFO][NMIN];
                 }
                 if (0 < rem)
                 {
@@ -1008,7 +1035,7 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 }
                 if (W)
                 {
-                    i+=DI;
+                    i += DI;
                     item[i] = W;
                 }
             }
@@ -1034,48 +1061,48 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 i = i1;
             }
             rem = 0; k = 0;
-            while (MIN <= i && i <= MAX && w === item[i]) {rem += item[i]; k++; i -= DI;}
-            if (i < MIN || i > MAX)
+            while ((MIN <= i) && (i <= MAX) && (w === item[i])) {rem += item[i]; ++k; i -= DI;}
+            if ((i < MIN) || (i > MAX))
             {
                 item = null;
             }
             else
             {
-                if (M === item[i]) item[INFO][NMAX]--;
-                if (W === item[i]-1) item[INFO][NMIN]++;
-                item[i]--; rem += item[i]; k++; i -= DI;
-                if (i < MIN || i > MAX)
+                if (M === item[i]) --item[INFO][NMAX];
+                if (W === item[i]-1) ++item[INFO][NMIN];
+                --item[i]; rem += item[i]; ++k; i -= DI;
+                if ((i < MIN) || (i > MAX))
                 {
                     item = null;
                 }
                 else
                 {
-                    while (MIN<=i && i<=MAX && ((M && M<item[i]+1) || (MIN<=i-DI && i-DI<=MAX && item[i-DI]<item[i]+1))) {rem += item[i]; k++; i -= DI;}
-                    if (i < MIN || i > MAX)
+                    while ((MIN <= i) && (i <= MAX) && ((M && (M < item[i]+1)) || ((MIN <= i-DI) && (i-DI <= MAX) && (item[i-DI] < item[i]+1)))) {rem += item[i]; ++k; i -= DI;}
+                    if ((i < MIN) || (i > MAX))
                     {
                         item = null;
                     }
                     else
                     {
-                        item[i]++;
-                        if (M === item[i]) item[INFO][NMAX]++;
+                        ++item[i];
+                        if (M === item[i]) ++item[INFO][NMAX];
                         m = 0 < k ? rem % k : 0;
                         d = 0 < k ? stdMath.floor(rem/k) : rem;
                         j = 0;
                         while (0 < rem)
                         {
                             i += DI;
-                            if (M === item[i]) item[INFO][NMAX]--;
-                            if (W === item[i]) item[INFO][NMIN]--;
+                            if (M === item[i]) --item[INFO][NMAX];
+                            if (W === item[i]) --item[INFO][NMIN];
                             item[i] = d+(j<m); rem -= item[i];
-                            if (M === item[i]) item[INFO][NMAX]++;
-                            if (W === item[i]) item[INFO][NMIN]++;
-                            j++;
+                            if (M === item[i]) ++item[INFO][NMAX];
+                            if (W === item[i]) ++item[INFO][NMIN];
+                            ++j;
                         }
                         if (W)
                         {
                             item[i1] = W;
-                            //item[INFO][NMIN]++;
+                            //++item[INFO][NMIN];
                         }
                     }
                 }
@@ -1102,7 +1129,7 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 w = 1;
                 m = stdMath.min(M, n-M);
                 k = stdMath.ceil(n/M)-1;
-                m = /*MAX*/item[INFO][LEN] > k+1 || item[i0+(k-1)*DI] < m;
+                m = /*MAX*/(item[INFO][LEN] > k+1) || (item[i0+(k-1)*DI] < m);
                 j = i0+DI;
             }
             else
@@ -1111,40 +1138,40 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 m = item[i0] < n;
                 j = i0;
             }
-            if (MIN <= j && j <= MAX && m)
+            if ((MIN <= j) && (j <= MAX) && m)
             {
                 l = 0; r = 0; rem = 0;
                 if (0 < MAX)
                 {
                     i = i1-DI;
                     rem += item[i1];
-                    if (M === item[i1]) l++;
-                    if (W === item[i1]) r++;
+                    if (M === item[i1]) ++l;
+                    if (W === item[i1]) ++r;
                 }
                 else
                 {
                     i = i1;
                 }
-                while ((MIN<=i && i<=MAX) && (MIN<=i-DI && i-DI<=MAX) && (DI*(i-j) > 0) && (item[i-DI] === item[i] || (W && (rem-1 < W))))
+                while (((MIN <= i) && (i <= MAX)) && ((MIN <= i-DI) && (i-DI <= MAX)) && (DI*(i-j) > 0) && (item[i-DI] === item[i] || (W && (rem-1 < W))))
                 {
                     rem += item[i];
-                    if (M === item[i]) l++;
-                    if (W === item[i]) r++;
+                    if (M === item[i]) ++l;
+                    if (W === item[i]) ++r;
                     i -= DI;
                 }
                 if (M && (M <= item[i])) return null;
                 item[INFO][LEN] = (0 > DI ? LN-i : i+1);
                 item[INFO][NMAX] -= l;
                 item[INFO][NMIN] -= r;
-                if (W === item[i]) item[INFO][NMIN]--;
-                item[i]++; rem--; j = i;
-                if (M === item[i]) item[INFO][NMAX]++;
+                if (W === item[i]) --item[INFO][NMIN];
+                ++item[i]; --rem; j = i;
+                if (M === item[i]) ++item[INFO][NMAX];
                 while (w <= rem)
                 {
-                    i += DI; item[INFO][LEN]++;
+                    i += DI; ++item[INFO][LEN];
                     item[i] = w; rem -= w;
                     if (W) item[INFO][NMIN]++;
-                    if (M === item[i]) item[INFO][NMAX]++;
+                    if (M === item[i]) ++item[INFO][NMAX];
                 }
                 if (0 < rem)
                 {
@@ -1157,18 +1184,18 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                         MIN = 0; MAX = item[INFO][LEN]-1;
                     }
                     i = j+DI;
-                    while (MIN<=i && i<=MAX && 0 < rem)
+                    while ((MIN <= i) && (i <= MAX) && (0 < rem))
                     {
-                        m = MIN<=i-DI && i-DI<=MAX ? (item[i-DI]>item[i] ? 1 : 0) : stdMath.min(M ? M-item[i] : rem, rem);
+                        m = (MIN <= i-DI) && (i-DI <= MAX) ? (item[i-DI] > item[i] ? 1 : 0) : stdMath.min(M ? M-item[i] : rem, rem);
                         if (W === item[i])
                         {
                             if (1 === item[INFO][NMIN])
                             {
                                 i = j;
-                                while (MIN<=i && i<=MAX && MIN<=i-DI && i-DI<=MAX && item[i-DI]===item[i]) i -= DI;
-                                if (MIN<=i-DI && i-DI<=MAX)
+                                while ((MIN <= i) && (i <= MAX) && (MIN <= i-DI) && (i-DI <= MAX) && (item[i-DI] === item[i])) i -= DI;
+                                if ((MIN <= i-DI) && (i-DI <= MAX))
                                 {
-                                    item[i]++; rem--;
+                                    ++item[i]; --rem;
                                     i += DI;
                                     continue;
                                 }
@@ -1181,11 +1208,11 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                             }
                             else
                             {
-                                item[INFO][NMIN]--;
+                                --item[INFO][NMIN];
                             }
                         }
                         item[i] += m; rem -= m;
-                        if (M === item[i]) item[INFO][NMAX]++;
+                        if (M === item[i]) ++item[INFO][NMAX];
                         i += DI;
                     }
                 }
@@ -1204,7 +1231,7 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
 
-    if (0 >= n || (null != K && 0 >= K) || (null != W && 0 >= W) || (null != M && 0 >= M)) return null;
+    if ((0 >= n) || ((null != K) && (0 >= K)) || ((null != W) && (0 >= W)) || ((null != M) && (0 >= M))) return null;
 
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
@@ -1249,14 +1276,14 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 else
                 {
                     i = i1-DI; j = i1; d = item[i1]-W; rem = item[i1]; k = 1;
-                    while (MIN<=i && i<=MAX && (W===item[i] || M<item[j]+1))
+                    while ((MIN <= i) && (i <= MAX) && ((W === item[i]) || (M < item[j]+1)))
                     {
                         rem += item[i];
-                        k++;
+                        ++k;
                         j = i;
                         i -= DI;
                     }
-                    if (MIN > i || i > MAX)
+                    if ((MIN > i) || (i > MAX))
                     {
                         item = null;
                     }
@@ -1265,52 +1292,52 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         if (0 < d)
                         {
                             m = rem+1-W*(k-1);
-                            if (1 === item[INFO][NMIN] && W === item[j] && (k-1)*M+W < rem+1)
+                            if ((1 === item[INFO][NMIN]) && (W === item[j]) && ((k-1)*M+W < rem+1))
                             {
                                 rem += item[i]-W; item[i] = W;
-                                item[INFO][NMIN]++;
+                                ++item[INFO][NMIN];
                             }
-                            else if (1 === item[INFO][NMAX] && M === item[i] && M > m)
+                            else if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > m))
                             {
                                 item[i] = stdMath.max(item[j], item[i1]); rem += M-item[i];
-                                if (M !== item[i]) item[INFO][NMAX]--;
-                                if (W === item[i]) item[INFO][NMIN]++;
+                                if (M !== item[i]) --item[INFO][NMAX];
+                                if (W === item[i]) ++item[INFO][NMIN];
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                rem++; item[i]--;
-                                if (W === item[i]) item[INFO][NMIN]++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                ++rem; --item[i];
+                                if (W === item[i]) ++item[INFO][NMIN];
                             }
                             m = rem-W*k;
-                            while (0 < rem && MIN <= j && j <= MAX)
+                            while ((0 < rem) && (MIN <= j) && (j <= MAX))
                             {
-                                if (W === item[j]) item[INFO][NMIN]--;
-                                if (M === item[j]) item[INFO][NMAX]--;
+                                if (W === item[j]) --item[INFO][NMIN];
+                                if (M === item[j]) --item[INFO][NMAX];
                                 item[j] = stdMath.min(M, W+m);
                                 rem -= item[j]; m -= item[j]-W;
-                                if (M === item[j]) item[INFO][NMAX]++;
-                                if (W === item[j]) item[INFO][NMIN]++;
+                                if (M === item[j]) ++item[INFO][NMAX];
+                                if (W === item[j]) ++item[INFO][NMIN];
                                 j += DI;
                             }
                         }
                         else
                         {
-                            if (1 === item[INFO][NMIN] && W === item[j])
+                            if ((1 === item[INFO][NMIN]) && (W === item[j]))
                             {
                                 item[j] = item[i]; item[i] = W;
                             }
-                            else if (1 === item[INFO][NMAX] && M === item[i] && M > item[j]+1)
+                            else if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > item[j]+1))
                             {
                                 item[i] = item[j]; item[j] = M;
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                if (W === item[j]) item[INFO][NMIN]--;
-                                item[i]--; item[j]++;
-                                if (M === item[j]) item[INFO][NMAX]++;
-                                if (W === item[i]) item[INFO][NMIN]++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                if (W === item[j]) --item[INFO][NMIN];
+                                --item[i]; ++item[j];
+                                if (M === item[j]) ++item[INFO][NMAX];
+                                if (W === item[i]) ++item[INFO][NMIN];
                             }
                         }
                     }
@@ -1328,18 +1355,18 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-W*(K-1) > m)
                     {
                         i = i1-DI;
-                        while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
+                        while ((MIN <= i) && (i <= MAX) && (W === item[i])) i -= DI;
                         j = i+DI;
-                        if (1 === item[INFO][NMIN] && W === item[j] && j === i1)
+                        if ((1 === item[INFO][NMIN]) && (W === item[j]) && (j === i1))
                         {
                             item[j] = item[i]; item[i] = W;
                         }
                         else
                         {
-                            if (W === item[j]) item[INFO][NMIN]--;
-                            item[i]--; item[i1] = W; item[j] = 1+m;
-                            if (W === item[i]) item[INFO][NMIN]++;
-                            if (item[i1] === W && W !== m) item[INFO][NMIN]++;
+                            if (W === item[j]) --item[INFO][NMIN];
+                            --item[i]; item[i1] = W; item[j] = 1+m;
+                            if (W === item[i]) ++item[INFO][NMIN];
+                            if ((item[i1] === W) && (W !== m)) ++item[INFO][NMIN];
                         }
                     }
                     // last
@@ -1355,14 +1382,14 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 else
                 {
                     i = i1-DI; j = i1; d = item[i1]-1; rem = item[i1]; k = 1;
-                    while (MIN<=i && i<=MAX && (1===item[i] || M<item[j]+1))
+                    while ((MIN <= i) && (i <= MAX) && ((1 === item[i]) || (M < item[j]+1)))
                     {
                         rem += item[i];
-                        k++;
+                        ++k;
                         j = i;
                         i -= DI;
                     }
-                    if (MIN > i || i > MAX)
+                    if ((MIN > i) || (i > MAX))
                     {
                         item = null;
                     }
@@ -1370,37 +1397,37 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     {
                         if (0 < d)
                         {
-                            if (1 === item[INFO][NMAX] && M === item[i] && M > rem-(k-1)+1)
+                            if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > rem-(k-1)+1))
                             {
                                 item[i] = stdMath.max(item[j], item[i1]); rem += M-item[i];
-                                if (M !== item[i]) item[INFO][NMAX]--;
+                                if (M !== item[i]) --item[INFO][NMAX];
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                item[i]--; rem++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                --item[i]; ++rem;
                             }
                             l = 0;
-                            while (0 < rem && MIN <= j && j <= MAX)
+                            while ((0 < rem) && (MIN <= j) && (j <= MAX))
                             {
-                                if (M === item[j]) item[INFO][NMAX]--;
+                                if (M === item[j]) --item[INFO][NMAX];
                                 item[j] = stdMath.min(M, rem-(k-l-1));
                                 rem -= item[j];
-                                if (M === item[j]) item[INFO][NMAX]++;
-                                j += DI; l++;
+                                if (M === item[j]) ++item[INFO][NMAX];
+                                j += DI; ++l;
                             }
                         }
                         else
                         {
-                            if (1 === item[INFO][NMAX] && M === item[i] && M > item[j]+1)
+                            if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > item[j]+1))
                             {
                                 item[i] = item[j]; item[j] = M;
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                item[i]--; item[j]++;
-                                if (M === item[j]) item[INFO][NMAX]++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                --item[i]; ++item[j];
+                                if (M === item[j]) ++item[INFO][NMAX];
                             }
                         }
                     }
@@ -1415,9 +1442,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > m)
                     {
                         item[i0] = 1; i = i0+DI;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i+=DI;
-                        item[i]--;
-                        if (MIN <= i-DI && i-DI <= MAX) item[i-DI] = 1+m;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i += DI;
+                        --item[i];
+                        if ((MIN <= i-DI) && (i-DI <= MAX)) item[i-DI] = 1+m;
                     }
                     // last
                     else item = null;
@@ -1428,9 +1455,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > m)
                     {
                         item[i1] = 1; i = i1;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i-=DI;
-                        item[i]--;
-                        if (MIN <= i+DI && i+DI <= MAX) item[i+DI] = 1+m;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i -= DI;
+                        --item[i];
+                        if ((MIN <= i+DI) && (i+DI <= MAX)) item[i+DI] = 1+m;
                     }
                     // last
                     else item = null;
@@ -1455,20 +1482,20 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
             else if (M)
             {
                 rem = 0; i = i1; k = item[INFO][LEN]; l = 0;
-                while (MIN <= i && i <= MAX && 1 === item[i])
+                while ((MIN <= i) && (i <= MAX) && (1 === item[i]))
                 {
-                    if (M === item[i]) l++;
+                    if (M === item[i]) ++l;
                     i -= DI;
-                    rem++;
-                    k--;
+                    ++rem;
+                    --k;
                 }
-                if (i < MIN || i > MAX)
+                if ((i < MIN) || (i > MAX))
                 {
                     item = null;
                 }
                 else
                 {
-                    if (1 === item[INFO][NMAX] && M === item[i])
+                    if ((1 === item[INFO][NMAX]) && (M === item[i]))
                     {
                         if (n === M)
                         {
@@ -1476,40 +1503,40 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         }
                         else if (M <= rem+1)
                         {
-                            if (M === item[i]) item[INFO][NMAX]--;
-                            item[i]--; rem++; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                            if (M === item[i]) --item[INFO][NMAX];
+                            --item[i]; ++rem; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                             while (0 < rem)
                             {
                                 i += DI;
                                 item[i] = stdMath.min(M, rem);
-                                item[INFO][LEN]++;
-                                if (M === item[i]) item[INFO][NMAX]++;
+                                ++item[INFO][LEN];
+                                if (M === item[i]) ++item[INFO][NMAX];
                                 rem -= item[i];
                             }
                         }
                         else if (M < item[i]+rem)
                         {
                             if (M === item[i]) item[INFO][NMAX]--;
-                            item[i]-=M-rem; rem=M; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                            item[i] -= M-rem; rem = M; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                             while (0 < rem)
                             {
                                 i += DI;
                                 item[i] = stdMath.min(M, rem);
-                                item[INFO][LEN]++;
-                                if (M === item[i]) item[INFO][NMAX]++;
+                                ++item[INFO][LEN];
+                                if (M === item[i]) ++item[INFO][NMAX];
                                 rem -= item[i];
                             }
                         }
                         else
                         {
-                            if (M === item[i]) l++;
-                            rem+=item[i]; i-=DI; k--;
-                            while (MIN <= i && i <= MAX && 1 === item[i])
+                            if (M === item[i]) ++l;
+                            rem += item[i]; i -= DI; --k;
+                            while ((MIN <= i) && (i <= MAX) && (1 === item[i]))
                             {
-                                if (M === item[i]) l++;
-                                i-=DI;
-                                rem++;
-                                k--;
+                                if (M === item[i]) ++l;
+                                i -= DI;
+                                ++rem;
+                                --k;
                             }
                             /*if (0 > DI)
                             {
@@ -1519,20 +1546,20 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                             {
                                 MIN = 0; MAX = item[INFO][LEN]-1;
                             }*/
-                            if (i < MIN || i > MAX)
+                            if ((i < MIN) || (i > MAX))
                             {
                                 item = null;
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                item[i]--; rem++; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                --item[i]; ++rem; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                                 while (0 < rem)
                                 {
                                     i += DI;
                                     item[i] = stdMath.min(M, rem);
-                                    item[INFO][LEN]++;
-                                    if (M === item[i]) item[INFO][NMAX]++;
+                                    ++item[INFO][LEN];
+                                    if (M === item[i]) ++item[INFO][NMAX];
                                     rem -= item[i];
                                 }
                             }
@@ -1540,14 +1567,14 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     }
                     else
                     {
-                        if (M === item[i]) item[INFO][NMAX]--;
-                        item[i]--; rem++; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                        if (M === item[i]) --item[INFO][NMAX];
+                        --item[i]; ++rem; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                         while (0 < rem)
                         {
                             i += DI;
                             item[i] = stdMath.min(M, rem);
-                            item[INFO][LEN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                             rem -= item[i];
                         }
                     }
@@ -1558,18 +1585,18 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 if (n > item[INFO][LEN])
                 {
                     i = i1; rem = 0;
-                    while (MIN <= i && i <= MAX && 1 === item[i]) {i-=DI; rem++;}
-                    m = item[i]-1; item[i] = m; rem++;
+                    while ((MIN <= i) && (i <= MAX) && (1 === item[i])) {i -= DI; ++rem;}
+                    m = item[i]-1; item[i] = m; ++rem;
                     if (0 < rem)
                     {
-                        if (MIN <= i+DI && i+DI <= MAX)
+                        if ((MIN <= i+DI) && (i+DI <= MAX))
                         {
-                            i+=DI; item[i]=rem; rem=0;
+                            i += DI; item[i] = rem; rem = 0;
                             item[INFO][LEN] = 0 > DI ? LN-i : i+1;
                         }
                         else
                         {
-                            while (0 < rem--) {i+=DI; item[i] = 1; item[INFO][LEN]++;}
+                            while (0 < rem--) {i += DI; item[i] = 1; ++item[INFO][LEN];}
                         }
                     }
                 }
@@ -1592,8 +1619,8 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 if (M === W) return null; // there is only one, if any
                 j = i1; k = 1;
                 i = j-DI; d = M-item[j]; rem = item[j];
-                while (MIN <= i && i <= MAX && (M < item[i]+1 || W === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
-                if (MIN > i || i > MAX)
+                while ((MIN <= i) && (i <= MAX) && ((M < item[i]+1) || (W === item[j]))) {rem += item[i]; ++k; j = i; i -= DI;}
+                if ((MIN > i) || (i > MAX))
                 {
                     item = null;
                 }
@@ -1602,45 +1629,45 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (0 < d)
                     {
                         m = rem-1-W*(k-1);
-                        if (1 === item[INFO][NMIN] && W === item[i] && k <= m)
+                        if ((1 === item[INFO][NMIN]) && (W === item[i]) && (k <= m))
                         {
                             item[i] = item[i1]; item[i1] = W; rem -= item[i]-W;
                         }
-                        else if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > m)
+                        else if ((1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1) && (M > m))
                         {
                             item[j] = item[i]; item[i] = M; rem -= M-item[j];
                         }
                         else
                         {
-                            if (W === item[i]) item[INFO][NMIN]--;
-                            item[i]++; rem--;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (W === item[i]) --item[INFO][NMIN];
+                            ++item[i]; --rem;
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                         i = i1; m = rem-W*k;
-                        while (MIN<=i && i<=MAX && 0<rem)
+                        while ((MIN <= i) && (i <= MAX) && (0 < rem))
                         {
-                            if (M === item[i]) item[INFO][NMAX]--;
-                            if (W === item[i]) item[INFO][NMIN]--;
+                            if (M === item[i]) --item[INFO][NMAX];
+                            if (W === item[i]) --item[INFO][NMIN];
                             item[i] = stdMath.min(M, W+m);
                             rem -= item[i]; m -= item[i]-W;
-                            if (M === item[i]) item[INFO][NMAX]++;
-                            if (W === item[i]) item[INFO][NMIN]++;
-                            i -= DI; l++;
+                            if (M === item[i]) ++item[INFO][NMAX];
+                            if (W === item[i]) ++item[INFO][NMIN];
+                            i -= DI; ++l;
                         }
                     }
                     else
                     {
-                        if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
+                        if ((1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1))
                         {
                             item[j] = item[i]; item[i] = M;
                         }
                         else
                         {
-                            if (M === item[j]) item[INFO][NMAX]--;
-                            if (W === item[i]) item[INFO][NMIN]--;
-                            item[i]++; item[j]--;
-                            if (W === item[j]) item[INFO][NMIN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (M === item[j]) --item[INFO][NMAX];
+                            if (W === item[i]) --item[INFO][NMIN];
+                            ++item[i]; --item[j];
+                            if (W === item[j]) ++item[INFO][NMIN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                     }
                 }
@@ -1650,17 +1677,17 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 if (n-W*(K-1) > item[i0])
                 {
                     i = i1;
-                    while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
+                    while ((MIN <= i) && (i <= MAX) && (W === item[i])) i -= DI;
                     j = i-DI;
-                    if (1 === item[INFO][NMIN] && W === item[j])
+                    if ((1 === item[INFO][NMIN]) && (W === item[j]))
                     {
                         item[j] = item[i]; item[i] = W;
                     }
                     else
                     {
-                        if (W === item[j]) item[INFO][NMIN]--;
-                        item[i]--; item[j]++;
-                        if (W === item[i]) item[INFO][NMIN]++;
+                        if (W === item[j]) --item[INFO][NMIN];
+                        --item[i]; ++item[j];
+                        if (W === item[i]) ++item[INFO][NMIN];
                         m = item[i]; item[i] = item[i1]; item[i1] = m;
                     }
                 }
@@ -1671,8 +1698,8 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
             {
                 j = i1; k = 1;
                 i = j-DI; d = M-item[j]; rem = item[j];
-                while (MIN <= i && i <= MAX && ((M && M < item[i]+1) || 1 === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
-                if (MIN > i || i > MAX)
+                while ((MIN <= i) && (i <= MAX) && ((M && (M < item[i]+1)) || (1 === item[j]))) {rem += item[i]; ++k; j = i; i -= DI;}
+                if ((MIN > i) || (i > MAX))
                 {
                     item = null;
                 }
@@ -1680,36 +1707,36 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 {
                     if (0 < d)
                     {
-                        if (M && 1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > rem-(k-1)-1)
+                        if (M && (1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1) && (M > rem-(k-1)-1))
                         {
-                            item[j] = item[i]; item[i] = M; rem-=M-item[j];
+                            item[j] = item[i]; item[i] = M; rem -= M-item[j];
                         }
                         else
                         {
-                            item[i]++; rem--;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[i]; --rem;
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                         l = 0; i = i1;
-                        while (MIN<=i && i<=MAX && 0<rem)
+                        while ((MIN <= i) && (i <= MAX) && (0 < rem))
                         {
-                            if (M === item[i]) item[INFO][NMAX]--;
+                            if (M === item[i]) --item[INFO][NMAX];
                             item[i] = stdMath.min(M, rem-(k-l-1));
                             rem -= item[i];
-                            if (M === item[i]) item[INFO][NMAX]++;
-                            i -= DI; l++;
+                            if (M === item[i]) ++item[INFO][NMAX];
+                            i -= DI; ++l;
                         }
                     }
                     else
                     {
-                        if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
+                        if ((1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1))
                         {
                             item[j] = item[i]; item[i] = M;
                         }
                         else
                         {
-                            if (M === item[j]) item[INFO][NMAX]--;
-                            item[i]++; item[j]--;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (M === item[j]) --item[INFO][NMAX];
+                            ++item[i]; --item[j];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                     }
                 }
@@ -1722,9 +1749,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > item[i1])
                     {
                         i = i0;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i+=DI;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i += DI;
                         m = item[i]; item[i] = 1; item[i0] = m-1;
-                        if (MIN <= i+DI && i+DI <= MAX) item[i+DI]++;
+                        if ((MIN <= i+DI) && (i+DI <= MAX)) ++item[i+DI];
                     }
                     // last
                     else item = null;
@@ -1734,9 +1761,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > item[i0])
                     {
                         i = i1;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i-=DI;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i -= DI;
                         m = item[i]; item[i] = 1; item[i1] = m-1;
-                        if (MIN <= i-DI && i-DI <= MAX) item[i-DI]++;
+                        if ((MIN <= i-DI) && (i-DI <= MAX)) ++item[i-DI];
                     }
                     // last
                     else item = null;
@@ -1756,19 +1783,19 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 w = W ? W : 1;
                 i = i1;
                 rem = item[i];
-                if (M === item[i]) item[INFO][NMAX]--;
-                if (W && W === item[i]) item[INFO][NMIN]--;
-                item[INFO][LEN]--;
+                if (M === item[i]) --item[INFO][NMAX];
+                if (W && W === item[i]) --item[INFO][NMIN];
+                --item[INFO][LEN];
                 i -= DI;
-                while (null != W && MIN<=i && i<=MAX && rem<1+W)
+                while ((null != W) && (MIN <= i) && (i <= MAX) && (rem < 1+W))
                 {
                     rem += item[i];
-                    item[INFO][LEN]--;
-                    if (M === item[i]) item[INFO][NMAX]--;
-                    if (W === item[i]) item[INFO][NMIN]--;
+                    --item[INFO][LEN];
+                    if (M === item[i]) --item[INFO][NMAX];
+                    if (W === item[i]) --item[INFO][NMIN];
                     i -= DI;
                 }
-                if (MIN > i || MAX < i)
+                if ((MIN > i) || (MAX < i))
                 {
                     return null;
                 }
@@ -1784,33 +1811,33 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         j = i;
                         rem -= M-item[i];
                         item[i] = M;
-                        item[INFO][NMAX]++;
+                        ++item[INFO][NMAX];
                         while (w <= rem)
                         {
                             i += DI;
                             item[i] = w;
                             rem -= w;
-                            item[INFO][LEN]++;
-                            if (W) item[INFO][NMIN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            if (W) ++item[INFO][NMIN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
-                        if (null != W && 0 === item[INFO][NMIN])
+                        if ((null != W) && (0 === item[INFO][NMIN]))
                         {
                             rem += item[i]-W;
                             item[i] = W;
-                            item[INFO][NMIN]++;
+                            ++item[INFO][NMIN];
                         }
                     }
                 }
                 else
                 {
                     l = 0; r = 0; m = 0;
-                    while (MIN <= i && i <= MAX && (M === item[i]))
+                    while ((MIN <= i) && (i <= MAX) && (M === item[i]))
                     {
-                        l++;
+                        ++l;
                         m += item[i];
                         i -= DI;
-                        k--;
+                        --k;
                     }
                     /*if (0 > DI)
                     {
@@ -1820,18 +1847,18 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     {
                         MIN = 0; MAX = item[INFO][LEN]-1;
                     }*/
-                    if (MIN > i || MAX < i)
+                    if ((MIN > i) || (MAX < i))
                     {
                         return null;
                     }
                     else
                     {
                         j = i;
-                        item[i]++;
+                        ++item[i];
                         rem += m-1;
                         item[INFO][LEN] = k;
                         item[INFO][NMAX] -= l;
-                        if (M === item[i]) item[INFO][NMAX]++;
+                        if (M === item[i]) ++item[INFO][NMAX];
                         if (0 === item[INFO][NMAX])
                         {
                             m = M;
@@ -1846,22 +1873,22 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                             i += DI;
                             item[i] = w;
                             rem -= w;
-                            item[INFO][LEN]++;
-                            if (W) item[INFO][NMIN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            if (W) ++item[INFO][NMIN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
-                        if (W && 0 === item[INFO][NMIN])
+                        if (W && (0 === item[INFO][NMIN]))
                         {
                             rem += item[i]-W;
                             item[i] = W;
-                            item[INFO][NMIN]++;
+                            ++item[INFO][NMIN];
                         }
                         if (0 < m)
                         {
                             i += DI;
                             item[i] = M;
-                            item[INFO][LEN]++;
-                            item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            ++item[INFO][NMAX];
                         }
                     }
                     if (0 < rem)
@@ -1874,12 +1901,12 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         {
                             MIN = 0; MAX = item[INFO][LEN]-1;
                         }*/
-                        while(MIN<=i && i<=MAX && /*0<=DI*(i-j) &&*/ 0<rem)
+                        while ((MIN <= i) && (i <= MAX) && /*(0 <= DI*(i-j)) &&*/ (0 < rem))
                         {
                             m = item[i];
                             if (M > m)
                             {
-                                if (W && W === m)
+                                if (W && (W === m))
                                 {
                                     if (1 === item[INFO][NMIN])
                                     {
@@ -1888,17 +1915,17 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                                     }
                                     else
                                     {
-                                        item[INFO][NMIN]--;
+                                        --item[INFO][NMIN];
                                         item[i] = stdMath.min(M, m+rem);
                                         rem -= item[i]-m;
-                                        if (M === item[i]) item[INFO][NMAX]++;
+                                        if (M === item[i]) ++item[INFO][NMAX];
                                     }
                                 }
                                 else
                                 {
                                     item[i] = stdMath.min(M, m+rem);
                                     rem -= item[i]-m;
-                                    if (M === item[i]) item[INFO][NMAX]++;
+                                    if (M === item[i]) ++item[INFO][NMAX];
                                 }
                             }
                             i -= DI;
@@ -1926,49 +1953,49 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 {
                     i = i1;
                     rem = item[i];
-                    item[INFO][LEN]--;
-                    if (W && W === item[i]) item[INFO][NMIN]--;
+                    --item[INFO][LEN];
+                    if (W && (W === item[i])) --item[INFO][NMIN];
                     i -= DI;
-                    if (W && W === item[i]) item[INFO][NMIN]--;
-                    item[i]++;
-                    rem--;
+                    if (W && (W === item[i])) --item[INFO][NMIN];
+                    ++item[i];
+                    --rem;
                     while (w <= rem)
                     {
                         i += DI;
                         item[i] = w;
                         rem -= w;
-                        item[INFO][LEN]++;
-                        if (W) item[INFO][NMIN]++;
+                        ++item[INFO][LEN];
+                        if (W) ++item[INFO][NMIN];
                     }
-                    if (W && 0 === item[INFO][NMIN])
+                    if (W && (0 === item[INFO][NMIN]))
                     {
                         rem += item[i]-W;
                         item[i] = W;
-                        item[INFO][NMIN]++;
+                        ++item[INFO][NMIN];
                     }
                     if (0 < rem)
                     {
-                        if (W && 1 === item[INFO][NMIN] && W === item[i])
+                        if (W && (1 === item[INFO][NMIN]) && (W === item[i]))
                         {
                             if (W < rem)
                             {
                                 rem += item[i];
-                                item[INFO][LEN]--;
-                                item[INFO][NMIN]--;
+                                --item[INFO][LEN];
+                                --item[INFO][NMIN];
                                 i -= DI;
-                                item[i]++;
-                                rem--;
+                                ++item[i];
+                                --rem;
                                 while (w <= rem)
                                 {
                                     i += DI;
                                     item[i] = w;
                                     rem -= w;
-                                    item[INFO][LEN]++;
-                                    item[INFO][NMIN]++;
+                                    ++item[INFO][LEN];
+                                    ++item[INFO][NMIN];
                                 }
                                 if (0 < rem)
                                 {
-                                    if (W === item[i]) item[INFO][NMIN]--;
+                                    if (W === item[i]) --item[INFO][NMIN];
                                     item[i] += rem;
                                 }
                             }
@@ -1979,7 +2006,7 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         }
                         else
                         {
-                            if (W && W === item[i]) item[INFO][NMIN]--;
+                            if (W && W === item[i]) --item[INFO][NMIN];
                             item[i] += rem;
                         }
                         rem = 0;
@@ -2102,21 +2129,21 @@ function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*
         return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
     if (
         Arithmetic.lt(n, O)
-        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
+        || ((null != K) && (null != M) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || ((null != M) && (null != W) && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
+        || ((null != K) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
+        || ((null != K) && (null != M) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || ((null != M) && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
+        || ((null != W) && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
+        || ((null != K) && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
     ) return p;
 
-    if (null != M && null == K && null == W) {m = n; k0 = M; k1 = M; K = M; M = null;} // count the conjugates, same
+    if ((null != M) && (null == K) && (null == W)) {m = n; k0 = M; k1 = M; K = M; M = null;} // count the conjugates, same
 
     key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
     if (null == partitions.mem[key])
     {
-        if (null != M && null != W)
+        if ((null != M) && (null != W))
         {
             n = Arithmetic.equ(M, W) ? sub(n, M) : sub(n, add(M, W));
             if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, Arithmetic.equ(M, W) ? I : two))) return I;
@@ -2221,7 +2248,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
         M = null == max ? n : N(max);
         W = null == min ? I : N(min);
 
-        if (null == min && null == max)
+        if ((null == min) && (null == max))
         {
             Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I
             if (null == k)
@@ -2245,9 +2272,9 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
             }
         }
         else if (
-            (0 < nmin && 0 < nmax)
-            || (0 < nmin && null == max)
-            || (0 < nmax && null == min)
+            ((0 < nmin) && (0 < nmax))
+            || ((0 < nmin) && (null == max))
+            || ((0 < nmax) && (null == min))
         )
         {
             if (null == k)
@@ -2274,7 +2301,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                 }
             }
         }
-        else if (null != max && (0 < nmin || null == min))
+        else if ((null != max) && ((0 < nmin) || (null == min)))
         {
             if (null == k)
             {
@@ -2330,7 +2357,7 @@ function comp_rank(n, limit, min, max, k, nmin, nmax)
                 }
             }
         }
-        else if (null != min && (0 < nmax || null == max))
+        else if ((null != min) && ((0 < nmax) || (null == max)))
         {
             if (null == k)
             {
@@ -2524,19 +2551,19 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
         return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
     if (
         Arithmetic.lt(n, O)
-        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
+        || ((null != K) && (null != M) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || ((null != M) && (null != W) && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
+        || ((null != K) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
+        || ((null != K) && (null != M) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || ((null != M) && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
+        || ((null != W) && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
+        || ((null != K) && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
     ) return c;
 
     key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
     if (null == compositions.mem[key])
     {
-        if (null != K && null != M && null != W)
+        if ((null != K) && (null != M) && (null != W))
         {
             if (Arithmetic.equ(M, W))
             {
@@ -2574,7 +2601,7 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
                 }
             }
         }
-        else if (null != W && null != M)
+        else if ((null != W) && (null != M))
         {
             if (Arithmetic.equ(M, W))
             {
@@ -2616,7 +2643,7 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
                 }
             }
         }
-        else if (null != K && null != W)
+        else if ((null != K) && (null != W))
         {
             if (Arithmetic.equ(mul(K, W), n))
             {
@@ -2633,7 +2660,7 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
                 }
             }
         }
-        else if (null != K && null != M)
+        else if ((null != K) && (null != M))
         {
             if (Arithmetic.equ(mul(K, M), n))
             {
@@ -2776,14 +2803,14 @@ function packpartition(partition, dir)
     if (null == partition) return null;
     var packed = [], i, j, l = partition.length,
         reflected = -1 === dir,
-        a = 1, b = 0, push = "push",
+        a = 1, b = 0, push = 'push',
         last, part;
 
     if (reflected)
     {
         a = -a;
         b = l-1-b;
-        push = "unshift";
+        push = 'unshift';
     }
     for (last=partition[b],part=[last, 1],i=1; i<l; ++i)
     {
@@ -2807,12 +2834,12 @@ function unpackpartition(packed, dir)
     if (null == packed) return null;
     var partition = [], i, j, k, v, l = packed.length,
         cmp, reflected = -1 === dir,
-        a = 1, b = 0, push = "push";
+        a = 1, b = 0, push = 'push';
     if (reflected)
     {
         a = -a;
         b = l-1-b;
-        push = "unshift";
+        push = 'unshift';
     }
     for (i=0; i<l; ++i)
     {
@@ -2837,3 +2864,5 @@ function subset2composition(item, n, dir)
     n = n || item.length;
     return fdiff(new Array(n), item, 1, 1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
 }
+// aliases
+Partition.transpose = Partition.toTranspose = Partition.conjugate = Partition.toConjugate;

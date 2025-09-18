@@ -51,28 +51,28 @@ print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
+print_all(o.rewind(), 1, function(item) {
     return [item.join('+'), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$), Abacus.Partition.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join('+')];
 });
 
 echo('backwards');
 echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
+print_all(o.rewind(-1), -1);
 
 echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
+print_all(o.order("lex,reflected"));
 
 echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
+print_all(o.order("lex,reversed"));
 
 echo('o.order("colex")');
-print_all( o.order("colex") );
+print_all(o.order("colex"));
 
 echo('o.order("colex,reflected")');
-print_all( o.order("colex,reflected") );
+print_all(o.order("colex,reflected"));
 
 echo('o.order("colex,reversed")');
-print_all( o.order("colex,reversed") );
+print_all(o.order("colex,reversed"));
 
 echo('o.random()');
 print(o.random());
@@ -98,19 +98,19 @@ print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
+print_all(o.rewind(), 1, function(item) {
     return [item.join('+'), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$), Abacus.Partition.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join('+')];
 });
 
 echo('backwards');
 echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
+print_all(o.rewind(-1), -1);
 
 echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
+print_all(o.order("lex,reflected"));
 
 echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
+print_all(o.order("lex,reversed"));
 
 echo('o.random()');
 print(o.random());
@@ -138,19 +138,19 @@ print(o.next());
 
 echo('default order is "lex", lexicographic-order');
 echo('o.rewind()');
-print_all( o.rewind(), 1, function( item ){
+print_all(o.rewind(), 1, function(item) {
     return [item.join('+'), o.index()-(o.hasNext()?1:0), Abacus.Partition.rank(item, o.n, o.$), Abacus.Partition.unrank(o.index()-(o.hasNext()?1:0), o.n, o.$).join('+')];
 });
 
 echo('backwards');
 echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
+print_all(o.rewind(-1), -1);
 
 echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
+print_all(o.order("lex,reflected"));
 
 echo('o.order("lex,reversed")');
-print_all( o.order("lex,reversed") );
+print_all(o.order("lex,reversed"));
 
 echo('o.random()');
 print(o.random());

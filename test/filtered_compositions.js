@@ -12,12 +12,13 @@ function print(o)
 }
 function print_all(o, prev, f)
 {
+    let item;
     if (-1 === prev)
-        while (o.hasNext(-1)) echo(f ? f(o.next(-1)) : o.next(-1).join('+'));
+        while (o.hasNext(-1) &&(item=o.next(-1))) echo(f ? f(item) : item.join('+'));
     else
         //while (o.hasNext()) echo(o.next());
         // iterator/iterable are supported
-        for (let item of o) echo(f ? f(item) : item.join('+'));
+        for (item of o) echo(f ? f(item) : item.join('+'));
 }
 
 // Note: Due to the large number of combinatorial samples,
@@ -36,10 +37,10 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 echo('backwards');
 echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
+print_all(o.rewind(-1), -1);
 o.dispose();
 
 // Restricted Compositions to fixed Max value M by filtering
@@ -49,7 +50,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(7,{type:"composition","max=":4}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed Max value M by filtering
@@ -59,7 +60,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(8,{type:"composition","max=":4}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed Max value M by filtering
@@ -69,7 +70,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(8,{type:"composition","max=":3}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed Max value M by filtering
@@ -79,7 +80,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(10,{type:"composition","max=":5}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed Parts value K by filtering
@@ -89,7 +90,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(10,{type:"composition","parts=":5}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed K parts and Max value M by filtering
@@ -98,17 +99,17 @@ o = Abacus.Partition(10,{type:"composition"}).filterBy(Abacus.Filter.LEN(4).AND(
 /*
 equivalent to above with a simple custom function used for filtering:
 
-o = Abacus.Partition(10,{type:"composition"}).filterBy(function(item){
+o = Abacus.Partition(10,{type:"composition"}).filterBy(function(item) {
     var i, M, n = item.length;
-    if ( n !== 4 ) return false;
+    if (n !== 4) return false;
     M = item[0];
-    if ( M > 3 ) return false;
+    if (M > 3) return false;
     for(i=1; i<n; i++)
     {
-        if ( item[i] > M )
+        if (item[i] > M)
         {
             M = item[i];
-            if ( M > 3 ) return false;
+            if (M > 3) return false;
         }
     }
     return true;
@@ -119,7 +120,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(10,{type:"composition","max=":3,"parts=":4}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed K parts and Max value M by filtering
@@ -129,7 +130,7 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(20,{type:"composition","max=":5,"parts=":5}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();
 
 // Restricted Compositions to fixed K parts and Max value M by filtering
@@ -139,5 +140,5 @@ echo('o.total() /* with filtering applied .total() and some other functions stil
 echo(o.total());
 echo(Abacus.Partition(23,{type:"composition","max=":7,"parts=":5}).total());
 echo('default order is "lex", lexicographic-order');
-print_all( o );
+print_all(o);
 o.dispose();

@@ -331,8 +331,6 @@ if (('undefined' !== typeof Symbol) && ('undefined' !== typeof Symbol.iterator))
     Iterator[PROTO][Symbol.iterator] = Iterator[PROTO].__iter__;
 }
 
-
-
 // Abacus.CombinatorialIterator, Combinatorial Base Class extends and implements Iterator Interface
 // NOTE: by substituting usual Arithmetic ops with big-integer ops,
 // big-integers can be handled transparently throughout all the combinatorial algorithms
@@ -522,7 +520,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 }
                 return 0 <= i && i < seq.length ? seq[i].next(dir) : null;
             }
-            return null == index ? null : klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $);
+            return null == index ? null : klass.unrank(Arithmetic.add(index, 0 > dir ? Arithmetic.J : Arithmetic.I), n, $);
         }
         ,rand: function(n, $) {
             var item, klass = this, Arithmetic = Abacus.Arithmetic,
