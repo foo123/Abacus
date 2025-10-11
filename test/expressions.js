@@ -30,12 +30,12 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('Expr("1+2*x").toString()');
-echo(Expr("1+2*x").toString());
+echo('Expr("1+2x").toString()');
+echo(Expr("1+2x").toString());
 echo('Expr("1+2x^2").toString()');
 echo(Expr("1+2x^2").toString());
-echo('Expr("1/2+2*x_{1}*x_2^2").toString()');
-echo(Expr("1/2+2*x_{1}*x_2^2").toString());
+echo('Expr("1/2+2x_{1}x_2^2").toString()');
+echo(Expr("1/2+2x_{1}x_2^2").toString());
 
 /*
 echo("(3/2)/x",
@@ -62,8 +62,8 @@ echo('---');
 
 echo('o=Expr("x+1")');
 o=Expr("x+1");
-echo('o2=Expr("(x+1)*(x+a)+1/b")');
-o2=Expr("(x+1)*(x+a)+1/b");
+echo('o2=Expr("(x+1)(x+a)+1/b")');
+o2=Expr("(x+1)(x+a)+1/b");
 echo('o.toString()');
 echo(o.toString());
 echo('o2.toString()');

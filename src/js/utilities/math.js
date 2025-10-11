@@ -381,8 +381,6 @@ Abacus.Util = {
     ,complementation: complementation
     ,reflection: reflection
     ,reversion: reversion
-    ,lcs: lcs
-    ,levenshtein: damerau_levenshtein
     ,align: align_sequences
     ,merge: merge_sequences
     ,gray: gray

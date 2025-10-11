@@ -27,8 +27,9 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
 
     ,REVERSED = 1, REFLECTED = 2
-    ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32
+    ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32, GRADED = 64
     ,LEXICAL = LEX | COLEX | MINIMAL
+    ,MONOMIAL = LEX | GRADED
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,LEFT = -2, RIGHT = 2, PREFIX = 2, INFIX = 4, POSTFIX = 8

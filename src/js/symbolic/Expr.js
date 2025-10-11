@@ -267,7 +267,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 // https://the0cp.cc/posts/mathjax/
                 // https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference
                 var match, m, n, c, i0,
-                    op, term, arg,
+                    op, term, arg, prev_term = false,
                     terms = [], ops = [];
                 function eat(pattern, group)
                 {
@@ -413,6 +413,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         else if ('\\eq' === op) op = '=';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (match = eat(/^(>=|<=|=<|!=|>|<|=)[^<>!=]/i, 1))
@@ -422,6 +423,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('=<' === op) op = '<=';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (match = eat(/^(\+|-|\*|\/)/i))
@@ -430,6 +432,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         op = match[0];
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (eat('⋅') || eat('×') || eat(/^(\\times|\\cdot|xx)[^a-z]/i, 1))
@@ -438,6 +441,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         op = '*';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (eat('÷') || eat('-:') || eat(/^(\\over|\\div)[^a-z]/i, 1))
@@ -446,6 +450,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         op = '/';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (eat(/^\\frac\{/))
@@ -456,7 +461,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
                         if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
                         term = Expr.OP['/'].fn(arg);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if (match = eat(/^(\^)([\{\(])?/i))
@@ -476,6 +487,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         ops.unshift([op, i0]);
                         merge();
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i)))
@@ -488,7 +500,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         term = parse_until('{' === match[3] ? '}' : ')');
                         if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
                         term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i))
@@ -504,10 +522,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             if (!eat(',')) break;
                         } while (1);
                         term = 'sqrt()' === m ? Expr.OP['^'].fn([arg[0], Rational(1, 2, true)/*1/2*/]) : Expr(m, arg);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
-                    if (eat('√') || eat(/^sqrt\s+/i))
+                    if (eat('√') || eat(/^sqrt\b\s*/i))
                     {
                         // alternative sqrt
                         if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "sqrt()"', i0);
@@ -517,12 +541,17 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             // subexpression
                             arg = parse_until(')');
                         }
+                        else if ('{' === s.charAt(0))
+                        {
+                            // subexpression
+                            arg = parse_until('}');
+                        }
                         else if (match = eat(/^\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                         {
                             // number
                             arg = Expr('', Rational.fromDec(match[0]));
                         }
-                        else if (match = eat(/^[a-z][a-z]*(_\{?[a-z0-9]+\}?)?/i))
+                        else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
                         {
                             // symbol
                             m = match[0];
@@ -532,36 +561,54 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
                         term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if (match = eat(/^-?\s*\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                     {
                         // float or int to rational number
                         term = Expr('', Rational.fromDec(match[0].split(/\s+/).join('')));
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
-                        if (eat(/^\s*[a-z\(]/i, false))
+                        /*if (eat(/^\s*[a-z\(]/i, false))
                         {
                             // directly following symbol or parenthesis, assume implicit multiplication
                             ops.unshift(['*', i]);
                             merge();
-                        }
+                        }*/
+                        prev_term = true;
                         continue;
                     }
-                    if (match = eat(/^[a-z][a-z]*(_\{?[a-z0-9]+\}?)?/i))
+                    if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
                     {
                         // symbol
                         m = match[0];
                         if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         term = Expr('', imagUnit === m ? Complex.Img() : m);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
-                        if ((imagUnit === m) && eat(/^\s*[\d\(]/, false))
+                        /*if ((imagUnit === m) && eat(/^\s*[\d\(]/, false))
                         {
                             // directly following number or parenthesis after imaginary symbol, assume implicit multiplication
                             ops.unshift(['*', i]);
                             merge();
-                        }
+                        }*/
+                        prev_term = true;
                         continue;
                     }
                     c = s.charAt(0);
@@ -570,6 +617,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         s = s.slice(1);
                         i += 1;
                         term = parse_until('{' === c ? '}' : ')');
+                        if ('(' === c)
+                        {
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            prev_term = true;
+                        }
                         if (term) terms.unshift(term);
                         continue;
                     }
@@ -1582,7 +1638,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._xpnd;
     }
     ,toPoly: function(symbol, ring, imagUnit) {
-        var self = this, other_symbols = null, CoefficientRing = null;
+        var self = this, other_symbols = null, CoefficientRing = null, PolynomialClass;
 
         if (is_instance(ring, Ring) && !is_class(ring.NumberClass, Complex))
         {
@@ -1609,6 +1665,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             CoefficientRing = other_symbols.length ? Ring(ring.NumberClass, other_symbols, true) : ring;
         }
+        PolynomialClass = is_array(symbol) ? MultiPolynomial : Polynomial;
 
         function poly(expr, symbol, ring, CoefficientRing)
         {
@@ -1649,7 +1706,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     term[is_array(symbol) ? '1' : '0'] = arg;
                 }
-                return is_array(symbol) ? MultiPolynomial(term, symbol, CoefficientRing) : Polynomial(term, symbol, CoefficientRing);
+                return PolynomialClass(term, symbol, CoefficientRing);
             }
             function is_const(expr)
             {
@@ -1692,7 +1749,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         else
                         {
                             subexpr = poly(subexpr, symbol, ring, CoefficientRing);
-                            return null == subexpr ? null : ('*' === ast.op ? result.mul(subexpr) : ('-' === ast.op ? result.sub(subexpr): result.add(subexpr)));
+                            return null == subexpr ? null : ('*' === ast.op ? result._mul(subexpr) : ('-' === ast.op ? result._sub(subexpr): result._add(subexpr)));
                         }
                     }, null);
                 }
@@ -1735,7 +1792,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), coeff, null, null, true);
                             }
                             subexpr = poly(subexpr.den, symbol, ring, CoefficientRing);
-                            return null == subexpr ? null : result.mul(subexpr.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, CoefficientRing) : Polynomial({'0':coeff}, symbol, CoefficientRing)));
+                            return null == subexpr ? null : result._mul(subexpr.mul(PolynomialClass.Const(coeff, symbol, CoefficientRing)));
                         }
                         else
                         {
@@ -1751,7 +1808,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     exp = ast.arg[1].c();
                     if (exp.equ(0))
                     {
-                        return is_array(symbol) ? MultiPolynomial.One(symbol, CoefficientRing) : Polynomial.One(symbol, CoefficientRing);
+                        return PolynomialClass.One(symbol, CoefficientRing);
                     }
                     if (exp.lt(0))
                     {
@@ -1785,7 +1842,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 term = poly(ast.arg[0].den, symbol, ring, CoefficientRing);
                                 if (null != term)
                                 {
-                                    term = term.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, CoefficientRing) : Polynomial({'0':coeff}, symbol, CoefficientRing));
+                                    term = term._mul(PolynomialClass.Const(coeff, symbol, CoefficientRing));
                                 }
                             }
                         }
@@ -1794,7 +1851,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     {
                         term = poly(ast.arg[0], symbol, ring, CoefficientRing);
                     }
-                    return null == term ? null : term.pow(exp);
+                    return null == term ? null : term._pow(exp);
                 }
                 else
                 {
@@ -1807,7 +1864,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,toRationalFunc: function() {
         var self = this,
-            num = self.num.toPoly(self.symbols().filter(function(s) {return '1' !== s;})),
+            num = self.num.toPoly(self.symbols()),
             den = num ? self.den.toPoly(num.symbol) : null
         ;
         return num && den ? RationalFunc(num, den) : null;
@@ -2084,7 +2141,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                if ('*' === op) out.push(' \\cdot ');
+                                if ('*' === op) out.push(/*' \\cdot '*/'');
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
                                 out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr)) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);

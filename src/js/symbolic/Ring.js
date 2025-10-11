@@ -160,6 +160,10 @@ Ring = Abacus.Ring = Class({
         var self = this;
         return self.PolynomialClass ? self.PolynomialClass.MinusOne(self.PolynomialSymbol, self.CoefficientRing) : self.NumberClass.MinusOne(self.Modulo);
     }
+    ,Const: function(c) {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.Const(c, self.PolynomialSymbol, self.CoefficientRing) : (self.Modulo ? self.NumberClass.cast(c, self.Modulo) : self.NumberClass.cast(c));
+    }
 
     ,isSymbolic: function() {
         var self = this;
