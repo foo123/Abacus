@@ -493,14 +493,14 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             });
             // Set-up numerator factors
             f = array(n, function(i) {
-                return Polynomial([v[i][0].neg(), I], x, ring);
+                return Polynomial({'0':v[i][0].neg(), '1':I}, x, ring);
             });
             // Produce each Lj in turn, and sum into p
             return operate(function(p, j) {
                 return Polynomial.Add(operate(function(Lj, i){
                     if (j !== i) Lj = Polynomial.Mul(f[i], Lj);
                     return Lj;
-                }, Polynomial(d[j], x, ring), null, 0, n-1), p);
+                }, Polynomial.Const(d[j], x, ring), null, 0, n-1), p);
             }, Polynomial.Zero(x, ring), null, 0, n-1);
         }
 
@@ -841,55 +841,86 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     }
     ,factors: function() {
         // factorize polynomial over Integers/Rationals if factorizable
-        // find factor of polynomial over Integers/Rationals of degree deg using Kronecker method
+        // Kronecker method
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
-        var p = this, ring = p.ring, symbol = p.symbol, Arithmetic = Abacus.Arithmetic,
-            constant, factors, factor, root, i, n, m, remainder, roots;
-        if (null == p._factors)
+        var self = this,
+            ring = self.ring,
+            symbol = self.symbol,
+            Arithmetic = Abacus.Arithmetic,
+            factors, factor,
+            c, q, p, i, n, m, x, y;
+        if (null == self._factors)
         {
-            remainder = p.primitive(true);
-            roots = p.roots();
-            constant = remainder[1];
-            remainder = remainder[0];
-            factors = [];
-            if (roots.length)
+            p = self.primitive(true);
+            c = p[1];
+            q = p[0];
+            factors = {};
+            do
             {
-                for (i=0,n=roots.length; i<n; ++i)
+                p = q;
+                factor = null;
+                for (i=1,n=(p.deg()>>1); i<=n; ++i)
                 {
-                    root = roots[i];
-                    // use integer coefficients
-                    factor = Polynomial([Arithmetic.neg(root[0].num), root[0].den], symbol, ring);
-                    factors.push([factor, root[1]]);
-                    remainder = remainder.div(factor.pow(root[1]));
-                }
-                // normalise remainder to have integer coefficients, if not already
-                if (!is_class(ring.NumberClass, Complex) || remainder.isReal()/* || remainder.isImag()*/)
-                {
-                    if (is_class(ring.NumberClass, Integer))
+                    x = array(i+1, ((i+1)>>1), -1);
+                    y = x.map(function(xi) {return p.evaluate(xi).real().num;});
+                    if (factor = kronecker_factor(p, x, y))
                     {
-                        m = Arithmetic.I;
-                    }
-                    /*else if (remainder.isImag())
-                    {
-                        m = lcm(remainder.terms.map(function(t){return t.c.imag().den;}));
-                    }*/
-                    else
-                    {
-                        m = lcm(remainder.terms.map(is_class(ring.NumberClass, Complex) ? function(t) {return t.c.real().den;} : function(t) {return t.c.den;}));
-                    }
-                    if (!Arithmetic.equ(Arithmetic.I, m))
-                    {
-                        constant = constant.div(m);
-                        remainder = remainder.mul(m);
+                        factor = factor.monic().primitive(true);
+                        c = c.mul(factor[1]);
+                        factor = factor[0];
+                        q = p.div(factor);
+                        if (HAS.call(factors, factor.toString()))
+                        {
+                            ++factors[factor.toString()][1];
+                        }
+                        else
+                        {
+                            factors[factor.toString()] = [factor, 1];
+                        }
+                        break;
                     }
                 }
-                if (0 < remainder.deg()) factors.push([remainder, 1]);
-                else constant = constant.mul(remainder.cc());
+            } while (factor);
+            // normalise remainder to have integer coefficients, if not already
+            if (!is_class(ring.NumberClass, Complex) || q.isReal()/* || q.isImag()*/)
+            {
+                if (is_class(ring.NumberClass, Integer))
+                {
+                    m = Arithmetic.I;
+                }
+                /*else if (q.isImag())
+                {
+                    m = lcm(q.terms.map(function(t){return t.c.imag().den;}));
+                }*/
+                else
+                {
+                    m = lcm(q.terms.map(is_class(ring.NumberClass, Complex) ? function(t) {return t.c.real().den;} : function(t) {return t.c.den;}));
+                }
+                if (!Arithmetic.equ(Arithmetic.I, m))
+                {
+                    c = c.div(m);
+                    q = q.mul(m);
+                }
             }
-            if (!factors.length) factors.push([remainder, 1]);
-            p._factors = [factors, constant];
+            if (0 < q.deg())
+            {
+                if (HAS.call(factors, q.toString()))
+                {
+                    ++factors[q.toString()][1];
+                }
+                else
+                {
+                    factors[q.toString()] = [q, 1];
+                }
+            }
+            else
+            {
+                c = c.mul(q.cc());
+            }
+            factors = KEYS(factors).map(function(k) {return factors[k];});
+            self._factors = [factors, c];
         }
-        return [p._factors[0].slice(), p._factors[1]];
+        return [self._factors[0].slice(), self._factors[1]];
     }
     ,equ: function(other) {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -1404,7 +1435,7 @@ var MultiPolyTerm = Class({
                 c = MultiPolynomial(c, c.symbol, self.ring);
         }
         if (is_instance(c, MultiPolynomial)) c = c.order(order);
-        self.c = self.ring.cast(c || 0));
+        self.c = self.ring.cast(c || 0);
         self.e = is_array(e) ? e : [+(e || 0)];
     }
 
@@ -3291,6 +3322,48 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
     heap.dispose();
 
     return q_and_r ? [q, r] : q;
+}
+function kronecker_factor(p, x, y)
+{
+    // Kronecker method to factorize over the integers/rationals
+    var i, j, v, q;
+    if (!y.length) return;
+    for (i=y.length-1; i>=0; --i)
+    {
+        if (Abacus.Arithmetic.equ(y[i], 0))
+        {
+            // found linear factor
+            return Polynomial({'0':p.ring.cast(-x[i]), '1':p.ring.One()}, p.symbol, p.ring);
+        }
+        else
+        {
+            y[i] = [p.ring.cast(x[i]), divisors(y[i], true)];
+        }
+    }
+    v = new Array(y.length);
+    i = y.length-1;
+    for (;;)
+    {
+        while ((0 <= i) && !y[i][1].hasNext())
+        {
+            y[i][1].rewind();
+            v[i] = [y[i][0], p.ring.cast(y[i][1].next())];
+            --i;
+        }
+        if (0 > i) return;
+        v[i] = [y[i][0], p.ring.cast(y[i][1].next())];
+        if (null == v[0])
+        {
+            for (j=0; j<i; ++j)
+            {
+                v[j] = [y[j][0], p.ring.cast(y[j][1].next())];
+            }
+        }
+        i = y.length-1;
+        q = Polynomial.fromValues(v, p.symbol, p.ring);
+        // found factor
+        if ((0 < q.deg()) && p.mod(q).equ(0)) return q;
+    }
 }
 function polykthroot(p, k, limit)
 {
