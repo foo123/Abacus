@@ -276,16 +276,16 @@ console.log(m.inv().mul(m).toString());
 * support general and least-squares solutions of arbitrary linear systems **[DONE]**
 * support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**
 * use optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
-* support multivariate polynomial, multivariate operations **[DONE]**
-* support (univariate) polynomial factorization over the integers, rational root finding **[DONE]**
-* support (multivariate) polynomial factorization over the integers, rational root finding (eg `Kronecker` algorithm) (TODO)
+* support multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
+* support univariate polynomial factorization over the integers, rational root finding **[DONE]**
+* support multivariate polynomial factorization over the integers, rational root finding (TODO)
 * support polynomial approximate root finding (eg `Aberth` algorithm) (TODO)
 * implement recursive multivariate polynomial `GCD` from univariate polynomial `GCD` **[DONE]**
 * implement more efficient multivariate polynomial `GCD` (TODO)
-* implement `LLL` algorithm (TODO)
 * implement polynomial `Resultant`, `Discriminant` computations **[DONE]**
 * implement `Groebner Basis` computations (`Buchberger` algorithm) **[DONE]**
 * implement more efficient `Groebner Basis` computations (TODO)
+* implement `LLL` algorithm (TODO)
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
 * implement faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
