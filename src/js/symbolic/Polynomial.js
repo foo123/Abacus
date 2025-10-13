@@ -171,7 +171,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 if (terms.length && !is_instance(terms[0], UniPolyTerm))
                 {
                     // dense representation, array with all powers
-                    // convert to sparse representation in decreasing order
+                    // convert to sparse representation
                     self.terms = array(terms.length, function(i) {return UniPolyTerm(terms[i], i, self.ring);});
                 }
                 else
@@ -181,11 +181,22 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             }
             else if (is_obj(terms))
             {
-                // sparse representation as object with keys only to existing powers
-                // convert to sparse coefficient representation in decreasing order
-                self.terms = KEYS(terms).map(function(e) {
-                    return UniPolyTerm(terms[e], e, self.ring);
-                });
+                if (HAS.call(terms, '0') || !KEYS(terms).filter(function(k) {return 0 === k.indexOf(self.symbol);}).length)
+                {
+                    // sparse representation as object with keys only to existing powers
+                    // convert to sparse coefficient representation
+                    self.terms = KEYS(terms).map(function(e) {
+                        return UniPolyTerm(terms[e], e, self.ring);
+                    });
+                }
+                else
+                {
+                    // sparse representation as object with keys only to existing powers with symbol
+                    // convert to sparse coefficient representation
+                    self.terms = KEYS(terms).map(function(k) {
+                        return UniPolyTerm(terms[k], '1' === k ? 0 : (self.symbol === k ? 1 : (self.symbol+'^' === k.slice(0, self.symbol.length+1) ? parseInt(k.slice(self.symbol.length+1)) : 0)), self.ring);
+                    });
+                }
             }
             else
             {
@@ -453,55 +464,6 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 return Polynomial.Piecewise(segments, 0, symbol, ring);
             }
             return Polynomial.Piecewise([Polynomial.Zero(symbol, ring)], 0, symbol, ring);
-        }
-
-        ,fromValues: function(v, x, ring) {
-            // https://en.wikipedia.org/wiki/Lagrange_polynomial
-            // https://en.wikipedia.org/wiki/Newton_polynomial
-            ring = ring || Ring.Q();
-            var I = ring.One(), n, d, f, vi, hash, dupl;
-            x = String(x || 'x');
-            if (!v || !v.length) return Polynomial([], x, ring);
-            if (is_args(v)) v = slice.call(v);
-            if (!is_array(v[0])) v = [v];
-            v = v.map(function(vi) {
-                return [ring.cast(vi[0]), ring.cast(vi[1])];
-            });
-            // check and filter out duplicate values
-            hash = Obj(); dupl = [];
-            for (n=0; n<v.length; ++n)
-            {
-                vi = v[n][0].toString();
-                if (!HAS.call(hash, vi)) hash[vi] = n;
-                else if (!v[hash[vi]][1].equ(v[n][1])) return null; // no polynomial exists
-                else dupl.push(n); // duplicate value to be removed
-            }
-            // remove duplicate values
-            while (dupl.length) v.splice(dupl.pop(), 1);
-            hash = null; dupl = null; n = v.length;
-
-            // Set-up denominators
-            d = array(n, function(j) {
-                var i, dj = I;
-                for (i=0; i<n; ++i)
-                {
-                    if (i === j) continue;
-                    dj = dj.mul(v[j][0].sub(v[i][0]));
-                }
-                dj = v[j][1].div(dj);
-                return dj;
-            });
-            // Set-up numerator factors
-            f = array(n, function(i) {
-                return Polynomial({'0':v[i][0].neg(), '1':I}, x, ring);
-            });
-            // Produce each Lj in turn, and sum into p
-            return operate(function(p, j) {
-                return Polynomial.Add(operate(function(Lj, i){
-                    if (j !== i) Lj = Polynomial.Mul(f[i], Lj);
-                    return Lj;
-                }, Polynomial.Const(d[j], x, ring), null, 0, n-1), p);
-            }, Polynomial.Zero(x, ring), null, 0, n-1);
         }
 
         ,fromString: function(s, symbol, ring) {
@@ -3280,11 +3242,66 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
 
     return q_and_r ? [q, r] : q;
 }
+function poly_interpolate(v, x, ring, PolynomialClass)
+{
+    // https://en.wikipedia.org/wiki/Lagrange_polynomial
+    // https://en.wikipedia.org/wiki/Newton_polynomial
+    PolynomialClass = PolynomialClass || Polynomial;
+    ring = ring || Ring.Q();
+    var I = ring.One(), n, d, f, vi, hash, dupl;
+    if (!v || !v.length) return PolynomialClass.Zero(x, ring);
+    if (is_args(v)) v = slice.call(v);
+    if (!is_array(v[0])) v = [v];
+    v = v.map(function(vi) {
+        return [ring.cast(vi[0]), ring.cast(vi[1])];
+    });
+    // check and filter out duplicate values
+    hash = Obj(); dupl = [];
+    for (n=0; n<v.length; ++n)
+    {
+        vi = v[n][0].toString();
+        if (!HAS.call(hash, vi)) hash[vi] = n;
+        else if (!v[hash[vi]][1].equ(v[n][1])) return null; // no polynomial exists
+        else dupl.push(n); // duplicate value to be removed
+    }
+    // remove duplicate values
+    while (dupl.length) v.splice(dupl.pop(), 1);
+    hash = null; dupl = null; n = v.length;
+
+    // Set-up denominators
+    d = array(n, function(j) {
+        var i, dj = I;
+        for (i=0; i<n; ++i)
+        {
+            if (i === j) continue;
+            dj = dj.mul(v[j][0].sub(v[i][0]));
+        }
+        dj = v[j][1].div(dj);
+        return dj;
+    });
+    // Set-up numerator factors
+    f = array(n, function(i) {
+        var terms = {};
+        terms[x] = I;
+        terms['1'] = v[i][0].neg();
+        return PolynomialClass(terms, x, ring);
+    });
+    // Produce each Lj in turn, and sum into p
+    return operate(function(p, j) {
+        return p._add(operate(function(Lj, i){
+            if (j !== i) Lj = Lj._mul(f[i]);
+            return Lj;
+        }, PolynomialClass.Const(d[j], x, ring), null, 0, n-1));
+    }, PolynomialClass.Zero(x, ring), null, 0, n-1);
+}
 function kronecker_factor(p)
 {
     // Kronecker method to factorize p over the integers/rationals
     var i, j, n, y, v, d, q,
-        r = p.ring, s = p.symbol;
+        r = p.ring, x = p.symbol,
+        Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        PolynomialClass = p[CLASS];
     for (d=1,n=(p.deg()>>1); d<=n; ++d)
     {
         y = array(d+1, d>>1, -1).map(function(xi) {
@@ -3297,7 +3314,10 @@ function kronecker_factor(p)
             if (y[i][1].equ(0))
             {
                 // found linear factor
-                return Polynomial({'0':y[i][0].neg(), '1':r.One()}, s, r);
+                var terms = {};
+                terms[x] = r.One();
+                terms['1'] = y[i][0].neg();
+                return PolynomialClass(terms, x, r);
             }
             else
             {
@@ -3311,7 +3331,7 @@ function kronecker_factor(p)
                             d = iter.next();
                         }
                         if (null == d) return null;
-                        var sd = Abacus.Arithmetic.mul(d, s);
+                        var sd = Arithmetic.mul(d, s);
                         s = -s;
                         if (1 === s) d = iter.next();
                         return sd;
@@ -3338,9 +3358,9 @@ function kronecker_factor(p)
                     v[j] = [y[j][0], r.cast(y[j][1].next())];
                 }
             }
-            q = Polynomial.fromValues(v, s, r);
+            q = poly_interpolate(v, x, r, PolynomialClass);
             // found factor
-            if ((0 < q.deg()) && p.mod(q).equ(0)) return q;
+            if ((0 < q.deg(x)) && Arithmetic.equ(O, Arithmetic.mod(p.lc().real().num, q.lc().real().num)) && Arithmetic.equ(O, Arithmetic.mod(p.tc().real().num, q.tc().real().num)) && p.mod(q).equ(0)) return q;
             i = d;
         }
     }

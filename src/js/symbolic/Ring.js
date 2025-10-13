@@ -250,10 +250,6 @@ Ring = Abacus.Ring = Class({
         if (!is_instance(e, Expr)) return null;
         return self.PolynomialClass ? self.PolynomialClass.fromExpr(e, self.PolynomialSymbol, self.CoefficientRing) : self.cast(e.c());
     }
-    ,fromValues: function(v) {
-        var self = this;
-        return is_class(self.PolynomialClass, Polynomial) ? self.PolynomialClass.fromValues(v, self.PolynomialSymbol, self.CoefficientRing) : null;
-    }
     ,toString: function() {
         var self = this, subring, R;
         if (null == self._str)
