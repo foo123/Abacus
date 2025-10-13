@@ -841,82 +841,39 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     }
     ,factors: function() {
         // factorize polynomial over Integers/Rationals if factorizable
-        // Kronecker method
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
-        var self = this,
-            ring = self.ring,
-            symbol = self.symbol,
-            Arithmetic = Abacus.Arithmetic,
-            factors, factor,
-            c, q, p, i, n, m, x, y;
+        var self = this, queue, factors, c, q, p;
         if (null == self._factors)
         {
             p = self.primitive(true);
             c = p[1];
-            q = p[0];
+            p = p[0];
+            queue = [p];
             factors = {};
-            do
-            {
-                p = q;
-                factor = null;
-                for (i=1,n=(p.deg()>>1); i<=n; ++i)
+            do {
+                p = queue.shift();
+                // Kronecker method
+                q = kronecker_factor(p);
+                if (q)
                 {
-                    x = array(i+1, ((i+1)>>1), -1);
-                    y = x.map(function(xi) {return p.evaluate(xi).real().num;});
-                    if (factor = kronecker_factor(p, x, y))
+                    q = q.monic().primitive(true);
+                    c = c.mul(q[1]);
+                    q = q[0];
+                    queue.push(q);
+                    queue.push(p.div(q));
+                }
+                else
+                {
+                    if (HAS.call(factors, p.toString()))
                     {
-                        factor = factor.monic().primitive(true);
-                        c = c.mul(factor[1]);
-                        factor = factor[0];
-                        q = p.div(factor);
-                        if (HAS.call(factors, factor.toString()))
-                        {
-                            ++factors[factor.toString()][1];
-                        }
-                        else
-                        {
-                            factors[factor.toString()] = [factor, 1];
-                        }
-                        break;
+                        ++factors[p.toString()][1];
+                    }
+                    else
+                    {
+                        factors[p.toString()] = [p, 1];
                     }
                 }
-            } while (factor);
-            // normalise remainder to have integer coefficients, if not already
-            if (!is_class(ring.NumberClass, Complex) || q.isReal()/* || q.isImag()*/)
-            {
-                if (is_class(ring.NumberClass, Integer))
-                {
-                    m = Arithmetic.I;
-                }
-                /*else if (q.isImag())
-                {
-                    m = lcm(q.terms.map(function(t){return t.c.imag().den;}));
-                }*/
-                else
-                {
-                    m = lcm(q.terms.map(is_class(ring.NumberClass, Complex) ? function(t) {return t.c.real().den;} : function(t) {return t.c.den;}));
-                }
-                if (!Arithmetic.equ(Arithmetic.I, m))
-                {
-                    c = c.div(m);
-                    q = q.mul(m);
-                }
-            }
-            if (0 < q.deg())
-            {
-                if (HAS.call(factors, q.toString()))
-                {
-                    ++factors[q.toString()][1];
-                }
-                else
-                {
-                    factors[q.toString()] = [q, 1];
-                }
-            }
-            else
-            {
-                c = c.mul(q.cc());
-            }
+            } while (queue.length);
             factors = KEYS(factors).map(function(k) {return factors[k];});
             self._factors = [factors, c];
         }
@@ -3323,46 +3280,69 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
 
     return q_and_r ? [q, r] : q;
 }
-function kronecker_factor(p, x, y)
+function kronecker_factor(p)
 {
-    // Kronecker method to factorize over the integers/rationals
-    var i, j, v, q;
-    if (!y.length) return;
-    for (i=y.length-1; i>=0; --i)
+    // Kronecker method to factorize p over the integers/rationals
+    var i, j, n, y, v, d, q,
+        r = p.ring, s = p.symbol;
+    for (d=1,n=(p.deg()>>1); d<=n; ++d)
     {
-        if (Abacus.Arithmetic.equ(y[i], 0))
+        y = array(d+1, d>>1, -1).map(function(xi) {
+            xi = r.cast(xi).real();
+            var yi = p.evaluate(xi).real();
+            return [xi, yi.abs()];
+        });
+        for (i=d; i>=0; --i)
         {
-            // found linear factor
-            return Polynomial({'0':p.ring.cast(-x[i]), '1':p.ring.One()}, p.symbol, p.ring);
-        }
-        else
-        {
-            y[i] = [p.ring.cast(x[i]), divisors(y[i], true)];
-        }
-    }
-    v = new Array(y.length);
-    i = y.length-1;
-    for (;;)
-    {
-        while ((0 <= i) && !y[i][1].hasNext())
-        {
-            y[i][1].rewind();
-            v[i] = [y[i][0], p.ring.cast(y[i][1].next())];
-            --i;
-        }
-        if (0 > i) return;
-        v[i] = [y[i][0], p.ring.cast(y[i][1].next())];
-        if (null == v[0])
-        {
-            for (j=0; j<i; ++j)
+            if (y[i][1].equ(0))
             {
-                v[j] = [y[j][0], p.ring.cast(y[j][1].next())];
+                // found linear factor
+                return Polynomial({'0':y[i][0].neg(), '1':r.One()}, s, r);
+            }
+            else
+            {
+                y[i][1] = Iterator((function(yi) {
+                    var iter = divisors(yi, true), s, d;
+                    return function(curr, dir, state, init) {
+                        if (init)
+                        {
+                            iter.rewind();
+                            s = 1;
+                            d = iter.next();
+                        }
+                        if (null == d) return null;
+                        var sd = Abacus.Arithmetic.mul(d, s);
+                        s = -s;
+                        if (1 === s) d = iter.next();
+                        return sd;
+                    };
+                })(y[i][1].num));
             }
         }
-        i = y.length-1;
-        q = Polynomial.fromValues(v, p.symbol, p.ring);
-        // found factor
-        if ((0 < q.deg()) && p.mod(q).equ(0)) return q;
+        v = new Array(y.length);
+        i = d;
+        for (;;)
+        {
+            while ((0 <= i) && !y[i][1].hasNext())
+            {
+                y[i][1].rewind();
+                v[i] = [y[i][0], r.cast(y[i][1].next())];
+                --i;
+            }
+            if (0 > i) break;
+            v[i] = [y[i][0], r.cast(y[i][1].next())];
+            if (null == v[0])
+            {
+                for (j=0; j<i; ++j)
+                {
+                    v[j] = [y[j][0], r.cast(y[j][1].next())];
+                }
+            }
+            q = Polynomial.fromValues(v, s, r);
+            // found factor
+            if ((0 < q.deg()) && p.mod(q).equ(0)) return q;
+            i = d;
+        }
     }
 }
 function polykthroot(p, k, limit)
