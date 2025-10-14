@@ -32,6 +32,23 @@ Complex = Abacus.Complex = Class(Numeric, {
 
         self.re = is_instance(real, Rational) ? real : Rational.cast(real);
         self.im = is_instance(imag, Rational) ? imag : Rational.cast(imag);
+
+        def(self, 'num', {
+            get: function() {
+                return self;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return Complex.One();
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {

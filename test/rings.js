@@ -6,20 +6,6 @@ const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
 const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
 use_biginteger_arithmetic(Abacus);
 
-function check_xgcd(ring, args)
-{
-    let out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
-        res = field.Zero(), gcd = ring.xgcd(args), monicgcd = gcd[0].monic();
-    for (let i=0; i<args.length; ++i)
-    {
-        out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
-        res = res.add(gcd[i+1].mul(args[i]));
-        if (!args[i].mod(gcd[0]).equ(0)) echo(args[i].toString()+' is not divided! '+(args[i].mod(monicgcd).equ(0)?'divided by monic':'neither by monic'));
-    }
-    out += ' = '+res.toString()+' (gcd: '+gcd[0].toString()+')';
-    echo(out, res.equ(gcd[0]));
-}
-
 const util = require('util');
 const log = x => echo(util.inspect(x, {showHidden: false, depth: null, colors: false}));
 const Ring = Abacus.Ring;
@@ -30,7 +16,7 @@ echo('---');
 
 echo('Rings / Fields');
 echo('--------------');
-
+/*
 ring = Ring.C("x", "y", "z");
 rring = Ring.K(Ring.K(Ring.K(Ring.C()), "y", "z"), "x");
 echo('ring = '+ring.toString()+' ('+ring.toTex()+')'+' rring = '+rring.toString()+' ('+rring.toTex()+')');
@@ -54,22 +40,29 @@ echo(p1.toString()+' + (x + y) = '+p1.add(rring.fromString('x+y')).toString())
 echo(p2.toString()+' + (x + y) = '+p2.add(rring.fromString('x+y')).toString())
 
 echo('---');
-
+*/
 echo('ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")');
-echo((ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")).toString());
-//log(ring)
+echo((ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y", true), "x", true)).toString());
 echo('ring.fromString("x*y+x+y-2").toString()');
 echo((p=ring.fromString("x*y+x+y-2")).toString());
-//log(p);
 
 echo('---');
 
-p1 = ring.fromString("x^2*y + x^3");
-echo("x^2*y + x^3", ',', p1.toString());
-p2 = ring.fromString("(x + y)^2");
-echo("(x + y)^2", ',', p2.toString());
-p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
-echo("x^2 + x*y^2 + x*y + x + y^3 + y", ',', p3.toString());
-//log(p3);
-echo(ring.gcd(p1, p2, p3).toUnivariate(false, ["x", "y"], Ring.Q()).toString(), ',', "x + y");
-check_xgcd(ring, [p3, p1, p2]);
+ring = Ring.Q("x", "y");
+rring = Ring.K(Ring.K(Ring.K(Ring.Q()), "y", true).associatedField(), "x", true);
+p1 = ring.fromString("x^2 + x*y");
+p2 = ring.fromString("x*y + y^2");
+p3 = ring.gcd(p1, p2);
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mod(p3).toString()+','+p2.mod(p3).toString()+', x + y');
+p1 = ring.fromString("x*(x+y)");
+p2 = ring.fromString("(x+y)^2");
+p3 = ring.gcd(p1, p2);
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mod(p3).toString()+','+p2.mod(p3).toString()+', x + y');
+p1 = rring.fromString("x^2 + x*y");
+p2 = rring.fromString("x*y + y^2");
+p3 = rring.gcd(p1, p2);
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mod(p3).toString()+','+p2.mod(p3).toString()+', x + y');
+p1 = rring.fromString("x*(x+y)");
+p2 = rring.fromString("(x+y)^2");
+p3 = rring.gcd(p1, p2);
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mod(p3).toString()+','+p2.mod(p3).toString()+', x + y');

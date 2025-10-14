@@ -3,12 +3,12 @@
 **Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** in progress
+**version 2.0.0** in progress (333 kB minified)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
 
-`Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
+`Abacus` is a relatively small (333 kB minified) and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
 
 `Abacus` uses mostly self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
@@ -164,7 +164,7 @@ See the comments in the code for algorithms and references used.
 ### Example API
 
 ```javascript
-let o = Abacus.Permutation(4);
+const o = Abacus.Permutation(4);
 console.log(String(o.total()));
 console.log('---');
 for (let item of o)
@@ -203,7 +203,7 @@ for (let item of o)
 ```
 
 ```javascript
-let o = Abacus.Partition(6);
+const o = Abacus.Partition(6);
 console.log(String(o.total()));
 console.log('---');
 for (let item of o)
@@ -229,16 +229,50 @@ for (let item of o)
 ```
 
 ```javascript
-let field = Abacus.Ring.Q("x").associatedField();
+const p = Abacus.Expr("ax^2 + bx + c").toPoly("x");
+console.log(p.discriminant().toString());
 
-let m = Abacus.Matrix(field, [
+const ring = Abacus.Ring.Q("x", "y");
+const p1 = ring.fromString("x^2*y + x^3");
+const p2 = ring.fromString("(x + y)^2");
+const p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
+console.log(ring.gcd(p1, p2, p3).toString());
+
+console.log(ring.fromString("x^2+y").resultant(ring.fromString("x-2*y"), "x").toString());
+console.log(ring.fromString("x^2+y").resultant(ring.fromString("x-2*y"), "y").toString());
+```
+
+```text
+-4*a*c + b^2
+
+x + y
+
+4*y^2 + y
+2*x^2 + x
+```
+
+```javascript
+const field1 = Abacus.Ring.Q("x").associatedField();
+
+const m1 = Abacus.Matrix(field1, [
     ["x-1", "x^2-1"],
     ["x^2-1", "x-1"]
 ]);
 
-console.log(m.toString());
-console.log(m.inv().toString());
-console.log(m.inv().mul(m).toString());
+console.log(m1.toString());
+console.log(m1.inv().toString());
+console.log(m1.inv().mul(m1).toString());
+
+const field2 = Abacus.Ring.Q("x","y").associatedField();
+
+const m2 = Abacus.Matrix(field2, [
+    ["x^2 + x*y", "x*y + y^2"],
+    ["x*y + y^2", "x^2 + x*y"]
+]);
+
+console.log(m2.toString());
+console.log(m2.inv().toString());
+console.log(m2.inv().mul(m2).toString());
 ```
 
 ```text
@@ -247,6 +281,15 @@ console.log(m.inv().mul(m).toString());
 
 |   -1/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)|
 |(x+1)/(x^3+x^2-2*x)    -1/(x^3+x^2-2*x)|
+
+|1 0|
+|0 1|
+
+|x^2 + x*y x*y + y^2|
+|x*y + y^2 x^2 + x*y|
+
+| x/(x^3 + x^2*y - x*y^2 - y^3)      -y/(x^3 + x^2*y - x*y^2 - y^3)|
+|-y/(x^3 + x^2*y - x*y^2 - y^3) x*y/(x^3*y + x^2*y^2 - x*y^3 - y^4)|
 
 |1 0|
 |0 1|
@@ -300,11 +343,11 @@ console.log(m.inv().mul(m).toString());
 
 **see also:**
 
-* [Abacus](https://github.com/foo123/Abacus) advanced Combinatorics and Algebraic Number Theory Symbolic Computation Library for JavaScript, Python
+* [Abacus](https://github.com/foo123/Abacus) Computer Algebra and Symbolic Computation System for Combinatorics and Algebraic Number Theory for JavaScript and Python
 * [TensorView](https://github.com/foo123/TensorView) view array data as multidimensional tensors of various shapes efficiently
 * [Geometrize](https://github.com/foo123/Geometrize) Computational Geometry and Rendering Library for JavaScript
 * [Plot.js](https://github.com/foo123/Plot.js) simple and small library which can plot graphs of functions and various simple charts and can render to Canvas, SVG and plain HTML
-* [CanvasLite](https://github.com/foo123/CanvasLite) a lite canvas implementation in pure JavaScript
+* [CanvasLite](https://github.com/foo123/CanvasLite) an html canvas implementation in pure JavaScript
 * [Rasterizer](https://github.com/foo123/Rasterizer) stroke and fill lines, rectangles, curves and paths, without canvas
 * [Gradient](https://github.com/foo123/Gradient) create linear, radial, conic and elliptic gradients and image patterns without canvas
 * [css-color](https://github.com/foo123/css-color) simple class to parse and manipulate colors in various formats
@@ -312,7 +355,7 @@ console.log(m.inv().mul(m).toString());
 * [HAAR.js](https://github.com/foo123/HAAR.js) image feature detection based on Haar Cascades in JavaScript (Viola-Jones-Lienhart et al Algorithm)
 * [HAARPHP](https://github.com/foo123/HAARPHP) image feature detection based on Haar Cascades in PHP (Viola-Jones-Lienhart et al Algorithm)
 * [FILTER.js](https://github.com/foo123/FILTER.js) video and image processing and computer vision Library in pure JavaScript (browser and node)
-* [Xpresion](https://github.com/foo123/Xpresion) a simple and versatile eXpression parser engine (with custom functions and variables support), based on [GrammarTemplate](https://github.com/foo123/GrammarTemplate), for PHP, JavaScript, Python
+* [Xpresion](https://github.com/foo123/Xpresion) a simple and flexible eXpression parser engine (with custom functions and variables support), based on [GrammarTemplate](https://github.com/foo123/GrammarTemplate), for PHP, JavaScript, Python
 * [Regex Analyzer/Composer](https://github.com/foo123/RegexAnalyzer) Regular Expression Analyzer and Composer for PHP, JavaScript, Python
 * [GrammarTemplate](https://github.com/foo123/GrammarTemplate) grammar-based templating for PHP, JavaScript, Python
 * [codemirror-grammar](https://github.com/foo123/codemirror-grammar) transform a formal grammar in JSON format into a syntax-highlight parser for CodeMirror editor
@@ -320,5 +363,7 @@ console.log(m.inv().mul(m).toString());
 * [prism-grammar](https://github.com/foo123/prism-grammar) transform a formal grammar in JSON format into a syntax-highlighter for Prism code highlighter
 * [highlightjs-grammar](https://github.com/foo123/highlightjs-grammar) transform a formal grammar in JSON format into a syntax-highlight mode for Highlight.js code highlighter
 * [syntaxhighlighter-grammar](https://github.com/foo123/syntaxhighlighter-grammar) transform a formal grammar in JSON format to a highlight brush for SyntaxHighlighter code highlighter
-* [SortingAlgorithms](https://github.com/foo123/SortingAlgorithms) implementations of Sorting Algorithms in JavaScript
-* [PatternMatchingAlgorithms](https://github.com/foo123/PatternMatchingAlgorithms) implementations of Pattern Matching Algorithms in JavaScript
+* [Fuzzion](https://github.com/foo123/Fuzzion) a library of fuzzy / approximate string metrics for PHP, JavaScript, Python
+* [Matchy](https://github.com/foo123/Matchy) a library of string matching algorithms for PHP, JavaScript, Python
+* [PatternMatchingAlgorithms](https://github.com/foo123/PatternMatchingAlgorithms) library of Pattern Matching Algorithms in JavaScript using [Matchy](https://github.com/foo123/Matchy)
+* [SortingAlgorithms](https://github.com/foo123/SortingAlgorithms) library of Sorting Algorithms in JavaScript

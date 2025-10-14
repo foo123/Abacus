@@ -1,9 +1,9 @@
 // Abacus.Ring represents an algebraic Ring or Field (even Polynomial Ring)
 Ring = Abacus.Ring = Class({
 
-    constructor: function Ring(NumberClass, PolynomialSymbol, isFraction) {
+    constructor: function Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate) {
         var self = this, ring = null;
-        if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction);
+        if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate);
 
         self.PolynomialClass = null;
         self.CoefficientRing = null;
@@ -61,7 +61,7 @@ Ring = Abacus.Ring = Class({
             }
             else
             {
-                if (self.CoefficientRing.PolynomialClass || (1 < PolynomialSymbol.length))
+                if ((true === ForceMultiVariate) || self.CoefficientRing.PolynomialClass || (1 < PolynomialSymbol.length))
                 {
                     self.PolynomialClass = MultiPolynomial;
                     self.PolynomialSymbol = PolynomialSymbol;
@@ -115,14 +115,18 @@ Ring = Abacus.Ring = Class({
         ,K: function(/* R, "x","y",.. */) {
             // generic Ring/Field
             var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments),
-                R = null, N = null;
+                R = null, N = null, forceMultivariate = false;
+            if (args.length && (true === args[args.length-1] || false === args[args.length-1]))
+            {
+                forceMultivariate = args.pop();
+            }
             if (args.length)
             {
                 // K(C("x","y"), "z","w") ring C("z","w") with coefficients from C("x","y")
                 if (is_instance(args[0], Ring)) {R = args[0]; args = args.slice(1);}
                 else if (is_class(args[0], Numeric)) {N = args[0]; args = args.slice(1);}
                 args = Ring.getSymbols(args);
-                return args.length ? (R || N ? Ring(R || N, args) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
+                return args.length ? (R || N ? Ring(R || N, args, false, forceMultivariate) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
             }
             return Ring.Q();
         }

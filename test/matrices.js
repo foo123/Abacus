@@ -6,7 +6,6 @@ const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
 const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
 use_biginteger_arithmetic(Abacus);
 
-
 function print_base(m)
 {
     for (let i=0; i<m.length; i++)
@@ -28,7 +27,7 @@ echo('Abacus.Matrices (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Matrices and Matrix operations');
-echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+') /* ring of integers */');
+echo('ring = '+ring.toString()+' ('+ring.toTex()+') /* ring of integers */');
 echo('---');
 echo('o=Abacus.Matrix(ring, 3)');
 o=Abacus.Matrix(ring, 3);
@@ -550,7 +549,7 @@ o.dispose();
 echo('---');
 
 ring = Abacus.Ring.Q("x"); field = ring.associatedField();
-echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+') /* ring of polynomials */');
+echo('ring = '+ring.toString()+' ('+ring.toTex()+') /* ring of polynomials */');
 echo('---');
 echo('o=Abacus.Matrix.I(field, 3)');
 o=Abacus.Matrix.I(field, 3);
@@ -584,3 +583,36 @@ echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(field, 2)));
 echo('o.charpoly("y").toString()');
 echo(o.charpoly("y").toString());
 echo('---');
+
+ring = Abacus.Ring.Q("x","y"); field = ring.associatedField();
+echo('o=Abacus.Matrix(field, [["x^2 + x*y","x*y + y^2"],["x*y + y^2","x^2 + x*y"]])');
+o=Abacus.Matrix(field, [["x^2 + x*y","x*y + y^2"],["x*y + y^2","x^2 + x*y"]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(field, 2)));
+
+echo('o=Abacus.Matrix(field, [["x*(x+y)","(x+y)^2"],["(x+y)^2","x*(x+y)"]])');
+o=Abacus.Matrix(field, [["x*(x+y)","(x+y)^2"],["(x+y)^2","x*(x+y)"]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(field, 2)));
+
+/*
+ring = Abacus.Ring.Q("x","y"); field = ring.associatedField();
+echo('o=Abacus.Matrix(field, [["x+y","1+x*y+x^2"],["1+x*y+x^2","x+y"]])');
+o=Abacus.Matrix(field, [["x+y","1+x*y+x^2"],["1+x*y+x^2","x+y"]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString());
+echo('\n'+o.inv().mul(o).toString());
+// wolfram alpha does not compute correct inverse either
+let inv=Abacus.Matrix(field, [["(x + y)/((x + y)^2 - (x^2 + x*y + 1)^2)", "-(x^2 + x*y + 1)/((x + y)^2 - (x^2 + x*y + 1)^2)"],
+["-(x^2 + x*y + 1)/((x + y)^2 - (x^2 + x*y + 1)^2)", "(x + y)/((x + y)^2 - (x^2 + x*y + 1)^2)"]]);
+echo('\n\n'+inv.toString());
+echo('\n'+inv.mul(o).toString());
+//echo('o.charpoly("z").toString()');
+//echo(o.charpoly("z").toString());
+*/

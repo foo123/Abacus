@@ -1677,7 +1677,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     if (is_own_symbol)
                     {
                         // polynomial symbol
-                        term[is_array(symbol) ? arg : '1'] = CoefficientRing.One();
+                        term[arg] = CoefficientRing.One();
                     }
                     else if (ring.PolynomialClass)
                     {
@@ -1699,12 +1699,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         // symbolic rational constant suitable as polynomial coefficient
                         coeff_term = {};
                         coeff_term[arg] = ring.One();
-                        term[is_array(symbol) ? '1' : '0'] = RationalFunc(MultiPolynomial(coeff_term, other_symbols, ring), null, null, null, true);
+                        term['1'] = RationalFunc(MultiPolynomial(coeff_term, other_symbols, ring), null, null, null, true);
                     }
                 }
                 else //if (is_instance(arg, Numeric))
                 {
-                    term[is_array(symbol) ? '1' : '0'] = arg;
+                    term['1'] = arg;
                 }
                 return PolynomialClass(term, symbol, CoefficientRing);
             }

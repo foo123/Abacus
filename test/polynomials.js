@@ -89,7 +89,7 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('ring.fromValues([[1,0],[1,1]])');
+/*echo('ring.fromValues([[1,0],[1,1]])');
 echo(ring.fromValues([[1,0],[1,1]]));
 
 echo('ring.fromValues([[1,1],[2,1],[3,1]]).toString()');
@@ -103,10 +103,10 @@ echo(ring.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString());
 
 echo('ring.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString()');
 echo(ring.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString());
-echo('---');
+echo('---');*/
 
-echo('o=ring.create({"50":1,"2":2})');
-o=ring.create({"50":1,"2":2});
+echo('o=ring.create({"x^50":1,"x^2":2})');
+o=ring.create({"x^50":1,"x^2":2});
 echo('o.toString()');
 echo(o.toString());
 echo('o.toTex()');
@@ -349,6 +349,16 @@ echo('ring.fromString("x^2+x+1").factors()');
 o=ring.fromString("x^2+x+1");
 d=o.factors();
 check_factors(o, d[0], d[1]);
+
+//echo(Expr('x^5+x^4+x^2+x+2').toPoly('x').mod(Expr('2*x^2 + 2*x + 2').toPoly('x')).toString());
+echo('poly("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2").factors()');
+o = Abacus.Expr(/*'x^5+x^4+x^2+x+2'*/'(x+1)(x^2 + x + 1)(x^3 - x + 2)^2').toPoly("x");
+d = o.factors();
+/*let s = d[0].reduce(function(s, f) {
+    return s + '('+ f[0].toString() +')'+(1 < f[1] ? '^'+f[1] : '');
+}, d[1].equ(1) ? '' : d[1].toString());
+echo('(x+1)(x^2 + x + 1)(x^3 - x + 2)^2 = ' + s);*/
+check_factors(o, d[0], d[1]);
 echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');
@@ -496,4 +506,4 @@ check_primitive(o);
 echo('------');
 
 check_resultant(ring.fromString("(3/2+(1/2)*i)*x+1+(2/3)*i"), ring.fromString("(1/2)*i*x^2+(1+(2/3)*i)*x"));
-check_discriminant(Abacus.Expr("a*x^2 + b*x + c").toPoly("x"), Abacus.Expr("b^2 - 4a*c"));
+check_discriminant(Abacus.Expr("ax^2 + bx + c").toPoly("x"), Abacus.Expr("b^2 - 4a*c"));

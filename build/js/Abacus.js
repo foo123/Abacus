@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-09-17 23:44:51)
+*   @version: 2.0.0 (2025-10-14 23:30:53)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-09-17 23:44:51)
+*   @version: 2.0.0 (2025-10-14 23:30:53)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -28,35 +28,17 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
 
 var  Abacus = {VERSION: "2.0.0"}
 
-    ,PROTO = 'prototype', CLASS = 'constructor'
-    ,slice = Array[PROTO].slice
-    ,HAS = Object[PROTO].hasOwnProperty
-    ,KEYS = Object.keys
-    ,def = Object.defineProperty
-    ,toString = Object[PROTO].toString
-    ,stdMath = Math, log2 = stdMath.log2 || function(x) {return stdMath.log(x) / stdMath.LN2;}
-
-    ,trim_re = /^\s+|\s+$/g
-    ,trim = String[PROTO].trim ? function(s) {return s.trim();} : function(s) {return s.replace(trim_re, '');}
-
-    ,pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/
-    ,in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/
-    ,dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/
-
+    ,stdMath = Math
     ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MAX_SAFE_INTEGER
     ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
 
-    ,V_EQU = 1, V_DIFF = -1, V_INC = 3, V_DEC = -3, V_NONINC = -2, V_NONDEC = 2
-
     ,REVERSED = 1, REFLECTED = 2
-    ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32
+    ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32, GRADED = 64
     ,LEXICAL = LEX | COLEX | MINIMAL
+    ,MONOMIAL = LEX | GRADED
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
 
     ,LEFT = -2, RIGHT = 2, PREFIX = 2, INFIX = 4, POSTFIX = 8
-
-    ,Obj = function() {return Object.create(null);}
-    ,NOP = function() {}
 
     ,Node, Heap, ListSet
     ,DefaultArithmetic, INUMBER, INumber
@@ -75,7 +57,18 @@ var  Abacus = {VERSION: "2.0.0"}
     ,Subset, Partition, SetPartition
     ,CatalanWord, LatinSquare, MagicSquare
 ;
+// utility methods
+var  PROTO = 'prototype', CLASS = 'constructor'
+    ,slice = Array[PROTO].slice
+    ,HAS = Object[PROTO].hasOwnProperty
+    ,KEYS = Object.keys
+    ,def = Object.defineProperty
+    ,toString = Object[PROTO].toString
+    ,log2 = stdMath.log2 || function(x) {return stdMath.log(x) / stdMath.LN2;}
 
+    ,trim_re = /^\s+|\s+$/g
+    ,trim = String[PROTO].trim ? function(s) {return s.trim();} : function(s) {return s.replace(trim_re, '');}
+;
 function Merge(/* args */)
 {
     var args = arguments, l = args.length, a, b, i, p;
@@ -98,15 +91,43 @@ function Class(supr, proto)
     klass[PROTO] = supr ? Merge(Object.create(supr[PROTO]), proto) : proto;
     return klass;
 }
-// utility methods
-function NotImplemented() {throw new Error("Method not implemented!");}
-function ID(x) {return x;}
-function is_array(x) {return (x instanceof Array) || ('[object Array]' === toString.call(x));}
-function is_args(x) {return ('[object Arguments]' === toString.call(x)) && (null != x.length);}
-function is_obj(x) {return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));}
-function is_string(x) {return (x instanceof String) || ('[object String]' === toString.call(x));}
-function is_number(x) {return "number" === typeof x;}
-function is_callable(x) {return "function" === typeof x;}
+function NOP() {}
+function Obj()
+{
+    return Object.create(null);
+}
+function NotImplemented()
+{
+    throw new Error("Method not implemented!");
+}
+function ID(x)
+{
+    return x;
+}
+function is_array(x)
+{
+    return (x instanceof Array) || ('[object Array]' === toString.call(x));
+}
+function is_args(x)
+{
+    return ('[object Arguments]' === toString.call(x)) && (null != x.length);
+}
+function is_obj(x)
+{
+    return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));
+}
+function is_string(x)
+{
+    return (x instanceof String) || ('[object String]' === toString.call(x));
+}
+function is_number(x)
+{
+    return "number" === typeof x;
+}
+function is_callable(x)
+{
+    return "function" === typeof x;
+}
 function is_class(C1, C2)
 {
     // C1 is same class as C2, or is a subclass of C2
@@ -116,14 +137,14 @@ function is_class(C1, C2)
         {
             for (var i=0,n=C2.length; i<n; ++i)
             {
-                if (is_callable(C2[i]) && ((C1===C2[i]) || (C1[PROTO] instanceof C2[i])))
+                if (is_callable(C2[i]) && ((C1 === C2[i]) || is_instance(C1[PROTO], C2[i])))
                     return true;
 
             }
         }
         else if (is_callable(C2))
         {
-            return (C1===C2) || (C1[PROTO] instanceof C2);
+            return (C1 === C2) || is_instance(C1[PROTO], C2);
         }
     }
     return false;
@@ -156,7 +177,10 @@ function to_tex(s)
     var p = String(s).split('_');
     return p[0] + (p.length > 1 ? ('_{' + p[1] + '}') : '');
 }
-function Tex(s) {return is_callable(s.toTex) ? s.toTex() : String(s);}
+function Tex(s)
+{
+    return is_callable(s.toTex) ? s.toTex() : String(s);
+}
 
 // https://github.com/foo123/FnList.js
 function operate(F, F0, x, i0, i1, ik, strict)
@@ -190,52 +214,52 @@ function operate(F, F0, x, i0, i1, ik, strict)
 
     if (x_array)
     {
-        i00 = stdMath.max(0,i00); i11 = stdMath.min(x.length-1,i11);
-        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,x[i],i);
+        i00 = stdMath.max(0, i00); i11 = stdMath.min(x.length-1, i11);
+        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv, x[i], i);
         for (ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
         {
-            i =ii; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
-            i+=ik; Fv = F(Fv,x[i],i);
+            i =ii; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
+            i+=ik; Fv = F(Fv, x[i], i);
         }
-        if ((true===strict) && (null!==last) && (0<=last && last<x.length)) Fv = F(Fv,x[last],last);
+        if ((true === strict) && (null !== last) && (0 <= last && last < x.length)) Fv = F(Fv, x[last], last);
     }
     else
     {
-        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv,i,i);
+        for (i=i0; i00<=i && i<=i11 && 0<di*(i0r-i); i+=ik) Fv = F(Fv, i, i);
         for (ii=i0r; i00<=ii && ii<=i11; ii+=ikk)
         {
-            i =ii; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
-            i+=ik; Fv = F(Fv,i,i);
+            i =ii; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
+            i+=ik; Fv = F(Fv, i, i);
         }
-        if ((true===strict) && (null!==last)) Fv = F(Fv,last,last);
+        if ((true === strict) && (null !== last)) Fv = F(Fv, last, last);
     }
     return Fv;
 }
@@ -295,7 +319,7 @@ function reversion(n, n0)
         return n0[i]-1-n[n.length-1-i];
     } : function(i) {
         return n0-n[i];
-    }) : ((n === +n) && (n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.num(n0),n));
+    }) : ((n === +n) && (n0 === +n0) ? (n0-n) : Abacus.Arithmetic.sub(Abacus.Arithmetic.num(n0), n));
 }
 function gray(b, a, n, a0, a1)
 {
@@ -678,7 +702,7 @@ function merge/*union*/(union, a, b, dir, a0, a1, b0, b1, indices, unique, inpla
 }
 function sortedrun(a, a0, a1, index, indices, dir)
 {
-    // findout already sorted chunks either ascending or descending
+    // find already sorted chunks either ascending or descending
     var ap, ai, i, i0, i1, d0, i2, i3, d1;
     index[0] = -1; index[1] = -1; index[2] = 0;
     index[3] = -1; index[4] = -1; index[5] = 0;
@@ -798,7 +822,7 @@ function is_sorted(a, dir, a0, a1)
     // O(n)
     if (null == dir || 0 === dir)
     {
-        // findout if and how it is sorted
+        // find out if and how it is sorted
         dir = 0;
         for (ap=a[a0],i=a0+1; i<=a1; ++i)
         {
@@ -1020,108 +1044,6 @@ function is_mirror_image(x)
     }
     return true;
 }
-function lcs_key(path)
-{
-    return path.map(function(ij) {return String(ij[0]) + ',' + String(ij[1]);}).join('-');
-}
-function lcs_backtrack(L, a, b, i, j, eq, all)
-{
-    if (0 > i || 0 > j) return [];
-    var L1 = 0 === i ? 0 : L[i-1][j], L2 = 0 === j ? 0 : L[i][j-1], out, lcs1, lcs2, visited;
-    if (all)
-    {
-        if (eq(a[i], b[j]))
-        {
-            out = lcs_backtrack(L, a, b, i-1, j-1, eq, all);
-            return out.length ? out.map(function(path){path.push([i, j]); return path;}) : [[[i, j]]];
-        }
-        out = [];
-        // NOTE: below different paths, may lead to same LCS nevertheless, unless filtering is used
-        lcs1 = L1 >= L2 ? lcs_backtrack(L, a, b, i-1, j, eq, all) : [];
-        lcs2 = L2 >= L1 ? lcs_backtrack(L, a, b, i, j-1, eq, all) : [];
-        if (lcs1.length && lcs2.length)
-        {
-            visited = lcs1.reduce(function(visited, path){visited[lcs_key(path)] = 1; return visited;}, Obj());
-            lcs2 = lcs2.filter(function(path){return 1 !== visited[lcs_key(path)];});
-        }
-        out.push.apply(out, lcs1);
-        out.push.apply(out, lcs2);
-        return out;
-    }
-    else
-    {
-        if (eq(a[i], b[j]))
-        {
-            out = lcs_backtrack(L, a, b, i-1, j-1, eq, all);
-            out.push([i, j]);
-            return out;
-        }
-        return L1 >= L2 ? lcs_backtrack(L, a, b, i-1, j, eq, all) : lcs_backtrack(L, a, b, i, j-1, eq, all);
-    }
-}
-function lcs(a, b, contiguous, ret, eq)
-{
-    var i, j, n = a.length, m = b.length, s, L, L1, L2, out, sizeOnly = 'size' === ret, all = 'all' === ret;
-    if (!n || !m) return sizeOnly ? 0 : [];
-    eq = eq || default_eq;
-    if (contiguous)
-    {
-        // https://en.wikipedia.org/wiki/Longest_common_substring_problem
-        // O(nm)
-        s = 0;
-        out = [];
-        L = new Array(n);
-        for (i=0; i<n; ++i)
-        {
-            L[i] = new Array(m);
-            for (j=0; j<m; ++j)
-            {
-                if (eq(a[i], b[j]))
-                {
-                    L[i][j] = (0 === i || 0 === j ? 0 : L[i-1][j-1]) + 1;
-                    if (L[i][j] > s)
-                    {
-                        s = L[i][j];
-                        if (!sizeOnly) out = [[i-s+1, i, j-s+1, j]];
-                    }
-                    else if (all && (L[i][j] === s))
-                    {
-                        out.push([i-s+1, i, j-s+1, j]);
-                    }
-                }
-                else
-                {
-                    L[i][j] = 0;
-                }
-            }
-        }
-    }
-    else
-    {
-        // https://en.wikipedia.org/wiki/Longest_common_subsequence_problem
-        // O(nm)
-        L = new Array(n);
-        out = [];
-        for (i=0; i<n; ++i)
-        {
-            L[i] = new Array(m);
-            for (j=0; j<m; ++j)
-            {
-                if (eq(a[i], b[j]))
-                {
-                    L[i][j] = (0 === i || 0 === j ? 0 : L[i-1][j-1]) + 1;
-                }
-                else
-                {
-                    L[i][j] = stdMath.max(0 === j ? 0 : L[i][j-1], 0 === i ? 0 : L[i-1][j]);
-                }
-            }
-        }
-        s = L[n-1][m-1];
-        if (!sizeOnly) out = lcs_backtrack(L, a, b, n-1, m-1, eq, all);
-    }
-    return sizeOnly ? s : out;
-}
 function cmp_with_indices(cmp)
 {
     return function(a, b) {
@@ -1169,7 +1091,7 @@ function dist(a, b)
 {
     return stdMath.abs(a - b);
 }
-function align(A, B, dist_AB, cmp_AA, cmp_BB)
+function align_sequences(A, B, dist_AB, cmp_AA, cmp_BB)
 {
     // https://stackoverflow.com/a/78740257/3591273
     /*
@@ -1292,8 +1214,8 @@ function align(A, B, dist_AB, cmp_AA, cmp_BB)
     }
     return [];
 }
-align.cmp = cmp;
-align.dist = dist;
+align_sequences.cmp = cmp;
+align_sequences.dist = dist;
 function merge_sequences(A, B, combAB, compAB)
 {
     // combine A and B assumed to be in sorted order
@@ -2425,7 +2347,7 @@ function trial_div_fac(n, maxlimit)
 
         p2 = Arithmetic.mul(p, p);
 
-        if (Arithmetic.gt(p2, n) || (null!=maxlimit && Arithmetic.gt(p2, maxlimit))) break;
+        if (Arithmetic.gt(p2, n) || ((null != maxlimit) && Arithmetic.gt(p2, maxlimit))) break;
 
         if (Arithmetic.equ(O, Arithmetic.mod(n, p)))
         {
@@ -2446,7 +2368,7 @@ function trial_div_fac(n, maxlimit)
     if (i >= l)
     {
         p = Arithmetic.add(p, two); p2 = Arithmetic.mul(p, p);
-        while (Arithmetic.lte(p2, n) && (null==maxlimit || Arithmetic.lte(p2, maxlimit)))
+        while (Arithmetic.lte(p2, n) && ((null == maxlimit) || Arithmetic.lte(p2, maxlimit)))
         {
             e = O;
             while (Arithmetic.equ(O, Arithmetic.mod(n, p)))
@@ -2595,6 +2517,7 @@ function factorize(n)
     }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
 }
+var dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/;
 function dec2frac(dec, simplify)
 {
     // compute fraction (num/denom) for given decimal number (can include repeating decimals through special notation)
@@ -2931,7 +2854,7 @@ function divisors(n, as_generator)
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         list = null, D2 = null, D1 = null, L1 = 0, L2 = 0, node, sqrn, i, n_i, next, factors, INT = null;
 
-    if (is_instance(n, Integer)) { INT = n[CLASS]; n = n.num; }
+    if (is_instance(n, Integer)) {INT = n[CLASS]; n = n.num;}
 
     n = Arithmetic.abs(n);
     if (true === as_generator)
@@ -2973,7 +2896,7 @@ function divisors(n, as_generator)
                     return INT ? new INT(k) : k;
                 }
                 i = Arithmetic.add(i, I);
-                while (Arithmetic.lte(i,sqrn))
+                while (Arithmetic.lte(i, sqrn))
                 {
                     if (Arithmetic.equ(O, Arithmetic.mod(n, i)))
                     {
@@ -3130,7 +3053,7 @@ function indexOf(item, set)
 {
     var i, l = set.length, eq;
     if (!l) return -1;
-    eq = is_instance(item, INumber) ? function(it, si) {return it.equ(si);} : function(it, si) {return it === si;};
+    eq = is_instance(item, INumber) ? function(it, si) {return it.equ(si);} : default_eq;
     for (i=0; i<l; ++i)
         if (eq(item, set[i]))
             return i;
@@ -3157,13 +3080,13 @@ function buchberger_groebner(Basis)
     var Arithmetic = Abacus.Arithmetic, PolynomialClass = MultiPolynomial,
         pairs, pair, extraBasis, newBasis, s, f, g, i, n, found, others, lt, lts;
 
-    Basis = Basis.map(function(b){return b.monic();});
+    Basis = Basis.map(function(b) {return b.monic();});
     if (1 < Basis.length)
     {
         PolynomialClass = Basis[0][CLASS];
 
         // Build a Groebner basis using Buchberger's algorithm.
-        pairs = Combination(Basis.length, 2).mapTo(function(i){return [Basis[i[0]], Basis[i[1]]];});
+        pairs = Combination(Basis.length, 2).mapTo(function(i) {return [Basis[i[0]], Basis[i[1]]];});
         for (;;)
         {
             newBasis = [];
@@ -3221,7 +3144,7 @@ function buchberger_groebner(Basis)
         }
 
         // Sort it.
-        Basis = Basis.sort(function(a, b){
+        Basis = Basis.sort(function(a, b) {
             return PolynomialClass.Term.cmp(b.ltm(), a.ltm(), true);
         });
     }
@@ -3833,47 +3756,6 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
-function subset_lex_rank(n, x, y)
-{
-    var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
-        O = Arithmetic.O, I = Arithmetic.I,
-        k, j, index = O, key;
-    key = String(n) + ',' + String(x) + ',' + String(null == y ? null : x-y);
-    if (null == subset_lex_rank.mem[key])
-    {
-        if (null == y)
-        {
-            for (k = I,j = 0; j < x; ++j) k = add(k, pow2(n-j-1));
-            index = add(index, k);
-            subset_lex_rank.mem[key] = index;
-        }
-        else
-        {
-            if (x === y+1)
-            {
-                index = add(index, I);
-                subset_lex_rank.mem[key] = index;
-            }
-            else if (x > y+1)
-            {
-                for (k = I,j = y+1; j < x; ++j) k = add(k, pow2(n-j-1));
-                index = add(index, k);
-                subset_lex_rank.mem[key] = index;
-            }
-        }
-    }
-    else
-    {
-        index = subset_lex_rank.mem[key];
-    }
-    return index;
-}
-subset_lex_rank.mem = Obj();
-function subset_bin_rank(n, x, y)
-{
-    var Arithmetic = Abacus.Arithmetic;
-    return n > x && 0 <= x ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
-}
 function pow2(n)
 {
     if (is_instance(n, Integer))
@@ -4304,723 +4186,6 @@ function stirling(n, k, s)
 stirling.mem1 = Obj();
 stirling.mem2 = Obj();
 stirling.mem3 = Obj();
-function p_nkab(n, k, a, b)
-{
-    // recursively compute the partition count using the recursive relation:
-    // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
-    // http://www.programminglogic.com/integer-partition-algorithm/
-    // compute number of integer partitions of n
-    // into exactly k parts having summands between a and b (inclusive)
-    // k*a <= n <= k*b
-    var Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        p = O, key, j0, j1;
-
-    if (
-        Arithmetic.lt(n, O)
-        || Arithmetic.lte(k, O)
-        || Arithmetic.lte(a, O)
-        || Arithmetic.gt(a, b)
-        || Arithmetic.gt(mul(k, a), n)
-        || Arithmetic.lt(mul(k, b), n)
-    ) return p;
-
-    if (Arithmetic.gt(a, I)) {n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I); a = I;}
-
-    //if ((Arithmetic.equ(b, n) && Arithmetic.equ(k, I)) || (Arithmetic.equ(k, n) && Arithmetic.equ(b, I))) return I;
-    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.lte(n, b) ? I : p;
-    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.gte(b, I) ? I : p;
-    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : p;
-    if (Arithmetic.equ(add(a, I), b)) return Arithmetic.lte(sub(n, mul(k, a)), k) ? I : p;
-
-    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
-    if (null == p_nkab.mem[key])
-    {
-        // compute it directly
-        j0 = Arithmetic.max(I, Arithmetic.divceil(n, k));
-        k = sub(k, I);
-        j1 = Arithmetic.min(b, sub(n, k));
-        while (Arithmetic.lte(j0, j1))
-        {
-            p = add(p, p_nkab(sub(n, j0), k, I, j0));
-            j0 = add(j0, I);
-        }
-        p_nkab.mem[key] = p;
-    }
-    return p_nkab.mem[key];
-}
-p_nkab.mem = Obj();
-function part_rank(n, limit, min, max, k)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](part_rank(n.num, limit, min, max, k));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, p = O, key,
-        add = Arithmetic.add, sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod;
-
-    if (is_instance(limit, Integer)) limit = limit.num;
-    if (is_instance(min, Integer)) min = min.num;
-    //if (is_instance(max, Integer)) max = max.num;
-    key = String(n) + ',' + String(limit) + ',' + String(min)/* + ',' + String(max)*/ + ',' + String(k);
-    if (null == part_rank.mem[key])
-    {
-        n = N(n);
-        limit = sub(N(limit), I);
-        //max = null == max ? n : N(max);
-        min = null == min ? I : N(min);
-
-        if (null == k)
-        {
-            k = I;
-            while (Arithmetic.lte(k, n))
-            {
-                p = add(p, p_nkab(n, k, min, limit));
-                k = add(k, I);
-            }
-        }
-        else
-        {
-            p = p_nkab(n, N(k), min, limit);
-        }
-        part_rank.mem[key] = p;
-    }
-    return part_rank.mem[key];
-}
-part_rank.mem = Obj();
-function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](partitions(n.num, K, M, W));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul, mod = Arithmetic.mod,
-        k0, k1, p = O, k, w, m, key;
-
-    if (is_instance(K, Integer)) K = K.num;
-    if (is_instance(M, Integer)) M = M.num;
-    if (is_instance(W, Integer)) W = W.num;
-    K = null == K ? null : Arithmetic.abs(N(K));
-    M = null == M ? null : Arithmetic.abs(N(M));
-    W = null == W ? null : Arithmetic.abs(N(W));
-    n = N(n);
-    k0 = null!=K ? K : I;
-    k1 = null!=K ? K : n;
-    w = null!=W ? W : I;
-    m = null!=M ? M : n;
-
-    if (Arithmetic.equ(n, O))
-        return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
-    if (
-        Arithmetic.lt(n, O)
-        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
-    ) return p;
-
-    if (null != M && null == K && null == W) {m = n; k0 = M; k1 = M; K = M; M = null;} // count the conjugates, same
-
-    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
-    if (null == partitions.mem[key])
-    {
-        if (null != M && null != W)
-        {
-            n = Arithmetic.equ(M, W) ? sub(n, M) : sub(n, add(M, W));
-            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, Arithmetic.equ(M, W) ? I : two))) return I;
-            if (null != K)
-            {
-                k1 = sub(k1, two);
-                k0 = sub(k0, two);
-            }
-        }
-        else if (null != W)
-        {
-            n = sub(n, W);
-            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, I))) return I;
-            if (null != K)
-            {
-                k1 = sub(k1, I);
-                k0 = sub(k0, I);
-            }
-        }
-        else if (null != M)
-        {
-            n = sub(n, M);
-            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, I))) return I;
-            if (null != K)
-            {
-                k1 = sub(k1, I);
-                k0 = sub(k0, I);
-            }
-        }
-        k = k0;
-        while (Arithmetic.lte(k, k1))
-        {
-            p = add(p, p_nkab(n, k, w, m));
-            k = add(k, I);
-        }
-        partitions.mem[key] = p;
-    }
-    return partitions.mem[key];
-}
-partitions.mem = Obj();
-function c_nkab(n, k, a, b)
-{
-    // recursively compute the composition count using the recursive relation:
-    // CLOSED FORM FORMULA FOR THE NUMBER OF RESTRICTED COMPOSITIONS (http://www.fmf.uni-lj.si/~jaklicg/papers/compositions_revision.pdf)
-    // compute number of integer compositions of n
-    // into exactly k parts having summands between a and b (inclusive)
-    var Arithmetic = Abacus.Arithmetic,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        O = Arithmetic.O, I = Arithmetic.I, c = O, m, m1, key;
-    if (
-        Arithmetic.lt(n, O)
-        || Arithmetic.lte(k, O)
-        || Arithmetic.lte(a, O)
-        || Arithmetic.gt(a, b)
-        || Arithmetic.gt(mul(k, a), n)
-        || Arithmetic.lt(mul(k, b), n)
-    ) return c;
-
-    if (Arithmetic.gt(a, I)) {n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I); a = I;}
-
-    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.gte(b, n) ? I : c;
-    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.gte(b, I) ? I : c;
-    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : c;
-    if (Arithmetic.equ(n, b)) return factorial(add(sub(n, mul(k, a)), sub(k, I)), sub(k, I));
-    if (Arithmetic.equ(add(a, I), b)) return factorial(k, sub(n, mul(k, a)));
-
-    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
-    if (null == c_nkab.mem[key])
-    {
-        // compute it directly
-        m1 = sub(n, a);
-        m = Arithmetic.max(I, sub(n, b));
-        k = sub(k, I);
-        while (Arithmetic.lte(m, m1))
-        {
-            c = add(c, c_nkab(m, k, a, b));
-            m = add(m, I);
-        }
-        c_nkab.mem[key] = c;
-    }
-    return c_nkab.mem[key];
-}
-c_nkab.mem = Obj();
-function comp_rank(n, limit, min, max, k, nmin, nmax)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](comp_rank(n.num, limit, min, max, k, nmin, nmax));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II, c = O, key,
-        W, M, i, j, nn, mm, nm, m, w, l, r, k0, kk,
-        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        div = Arithmetic.div, divceil = Arithmetic.divceil, mod = Arithmetic.mod;
-
-    if (is_instance(limit, Integer)) limit = limit.num;
-    if (is_instance(min, Integer)) min = min.num;
-    if (is_instance(max, Integer)) max = max.num;
-    key = String(n) + ',' + String(limit) + ',' + String(min) + ',' + String(max) + ',' + String(k) + ',' + String(0<nmin) + ',' + String(0<nmax);
-    if (null == comp_rank.mem[key])
-    {
-        n = N(n);
-        limit = N(limit);
-        M = null == max ? n : N(max);
-        W = null == min ? I : N(min);
-
-        if (null == min && null == max)
-        {
-            Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I
-            if (null == k)
-            {
-                mm = W;
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    c = add(c, Arithmetic.gte(nn, I) ? pow2(sub(nn, I)) : O);
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    c = add(c, c_nkab(sub(n, mm), k, W, M));
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else if (
-            (0 < nmin && 0 < nmax)
-            || (0 < nmin && null == max)
-            || (0 < nmax && null == min)
-        )
-        {
-            if (null == k)
-            {
-                mm = W;
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm); k = I;
-                    while (Arithmetic.lte(k, nn))
-                    {
-                        c = add(c, c_nkab(nn, k, W, M));
-                        k = add(k, I);
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    c = add(c, c_nkab(sub(n, mm), k, W, M));
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else if (null != max && (0 < nmin || null == min))
-        {
-            if (null == k)
-            {
-                mm = W; m = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(M, nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-
-                        if (Arithmetic.equ(O, mod(nn, M))) c = add(c, I);
-                        j = I; nm = M;
-                        while (Arithmetic.lte(nm, nn))
-                        {
-                            i = I; k = sub(nn, nm);
-                            while (Arithmetic.lte(i, k))
-                            {
-                                kk = c_nkab(k, i, W, m);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
-                                i = add(i, I);
-                            }
-                            nm = add(nm, M); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I); m = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(mul(k, M), nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-                        j = I; nm = M;
-                        while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
-                        {
-                            kk = c_nkab(sub(nn, nm), sub(k, j), W, m);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
-                            nm = add(nm, M); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else if (null != min && (0 < nmax || null == max))
-        {
-            if (null == k)
-            {
-                mm = W; w = add(W, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(W, nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-                        if (Arithmetic.equ(O, mod(nn, W))) c = add(c, I);
-                        if (Arithmetic.equ(W, mm))
-                        {
-                            j = O;
-                            nm = O;
-                        }
-                        else
-                        {
-                            j = I;
-                            nm = W;
-                        }
-                        while (Arithmetic.lte(nm, nn))
-                        {
-                            i = I; l = sub(nn, nm); k = div(l, W);
-                            while (Arithmetic.lte(i, k))
-                            {
-                                kk = c_nkab(l, i, w, M);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
-                                i = add(i, I);
-                            }
-                            nm = add(nm, W); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I); w = add(W, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(mul(k, W), nn))
-                    {
-                        c = add(c, I);
-                    }
-                    else
-                    {
-                        if (Arithmetic.equ(W, mm))
-                        {
-                            j = O;
-                            nm = O;
-                        }
-                        else
-                        {
-                            j = I;
-                            nm = W;
-                        }
-                        while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
-                        {
-                            kk = c_nkab(sub(nn, nm), sub(k, j), w, M);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
-                            nm = add(nm, W); j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-        }
-        else
-        {
-            if (null == k)
-            {
-                mm = W; l = add(W, I); r = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(M, W))
-                    {
-                        c = add(c, Arithmetic.equ(O, mod(nn, M)) ? I : O);
-                    }
-                    else
-                    {
-                        m = Arithmetic.max(I, div(nn, M));
-                        w = Arithmetic.max(I, div(nn, W));
-                        j = I;
-                        while (Arithmetic.lte(j, m))
-                        {
-                            i = Arithmetic.equ(W, mm) ? O : I;
-                            while (Arithmetic.lte(i, w))
-                            {
-                                nm = sub(nn, add(mul(j, M), mul(i, W)));
-                                if (Arithmetic.equ(O, nm))
-                                {
-                                    c = add(c, factorial(add(j, i), [j, i]));
-                                }
-                                else if (Arithmetic.gt(nm, O))
-                                {
-                                    k0 = I; k = div(nm, W);
-                                    while (Arithmetic.lte(k0, k))
-                                    {
-                                        kk = c_nkab(nm, k0, l, r);
-                                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k0, add(j, i)), [[j, i]])));
-                                        k0 = add(k0, I);
-                                    }
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                                i = add(i, I);
-                            }
-                            j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-            else
-            {
-                mm = W; k = sub(N(k), I);
-                l = add(W, I); r = sub(M, I);
-                while (Arithmetic.lt(mm, limit))
-                {
-                    nn = sub(n, mm);
-                    if (Arithmetic.equ(M, W))
-                    {
-                        c = add(c, Arithmetic.equ(mul(k, M), nn) ? I : O);
-                    }
-                    else
-                    {
-                        m = Arithmetic.max(I, div(nn, M));
-                        w = Arithmetic.max(I, div(nn, W));
-                        j = I;
-                        while (Arithmetic.lte(j, m))
-                        {
-                            i = Arithmetic.equ(W, mm) ? O : I;
-                            while (Arithmetic.lte(i, w))
-                            {
-                                k0 = sub(k, add(j, i));
-                                nm = sub(nn, add(mul(j, M), mul(i, W)));
-                                if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k0))
-                                {
-                                    c = add(c, factorial(k, [j, i]));
-                                }
-                                else if (Arithmetic.gt(k0, O) && Arithmetic.gt(nm, O))
-                                {
-                                    kk = c_nkab(nm, k0, l, r);
-                                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, [[j, i]])));
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                                i = add(i, I);
-                            }
-                            j = add(j, I);
-                        }
-                    }
-                    mm = add(mm, I);
-                }
-            }
-        }
-        comp_rank.mem[key] = c;
-    }
-    return comp_rank.mem[key];
-}
-comp_rank.mem = Obj();
-function compositions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
-{
-    if (is_instance(n, Integer)) return new n[CLASS](compositions(n.num, K, M, W));
-
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        add = Arithmetic.add, sub = Arithmetic.sub,
-        mul = Arithmetic.mul, div = Arithmetic.div, mod = Arithmetic.mod,
-        c = O, j, i, k, l, r, m, w, kk, k0, nm, mm, p, prod, key;
-
-    if (is_instance(K, Integer)) K = K.num;
-    if (is_instance(M, Integer)) M = M.num;
-    if (is_instance(W, Integer)) W = W.num;
-    K = null == K ? null : Arithmetic.abs(N(K));
-    M = null == M ? null : Arithmetic.abs(N(M));
-    W = null == W ? null : Arithmetic.abs(N(W));
-    n = N(n);
-
-    if (Arithmetic.equ(n, O))
-        return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
-    if (
-        Arithmetic.lt(n, O)
-        || (null != K && null != M && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
-        || (null != M && null != W && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
-        || (null != K && null != W && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
-        || (null != K && null != M && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
-        || (null != M && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
-        || (null != W && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
-        || (null != K && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
-    ) return c;
-
-    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
-    if (null == compositions.mem[key])
-    {
-        if (null != K && null != M && null != W)
-        {
-            if (Arithmetic.equ(M, W))
-            {
-                c = Arithmetic.equ(mul(K, M), n) ? I : O;
-            }
-            else
-            {
-                m = Arithmetic.max(I, div(n, M));
-                w = Arithmetic.max(I, div(n, W));
-                l = add(W, I); r = sub(M, I);
-                j = I;
-                while (Arithmetic.lte(j, m))
-                {
-                    i = I;
-                    while (Arithmetic.lte(i, w))
-                    {
-                        k = sub(K, add(j, i));
-                        nm = sub(n, add(mul(j, M), mul(i, W)));
-                        if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k))
-                        {
-                            c = add(c, factorial(K, [j, i]));
-                        }
-                        else if (Arithmetic.gt(k, O) && Arithmetic.gt(nm, O))
-                        {
-                            kk = c_nkab(nm, k, l, r);
-                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, [[i, j]])));
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        i = add(i, I);
-                    }
-                    j = add(j, I);
-                }
-            }
-        }
-        else if (null != W && null != M)
-        {
-            if (Arithmetic.equ(M, W))
-            {
-                c = Arithmetic.equ(O, mod(n, M)) ? I : O;
-            }
-            else
-            {
-                m = Arithmetic.max(I, div(n, M));
-                w = Arithmetic.max(I, div(n, W));
-                l = add(W, I); r = sub(M, I);
-                j = I;
-                while (Arithmetic.lte(j, m))
-                {
-                    i = I;
-                    while (Arithmetic.lte(i, w))
-                    {
-                        nm = sub(n, add(mul(j, M), mul(i, W)));
-                        if (Arithmetic.equ(O, nm))
-                        {
-                            c = add(c, factorial(add(j, i), [j, i]));
-                        }
-                        else if (Arithmetic.gt(nm, O))
-                        {
-                            k = I; K = div(nm, W);
-                            while (Arithmetic.lte(k, K))
-                            {
-                                kk = c_nkab(nm, k, l, r);
-                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, add(j, i)), [[j, i]])));
-                                k = add(k, I);
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        i = add(i, I);
-                    }
-                    j = add(j, I);
-                }
-            }
-        }
-        else if (null != K && null != W)
-        {
-            if (Arithmetic.equ(mul(K, W), n))
-            {
-                c = I;
-            }
-            else
-            {
-                j = I; nm = W; w = add(W, I);
-                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
-                {
-                    kk = c_nkab(sub(n, nm), sub(K, j), w, n);
-                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
-                    nm = add(nm, W); j = add(j, I);
-                }
-            }
-        }
-        else if (null != K && null != M)
-        {
-            if (Arithmetic.equ(mul(K, M), n))
-            {
-                c = I;
-            }
-            else
-            {
-                j = I; nm = M; m = sub(M, I);
-                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
-                {
-                    kk = c_nkab(sub(n, nm), sub(K, j), I, m);
-                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
-                    nm = add(nm, M); j = add(j, I);
-                }
-            }
-        }
-        else if (null != K)
-        {
-            c = c_nkab(n, K, I, n);
-        }
-        else if (null != W)
-        {
-            if (Arithmetic.equ(W, n))
-            {
-                c = I;
-            }
-            else
-            {
-                if (Arithmetic.equ(O, mod(n, W))) c = I;
-                j = I; nm = W; w = add(W, I);
-                while (Arithmetic.lte(nm, n))
-                {
-                    k = I; l = sub(n, nm); K = div(l, W);
-                    while (Arithmetic.lte(k, K))
-                    {
-                        kk = c_nkab(l, k, w, n);
-                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
-                        k = add(k, I);
-                    }
-                    nm = add(nm, W); j = add(j, I);
-                }
-            }
-        }
-        else if (null != M)
-        {
-            if (Arithmetic.equ(M, n))
-            {
-                c = I;
-            }
-            else
-            {
-
-                if (Arithmetic.equ(O, mod(n, M))) c = I;
-                j = I; nm = M; m = sub(M, I);
-                while (Arithmetic.lte(nm, n))
-                {
-                    k = I; K = sub(n, nm);
-                    while (Arithmetic.lte(k, K))
-                    {
-                        kk = c_nkab(K, k, I, m);
-                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
-                        k = add(k, I);
-                    }
-                    nm = add(nm, M); j = add(j, I);
-                }
-            }
-        }
-        else
-        {
-            c = Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I;
-        }
-        compositions.mem[key] = c;
-    }
-    return compositions.mem[key];
-}
-compositions.mem = Obj();
 function catalan(n)
 {
     var Arithmetic = Abacus.Arithmetic,
@@ -5302,337 +4467,6 @@ function cartesian(/* var args here */)
         return k + v[j][i-k];
     });
 }
-function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
-{
-    var k, kl, a, r, l, i, vv, nv = v.length, v0, v1,
-        tensor, t0, t1, ok, nvalid, product, p, pv, pe, pea, pl, npv,
-        seen = null, valid = null, invalid, expr, e, el;
-
-    if (!nv) return [];
-
-    if (is_callable(extra_conditions))
-    {
-        valid = extra_conditions;
-        extra_conditions = true;
-    }
-    else
-    {
-        extra_conditions = false;
-    }
-
-    if (!(V_EQU === value_conditions || V_DIFF === value_conditions || V_INC === value_conditions || V_DEC === value_conditions || V_NONINC === value_conditions || V_NONDEC === value_conditions))
-    {
-        value_conditions = false;
-    }
-
-    pe = new Array(nv); pea = []; pl = 0; pv = [];
-    for (kl=1,k=0; k<nv; ++k)
-    {
-        if (is_callable(v[k][0]))
-        {
-            // fixed expression for position k, store it to be added after actual values are added
-            if (!v[k][1].length)
-            {
-                // autonomous expression, which does not depend on any position
-                pea.push([v[k][0],k]);
-            }
-            else
-            {
-                // depends on one or multiple other positions
-                // expr v[k][0] for pos k, depends on value at positions v[k][1][]
-                for (e=0,el=v[k][1].length; e<el; ++e)
-                {
-                    if (null == pe[v[k][1][e]]) pe[v[k][1][e]] = [[v[k][0],k,v[k][1]]];
-                    else pe[v[k][1][e]].push([v[k][0],k,v[k][1]]);
-                }
-            }
-            // this makes the computation faster, since fixed/expression values
-            // are not counted as extra and then checked if valid, but generated directly validly
-        }
-        else
-        {
-            // values for position k, count them
-            pv.push(k);
-            kl *= v[k].length;
-            if (!kl || 0>=kl) return [];
-        }
-    }
-    if (!pv.length) return [];
-
-    product = new Array(kl); nvalid = 0;
-    t1 = nv-1; npv = pv.length-1;
-    // O(kl), count only necessary values, minus any outliers (as few as possible)
-    for (k=0; k<kl; ++k)
-    {
-        // O(nv)
-        tensor = new Array(nv); invalid = false;
-        // explicit tensor values, not expressions
-        for (r=k,a=npv; a>=0; --a)
-        {
-            p = pv[a];
-            l = v[p].length;
-            i = r % l;
-            r = ~~(r / l);
-            tensor[p] = v[p][i];
-        }
-        // evaluate expressions which are autonomous, do not depend on any position
-        for (a=0,pl=pea.length; a<pl; ++a)
-        {
-            expr = pea[a];
-            tensor[expr[1]] = expr[0]();
-        }
-        // evaluate expressions now after any explicit tensor values were calculated previously
-        for (a=0; a<nv; ++a)
-        {
-            // if expression and not already avaluated (eg by previous expression)
-            if (null != pe[a])
-            {
-                // fill-up any pos values which are expressions based on this pos value
-                expr = pe[a];
-                for (e=0,el=expr.length; e<el; ++e)
-                {
-                    p = expr[e][1];
-                    if (null == tensor[p])
-                    {
-                        // not computed already
-                        ok = true;
-                        vv = expr[e][2].map(function(k) {
-                            if ((null == tensor[k]) || isNaN(tensor[k])) ok = false; // not computed already, abort
-                            return tensor[k];
-                        });
-                        if (ok) tensor[p] = expr[e][0].apply(null, vv);
-                    }
-                }
-            }
-        }
-        if (value_conditions || extra_conditions)
-        {
-            if ((null == tensor[t1]) || isNaN(tensor[t1]) || extra_conditions && !valid(tensor,t1,t1))
-            {
-                invalid = true;
-            }
-            else
-            {
-                v1 = tensor[t1];
-                if (V_DIFF === value_conditions) {seen = {}; seen[v1] = 1;}
-                for (t0=t1-1; t0>=0; --t0)
-                {
-                    v0 = tensor[t0];
-                    if (
-                        (null == v0) || isNaN(v0) ||
-                        (V_EQU === value_conditions && v1 !== v0) ||
-                        (V_DIFF === value_conditions && 1 === seen[v0]) ||
-                        (V_INC === value_conditions && v0 >= v1) ||
-                        (V_DEC === value_conditions && v0 <= v1) ||
-                        (V_NONINC === value_conditions && v0 < v1) ||
-                        (V_NONDEC === value_conditions && v0 > v1) ||
-                        (extra_conditions && !valid(tensor,t0,t1))
-                   )
-                    {
-                        invalid = true;
-                        break;
-                    }
-                    if (V_DIFF === value_conditions) seen[v0] = 1;
-                    v1 = v0;
-                }
-            }
-        }
-        if (invalid) continue;
-        product[nvalid++] = tensor;
-    }
-    // truncate if needed
-    if (product.length > nvalid) product.length = nvalid;
-    return product;
-}
-function gen_combinatorial_data(n, data, pos, value_conditions, options)
-{
-    options = options || {};
-    pos = pos || array(data.length||0, 0, 1);
-    // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
-    // NOTE: needs at least one non-autonomous expression or one range of values, else will return empty set
-    var min = null == options.min ? 0 : options.min,
-        max = null == options.max ? n-1 : options.max,
-        nn = max-min+1, D = data, m, d, i, a, j, pi, l = D.length, none = false,
-        pos_ref, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
-        in_range = function in_range(x) {return min <= x && x <= max;}, additional_conditions;
-
-    data = []; none = false;
-    for (pi=0,i=0; i<l; ++i,++pi)
-    {
-        d = D[i];
-        if (is_string(d))
-        {
-            if (m=d.match(not_in_set_re))
-            {
-                if (0 < m[1].indexOf('..'))
-                {
-                    m = m[1].split('..').map(Number);
-                    if (m[0] > m[1])
-                        a = complement(n, array(m[0]-m[1]+1, m[1], 1).filter(in_range)).reverse();
-                    else
-                        a = complement(n, array(m[1]-m[0]+1, m[0], 1).filter(in_range));
-                }
-                else
-                {
-                    a = complement(n, m[1].split(',').map(Number).filter(in_range));
-                }
-                if (!a.length) {none = true; break;}
-                data.push(a);
-            }
-            else if (m=d.match(in_set_re))
-            {
-                if (0 < m[1].indexOf('..'))
-                {
-                    m = m[1].split('..').map(Number);
-                    a = (m[0] > m[1] ? array(m[0]-m[1]+1, m[0], -1) : array(m[1]-m[0]+1, m[0], 1)).filter(in_range);
-                }
-                else
-                {
-                    a = m[1].split(',').map(Number).filter(in_range);
-                }
-                if (!a.length) {none = true; break;}
-                data.push(a);
-            }
-            else
-            {
-                is_valid = true; pos_ref = []; expr = null;
-                d = d.replace(pos_re, function(m, d) {
-                    var posref = parseInt(d, 10), varname = 'v' + String(posref);
-                    if (isNaN(posref) || !in_range(posref)) is_valid = false;
-                    if (is_valid && (-1 === pos_ref.indexOf(posref))) pos_ref.push(posref);
-                    return varname;
-                });
-                if (!is_valid)
-                {
-                    if (pos) pos.splice(pi--, 1);
-                    continue;
-                }
-                pos_ref.sort(sorter());
-                try {
-                    expr = new Function(pos_ref.map(function(p) {return 'v' + String(p);}).join(','),'return Math.floor('+d+');');
-                } catch(e) {
-                    expr = null;
-                }
-                if (!is_callable(expr))
-                {
-                    if (pos) pos.splice(pi--, 1);
-                    continue;
-                }
-                for (j=0; j<pos_ref.length; ++j)
-                {
-                    if (!ref[pos_ref[j]]) ref[pos_ref[j]] = [expr];
-                    else ref[pos_ref[j]].push(expr);
-                    if ((-1 === pos.indexOf(pos_ref[j])) && (-1 === missing.indexOf(pos_ref[j]))) missing.push(pos_ref[j]);
-                }
-                algebraic.push([expr,null,null,pos_ref,pos[pi]]);
-                data.push(algebraic[algebraic.length-1]);
-            }
-        }
-        else if (is_array(d))
-        {
-            a = false === d[0] ? complement(n, d.slice(1).filter(in_range)) : (true === d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
-            if (!a.length) {none = true; break;}
-            data.push(a);
-        }
-    }
-    if (none) data = [];
-
-    if (missing.length)
-    {
-        for (i=0,l=missing.length; i<l; ++i)
-        {
-            // add any missing references
-            pos.push(missing[i]);
-            if (!none) data.push(array(nn, min, 1));
-        }
-    }
-
-    // sort positions ascending if needed and re-arrange data
-    // two parameters change here, adjust [pos] array IN-PLACE, while simply return the new computed [data]
-    i = is_sorted(pos);
-    if (-1 === i)
-    {
-        reflection(pos, pos);
-        if (!none) reflection(data, data);
-    }
-    else if (0 === i)
-    {
-        d = mergesort(pos, 1, false, true);
-        permute(pos, d);
-        if (!none) permute(data, d);
-    }
-    if (none) return [];
-    if (algebraic.length)
-    {
-        for (i=0,l=algebraic.length; i<l; ++i)
-        {
-            m = algebraic[i];
-            // adjust relative positions in algebraic expressions used in data (same reference)
-            m[1] = m[3].map(function(m3) {return pos.indexOf(m3);});
-            m[2] = pos.indexOf(m[4]);
-            for (j=0; j<m[3].length; ++j)
-            {
-                // by the way, filter out some invalid values here for all expr on the same pos ref
-                // for expr that depend on single position only, else leave for actual combinatorial generation later on
-                expr = ref[m[3][j]];
-                if (!is_callable(data[m[1][j]][0]) /*expression does not reference another expression*/)
-                {
-                    a = data[m[1][j]].filter(function(x) {
-                        for (var ex,i=0,l=expr.length; i<l; ++i)
-                        {
-                            // for expr that depend on single position only
-                            if (1 !== expr[i].length /*num of func args*/) continue;
-                            ex = expr[i](x);
-                            if (isNaN(ex) || min > ex || ex > max) return false;
-                        }
-                        return true;
-                    });
-                    if (!a.length) {none = true; break;}
-                    else data[m[1][j]] = a;
-                }
-            }
-            if (none) break;
-        }
-    }
-    if (none) return [];
-
-    // check value conditions
-    if ('=' === value_conditions) value_conditions = V_EQU;
-    else if (('!=' === value_conditions) || ('<>' === value_conditions)) value_conditions = V_DIFF;
-    else if ('<' === value_conditions) value_conditions = V_INC;
-    else if (('<=' === value_conditions) || ('=<' === value_conditions)) value_conditions = V_NONDEC;
-    else if ('>' === value_conditions) value_conditions = V_DEC;
-    else if (('>=' === value_conditions) || ('=>' === value_conditions)) value_conditions = V_NONINC;
-    else value_conditions = false;
-
-    // check additional conditions
-    additional_conditions = is_callable(options.extra_conditions) ? function(v, i0, i1) {
-        var v0 = v[i0];
-        if (
-            // check in range
-            (min > v0 || v0 > max) ||
-            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
-            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
-            (V_INC === value_conditions && pos[i0] > v0) ||
-            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
-       ) return false
-        return options.extra_conditions(v ,i0, i1);
-    } : function(v, i0, i1) {
-        var v0 = v[i0];
-        if (
-            // check in range
-            (min > v0 || v0 > max) ||
-            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
-            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
-            (V_INC === value_conditions && pos[i0] > v0) ||
-            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
-       ) return false
-        return true;
-    };
-
-    // compute valid combinatorial data satisfying conditions
-    return true === options.lazy ? data : conditional_combinatorial_tensor(data, value_conditions, additional_conditions);
-}
 function summation(a, b, Arithmetic, do_subtraction)
 {
     // O(max(n1,n2))
@@ -5703,306 +4537,6 @@ function complement(n, item, sort/*, dupl*/)
         else if (0 === d) item = mergesort(item.slice(), 1, true);
     }
     return difference(null, n, item/*, 1, null, null, null, null, dupl*/);
-}
-function subset2binary(item, n)
-{
-    if (0 >= n) return [];
-    var binary = array(n, 0, 0), i, l = item.length;
-    for (n=n-1,i=0; i<l; ++i) binary[n-item[i]] = 1;
-    return binary;
-}
-function binary2subset(item, n)
-{
-    n = stdMath.min(n || item.length, item.length);
-    var subset = new Array(n), i, j;
-    for (n=n-1,i=0,j=0; i<=n; ++i) if (0 < item[i]) subset[j++] = n - i;
-    if (j < subset.length) subset.length = j; // truncate if needed
-    return subset;
-}
-function composition2subset(item, n, dir)
-{
-    if (null == item) return null;
-    n = n || item.length;
-    return psum(new Array(n), item, 1, -1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
-}
-function subset2composition(item, n, dir)
-{
-    if (null == item) return null;
-    n = n || item.length;
-    return fdiff(new Array(n), item, 1, 1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
-}
-function conjugatepartition(is_composition, item, dir)
-{
-    if (null == item) return null;
-    var conjugate = null, l = item.length, n;
-    dir = -1 === dir ? -1 : 1;
-    if (is_composition)
-    {
-        // On Conjugates for Set Partitions and Integer Compositions (arxiv.org/abs/math/0508052v3)
-        n = operate(addn, 0, item);
-        if (1 >= n)
-        {
-            conjugate = item.slice();
-        }
-        else
-        {
-            // get the associated n-composition of the complement(conjugate) of the associated (n-1)-subset
-            conjugate = subset2composition(complement(n-1, composition2subset(item, l-1, dir)));
-            // add the remainder
-            if (0 < (n=n-operate(addn, 0, conjugate))) conjugate.push(n);
-            // if reflected, get the reflected composition
-            if (0 > dir) reflection(conjugate, conjugate);
-        }
-    }
-    else
-    {
-        // http://mathworld.wolfram.com/ConjugatePartition.html
-        var i, ii, j, jj, p, a = 1, b = 0, d = 0, push = "push";
-        if (0 > dir) {a = -a; b = l-1-b; push = "unshift";}
-        if (is_array(item[b]))
-        {
-            // multiplicity(packed) representation
-            p = item[b]; conjugate = [[p[1], p[0]]]; i = 0;
-            for (j=1,jj=a+b; j<l; ++j,jj+=a)
-            {
-                p = item[jj]; ii = 0>dir ? 0 : i;
-                if (p[1] === conjugate[ii][0])
-                {
-                    // same part increase multiplicity
-                    conjugate[ii][1] += p[0];
-                }
-                else
-                {
-                    // swap part with multiplicity
-                    conjugate[push]([p[1], p[0]]); ++i;
-                }
-            }
-        }
-        else
-        {
-            // standard(unpacked) representation
-            n = item[b]; conjugate = array(n, 1, 0);
-            if (0 > dir) d = n-1-d;
-            for (j=1,jj=a+b; j<l; ++j,jj+=a)
-            {
-                i = 0; ii = d; p = item[jj];
-                while ((i < n) && (p > 0)) {++conjugate[ii]; --p; ++i; ii += a;}
-            }
-        }
-    }
-    return conjugate;
-}
-function packpartition(partition, dir)
-{
-    if (null == partition) return null;
-    var packed = [], i, j, l = partition.length,
-        reflected = -1 === dir,
-        a = 1, b = 0, push = "push",
-        last, part;
-
-    if (reflected)
-    {
-        a = -a;
-        b = l-1-b;
-        push = "unshift";
-    }
-    for (last=partition[b],part=[last, 1],i=1; i<l; ++i)
-    {
-        j = a*i+b;
-        if (last === partition[j])
-        {
-            ++part[1];
-        }
-        else
-        {
-            packed[push](part);
-            last = partition[j];
-            part = [last, 1];
-        }
-    }
-    packed[push](part);
-    return packed;
-}
-function unpackpartition(packed, dir)
-{
-    if (null == packed) return null;
-    var partition = [], i, j, k, v, l = packed.length,
-        cmp, reflected = -1 === dir,
-        a = 1, b = 0, push = "push";
-    if (reflected)
-    {
-        a = -a;
-        b = l-1-b;
-        push = "unshift";
-    }
-    for (i=0; i<l; ++i)
-    {
-        cmp = packed[a*i+b];
-        if (1 === cmp[1])
-            partition[push](cmp[0]);
-        else
-            for (k=cmp[1],v=cmp[0],j=0; j<k; ++j)
-                partition[push](v);
-    }
-    return partition;
-}
-function singletons(item, n)
-{
-    var i, j, l = item.length, S = new Array(l);
-    for (i=0,j=0; i<l; ++i)
-    {
-        if (1 === item[i].length)
-            S[j++] = item[i][0];
-    }
-    if (j < S.length) S.length = j; // truncate if needed
-    return S;
-}
-function adjInit(item, n)
-{
-    var i, j, k, l = item.length, I = [];
-    for (i=0,k=0; i<l; ++i)
-    {
-        if (1 === item[i].length)
-        {
-            I.push(item[i][0]);
-        }
-        else
-        {
-            for (j=0,k=item[i].length; j+1<k; ++j)
-            {
-                if (item[i][j]+1 === item[i][j+1])
-                    I.push(item[i][j]);
-            }
-            if (((item[i][j]+1) % n) === item[i][0])
-                    I.push(item[i][j]);
-        }
-    }
-    return I;
-}
-function adjTerm(item, n)
-{
-    var i, j, l, k, T = [];
-    for (i=0,l=item.length; i<l; ++i)
-    {
-        if (1 === item[i].length)
-        {
-            T.push(item[i][0]);
-        }
-        else
-        {
-            for (j=0,k=item[i].length; j+1<k; ++j)
-            {
-                if (item[i][j]+1 === item[i][j+1])
-                    T.push(item[i][j+1]);
-            }
-            if ((item[i][j]+1) % n === item[i][0])
-                    T.push(item[i][0]);
-        }
-    }
-    return T;
-}
-/*function separateIS(item, S, I)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}
-function separateST(item, S, T)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}
-function combineIS(item, S, I)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}
-function combineST(item, S, T)
-{
-    return [item.reduce(function(p, set){
-            set = set.reduce(function(set, si){
-                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
-                    set.push(si);
-                return set;
-            }, []);
-            if (set.length) return p.push(set);
-            return p;
-        }, []), S, I];
-}*/
-function conjugatesetpartition(item, n)
-{
-    // adapted from https://arxiv.org/abs/math/0508052
-    if (null == item) return null;
-    var congugate = null;
-    return conjugate;
-}
-function permutation2inversion(inversion, permutation, N)
-{
-    // O(n log n) inversion computation
-    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
-    var n = permutation.length, k = stdMath.ceil(log2(N||n)),
-        twok = 1 << k, Tl = (1<<(1+k))-1, T = array(Tl, 0, 0);
-
-    return operate(function(inv ,ctr, i) {
-        // Starting bottom-up at the leaf associated with pi
-        for (var node=ctr+twok,j=0; j<k; ++j)
-        {
-            // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
-            if (node & 1) ctr -= T[(node >>> 1) << 1];
-            // 2) increase the value stored at the current node.
-            T[node] += 1;
-            // 3) move-up the tree
-            node >>>= 1;
-        }
-        T[node] += 1; inv[i] = ctr;
-        return inv;
-    }, inversion || new Array(n), permutation);
-}
-function inversion2permutation(permutation, inversion, N)
-{
-    // O(n log n) inversion computation
-    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
-    var n = inversion.length, k = stdMath.ceil(log2(N||n)),
-        i, i2, j, twok = 1 << k, Tl = (1<<(1+k))-1, T = new Array(Tl);
-
-    for (i=0; i<=k; ++i) for (j=1,i2=1<<i; j<=i2; ++j) T[i2-1+j] = 1 << (k-i);
-    return operate(function(perm, digit, i) {
-        // Starting top-down the tree
-        for (var node=1,j=0; j<k; ++j)
-        {
-            T[node] -= 1;
-            node <<= 1;
-            // next node as the left or right child whether digit is less than the stored value at the left child
-            if (digit >= T[node])
-            {
-                // If the next node is the right child, then the value of the left child is subtracted from digit
-                digit -= T[node];
-                ++node;
-            }
-        }
-        T[node] = 0; perm[i] = node - twok;
-        return perm;
-    }, permutation || new Array(n), inversion);
 }
 function permute(a, p, copy)
 {
@@ -6187,9 +4721,8 @@ Abacus.Math = {
     ,rndInt: rndInt
 
     ,factorial: factorial
+    ,binomial: factorial
     ,stirling: stirling
-    ,partitions: partitions
-    ,compositions: compositions
     ,bell: bell
     ,catalan: catalan
     ,fibonacci: fibonacci
@@ -6453,8 +4986,7 @@ Abacus.Util = {
     ,complementation: complementation
     ,reflection: reflection
     ,reversion: reversion
-    ,lcs: lcs
-    ,align: align
+    ,align: align_sequences
     ,merge: merge_sequences
     ,gray: gray
     ,igray: igray
@@ -6959,6 +5491,9 @@ INUMBER = {
     ,isImag: function() {
         return false;
     }
+    ,isComplex: function() {
+        return false;
+    }
     ,equ: function(other) {
         return is_instance(other, INumber) ? other.equ(this) : (is_string(other) ? (String(this) === other) : (this === other));
     }
@@ -7305,7 +5840,24 @@ Integer = Abacus.Integer = Class(Numeric, {
         if (is_instance(num, Rational)) num = num.integer(true);
         if (is_instance(num, Integer)) self._isp = num._isp;
         if (is_instance(num, [Integer, IntegerMod])) num = num.num;
-        self.num = Arithmetic.num(num || 0);
+        self.n = Arithmetic.num(num || 0);
+
+        def(self, 'num', {
+            get: function() {
+                return self.n;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return Arithmetic.I;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {
@@ -7360,7 +5912,7 @@ Integer = Abacus.Integer = Class(Numeric, {
         }
     }
 
-    ,num: null
+    ,n: null
     ,_n: null
     ,_isp: null
     ,_str: null
@@ -7371,7 +5923,7 @@ Integer = Abacus.Integer = Class(Numeric, {
         {
             self._n._n = null;
         }
-        self.num = null;
+        self.n = null;
         self._n = null;
         self._str = null;
         return self;
@@ -7383,18 +5935,18 @@ Integer = Abacus.Integer = Class(Numeric, {
     ,isPrime: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._isp)
-            self._isp = is_probable_prime(Arithmetic.abs(self.num)) && is_prime(Arithmetic.abs(self.num));
+            self._isp = is_probable_prime(Arithmetic.abs(self.n)) && is_prime(Arithmetic.abs(self.n));
         return self._isp;
     }
 
     ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Arithmetic.equ(self.num, other.num);
+            return Arithmetic.equ(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.equ(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.equ(self.num, other);
+            return Arithmetic.equ(self.n, other);
         else if (is_string(other))
             return other === self.toString();
 
@@ -7403,56 +5955,56 @@ Integer = Abacus.Integer = Class(Numeric, {
     ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Arithmetic.gt(self.num, other.num);
+            return Arithmetic.gt(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.lt(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.gt(self.num, other);
+            return Arithmetic.gt(self.n, other);
 
         return false;
     }
     ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Arithmetic.gte(self.num, other.num);
+            return Arithmetic.gte(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.lte(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.gte(self.num, other);
+            return Arithmetic.gte(self.n, other);
 
         return false;
     }
     ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Arithmetic.lt(self.num, other.num);
+            return Arithmetic.lt(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.gt(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.lt(self.num, other);
+            return Arithmetic.lt(self.n, other);
 
         return false;
     }
     ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Arithmetic.lte(self.num, other.num);
+            return Arithmetic.lte(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.gte(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.lte(self.num, other);
+            return Arithmetic.lte(self.n, other);
 
         return false;
     }
 
     ,abs: function() {
-        return Integer(Abacus.Arithmetic.abs(this.num));
+        return Integer(Abacus.Arithmetic.abs(this.n));
     }
     ,neg: function() {
         var self = this;
         if (null == self._n)
         {
-            self._n = Integer(Abacus.Arithmetic.neg(self.num));
+            self._n = Integer(Abacus.Arithmetic.neg(self.n));
             self._n._n = self;
         }
         return self._n;
@@ -7462,59 +6014,59 @@ Integer = Abacus.Integer = Class(Numeric, {
     ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Integer(Arithmetic.add(self.num, other.num));
+            return Integer(Arithmetic.add(self.n, other.n));
         else if (is_instance(other, INumber))
             return other.add(self);
         else if (Arithmetic.isNumber(other))
-            return Integer(Arithmetic.add(self.num, other));
+            return Integer(Arithmetic.add(self.n, other));
 
         return self;
     }
     ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Integer(Arithmetic.sub(self.num, other.num));
+            return Integer(Arithmetic.sub(self.n, other.n));
         else if (is_instance(other, INumber))
             return other.neg().add(self);
         else if (Arithmetic.isNumber(other))
-            return Integer(Arithmetic.sub(self.num, other));
+            return Integer(Arithmetic.sub(self.n, other));
 
         return self;
     }
     ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Integer(Arithmetic.mul(self.num, other.num));
+            return Integer(Arithmetic.mul(self.n, other.n));
         else if (is_instance(other, INumber))
             return other.mul(self);
         else if (Arithmetic.isNumber(other))
-            return Integer(Arithmetic.mul(self.num, other));
+            return Integer(Arithmetic.mul(self.n, other));
 
         return self;
     }
     ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Integer(Arithmetic.div(self.num, other.num));
+            return Integer(Arithmetic.div(self.n, other.n));
         else if (is_instance(other, Complex))
             return Complex(self).div(other);
         else if (is_instance(other, Rational))
             return Rational(self).div(other);
         else if (Arithmetic.isNumber(other))
-            return Integer(Arithmetic.div(self.num, other));
+            return Integer(Arithmetic.div(self.n, other));
 
         return self;
     }
     ,mod: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
-            return Integer(Arithmetic.mod(self.num, other.num));
+            return Integer(Arithmetic.mod(self.n, other.n));
         else if (is_instance(other, Complex))
             return Complex(self).mod(other);
         else if (is_instance(other, Rational))
             return Rational(self).mod(other);
         else if (Arithmetic.isNumber(other))
-            return Integer(Arithmetic.mod(self.num, other));
+            return Integer(Arithmetic.mod(self.n, other));
 
         return self;
     }
@@ -7524,11 +6076,11 @@ Integer = Abacus.Integer = Class(Numeric, {
     }
     ,divides: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
-        if (Arithmetic.equ(O, self.num)) return false;
+        if (Arithmetic.equ(O, self.n)) return false;
         if (Arithmetic.isNumber(other))
-            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.num));
+            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.n));
         else if (is_instance(other, Integer))
-            return Arithmetic.equ(O, Arithmetic.mod(other.num, self.num));
+            return Arithmetic.equ(O, Arithmetic.mod(other.n, self.n));
         else if (is_instance(other, INumber))
             return true;
 
@@ -7536,29 +6088,29 @@ Integer = Abacus.Integer = Class(Numeric, {
     }
     ,integer: function(raw) {
         var self = this;
-        return true === raw ? self.num : self;
+        return true === raw ? self.n : self;
     }
     ,pow: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if (n.lt(Arithmetic.O)) return null; // not supported
         else if (n.equ(Arithmetic.I)) return self;
-        return Integer(Arithmetic.pow(self.num, n.num));
+        return Integer(Arithmetic.pow(self.n, n.n));
     }
     ,rad: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if (n.lt(Arithmetic.I)) return null; // not supported
         else if (n.equ(Arithmetic.I)) return self;
-        return Integer(ikthroot(self.num, n.num));
+        return Integer(ikthroot(self.n, n.n));
     }
     ,valueOf: function() {
-        return Abacus.Arithmetic.val(this.num);
+        return Abacus.Arithmetic.val(this.n);
     }
     ,toString: function() {
         var self = this;
         if (null == self._str)
-            self._str = String(self.num);
+            self._str = String(self.n);
         return self._str;
     }
     ,toDec: function(precision) {
@@ -7590,9 +6142,26 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         }
         m = Integer.cast(m); num = Arithmetic.num(num||0);
         if (m.equ(Arithmetic.O)) throw new Error('Zero modulus in Abacus.IntegerMod!');
-        self.num = num; self.m = m;
+        self.n = num; self.m = m;
         if (simplified) self._simpl = true;
         else self.simpl();
+
+        def(self, 'num', {
+            get: function() {
+                return self.n;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return Arithmetic.I;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {
@@ -7680,7 +6249,7 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         }
     }
 
-    ,num: null
+    ,n: null
     ,m: null
     ,_n: null
     ,_i: null
@@ -7697,7 +6266,7 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         {
             self._i._i = null;
         }
-        self.num = null;
+        self.n = null;
         self.m = null;
         self._n = null;
         self._i = null;
@@ -7712,11 +6281,11 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return Arithmetic.equ(self.num, self.wrap(other.num));
+            return Arithmetic.equ(self.n, self.wrap(other.n));
         else if (is_instance(other, INumber))
             return other.equ(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.equ(self.num, self.wrap(Arithmetic.num(other)));
+            return Arithmetic.equ(self.n, self.wrap(Arithmetic.num(other)));
         else if (is_string(other))
             return other === self.toString();
 
@@ -7725,44 +6294,44 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     ,gt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return Arithmetic.gt(self.num, other.num);
+            return Arithmetic.gt(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.lt(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.gt(self.num, other);
+            return Arithmetic.gt(self.n, other);
 
         return false;
     }
     ,gte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return Arithmetic.gte(self.num, other.num);
+            return Arithmetic.gte(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.lte(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.gte(self.num, other);
+            return Arithmetic.gte(self.n, other);
 
         return false;
     }
     ,lt: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return Arithmetic.lt(self.num, other.num);
+            return Arithmetic.lt(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.gt(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.lt(self.num, other);
+            return Arithmetic.lt(self.n, other);
 
         return false;
     }
     ,lte: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return Arithmetic.lte(self.num, other.num);
+            return Arithmetic.lte(self.n, other.n);
         else if (is_instance(other, INumber))
             return other.gte(self);
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.lte(self.num, other);
+            return Arithmetic.lte(self.n, other);
 
         return false;
     }
@@ -7774,7 +6343,7 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         var self = this;
         if (null == self._n)
         {
-            self._n = IntegerMod(negm(self.num, self.m.num), self.m, true);
+            self._n = IntegerMod(negm(self.n, self.m.n), self.m, true);
             self._n._n = self;
         }
         return self._n;
@@ -7783,7 +6352,7 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         var self = this;
         if (null == self._i)
         {
-            self._i = IntegerMod(invm(self.num, self.m.num), self.m, true);
+            self._i = IntegerMod(invm(self.n, self.m.n), self.m, true);
             self._i._i = self;
         }
         return self._i;
@@ -7792,11 +6361,11 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return IntegerMod(addm(self.num, other.num, self.m.num), self.m, true);
+            return IntegerMod(addm(self.n, other.n, self.m.n), self.m, true);
         else if (is_instance(other, INumber))
             return other.add(self);
         else if (Arithmetic.isNumber(other))
-            return IntegerMod(addm(self.num, Arithmetic.num(other), self.m.num), self.m, true);
+            return IntegerMod(addm(self.n, Arithmetic.num(other), self.m.n), self.m, true);
 
         return self;
     }
@@ -7812,11 +6381,11 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return IntegerMod(mulm(self.num, other.num, self.m.num), self.m, true);
+            return IntegerMod(mulm(self.n, other.n, self.m.n), self.m, true);
         else if (is_instance(other, INumber))
             return other.mul(self);
         else if (Arithmetic.isNumber(other))
-            return IntegerMod(mulm(self.num, Arithmetic.num(other), self.m.num), self.m, true);
+            return IntegerMod(mulm(self.n, Arithmetic.num(other), self.m.n), self.m, true);
 
         return self;
     }
@@ -7834,13 +6403,13 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     ,mod: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
-            return IntegerMod(Arithmetic.mod(self.num, other.num), self.m);
+            return IntegerMod(Arithmetic.mod(self.n, other.n), self.m);
         else if (is_instance(other, Complex))
             return Complex(self).mod(other);
         else if (is_instance(other, Rational))
             return Rational(self).mod(other);
         else if (Arithmetic.isNumber(other))
-            return IntegerMod(Arithmetic.mod(self.num, other), self.m);
+            return IntegerMod(Arithmetic.mod(self.n, other), self.m);
 
         return self;
     }
@@ -7850,38 +6419,38 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
     }
     ,divides: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
-        if (Arithmetic.equ(O, self.num)) return false;
+        if (Arithmetic.equ(O, self.n)) return false;
         if (is_instance(other, IntegerMod) && self.m.isPrime())
             return true;
         else if (is_instance(other, Integer))
-            return Arithmetic.equ(O, Arithmetic.mod(other.num, self.num));
+            return Arithmetic.equ(O, Arithmetic.mod(other.n, self.n));
         else if (is_instance(other, INumber))
             return true;
         else if (Arithmetic.isNumber(other))
-            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.num));
+            return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.n));
 
         return false;
     }
     ,integer: function(raw) {
         var self = this;
-        return true === raw ? self.num : self;
+        return true === raw ? self.n : self;
     }
     ,pow: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if (n.lt(Arithmetic.O)) return null; // not supported
         else if (n.equ(Arithmetic.I)) return self;
-        return IntegerMod(powm(self.num, n.num, self.m.num), self.m, true);
+        return IntegerMod(powm(self.n, n.n, self.m.n), self.m, true);
     }
     ,rad: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if (n.lt(Arithmetic.I)) return null; // not supported
         else if (n.equ(Arithmetic.I)) return self;
-        return IntegerMod(ikthrootp(self.num, n.num, self.m.num), self.m, true);
+        return IntegerMod(ikthrootp(self.n, n.n, self.m.n), self.m, true);
     }
     ,wrap: function(x) {
-        var self = this, modulo = self.m.num, Arithmetic = Abacus.Arithmetic;
+        var self = this, modulo = self.m.n, Arithmetic = Abacus.Arithmetic;
         x = Arithmetic.mod(x, modulo);
         if (Arithmetic.lt(x, Arithmetic.O)) x = Arithmetic.add(x, modulo);
         return x;
@@ -7890,18 +6459,18 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (!self._simpl)
         {
-            self.num = self.wrap(self.num);
+            self.n = self.wrap(self.n);
             self._simpl = true;
         }
         return self;
     }
     ,valueOf: function() {
-        return Abacus.Arithmetic.val(this.num);
+        return Abacus.Arithmetic.val(this.n);
     }
     ,toString: function() {
         var self = this;
         if (null == self._str)
-            self._str = String(self.num);
+            self._str = String(self.n);
         return self._str;
     }
     ,toDec: function(precision) {
@@ -8584,6 +7153,23 @@ Complex = Abacus.Complex = Class(Numeric, {
 
         self.re = is_instance(real, Rational) ? real : Rational.cast(real);
         self.im = is_instance(imag, Rational) ? imag : Rational.cast(imag);
+
+        def(self, 'num', {
+            get: function() {
+                return self;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return Complex.One();
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {
@@ -8819,6 +7405,9 @@ Complex = Abacus.Complex = Class(Numeric, {
     ,isImag: function() {
         var self = this, O = Abacus.Arithmetic.O;
         return self.re.equ(O) && !self.im.equ(O);
+    }
+    ,isComplex: function() {
+        return true;
     }
     ,isInt: function() {
         var self = this;
@@ -9476,7 +8065,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 // https://the0cp.cc/posts/mathjax/
                 // https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference
                 var match, m, n, c, i0,
-                    op, term, arg,
+                    op, term, arg, prev_term = false,
                     terms = [], ops = [];
                 function eat(pattern, group)
                 {
@@ -9622,6 +8211,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         else if ('\\eq' === op) op = '=';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (match = eat(/^(>=|<=|=<|!=|>|<|=)[^<>!=]/i, 1))
@@ -9631,6 +8221,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('=<' === op) op = '<=';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (match = eat(/^(\+|-|\*|\/)/i))
@@ -9639,6 +8230,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         op = match[0];
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (eat('⋅') || eat('×') || eat(/^(\\times|\\cdot|xx)[^a-z]/i, 1))
@@ -9647,6 +8239,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         op = '*';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (eat('÷') || eat('-:') || eat(/^(\\over|\\div)[^a-z]/i, 1))
@@ -9655,6 +8248,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         op = '/';
                         ops.unshift([op, i0]);
                         merge();
+                        prev_term = false;
                         continue;
                     }
                     if (eat(/^\\frac\{/))
@@ -9665,7 +8259,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
                         if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
                         term = Expr.OP['/'].fn(arg);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if (match = eat(/^(\^)([\{\(])?/i))
@@ -9685,6 +8285,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         ops.unshift([op, i0]);
                         merge();
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i)))
@@ -9697,7 +8298,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         term = parse_until('{' === match[3] ? '}' : ')');
                         if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
                         term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
                     if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i))
@@ -9713,10 +8320,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             if (!eat(',')) break;
                         } while (1);
                         term = 'sqrt()' === m ? Expr.OP['^'].fn([arg[0], Rational(1, 2, true)/*1/2*/]) : Expr(m, arg);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
-                    if (eat('√') || eat(/^sqrt\s+/i))
+                    if (eat('√') || eat(/^sqrt\b\s*/i))
                     {
                         // alternative sqrt
                         if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "sqrt()"', i0);
@@ -9726,12 +8339,17 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             // subexpression
                             arg = parse_until(')');
                         }
-                        else if (match = eat(/^\d+(\.\d+)?(e-?\d+)?/i))
+                        else if ('{' === s.charAt(0))
+                        {
+                            // subexpression
+                            arg = parse_until('}');
+                        }
+                        else if (match = eat(/^\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                         {
                             // number
                             arg = Expr('', Rational.fromDec(match[0]));
                         }
-                        else if (match = eat(/^[a-z][a-z]*(_\{?[a-z0-9]+\}?)?/i))
+                        else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
                         {
                             // symbol
                             m = match[0];
@@ -9741,36 +8359,54 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
                         term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
+                        prev_term = true;
                         continue;
                     }
-                    if (match = eat(/^-?\s*\d+(\.\d+)?(e-?\d+)?/i))
+                    if (match = eat(/^-?\s*\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                     {
                         // float or int to rational number
                         term = Expr('', Rational.fromDec(match[0].split(/\s+/).join('')));
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
                         terms.unshift(term);
-                        if (eat(/^([a-z]|\()/i, false))
+                        /*if (eat(/^\s*[a-z\(]/i, false))
                         {
                             // directly following symbol or parenthesis, assume implicit multiplication
                             ops.unshift(['*', i]);
                             merge();
-                        }
+                        }*/
+                        prev_term = true;
                         continue;
                     }
-                    if (match = eat(/^[a-z][a-z]*(_\{?[a-z0-9]+\}?)?/i))
+                    if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
                     {
                         // symbol
                         m = match[0];
                         if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         term = Expr('', imagUnit === m ? Complex.Img() : m);
-                        terms.unshift(term);
-                        if ((imagUnit === m) && eat(/^\d/, false))
+                        if (prev_term)
                         {
-                            // directly following number after imaginary symbol, assume implicit multiplication
-                            ops.unshift(['*', i]);
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
                             merge();
                         }
+                        terms.unshift(term);
+                        /*if ((imagUnit === m) && eat(/^\s*[\d\(]/, false))
+                        {
+                            // directly following number or parenthesis after imaginary symbol, assume implicit multiplication
+                            ops.unshift(['*', i]);
+                            merge();
+                        }*/
+                        prev_term = true;
                         continue;
                     }
                     c = s.charAt(0);
@@ -9779,6 +8415,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         s = s.slice(1);
                         i += 1;
                         term = parse_until('{' === c ? '}' : ')');
+                        if ('(' === c)
+                        {
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            prev_term = true;
+                        }
                         if (term) terms.unshift(term);
                         continue;
                     }
@@ -10452,13 +9097,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         function replace(f, x, g)
         {
-            if (is_instance(g, Expr))
+            if (is_instance(g, Expr) || is_string(g))
             {
                 x = String(x);
                 if (('sym' === f.ast.type) && (f.ast.arg === x))
                 {
                     // substitute x -> g()
-                    return g;
+                    return is_string(g) ? Expr('', g) : g;
                 }
                 else if (('expr' === f.ast.type) && (-1 !== f.symbols().indexOf(x)))
                 {
@@ -10791,8 +9436,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._xpnd;
     }
     ,toPoly: function(symbol, ring, imagUnit) {
-        var self = this, other_symbols = null, CoefficientRing = null;
+        var self = this, other_symbols = null, CoefficientRing = null, PolynomialClass;
 
+        if (is_instance(ring, Ring) && !is_class(ring.NumberClass, Complex))
+        {
+            imagUnit = null; // ring does not support Complex
+        }
         if (!symbol)
         {
             symbol = self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s);});
@@ -10803,7 +9452,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if (!is_array(symbol)) symbol = [symbol];
             symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);}); //hmm..?
-            //if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed??
+            if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed
         }
         other_symbols = is_array(symbol) ? self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (-1 === symbol.indexOf(s));}) : self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (s !== symbol);});
         if (ring.PolynomialClass)
@@ -10814,6 +9463,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             CoefficientRing = other_symbols.length ? Ring(ring.NumberClass, other_symbols, true) : ring;
         }
+        PolynomialClass = is_array(symbol) ? MultiPolynomial : Polynomial;
 
         function poly(expr, symbol, ring, CoefficientRing)
         {
@@ -10825,7 +9475,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     if (is_own_symbol)
                     {
                         // polynomial symbol
-                        term[is_array(symbol) ? arg : '1'] = CoefficientRing.One();
+                        term[arg] = CoefficientRing.One();
                     }
                     else if (ring.PolynomialClass)
                     {
@@ -10847,14 +9497,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         // symbolic rational constant suitable as polynomial coefficient
                         coeff_term = {};
                         coeff_term[arg] = ring.One();
-                        term[is_array(symbol) ? '1' : '0'] = RationalFunc(MultiPolynomial(coeff_term, other_symbols, ring), null, null, null, true);
+                        term['1'] = RationalFunc(MultiPolynomial(coeff_term, other_symbols, ring), null, null, null, true);
                     }
                 }
                 else //if (is_instance(arg, Numeric))
                 {
-                    term[is_array(symbol) ? '1' : '0'] = arg;
+                    term['1'] = arg;
                 }
-                return is_array(symbol) ? MultiPolynomial(term, symbol, CoefficientRing) : Polynomial(term, symbol, CoefficientRing);
+                return PolynomialClass(term, symbol, CoefficientRing);
             }
             function is_const(expr)
             {
@@ -10897,7 +9547,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         else
                         {
                             subexpr = poly(subexpr, symbol, ring, CoefficientRing);
-                            return null == subexpr ? null : ('*' === ast.op ? result.mul(subexpr) : ('-' === ast.op ? result.sub(subexpr): result.add(subexpr)));
+                            return null == subexpr ? null : ('*' === ast.op ? result._mul(subexpr) : ('-' === ast.op ? result._sub(subexpr): result._add(subexpr)));
                         }
                     }, null);
                 }
@@ -10940,7 +9590,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 coeff = RationalFunc(MultiPolynomial.One(other_symbols, ring), coeff, null, null, true);
                             }
                             subexpr = poly(subexpr.den, symbol, ring, CoefficientRing);
-                            return null == subexpr ? null : result.mul(subexpr.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, CoefficientRing) : Polynomial({'0':coeff}, symbol, CoefficientRing)));
+                            return null == subexpr ? null : result._mul(subexpr.mul(PolynomialClass.Const(coeff, symbol, CoefficientRing)));
                         }
                         else
                         {
@@ -10956,7 +9606,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     exp = ast.arg[1].c();
                     if (exp.equ(0))
                     {
-                        return is_array(symbol) ? MultiPolynomial.One(symbol, CoefficientRing) : Polynomial.One(symbol, CoefficientRing);
+                        return PolynomialClass.One(symbol, CoefficientRing);
                     }
                     if (exp.lt(0))
                     {
@@ -10990,7 +9640,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 term = poly(ast.arg[0].den, symbol, ring, CoefficientRing);
                                 if (null != term)
                                 {
-                                    term = term.mul(is_array(symbol) ? MultiPolynomial({'1':coeff}, symbol, CoefficientRing) : Polynomial({'0':coeff}, symbol, CoefficientRing));
+                                    term = term._mul(PolynomialClass.Const(coeff, symbol, CoefficientRing));
                                 }
                             }
                         }
@@ -10999,7 +9649,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     {
                         term = poly(ast.arg[0], symbol, ring, CoefficientRing);
                     }
-                    return null == term ? null : term.pow(exp);
+                    return null == term ? null : term._pow(exp);
                 }
                 else
                 {
@@ -11012,7 +9662,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,toRationalFunc: function() {
         var self = this,
-            num = self.num.toPoly(self.symbols().filter(function(s) {return '1' !== s;})),
+            num = self.num.toPoly(self.symbols()),
             den = num ? self.den.toPoly(num.symbol) : null
         ;
         return num && den ? RationalFunc(num, den) : null;
@@ -11289,7 +9939,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                if ('*' === op) out.push(' \\cdot ');
+                                if ('*' === op) out.push(/*' \\cdot '*/'');
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
                                 out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr)) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);
@@ -11335,13 +9985,14 @@ Expr.cast = typecast([Expr], function(a) {
 // Represents a (univariate) polynomial term with coefficient and exponent in Polynomial non-zero sparse representation
 var UniPolyTerm = Class({
 
-    constructor: function UniPolyTerm(c, e, ring) {
+    constructor: function UniPolyTerm(c, e, ring, order) {
         var self = this;
-        if (!is_instance(self, UniPolyTerm)) return new UniPolyTerm(c, e, ring);
+        if (!is_instance(self, UniPolyTerm)) return new UniPolyTerm(c, e, ring, order);
 
         if (is_instance(c, UniPolyTerm)) {ring = ring || c.ring; e = c.e; c = c.c;}
         self.ring = is_instance(ring, Ring) ? ring : Ring.Q();
-        self.c = is_instance(c, RationalFunc) ? c : self.ring.cast(c || 0);
+        self.order = LEX; // default for univariate polynomial terms
+        self.c = self.ring.cast(c || 0);
         self.e = +(e || 0);
     }
 
@@ -11350,7 +10001,7 @@ var UniPolyTerm = Class({
             return is_instance(t, UniPolyTerm) && !t.c.equ(Abacus.Arithmetic.O);
         }
         ,cmp: function(t1, t2, full) {
-            var res = t1.e - t2.e;
+            var res = t1.e - t2.e; // LEX by default
             if ((true === full) && (0 === res))
                 return t1.c.equ(t2.c) ? 0 : (t1.c.lt(t2.c) ? -1 : 1);
             return res;
@@ -11359,20 +10010,22 @@ var UniPolyTerm = Class({
             return UniPolyTerm.cmp(t2, t1);
         }
         ,gcd: function(t1, t2, full) {
-            return UniPolyTerm(true === full ? (!(is_instance(t1.c, RationalFunc) || is_instance(t2.c, RationalFunc)) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), stdMath.min(t1.e, t2.e));
+            return UniPolyTerm(true === full ? (t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), stdMath.min(t1.e, t2.e));
         }
         ,lcm: function(t1, t2, full) {
-            return UniPolyTerm(true === full ? (!(is_instance(t1.c, RationalFunc) || is_instance(t2.c, RationalFunc)) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), stdMath.max(t1.e, t2.e));
+            return UniPolyTerm(true === full ? (t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), stdMath.max(t1.e, t2.e));
         }
     }
 
     ,ring: null
+    ,order: null
     ,c: null
     ,e: null
 
     ,dispose: function() {
         var self = this;
         self.ring = null;
+        self.order = null;
         self.c = null;
         self.e = null;
         return self;
@@ -11431,22 +10084,22 @@ var UniPolyTerm = Class({
         {
             if (true === asDec)
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst() ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, RationalFunc) && !c.isConst() ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
             }
             else if (true === asTex)
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst(true) ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toTex() + ')' : c.toTex());
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, RationalFunc) && !c.isConst() ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, RationalFunc) && !c.isConst() ? '(' + c.toTex() + ')' : c.toTex());
             }
             else
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I)) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : (is_instance(c, RationalFunc) && !c.isConst(true) ? '(' + c.toString() + ')' : c.toString());
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, RationalFunc) && (!c.isConst() || !c.den.equ(Arithmetic.I)) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : (is_instance(c, RationalFunc) && !c.isConst() ? '(' + c.toString() + ')' : c.toString());
             }
         }
         return term;
     }
     ,toString: function() {
         var self = this;
-        return '(' + self.c.toString() + ',' + String(self.e) + ')';
+        return '(' + self.c.toString() + ',' + String(self.e) + ',"lex")';
     }
 });
 
@@ -11469,10 +10122,10 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             self.terms = terms.terms.map(function(t) {
                 return UniPolyTerm(t.c, t.e[i], self.ring);
             }).sort(UniPolyTerm.sortDecr).reduce(function(terms, t) {
-                if (!terms.length || (terms[terms.length-1].e!==t.e)) terms.push(t);
+                if (!terms.length || (terms[terms.length-1].e !== t.e)) terms.push(t);
                 else terms[terms.length-1] = terms[terms.length-1].add(t);
                 return terms;
-            }, []).filter(UniPolyTerm.isNonZero);
+            }, []);
         }
         else if (is_instance(terms, Polynomial))
         {
@@ -11502,8 +10155,8 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 if (terms.length && !is_instance(terms[0], UniPolyTerm))
                 {
                     // dense representation, array with all powers
-                    // convert to sparse representation in decreasing order
-                    self.terms = array(terms.length, function(i) {return UniPolyTerm(terms[i], i, self.ring);}).filter(UniPolyTerm.isNonZero).reverse();
+                    // convert to sparse representation
+                    self.terms = array(terms.length, function(i) {return UniPolyTerm(terms[i], i, self.ring);});
                 }
                 else
                 {
@@ -11512,17 +10165,35 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             }
             else if (is_obj(terms))
             {
-                // sparse representation as object with keys only to existing powers
-                // convert to sparse coefficient representation in decreasing order
-                self.terms = KEYS(terms).map(function(e) {
-                    return UniPolyTerm(terms[e], e, self.ring);
-                })/*.filter(UniPolyTerm.isNonZero)*/.sort(UniPolyTerm.sortDecr);
+                // sparse representation as object with keys only to existing powers with symbol
+                // convert to sparse coefficient representation
+                self.terms = KEYS(terms).map(function(k) {
+                    return UniPolyTerm(terms[k], '1' === k ? 0 : (self.symbol === k ? 1 : (self.symbol+'^' === k.slice(0, self.symbol.length+1) ? parseInt(k.slice(self.symbol.length+1)) : 0)), self.ring);
+                });
             }
             else
             {
                 self.terms = [];
             }
         }
+        self.terms = self.terms.filter(UniPolyTerm.isNonZero).sort(UniPolyTerm.sortDecr);
+
+        def(self, 'num', {
+            get: function() {
+                return self;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return Polynomial.One(self.symbol, self.ring);
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {
@@ -11538,152 +10209,17 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         ,One: function(symbol, ring) {
             ring = ring || Ring.Q();
-            return new Polynomial(ring.One(), symbol || 'x', ring);
+            return new Polynomial({'1':ring.One()}, symbol || 'x', ring);
         }
         ,MinusOne: function(symbol, ring) {
             ring = ring || Ring.Q();
-            return new Polynomial(ring.MinusOne(), symbol || 'x', ring);
+            return new Polynomial({'1':ring.MinusOne()}, symbol || 'x', ring);
+        }
+        ,Const: function(c, symbol, ring) {
+            return new Polynomial({'1':c || Abacus.Arithmetic.O}, symbol || 'x', ring || Ring.Q());
         }
 
         ,cast: null // added below
-
-        ,Add: function(x, P, do_sub) {
-            var Arithmetic = Abacus.Arithmetic, res, symbol;
-            // O(max(n1,n2))
-            if (is_instance(x, Polynomial))
-            {
-                if (x.symbol === P.symbol)
-                {
-                    // O(max(n1,n2))
-                    if (x.terms.length)
-                        P.terms = addition_sparse(P.terms, x.terms, UniPolyTerm, true === do_sub, P.ring);
-                }
-                else
-                {
-                    // upgrade to multivariate polynomial
-                    symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
-                    return MultiPolynomial.Add(MultiPolynomial(x, symbol, P.ring), MultiPolynomial(P, symbol, P.ring), do_sub);
-                }
-            }
-            else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
-            {
-                // O(1)
-                x = UniPolyTerm(x, 0, P.ring);
-                if (!x.equ(Arithmetic.O))
-                {
-                    res = P.terms.length ? addition_sparse([P.terms.pop()], [x], UniPolyTerm, true === do_sub, P.ring) : [x];
-                    P.terms = P.terms.concat(res);
-                }
-            }
-            return P;
-        }
-
-        ,Mul: function(x, P) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, symbol;
-            if (!P.terms.length) return P;
-
-            if (is_instance(x, Polynomial))
-            {
-                if (x.symbol === P.symbol)
-                {
-                    // O(n1*n2)
-                    P.terms = x.terms.length ? multiplication_sparse(P.terms, x.terms, UniPolyTerm, P.ring) : [];
-                }
-                else
-                {
-                    // upgrade to multivariate polynomial
-                    symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
-                    return MultiPolynomial.Mul(MultiPolynomial(x, symbol, x.ring), MultiPolynomial(P, symbol, P.ring));
-                }
-            }
-            else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
-            {
-                // O(n)
-                /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
-                if (x.equ(O))
-                {
-                    P.terms = [];
-                }
-                else if (x.equ(Arithmetic.I))
-                {
-                    // do nothing
-                }
-                else
-                {
-                    for (i=P.terms.length-1; i>=0; --i)
-                        P.terms[i] = P.terms[i].mul(x);
-                }
-            }
-            return P;
-        }
-
-        ,Div: function(P, x, q_and_r) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, symbol, q/*, r, d, diff, diff0*/;
-            q_and_r = (true === q_and_r);
-
-            if (is_instance(x, Polynomial))
-            {
-                if (!x.terms.length) throw new Error('Division by zero in Abacus.Polynomial!');
-                if (x.isConst())
-                {
-                    // constant polynomial, simple numeric division
-                    x = x.cc();
-                    q = x.equ(I) ? P : Polynomial(array(P.terms.length, function(i) {
-                        return P.terms[i].div(x);
-                    }), P.symbol, P.ring);
-                    return q_and_r ? [q, Polynomial.Zero(P.symbol, P.ring)] : q;
-                }
-                // polynomial long division
-                // TODO: make it faster
-                /*r = Polynomial(P);
-                diff = r.deg()-x.deg();
-                if (0 <= diff)
-                {
-                    q = array(diff+1, function(){return Rational.Zero();});
-                    while (0 <= diff)
-                    {
-                        diff0 = diff;
-                        d = x.shift(diff);
-                        q[diff] = r.lc().div(d.lc());
-                        r = Polynomial.Add(Polynomial.Mul(q[diff], d), r, true);
-                        diff = r.deg()-x.deg();
-                        if ((diff === diff0)) break; // remainder won't change anymore
-                    }
-                }
-                else
-                {
-                    q = [];
-                }
-                q = Polynomial(q, self.symbol);*/
-
-                if (x.symbol === P.symbol)
-                {
-                    // sparse polynomial reduction/long division
-                    q = division_sparse(P.terms, x.terms, UniPolyTerm, q_and_r, P.ring);
-                    return q_and_r ? [Polynomial(q[0], P.symbol, P.ring), Polynomial(q[1], P.symbol, P.ring)] : Polynomial(q, P.symbol, P.ring);
-                }
-                else
-                {
-                    // upgrade to multivariate polynomial
-                    symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
-                    return MultiPolynomial.Div(MultiPolynomial(P, symbol, P.ring), MultiPolynomial(x, symbol, x.ring), q_and_r);
-                }
-            }
-            else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
-            {
-                /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
-                if (x.equ(O)) throw new Error('Division by zero in Abacus.Polynomial!');
-                q = x.equ(I) ? P : Polynomial(array(P.terms.length, function(i) {
-                    return P.terms[i].div(x);
-                }), P.symbol, P.ring);
-                return q_and_r ? [q, Polynomial.Zero(P.symbol, P.ring)] : q;
-            }
-            return P;
-        }
-
-        ,C: function(c, x, ring) {
-            return new Polynomial(c || Abacus.Arithmetic.O, x || 'x', ring || Ring.Q());
-        }
 
         ,bezier: function(points, symbol) {
             // https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Recursive_definition
@@ -11696,11 +10232,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 b11 = Polynomial([1, -1], symbol, ring);
                 b0 = Polynomial.One(symbol, ring).shift(n-1);
                 b1 = Polynomial.One(symbol, ring);
-                Bezier = Bezier.add(b0.mul(ring.cast(points[n-1])));
+                Bezier = Bezier._add(b0._mul(ring.cast(points[n-1])));
                 for (i=n-2; i>=0; --i)
                 {
-                    b0 = b0.shift(-1); b1 = b1.mul(b11);
-                    Bezier = Bezier.add(b1.mul(b0).mul(factorial(n-1,i)).mul(ring.cast(points[i])));
+                    b0 = b0.shift(-1); b1 = b1._mul(b11);
+                    Bezier = Bezier._add(b1._mul(b0)._mul(factorial(n-1,i))._mul(ring.cast(points[i])));
                 }
             }
             return Bezier;
@@ -11786,55 +10322,6 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             return Polynomial.Piecewise([Polynomial.Zero(symbol, ring)], 0, symbol, ring);
         }
 
-        ,fromValues: function(v, x, ring) {
-            // https://en.wikipedia.org/wiki/Lagrange_polynomial
-            // https://en.wikipedia.org/wiki/Newton_polynomial
-            ring = ring || Ring.Q();
-            var I = ring.One(), n, d, f, vi, hash, dupl;
-            x = String(x || 'x');
-            if (!v || !v.length) return Polynomial([], x, ring);
-            if (is_args(v)) v = slice.call(v);
-            if (!is_array(v[0])) v = [v];
-            v = v.map(function(vi) {
-                return [ring.cast(vi[0]), ring.cast(vi[1])];
-            });
-            // check and filter out duplicate values
-            hash = Obj(); dupl = [];
-            for (n=0; n<v.length; ++n)
-            {
-                vi = v[n][0].toString();
-                if (!HAS.call(hash, vi)) hash[vi] = n;
-                else if (!v[hash[vi]][1].equ(v[n][1])) return null; // no polynomial exists
-                else dupl.push(n); // duplicate value to be removed
-            }
-            // remove duplicate values
-            while (dupl.length) v.splice(dupl.pop(), 1);
-            hash = null; dupl = null; n = v.length;
-
-            // Set-up denominators
-            d = array(n, function(j) {
-                var i, dj = I;
-                for (i=0; i<n; ++i)
-                {
-                    if (i === j) continue;
-                    dj = dj.mul(v[j][0].sub(v[i][0]));
-                }
-                dj = v[j][1].div(dj);
-                return dj;
-            });
-            // Set-up numerator factors
-            f = array(n, function(i) {
-                return Polynomial([v[i][0].neg(), I], x, ring);
-            });
-            // Produce each Lj in turn, and sum into p
-            return operate(function(p, j) {
-                return Polynomial.Add(operate(function(Lj, i){
-                    if (j !== i) Lj = Polynomial.Mul(f[i], Lj);
-                    return Lj;
-                }, Polynomial(d[j], x, ring), null, 0, n-1), p);
-            }, Polynomial.Zero(x, ring), null, 0, n-1);
-        }
-
         ,fromString: function(s, symbol, ring) {
             return Polynomial.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
         }
@@ -11904,6 +10391,9 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         for (i=terms.length-1; i>=0; --i)
             if (!terms[i].c.isImag()) return false;
         return true;
+    }
+    ,isComplex: function() {
+        return is_class(this.ring.NumberClass, Complex);
     }
     ,isMono: function() {
         // is monomial
@@ -11978,12 +10468,15 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         // alias of cc()
         return this.cc();
     }
-    ,monic: function() {
-        var self = this, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
-        if (lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O)) return self;
+    ,order: function(order) {
+        return arguments.length ? this : 'lex'; // LEX by default
+    }
+    ,monic: function(with_factor) {
+        var self = this, p, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
+        if (lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O)) return true === with_factor ? [self, lc] : self;
         if (self.ring.isField())
         {
-            return Polynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring);
+            p = Polynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring);
         }
         else
         {
@@ -11996,9 +10489,23 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                     break;
                 }
             }
-            // at least make positive
-            return divides ? Polynomial(self.terms.map(function(t){return t.div(lc);}), self.symbol, self.ring) : (lc.lt(Arithmetic.O) ? self.neg() : self);
+            if (divides)
+            {
+                p = Polynomial(self.terms.map(function(t){return t.div(lc);}), self.symbol, self.ring);
+            }
+            else if (lc.lt(Arithmetic.O))
+            {
+                // at least make positive
+                p = self.neg();
+                lc = self.ring.MinusOne();
+            }
+            else
+            {
+                p = self;
+                lc = self.ring.One();
+            }
         }
+        return true === with_factor ? [p, lc] : p;
     }
     ,primitive: function(and_content) {
         // factorise into content and primitive part
@@ -12011,42 +10518,56 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             {
                 self._prim = [self, field.One()];
             }
+            else if (is_class(ring.PolynomialClass, RationalFunc))
+            {
+                LCM = iterms.reduce(function(LCM, t) {return t.c.den.mul(LCM);}, ring.One().num);
+                coeffp = terms.map(function(t) {return t.c.mul(LCM).num;});
+                content = MultiPolynomial.gcd(coeffp);
+                coeffp = coeffp.map(function(c) {return c.div(content);});
+                // make positive lead
+                if (coeffp[0].lt(Arithmetic.O))
+                {
+                    coeffp = coeffp.map(function(c) {return c.neg();});
+                    content = content.neg();
+                }
+                self._prim = [Polynomial(coeffp.map(function(c, i) {return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(RationalFunc(content, LCM).simpl())];
+            }
             else if (is_class(ring.NumberClass, Complex))
             {
-                    isReal = self.isReal(); isImag = self.isImag();
-                    if (!isReal && !isImag)
+                isReal = self.isReal(); isImag = self.isImag();
+                if (!isReal && !isImag)
+                {
+                    content = ring.gcd(terms.map(function(t) {return t.c;})).simpl();
+                    self._prim = [Polynomial(terms.map(function(t) {return UniPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                }
+                else if (isImag)
+                {
+                    LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.imag().den);}, Arithmetic.I);
+                    coeffp = terms.map(function(t) {return t.c.mul(LCM).imag().num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
                     {
-                        content = ring.gcd(terms.map(function(t) {return t.c;})).simpl();
-                        self._prim = [Polynomial(terms.map(function(t) {return UniPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                        coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
                     }
-                    else if (isImag)
+                    self._prim = [Polynomial(coeffp.map(function(c, i) {return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                }
+                else
+                {
+                    LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.real().den);}, Arithmetic.I);
+                    coeffp = terms.map(function(t) {return t.c.mul(LCM).real().num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
                     {
-                        LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.imag().den);}, Arithmetic.I);
-                        coeffp = terms.map(function(t) {return t.c.mul(LCM).imag().num;});
-                        content = gcd(coeffp);
-                        coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
-                        // make positive lead
-                        if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
-                        {
-                            coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
-                            content = Arithmetic.neg(content);
-                        }
-                        self._prim = [Polynomial(coeffp.map(function(c, i) {return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                        coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
                     }
-                    else
-                    {
-                        LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.real().den);}, Arithmetic.I);
-                        coeffp = terms.map(function(t) {return t.c.mul(LCM).real().num;});
-                        content = gcd(coeffp);
-                        coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
-                        // make positive lead
-                        if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
-                        {
-                            coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
-                            content = Arithmetic.neg(content);
-                        }
-                        self._prim = [Polynomial(coeffp.map(function(c, i) {return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
-                    }
+                    self._prim = [Polynomial(coeffp.map(function(c, i) {return UniPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                }
             }
             else
             {
@@ -12120,7 +10641,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                         // positive root
                         root = Rational(d0[comb[0]], dn[comb[1]]).simpl();
                         // negative root
-                        nroot = Rational(Arithmetic.neg(d0[comb[0]]), dn[comb[1]]).simpl();
+                        nroot = root.neg();
                         rm = 0; nrm = 0;
                         p = primitive; found = true;
                         while (found && (0 < p.deg()))
@@ -12150,62 +10671,68 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         return self._roots.map(function(r) {return r.slice();});
     }
-    ,factor: function(deg) {
-        // find factor of polynomial over Integers/Rationals of degree deg using Kronecker method
-        // https://en.wikipedia.org/wiki/Factorization_of_polynomials
-        // TODO
-        return null;
-    }
     ,factors: function() {
         // factorize polynomial over Integers/Rationals if factorizable
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
-        var p = this, ring = p.ring, symbol = p.symbol, Arithmetic = Abacus.Arithmetic,
-            constant, factors, factor, root, i, n, m, remainder, roots;
-        if (null == p._factors)
+        var self = this, queue, factors, k, c, q, p;
+        if (null == self._factors)
         {
-            remainder = p.primitive(true);
-            roots = p.roots();
-            constant = remainder[1];
-            remainder = remainder[0];
-            factors = [];
-            if (roots.length)
-            {
-                for (i=0,n=roots.length; i<n; ++i)
+            p = self.primitive(true);
+            c = p[1];
+            p = p[0];
+            queue = [p];
+            factors = {};
+            do {
+                p = queue.shift();
+                if (1 > p.deg())
                 {
-                    root = roots[i];
-                    // use integer coefficients
-                    factor = Polynomial([Arithmetic.neg(root[0].num), root[0].den], symbol, ring);
-                    factors.push([factor, root[1]]);
-                    remainder = remainder.div(factor.pow(root[1]));
+                    // const, irreducible
+                    c = c.mul(p.cc());
                 }
-                // normalise remainder to have integer coefficients, if not already
-                if (!is_class(ring.NumberClass, Complex) || remainder.isReal()/* || remainder.isImag()*/)
+                else if (1 === p.deg())
                 {
-                    if (is_class(ring.NumberClass, Integer))
+                    // linear factor, irreducible
+                    k = p.toString();
+                    if (HAS.call(factors, k))
                     {
-                        m = Arithmetic.I;
+                        ++factors[k][1];
                     }
-                    /*else if (remainder.isImag())
-                    {
-                        m = lcm(remainder.terms.map(function(t){return t.c.imag().den;}));
-                    }*/
                     else
                     {
-                        m = lcm(remainder.terms.map(is_class(ring.NumberClass, Complex) ? function(t) {return t.c.real().den;} : function(t) {return t.c.den;}));
-                    }
-                    if (!Arithmetic.equ(Arithmetic.I, m))
-                    {
-                        constant = constant.div(m);
-                        remainder = remainder.mul(m);
+                        factors[k] = [p, 1];
                     }
                 }
-                if (0 < remainder.deg()) factors.push([remainder, 1]);
-                else constant = constant.mul(remainder.cc());
-            }
-            if (!factors.length) factors.push([remainder, 1]);
-            p._factors = [factors, constant];
+                else
+                {
+                    q = polyfactor(p);
+                    if (q)
+                    {
+                        // found a factor, split p into q and p/q
+                        queue.push(q);
+                        queue.push(p.div(q));
+                    }
+                    else
+                    {
+                        // other irreducible factor
+                        p = p.monic(true); // same factor can appear with different constants
+                        c = c.mul(p[1]);
+                        p = p[0];
+                        k = p.toString();
+                        if (HAS.call(factors, k))
+                        {
+                            ++factors[k][1];
+                        }
+                        else
+                        {
+                            factors[k] = [p, 1];
+                        }
+                    }
+                }
+            } while (queue.length);
+            factors = KEYS(factors).map(function(k) {return factors[k];});
+            self._factors = [factors, c];
         }
-        return [p._factors[0].slice(), p._factors[1]];
+        return [self._factors[0].slice(), self._factors[1]];
     }
     ,equ: function(other) {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -12381,30 +10908,42 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     }
     ,inv: NotImplemented
 
+    ,_add: function(other) {
+        return uni_add(other, this.clone());
+    }
     ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Expr)) return self.toExpr().add(other);
         else if (is_instance(other, [RationalFunc, MultiPolynomial])) return other.add(self);
-        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? Polynomial.Add(other, self.clone()) : self;
+        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? uni_add(other, self.clone()) : self;
+    }
+    ,_sub: function(other) {
+        return uni_add(other, this.clone(), true);
     }
     ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Expr)) return self.toExpr().sub(other);
         else if (is_instance(other, [RationalFunc, MultiPolynomial])) return other.neg().add(self);
-        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? Polynomial.Add(other, self.clone(), true) : self;
+        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? uni_add(other, self.clone(), true) : self;
+    }
+    ,_mul: function(other) {
+        return uni_mul(other, this.clone());
     }
     ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Expr)) return self.toExpr().mul(other);
         else if (is_instance(other, [RationalFunc, MultiPolynomial])) return other.mul(self);
-        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? Polynomial.Mul(other, self.clone()) : self;
+        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? uni_mul(other, self.clone()) : self;
+    }
+    ,_div: function(other, q_and_r) {
+        return uni_div(this, other, true === q_and_r);
     }
     ,div: function(other, q_and_r) {
         var self = this;
         if (is_instance(other, Expr)) return self.toExpr().div(other);
         else if (is_instance(other, RationalFunc)) return RationalFunc(MultiPolynomial(self, other.num.symbol, other.num.ring)).div(other);
         else if (is_instance(other, MultiPolynomial)) return MultiPolynomial(self, other.symbol, other.ring).div(other, q_and_r);
-        return is_instance(other, [Polynomial, Numeric]) || Abacus.Arithmetic.isNumber(other) ? Polynomial.Div(self, other, true === q_and_r) : self;
+        return is_instance(other, [Polynomial, Numeric]) || Abacus.Arithmetic.isNumber(other) ? uni_div(self, other, true === q_and_r) : self;
     }
     ,multidiv: function(others, q_and_r) {
         var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
@@ -12448,6 +10987,10 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         qs = qs.map(function(qi) {return Polynomial(qi, p.symbol, p.ring);});
         return q_and_r ? [qs, Polynomial(r, p.symbol, p.ring)] : qs;
     }
+    ,_mod: function(other) {
+        var qr = this._div(other, true);
+        return qr[1];
+    }
     ,mod: function(other) {
         var qr = this.div(other, true);
         return qr[1];
@@ -12455,6 +10998,9 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,multimod: function(others) {
         var qr = this.multidiv(others, true);
         return qr[1];
+    }
+    ,_divmod: function(other) {
+        return this._div(other, true);
     }
     ,divmod: function(other) {
         return this.div(other, true);
@@ -12472,7 +11018,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             return other.mod(self).equ(Arithmetic.O);
         return false;
     }
-    ,pow: function(n) {
+    ,_pow: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic, pow, b;
         n = Integer.cast(n);
         if (n.lt(Arithmetic.O) || n.gt(MAX_DEFAULT)) return null;
@@ -12487,7 +11033,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         else if (2 === n)
         {
-            return Polynomial.Mul(self, self.clone());
+            return uni_mul(self, self.clone());
         }
         else
         {
@@ -12496,12 +11042,15 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             b = self.clone();
             while (0 !== n)
             {
-                if (n & 1) pow = Polynomial.Mul(b, pow);
+                if (n & 1) pow = uni_mul(b, pow);
                 n >>= 1;
-                b = Polynomial.Mul(b, b);
+                b = uni_mul(b, b);
             }
             return pow;
         }
+    }
+    ,pow: function(n) {
+        return this._pow(n);
     }
     ,rad: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -12528,8 +11077,8 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             i = t[0].e; pq = Polynomial(t[0].c, q.symbol, self.ring); j = 1;
             while (0 < i)
             {
-                --i; pq = Polynomial.Mul(q, pq);
-                if (j < t.length && i === t[j].e) pq = Polynomial.Add(t[j++].c, pq);
+                --i; pq = pq._mul(q);
+                if (j < t.length && i === t[j].e) pq = pq._add(t[j++].c);
             }
             return pq;
         }
@@ -12540,11 +11089,15 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         s = Arithmetic.val(s);
         if (0 === s)
+        {
             return self;
+        }
         else if (0 > s) // division by monomial x^|s|
+        {
             return Polynomial(self.terms.map(function(term) {
                 return term.e < -s ? null : UniPolyTerm(term.c, term.e+s, self.ring);
             }).filter(UniPolyTerm.isNonZero), self.symbol, self.ring);
+        }
         //else if (0 < s) // multiplication by monomial x^s
         return Polynomial(self.terms.map(function(term) {
             return UniPolyTerm(term.c, term.e+s, self.ring);
@@ -12658,7 +11211,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         for (i=0,l=t.length; i<l; ++i)
         {
             ti = t[i];
-            out += (prev && ((is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
+            out += (prev && ((is_instance(ti.c, RationalFunc) && (!ti.c.isConst() || !ti.c.den.equ(Arithmetic.I))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
             prev = true;
         }
         if (!out.length)
@@ -12684,20 +11237,17 @@ Polynomial.cast = function(a, symbol, ring) {
 // Represents a multivariate polynomial term with coefficient and exponents in Polynomial non-zero sparse representation
 var MultiPolyTerm = Class({
 
-    constructor: function MultiPolyTerm(c, e, ring) {
+    constructor: function MultiPolyTerm(c, e, ring, order) {
         var self = this;
-        if (!is_instance(self, MultiPolyTerm)) return new MultiPolyTerm(c, e, ring);
+        if (!is_instance(self, MultiPolyTerm)) return new MultiPolyTerm(c, e, ring, order);
 
-        if (is_instance(c, MultiPolyTerm)) {ring = ring || c.ring; e = c.e.slice(); c = c.c;}
-        else if (is_instance(c, UniPolyTerm)) {ring = ring || c.ring; e = [c.e]; c = c.c;}
+        if (is_instance(c, MultiPolyTerm)) {ring = ring || c.ring; order = order || c.order; e = c.e.slice(); c = c.c;}
+        else if (is_instance(c, UniPolyTerm)) {ring = ring || c.ring; order = c.order || LEX; e = [c.e]; c = c.c;}
         self.ring = is_instance(ring, Ring) ? ring : Ring.Q();
-        if (is_instance(c, MultiPolynomial) && (c.ring.NumberClass !== self.ring.NumberClass) && !is_class(c.ring.NumberClass, Complex) &&
-            is_class(c.ring.NumberClass, [Integer, Rational]) && is_class(self.ring.NumberClass, [Rational, Complex]))
-        {
-                c = MultiPolynomial(c, c.symbol, self.ring);
-        }
-        self.c = is_instance(c, [MultiPolynomial, RationalFunc]) ? c : (/*is_string(c) ? self.ring.fromString(c) :*/ self.ring.cast(c || 0));
+        self.order = order || LEX;
+        self.c = self.ring.cast(c || 0);
         self.e = is_array(e) ? e : [+(e || 0)];
+        if (is_instance(self.c, [MultiPolynomial, RationalFunc])) self.c = self.c.order(order);
     }
 
     ,__static__: {
@@ -12705,47 +11255,37 @@ var MultiPolyTerm = Class({
             return is_instance(t, MultiPolyTerm) && !t.c.equ(Abacus.Arithmetic.O);
         }
         ,cmp: function(t1, t2, full) {
-            function cmp_exp_i(e1, e2, i) {
-                if (i >= e1.length && i >= e2.length)
-                    return 0;
-                else if (i >= e2.length)
-                    return 0 === e1[i] ? cmp_exp_i(e1, e2, i+1) : e1[i];
-                else if (i >= e1.length)
-                    return 0 === e2[i] ? cmp_exp_i(e1, e2, i+1) : -e2[i];
-                else if (e1[i] === e2[i])
-                    return cmp_exp_i(e1, e2, i+1);
-                return e1[i] - e2[i];
-            };
-
-            if ((is_array(t1) || is_args(t1)) && (is_array(t2) || is_args(t2))) return cmp_exp_i(t1, t2, 0);
-
-            var res = cmp_exp_i(t1.e, t2.e, 0);
-            if ((true === full) && (0 === res))
-                return t1.c.equ(t2.c) ? 0 : (t1.c.lt(t2.c) ? -1 : 1);
+            var res = 0;
+            if ((REVERSED & t1.order) && (GRADED & t1.order)) res = cmp_monomial_grevlex(t1.e, t2.e);
+            else if ((GRADED & t1.order)) res = cmp_monomial_grlex(t1.e, t2.e);
+            else res = cmp_monomial_lex(t1.e, t2.e);
+            if ((true === full) && (0 === res)) res = t1.c.equ(t2.c) ? 0 : (t1.c.lt(t2.c) ? -1 : 1);
             return res;
         }
         ,sortDecr: function(t1, t2) {
             return MultiPolyTerm.cmp(t2, t1);
         }
         ,gcd: function(t1, t2, full) {
-            return MultiPolyTerm(true === full ? (!(is_instance(t1.c, [MultiPolynomial, RationalFunc]) || is_instance(t2.c, [MultiPolynomial, RationalFunc])) && t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), array(stdMath.max(t1.e.length, t2.e.length), function(i) {
+            return MultiPolyTerm(true === full ? (t1.ring.hasGCD() ? t1.ring.gcd(t1.c, t2.c) : t1.ring.One()) : t1.ring.One(), array(stdMath.max(t1.e.length, t2.e.length), function(i) {
                 return i < t1.e.length && i < t2.e.length ? stdMath.min(t1.e[i], t2.e[i]) : 0;
             }));
         }
         ,lcm: function(t1, t2, full) {
-            return MultiPolyTerm(true === full ? (!(is_instance(t1.c, [MultiPolynomial, RationalFunc]) || is_instance(t2.c, [MultiPolynomial, RationalFunc])) && t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), array(stdMath.max(t1.e.length, t2.e.length), function(i) {
+            return MultiPolyTerm(true === full ? (t1.ring.hasGCD() ? t1.ring.lcm(t1.c, t2.c) : t1.c.mul(t2.c)) : t1.c.mul(t2.c), array(stdMath.max(t1.e.length, t2.e.length), function(i) {
                 return i < t1.e.length && i < t2.e.length ? stdMath.max(t1.e[i], t2.e[i]) : (i < t1.e.length ? t1.e[i] : t2.e[i]);
             }));
         }
     }
 
     ,ring: null
+    ,order: null
     ,c: null
     ,e: null
 
     ,dispose: function() {
         var self = this;
         self.ring = null;
+        self.order = null;
         self.c = null;
         self.e = null;
         return self;
@@ -12755,7 +11295,7 @@ var MultiPolyTerm = Class({
     }
     ,cast: function(ring) {
         var self = this;
-        return ring === self.ring ? self : new MultiPolyTerm(self.c, self.e, ring);
+        return ring === self.ring ? self : new MultiPolyTerm(self.c, self.e, ring, self.order);
     }
     ,equ: function(term) {
         var self = this;
@@ -12763,27 +11303,27 @@ var MultiPolyTerm = Class({
     }
     ,neg: function() {
         var self = this;
-        return MultiPolyTerm(self.c.neg(), self.e.slice(), self.ring);
+        return MultiPolyTerm(self.c.neg(), self.e, self.ring, self.order);
     }
     ,add: function(term) {
         var self = this;
-        return is_instance(term, MultiPolyTerm) ? MultiPolyTerm(self.c.add(term.c), self.e.slice(), self.ring) : MultiPolyTerm(self.c.add(term), self.e.slice(), self.ring);
+        return is_instance(term, MultiPolyTerm) ? MultiPolyTerm(self.c.add(term.c), self.e, self.ring, self.order) : MultiPolyTerm(self.c.add(term), self.e, self.ring, self.order);
     }
     ,sub: function(term) {
         var self = this;
-        return is_instance(term, MultiPolyTerm) ? MultiPolyTerm(self.c.sub(term.c), self.e.slice(), self.ring) : MultiPolyTerm(self.c.sub(term), self.e.slice(), self.ring);
+        return is_instance(term, MultiPolyTerm) ? MultiPolyTerm(self.c.sub(term.c), self.e, self.ring, self.order) : MultiPolyTerm(self.c.sub(term), self.e, self.ring, self.order);
     }
     ,mul: function(term) {
         var self = this;
         return is_instance(term, MultiPolyTerm) ? MultiPolyTerm(self.c.mul(term.c), array(stdMath.max(self.e.length, term.e.length), function(i) {
             return i < self.e.length && i < term.e.length ? self.e[i]+term.e[i] : (i < term.e.length ? term.e[i] : self.e[i]);
-        }), self.ring) : MultiPolyTerm(self.c.mul(term), self.e.slice(), self.ring);
+        }), self.ring, self.order) : MultiPolyTerm(self.c.mul(term), self.e, self.ring, self.order);
     }
     ,div: function(term) {
         var self = this;
         return is_instance(term, MultiPolyTerm) ? MultiPolyTerm(self.c.div(term.c), array(stdMath.max(self.e.length, term.e.length), function(i) {
             return i < self.e.length && i < term.e.length ? stdMath.max(0, self.e[i]-term.e[i]) : (i < term.e.length ? 0 : self.e[i]);
-        }), self.ring) :  MultiPolyTerm(self.c.div(term), self.e.slice(), self.ring);
+        }), self.ring, self.order) :  MultiPolyTerm(self.c.div(term), self.e, self.ring, self.order);
     }
     ,divides: function(term) {
         var self = this, e1 = self.e, e2 = term.e, i, n = stdMath.max(e1.length, e2.length);
@@ -12808,12 +11348,12 @@ var MultiPolyTerm = Class({
     ,pow: function(k) {
         var self = this;
         k = +k;
-        return 1 === k ? self : MultiPolyTerm(self.c.pow(k), array(self.e.length, function(i) {return stdMath.floor(self.e[i] * k);}), self.ring);
+        return 1 === k ? self : MultiPolyTerm(self.c.pow(k), array(self.e.length, function(i) {return stdMath.floor(self.e[i] * k);}), self.ring, self.order);
     }
     ,rad: function(k) {
         var self = this;
         k = +k;
-        return 1 === k ? self : MultiPolyTerm(self.c.rad(k), array(self.e.length, function(i) {return stdMath.max(stdMath.floor(self.e[i] / k), stdMath.min(1, self.e[i]));}), self.ring);
+        return 1 === k ? self : MultiPolyTerm(self.c.rad(k), array(self.e.length, function(i) {return stdMath.max(stdMath.floor(self.e[i] / k), stdMath.min(1, self.e[i]));}), self.ring, self.order);
     }
     ,toTerm: function(symbol, asTex, monomialOnly, asDec, precision) {
         var t = this, e = t.e, c = t.c, term,
@@ -12821,7 +11361,7 @@ var MultiPolyTerm = Class({
             I = Arithmetic.I, J = Arithmetic.J;
         term = symbol.reduce(true === asTex
         ? function(monom, sym, i) {
-            return 0 < e[i] ? (monom + (monom.length ? ' \\cdot ' : '') + to_tex(sym) + (1 < e[i] ? ('^{' + Tex(e[i]) + '}') : '')) : monom;
+            return 0 < e[i] ? (monom /*+ (monom.length ? ' \\cdot ' : '')*/ + to_tex(sym) + (1 < e[i] ? ('^{' + Tex(e[i]) + '}') : '')) : monom;
         }
         : function(monom, sym, i) {
             return 0 < e[i] ? (monom + (monom.length ? '*' : '') + sym + (1 < e[i] ? ('^' + String(e[i])) : '')) : monom;
@@ -12830,22 +11370,22 @@ var MultiPolyTerm = Class({
         {
             if (true === asDec)
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst() ? ('(' + c.toDec(precision) + ')') : (!c.isReal() ? ('(' + c.toDec(precision) + ')') : c.toDec(precision))))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst() ? '(' + c.toDec(precision) + ')' : c.toDec(precision));
             }
             else if (true === asTex)
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst(true) ? '(' + c.toTex() + ')' : c.toTex());
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst() ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, RationalFunc]) && !c.isConst() ? '(' + c.toTex() + ')' : c.toTex());
             }
             else
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : ((is_instance(c, MultiPolynomial) && !c.isConst(true)) || (is_instance(c, RationalFunc) && (!c.isConst(true) || !c.den.equ(Arithmetic.I))) ? '(' + c.toString() + ')' : c.toString());
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : ((is_instance(c, MultiPolynomial) && !c.isConst()) || (is_instance(c, RationalFunc) && (!c.isConst() || !c.den.equ(Arithmetic.I))) ? ('(' + c.toString() + ')*') : (!c.isReal() ? ('(' + c.toString() + ')*') : (c.toString(true) + '*'))))) + term) : ((is_instance(c, MultiPolynomial) && !c.isConst()) || (is_instance(c, RationalFunc) && (!c.isConst() || !c.den.equ(Arithmetic.I))) ? '(' + c.toString() + ')' : c.toString());
             }
         }
         return term;
     }
     ,toString: function() {
-        var self = this;
-        return '(' + self.c.toString() + ',[' + self.e.join(',') + '])';
+        var self = this, order = self.order;
+        return '(' + self.c.toString() + ',[' + self.e.join(',') + '],"' + (GRADED & order ? (REVERSED & order ? 'grevlex' : 'grlex') : 'lex') + '")';
     }
 });
 
@@ -12863,18 +11403,17 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         {
             self.ring = ring || terms.ring;
             self.symbol = symbol || terms.symbol;
-            if ((self.ring !== terms.ring) || (self.symbol !== terms.symbol))
+            if ((self.ring !== terms.ring) || !is_same_symbol(self.symbol, terms.symbol))
             {
                 index = self.symbol.map(function(symbol) {return terms.symbol.indexOf(symbol);});
                 self.terms = terms.terms.map(function(t) {
-                    return MultiPolyTerm(t.c, array(self.symbol.length, function(i) {return -1 === index[i] ? 0 : t.e[index[i]];}), self.ring);
-                }).sort(MultiPolyTerm.sortDecr);
+                    return MultiPolyTerm(t.c, array(self.symbol.length, function(i) {return -1 === index[i] ? 0 : t.e[index[i]];}), self.ring, t.order);
+                });
             }
             else
             {
                 self.terms = terms.terms.slice();
             }
-            self._rsym = terms._rsym ? terms._rsym.slice() : null;
         }
         else if (is_instance(terms, Polynomial))
         {
@@ -12882,8 +11421,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             self.symbol = is_array(symbol) && symbol.length ? symbol : [terms.symbol];
             index = self.symbol.indexOf(terms.symbol); if (-1 === index) index = 0;
             self.terms = terms.terms.map(function(t) {
-                return MultiPolyTerm(t.c, array(self.symbol.length, function(i) {return i === index ? t.e : 0;}), self.ring);
-            }).sort(MultiPolyTerm.sortDecr);
+                return MultiPolyTerm(t.c, array(self.symbol.length, function(i) {return i === index ? t.e : 0;}), self.ring, t.order);
+            });
         }
         else
         {
@@ -12896,7 +11435,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
 
             if (is_instance(terms, Numeric) || Arithmetic.isNumber(terms) || is_string(terms))
             {
-                terms = MultiPolyTerm(terms, array(self.symbol.length, 0), self.ring);
+                terms = MultiPolyTerm(terms, array(self.symbol.length, 0), self.ring, LEX);
             }
 
             if (is_instance(terms, MultiPolyTerm))
@@ -12910,8 +11449,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 if (terms.length && !is_instance(terms[0], MultiPolyTerm))
                 {
                     self.terms = terms.map(function(c, e) {
-                        return MultiPolyTerm(c, array(self.symbol.length, function(i) {return 0 === i ? e : 0;}), self.ring);
-                    }).filter(MultiPolyTerm.isNonZero).reverse();
+                        return MultiPolyTerm(c, array(self.symbol.length, function(i) {return 0 === i ? e : 0;}), self.ring, LEX);
+                    });
                 }
                 else
                 {
@@ -12947,14 +11486,32 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                             e[-1 === ind ? 0 : ind] = exp;
                         }
                     }
-                    return MultiPolyTerm(c, e, self.ring);
-                }).sort(MultiPolyTerm.sortDecr);
+                    return MultiPolyTerm(c, e, self.ring, LEX);
+                });
             }
             else
             {
                 self.terms = [];
             }
         }
+        self.terms = self.terms.filter(MultiPolyTerm.isNonZero).sort(MultiPolyTerm.sortDecr);
+
+        def(self, 'num', {
+            get: function() {
+                return self;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return MultiPolynomial.One(self.symbol, self.ring);
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
     }
 
     ,__static__: {
@@ -12968,148 +11525,18 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return new MultiPolynomial([], symbol || ['x'], ring || Ring.Q());
         }
         ,One: function(symbol, ring) {
-            ring = ring || Ring.Q()
-            return new MultiPolynomial(ring.One(), symbol || ['x'], ring);
+            ring = ring || Ring.Q();
+            return new MultiPolynomial({'1':ring.One()}, symbol || ['x'], ring);
         }
         ,MinusOne: function(symbol, ring) {
-            ring = ring || Ring.Q()
-            return new MultiPolynomial(ring.MinusOne(), symbol || ['x'], ring);
+            ring = ring || Ring.Q();
+            return new MultiPolynomial({'1':ring.MinusOne()}, symbol || ['x'], ring);
+        }
+        ,Const: function(c, symbol, ring) {
+            return new MultiPolynomial({'1':c || Abacus.Arithmetic.O}, symbol || ['x'], ring || Ring.Q());
         }
 
         ,cast: null // added below
-
-        ,Add: function(x, P, do_sub, recur) {
-            var Arithmetic = Abacus.Arithmetic, res, rsym;
-            if (is_instance(x, Polynomial)) x = MultiPolynomial(x, P.symbol, P.ring);
-
-            if (is_instance(x, MultiPolynomial))
-            {
-                // O(max(n1,n2))
-                if (x.terms.length)
-                {
-                    /*recur = (true === recur);
-                    if (recur)
-                    {
-                        rsym = P._rsym;
-                        P = P.recur(false);
-                        x = x.recur(false);
-                    }*/
-                    P.terms = addition_sparse(P.terms, x.terms, MultiPolyTerm, true === do_sub, P.ring);
-                    //if (recur && rsym) P = P.recur(rsym);
-                }
-            }
-            else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
-            {
-                // O(1)
-                x = MultiPolyTerm(x, array(P.symbol.length, 0), P.ring);
-                if (!x.equ(Arithmetic.O))
-                {
-                    res = P.terms.length ? addition_sparse([P.terms.pop()], [x], MultiPolyTerm, true === do_sub, P.ring) : [x];
-                    P.terms = P.terms.concat(res);
-                }
-            }
-            return P;
-        }
-
-        ,Mul: function(x, P, recur) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, rsym;
-            if (!P.terms.length) return P;
-
-            if (is_instance(x, Polynomial))
-                x = MultiPolynomial(x, P.symbol, P.ring);
-
-            if (is_instance(x, MultiPolynomial))
-            {
-                // O(n1*n2)
-                if (x.terms.length)
-                {
-                    /*recur = (true === recur);
-                    if (recur)
-                    {
-                        rsym = P._rsym;
-                        P = P.recur(false);
-                        x = x.recur(false);
-                    }*/
-                    P.terms = multiplication_sparse(P.terms, x.terms, MultiPolyTerm, P.ring);
-                    //if (recur && rsym) P = P.recur(rsym);
-                }
-                else
-                {
-                    P.terms = [];
-                }
-            }
-            else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
-            {
-                // O(n)
-                /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
-                if (x.equ(O))
-                {
-                    P.terms = [];
-                }
-                else if (x.equ(Arithmetic.I))
-                {
-                    // do nothing
-                }
-                else
-                {
-                    for (i=P.terms.length-1; i>=0; --i)
-                        P.terms[i] = P.terms[i].mul(x);
-                }
-            }
-            return P;
-        }
-
-        ,Div: function(P, x, q_and_r, recur) {
-            var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, rsym, q/*, r, d, diff, diff0*/;
-            q_and_r = (true === q_and_r);
-
-            if (is_instance(x, Polynomial)) x = MultiPolynomial(x, P.symbol, P.ring);
-
-            if (is_instance(x, MultiPolynomial))
-            {
-                if (!x.terms.length) throw new Error('Division by zero in Abacus.MultiPolynomial!');
-
-                //recur = (true === recur);
-                //if (recur) x = x.recur(false); // convert to flat representation
-                if (x.isConst())
-                {
-                    // constant polynomial, simple numeric division
-                    x = x.cc();
-                    q = x.equ(I) ? P : MultiPolynomial(array(P.terms.length, function(i) {
-                        return P.terms[i].div(x);
-                    }), P.symbol, P.ring);
-                    return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
-                }
-                // sparse polynomial reduction/long division
-                /*if (recur)
-                {
-                    rsym = P._rsym;
-                    P = P.recur(false);
-                }*/
-                q = division_sparse(P.terms, x.terms, MultiPolyTerm, q_and_r, P.ring);
-                q = q_and_r ? [MultiPolynomial(q[0], P.symbol, P.ring), MultiPolynomial(q[1], P.symbol, P.ring)] : MultiPolynomial(q, P.symbol, P.ring);
-                /*if (recur && rsym)
-                {
-                    if (q_and_r) {q[0] = q[0].recur(rsym); q[1] = q[1].recur(rsym);}
-                    else q = q.recur(rsym);
-                }*/
-                return q;
-            }
-            else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
-            {
-                /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
-                if (x.equ(O)) throw new Error('Division by zero in Abacus.MultiPolynomial!');
-                q = x.equ(I) ? P : MultiPolynomial(array(P.terms.length, function(i) {
-                    return P.terms[i].div(x);
-                }), P.symbol, P.ring);
-                return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
-            }
-            return P;
-        }
-
-        ,C: function(c, x, ring) {
-            return new MultiPolynomial(c || Abacus.Arithmetic.O, x || ['x'], ring || Ring.Q());
-        }
 
         ,fromString: function(s, symbol, ring) {
             return MultiPolynomial.fromExpr(Expr.fromString(s, Complex.Symbol), symbol, ring);
@@ -13132,9 +11559,6 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,_tex: null
     ,_expr: null
     ,_prim: null
-    ,_flat: null
-    ,_recur: null
-    ,_rsym: null
 
     ,dispose: function() {
         var self = this;
@@ -13155,9 +11579,6 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         self._tex = null;
         self._expr = null;
         self._prim = null;
-        self._flat = null;
-        self._recur = null;
-        self._rsym = null;
         return self;
     }
     ,isInt: function() {
@@ -13184,88 +11605,73 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             if (!terms[i].c.isImag()) return false;
         return true;
     }
+    ,isComplex: function() {
+        return is_class(this.ring.NumberClass, Complex);
+    }
     ,isMono: function() {
         // is monomial
         var terms = this.terms;
-        return (1 === terms.length) && ((!is_instance(terms[0].c, MultiPolynomial) || terms[0].c.isMono()) && 0 !== MultiPolyTerm.cmp(terms[0].e, [0]));
+        return (1 === terms.length) && ((!is_instance(terms[0].c, [MultiPolynomial, RationalFunc]) || terms[0].c.isMono()) && 0 !== cmp_exp_i(terms[0].e, [0]));
     }
-    ,isConst: function(recur) {
+    ,isConst: function() {
         var terms = this.terms;
-        recur = (true === recur);
-        return (0 === terms.length) || ((1 === terms.length) && ((!recur || !is_instance(terms[0].c, MultiPolynomial) || terms[0].c.isConst(recur)) && 0 === MultiPolyTerm.cmp(terms[0].e, [0])));
+        return (0 === terms.length) || ((1 === terms.length) && (!is_instance(terms[0].c, [MultiPolynomial, RationalFunc])  || terms[0].c.isConst()) && (0 === cmp_exp_i(terms[0].e, [0])));
     }
     ,isUni: function(x, strict) {
         // is univariate on symbol x
         var self = this, terms = self.terms, index, e, i, d;
-        index = self.symbol.indexOf(String(x || 'x'));
+        index = self.symbol.indexOf(String(x || self.symbol[0]));
         if (-1 === index) return false;
         strict = (true === strict); d = 0;
         for (i=terms.length-1; i>=0; --i)
         {
             e = terms[i].e;
             d = stdMath.max(d, e[index]);
-            if (0 !== MultiPolyTerm.cmp(e.slice(0, index).concat(e.slice(index+1)), [0]))
+            if (0 !== cmp_exp_i(e.slice(0, index).concat(e.slice(index+1)), [0]))
                 return false;
         }
         return strict ? (0 !== d) : true;
     }
-    ,isRecur: function(strict, itself) {
-        // is recursive, has coefficients that are multipolynomials on rest variables
-        //return (null!=this._rsym) && (0<this._rsym.length);
-        if (is_class(this.ring.PolynomialClass, MultiPolynomial)) return true;
-        itself = true === itself;
-        strict = false !== strict;
-        var terms = this.terms, symbol = this.symbol, i;
-        for (i=terms.length-1; i>=0; --i)
-            if (is_instance(terms[i].c, MultiPolynomial) && (!itself || (terms[i].c.symbol === symbol)) && (strict || !terms[i].c.isConst(true))) return true;
-        return false;
-    }
-    ,deg: function(x, recur) {
+    ,deg: function(x) {
         // polynomial degree
         var self = this, terms = self.terms, symbol = self.symbol, index;
         if (arguments.length)
         {
-            recur = (true === recur);
-            index = symbol.indexOf(String(x || 'x'));
-            return (-1 === index) || !terms.length ? 0 : (recur && is_instance(term[0].c, MultiPolynomial) ? (terms[0].e[index]+term[0].c.deg(x, recur)) : terms[0].e[index]);
+            index = symbol.indexOf(String(x || symbol[0]));
+            return (-1 === index) || !terms.length ? 0 : terms[0].e[index];
         }
         return terms.length ? terms[0].e : array(symbol.length, 0);
     }
-    ,maxdeg: function(x, recur) {
+    ,maxdeg: function(x) {
         // polynomial maximum degree per symbol
         var self = this, terms = self.terms, symbol = self.symbol, index;
-        recur = (true === recur);
         if (arguments.length && (true === x))
         {
             return operate(function(max, xi) {
                 return stdMath.max(max, self.maxdeg(xi));
             }, 0, symbol);
         }
-        index = arguments.length ? symbol.indexOf(String(x || 'x')) : 0;
+        index = arguments.length ? symbol.indexOf(String(x || symbol[0])) : 0;
         if ((-1 === index) || !terms.length) return 0;
         x = symbol[index];
         return operate(function(max, t) {
-            if (recur && is_instance(t.c, MultiPolynomial))
-                return stdMath.max(max, t.e[index], t.e[index]+t.c.maxdeg(x, recur));
-            else
-                return stdMath.max(max, t.e[index]);
+            return stdMath.max(max, t.e[index]);
         }, 0, terms);
     }
-    ,mindeg: function(x, recur) {
+    ,mindeg: function(x) {
         // polynomial minimum degree per symbol
         var self = this, terms = self.terms, symbol = self.symbol, index;
-        recur = (true === recur);
         if (arguments.length && (true === x))
         {
             return operate(function(min, xi) {
-                return -1 === min ? self.mindeg(xi, recur) : stdMath.min(min, self.mindeg(xi, recur));
+                return -1 === min ? self.mindeg(xi) : stdMath.min(min, self.mindeg(xi));
             }, -1, symbol);
         }
-        index = arguments.length ? symbol.indexOf(String(x || 'x')) : 0;
+        index = arguments.length ? symbol.indexOf(String(x || symbol[0])) : 0;
         if ((-1 === index) || !terms.length) return 0;
         x = symbol[index];
         return operate(function(min, t) {
-            var deg = t.e[index]+(recur && is_instance(t.c, MultiPolynomial) ? t.c.mindeg(x, recur) : 0);
+            var deg = t.e[index];
             return -1 === min ? deg : stdMath.min(min, deg);
         }, -1, terms);
     }
@@ -13274,9 +11680,9 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol;
         if (true === as_degree)
             return terms.reduce(function(matched, t) {
-                // amtch all terms which have i as aggregate degree
+                // match all terms which have i as aggregate degree
                 if (i === t.e.reduce(addn, 0))
-                    matched = matched.add(MultiPolynomial([t], symbol, ring));
+                    matched = MultiPolynomial([t], symbol, ring)._add(matched);
                 return matched;
             }, MultiPolynomial.Zero(symbol, ring));
         return MultiPolynomial(0 <= i && i < terms.length ? [terms[i]] : [], symbol, ring);
@@ -13336,141 +11742,60 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,cc: function() {
         // constant coefficient
         var terms = this.terms;
-        return terms.length && (0 === MultiPolyTerm.cmp(terms[terms.length-1].e, [0])) ? terms[terms.length-1].c : this.ring.Zero();
+        return terms.length && (0 === cmp_exp_i(terms[terms.length-1].e, [0])) ? terms[terms.length-1].c : this.ring.Zero();
     }
     ,c: function() {
         // alias of cc()
         return this.cc();
     }
-    ,symbols: function() {
-        var self = this;
-        return self.isRecur() ? self.terms.reduce(function(s, t) {
-            if (is_instance(t.c, MultiPolynomial) && (self.symbol !== t.c.symbol))
-            {
-                t.c.symbols().forEach(function(x) {
-                    if (-1 === s.indexOf(x))
-                    {
-                        if (s === self.symbol) s = s.slice(); // copy
-                        s.push(x);
-                    }
-                });
-            }
-            return s;
-        }, self.symbol) : self.symbol;
-    }
-    ,recur: function(x) {
-        var self = this, terms = self.terms, symbol = self.symbol, ring = self.ring,
-            Arithmetic = Abacus.Arithmetic, index, maxdeg, pr, c = null;
-        if (false === x)
+    ,order: function(order) {
+        var self = this, o;
+        if (!arguments.length)
         {
-            // make non-recursive
-            if (null == self._flat)
+            if (self.terms.length)
             {
-                symbol = self.symbols();
-                ring = Ring(self.ring.NumberClass);
-                self._flat = (1 >= symbol.length) || !self.isRecur() ? self : self.toExpr(/*true*/).toPoly(symbol, ring, Complex.Symbol)/*operate(function(p, t) {
-                    return p._add(is_instance(t.c, MultiPolynomial) ? MultiPolynomial(MultiPolynomial([MultiPolyTerm(self.ring.One(), t.e, self.ring)], self.symbol, self.ring), symbol, ring)._mul(MultiPolynomial(t.c.recur(false), symbol, ring)) : MultiPolynomial(MultiPolynomial([t], self.symbol, self.ring), symbol, ring));
-                }, MultiPolynomial.Zero(symbol, ring), terms)*/;
-                self._flat._rsym = null;
-                self._flat._flat = self._flat;
+                o = self.terms[0].order;
+                if (GRADED & o) return REVERSED & o ? 'grevlex' : 'grlex';
             }
-            return self._flat;
+            return 'lex';
         }
-        else if (true === x)
+        if (null != order)
         {
-            // make recursive on all variables succesively
-            if (null == self._recur)
+            if (is_number(order))
             {
-                pr = self.recur(false);
-                self._recur = 1 >= pr.symbol.length ? self : operate(function(p, x) {return p.recur(x);}, pr, pr.symbol);
-                self._recur._flat = pr;
-                self._recur._recur = self._recur;
-            }
-            return self._recur;
-        }
-        else if (is_array(x))
-        {
-            return operate(function(p, xi) {return p.recur(xi);}, self, x);
-        }
-        else if (x)
-        {
-            // make recursive on/group by symbol x
-            // idempotent if is already grouped on x
-            if (1 >= symbol.length) return self;
-            x = String(x || 'x'); index = symbol.indexOf(x);
-            if ((-1 === index) || (self._rsym && (-1 !== self._rsym.indexOf(x)))) return self;
-            /*if (self.isUni(x))
-            {
-                self._rsym = (self._rsym||[]).concat(x);
-                return self;
-            }*/
-            maxdeg = self.maxdeg(x, true)
-            if (0 === maxdeg)
-            {
-                self._rsym = (self._rsym || []).concat(x);
-                return self;
-            }
-            pr = MultiPolynomial(operate(function(terms, t) {
-                var e = t.e[index], i = maxdeg - e, tt, p;
-                if (is_instance(t.c, MultiPolynomial))
+                o = order;
+                order = LEX;
+                if (o & GRADED)
                 {
-                    /*if ((t.c.symbol !== symbol) || (t.c.ring !== ring))
+                    order |= GRADED;
+                    if (o & REVERSED)
                     {
-                        p = MultiPolynomial(t.c.recur(false), symbol, ring);
-                        tt = MultiPolyTerm(p, t.e, ring);
-                    }*/
-                    /*if ((0 < e) && (0 < t.c.maxdeg(x, true)))
-                    {
-                        // messed up, try to regroup
-                        tt = t.clone();
-                        tt.e[index] = 0;
-                        tt.c = t.c.mul(MultiPolynomial([t], symbol, ring)).recur(x);
-                        p = MultiPolynomial([tt], symbol, ring);
-                    }
-                    else */if (t.c.isUni(x))
-                    {
-                        // recursive on same
-                        p = MultiPolynomial([t], symbol, ring);
-                    }
-                    else
-                    {
-                        // recursive on other
-                        tt = t.clone();
-                        tt.c = t.c.recur(x);
-                        tt.e[index] = 0;
-                        p = MultiPolynomial([tt], symbol, ring);
+                        order |= REVERSED;
                     }
                 }
-                else if (0 !== e)
-                {
-                    tt = t.clone();
-                    tt.e[index] = 0;
-                    p = MultiPolynomial([tt], symbol, ring);
-                }
-                else
-                {
-                    p = MultiPolynomial([t], symbol, ring);
-                }
-                // group by same power/exponent of recursive symbol
-                // put them directly in reverse order to avoid reversing later on
-                terms[i] = terms[i] ? terms[i]._add(p) : p;
-                return terms;
-            }, new Array(maxdeg+1), terms).map(function(t, e) {
-                return t.equ(Arithmetic.O) ? null : MultiPolyTerm(t, array(symbol.length, function(i) {return index === i ? maxdeg-e : 0;}));
-            }).filter(MultiPolyTerm.isNonZero), symbol, ring);
-            while (pr.isConst() && is_instance(c=pr.cc(), MultiPolynomial)) pr = c;
-            if (c === pr) pr = pr.clone(); // copy it to avoid mutating existing poly
-            pr._rsym = (self._rsym || []).concat(x);
-            return pr;
+            }
+            else
+            {
+                order = String(order || '').toLowerCase();
+                if ('grevlex' === order) order = GRADED | REVERSED | LEX;
+                else if ('grlex' === order) order = GRADED | LEX;
+                else order = LEX;
+            }
+            if (self.terms.length && (self.terms[0].order !== order))
+            {
+                return MultiPolynomial(self.terms.map(function(t) {
+                    return MultiPolyTerm(t.c, t.e, self.ring, order);
+                }), self.symbol, self.ring);
+            }
         }
         return self;
     }
-    ,monic: function() {
-        var self = this, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
-        if (lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O) /*|| is_instance(lc, MultiPolynomial)*/) return self;
+    ,monic: function(with_factor) {
+        var self = this, p, Arithmetic = Abacus.Arithmetic, lc = self.lc(), i, t, divides;
+        if (lc.equ(Arithmetic.I) || lc.equ(Arithmetic.O) /*|| is_instance(lc, MultiPolynomial)*/) return true === with_factor ? [self, lc] : self;
         if (self.ring.isField())
         {
-            return MultiPolynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring);
+            p = MultiPolynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring);
         }
         else
         {
@@ -13483,9 +11808,23 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                     break;
                 }
             }
-            // at least make positive
-            return divides ? MultiPolynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring) : (lc.lt(Arithmetic.O) ? self.neg() : self);
+            if (divides)
+            {
+                p = MultiPolynomial(self.terms.map(function(t) {return t.div(lc);}), self.symbol, self.ring);
+            }
+            else if (lc.lt(Arithmetic.O))
+            {
+                // at least make positive
+                p = self.neg();
+                lc = self.ring.MinusOne();
+            }
+            else
+            {
+                p = self;
+                lc = self.ring.One();
+            }
         }
+        return true === with_factor ? [p, lc] : p;
     }
     ,primitive: function(and_content) {
         // factorise into content and primitive part
@@ -13498,57 +11837,62 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             {
                 self._prim = [self, field.One()];
             }
-            else if (self.isRecur())
+            else if (is_class(ring.PolynomialClass, [MultiPolynomial, RationalFunc]))
             {
-                coeffp = terms.reduce(function(coeffp, t) {
-                    coeffp.push(is_instance(t.c, MultiPolynomial) ? t.c.primitive(true) : [MultiPolynomial([t], symbol, ring), field.One()]);
-                    return coeffp;
-                }, []);
-                content = field.gcd(coeffp.map(function(c) {return c[1];}));
-                self._prim = [MultiPolynomial(coeffp.map(function(c, i) {
-                    return MultiPolyTerm(c[0].mul(ring.cast(c[1].div(content))), terms[i].e, ring);
-                }), symbol, ring), content];
+                LCM = terms.reduce(function(LCM, t) {return t.c.den.mul(LCM);}, ring.One().num);
+                coeffp = terms.map(function(t) {return t.c.mul(LCM).num;});
+                content = MultiPolynomial.gcd(coeffp);
+                coeffp = coeffp.map(function(c){return c.div(content);});
+                // make positive lead
+                if (coeffp[0].lt(Arithmetic.O))
+                {
+                    coeffp = coeffp.map(function(c) {return c.neg();});
+                    content = content.neg();
+                }
+                self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring, terms[i].order);}), symbol, ring), field.create(RationalFunc(content, LCM).simpl())];
             }
             else if (is_class(ring.NumberClass, Complex))
             {
-                    isReal = self.isReal(); isImag = self.isImag();
-                    if (!isReal && !isImag)
+                isReal = self.isReal(); isImag = self.isImag();
+                if (!isReal && !isImag)
+                {
+                    content = ring.gcd(terms.map(function(t) {return t.c;})).simpl();
+                    self._prim = [MultiPolynomial(terms.map(function(t) {return MultiPolyTerm(t.c.div(content), t.e, ring, t.order);}), symbol, ring), content];
+                }
+                else if (isImag)
+                {
+                    LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.imag().den);}, Arithmetic.I);
+                    coeffp = terms.map(function(t) {return t.c.mul(LCM).imag().num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
                     {
-                        content = ring.gcd(terms.map(function(t) {return t.c;})).simpl();
-                        self._prim = [MultiPolynomial(terms.map(function(t) {return MultiPolyTerm(t.c.div(content), t.e, ring);}), symbol, ring), content];
+                        coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
                     }
-                    else if (isImag)
+                    self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring, terms[i].order);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                }
+                else
+                {
+                    LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.real().den);}, Arithmetic.I);
+                    coeffp = terms.map(function(t) {return t.c.mul(LCM).real().num;});
+                    content = gcd(coeffp);
+                    coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
+                    // make positive lead
+                    if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
                     {
-                        LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.imag().den);}, Arithmetic.I);
-                        coeffp = terms.map(function(t) {return t.c.mul(LCM).imag().num;});
-                        content = gcd(coeffp);
-                        coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
-                        // make positive lead
-                        if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
-                        {
-                            coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
-                            content = Arithmetic.neg(content);
-                        }
-                        self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Complex.Img().mul(Rational(content, LCM).simpl()))];
+                        coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
+                        content = Arithmetic.neg(content);
                     }
-                    else
-                    {
-                        LCM = terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.real().den);}, Arithmetic.I);
-                        coeffp = terms.map(function(t) {return t.c.mul(LCM).real().num;});
-                        content = gcd(coeffp);
-                        coeffp = coeffp.map(function(c) {return Arithmetic.div(c, content);});
-                        // make positive lead
-                        if (Arithmetic.gt(Arithmetic.O, coeffp[0]))
-                        {
-                            coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
-                            content = Arithmetic.neg(content);
-                        }
-                        self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
-                    }
+                    self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring, terms[i].order);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                }
             }
             else
             {
-                LCM = is_class(ring.NumberClass, Integer) ? Arithmetic.I : terms.reduce(function(LCM, t) {return Arithmetic.mul(LCM, t.c.den);}, Arithmetic.I);
+                LCM = is_class(ring.NumberClass, Integer) ? Arithmetic.I : terms.reduce(function(LCM, t) {
+                    return Arithmetic.mul(LCM, t.c.den);
+                }, Arithmetic.I);
                 coeffp = terms.map(function(t) {return t.c.mul(LCM).num;});
                 content = gcd(coeffp);
                 coeffp = coeffp.map(function(c){return Arithmetic.div(c, content);});
@@ -13558,7 +11902,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                     coeffp = coeffp.map(function(c) {return Arithmetic.neg(c);});
                     content = Arithmetic.neg(content);
                 }
-                self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
+                self._prim = [MultiPolynomial(coeffp.map(function(c, i) {return MultiPolyTerm(c, terms[i].e, ring, terms[i].order);}), symbol, ring), field.create(Rational(content, LCM).simpl())];
             }
         }
         return true === and_content ? self._prim.slice() : self._prim[0];
@@ -13573,26 +11917,22 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,discriminant: function(x) {
         return MultiPolynomial.Discriminant(this, x);
     }
-    ,equ: function(other, strict) {
+    ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             t = self.terms, tp, s, i;
         if (Arithmetic.isNumber(other))
         {
-            return Arithmetic.equ(O, other) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === MultiPolyTerm.cmp(t[0].e, [0])));
+            return Arithmetic.equ(O, other) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === cmp_exp_i(t[0].e, [0])));
         }
         else if (is_instance(other, Numeric))
         {
-            return other.equ(O) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === MultiPolyTerm.cmp(t[0].e, [0])));
+            return other.equ(O) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === cmp_exp_i(t[0].e, [0])));
         }
         else if (is_instance(other, Poly))
         {
-            strict = (false !== strict);
             other = is_instance(other, Polynomial) ? MultiPolynomial(other, self.symbol, self.ring) : other;
-            if (!strict)
-            {
-                t = self.recur(false).terms;
-                other = other.recur(false);
-            }
+            if (!is_same_symbol(self.symbol, other.symbol)) return false;
+            t = self.terms;
             tp = other.terms;
             if (t.length !== tp.length) return false;
             for (i=t.length-1; i>=0; --i)
@@ -13618,7 +11958,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return !self.isConst(true) || self.cc().gt(other);
+            return !self.isConst() || self.cc().gt(other);
         }
         else if (is_instance(other, RationalFunc))
         {
@@ -13639,7 +11979,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return !self.isConst(true) || self.cc().gte(other);
+            return !self.isConst() || self.cc().gte(other);
         }
         else if (is_instance(other, RationalFunc))
         {
@@ -13660,7 +12000,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return self.isConst(true) && self.cc().lt(other);
+            return self.isConst() && self.cc().lt(other);
         }
         else if (is_instance(other, RationalFunc))
         {
@@ -13681,7 +12021,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
-            return self.isConst(true) && self.cc().lte(other);
+            return self.isConst() && self.cc().lte(other);
         }
         else if (is_instance(other, RationalFunc))
         {
@@ -13704,7 +12044,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         if (is_class(ring.NumberClass, Complex))
         {
             return MultiPolynomial(self.terms.map(function(t) {
-                return MultiPolyTerm(t.c.real(), t.e, ring);
+                return MultiPolyTerm(t.c.real(), t.e, ring, t.order);
             }), self.symbol, ring);
         }
         else
@@ -13717,7 +12057,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         if (is_class(ring.NumberClass, Complex))
         {
             return MultiPolynomial(self.terms.map(function(t) {
-                return MultiPolyTerm(t.c.imag(), t.e, ring);
+                return MultiPolyTerm(t.c.imag(), t.e, ring, t.order);
             }), self.symbol, ring);
         }
         else
@@ -13736,7 +12076,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             if (is_class(ring.NumberClass, Complex))
             {
                 self._c = MultiPolynomial(self.terms.map(function(t) {
-                    return MultiPolyTerm(t.c.conj(), t.e, ring);
+                    return MultiPolyTerm(t.c.conj(), t.e, ring, t.order);
                 }), self.symbol, ring);
                 self._c._c = self;
             }
@@ -13758,54 +12098,46 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     }
     ,inv: NotImplemented
 
+    ,_add: function(other) {
+        return multi_add(other, this.clone(), false);
+    }
     ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Expr)) return self.toExpr().add(other);
         else if (is_instance(other, RationalFunc)) return other.add(self);
-        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? MultiPolynomial.Add(other, self.clone(), false, true) : self;
+        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? multi_add(other, self.clone(), false) : self;
     }
-    ,_add: function(other) {
-        // add as is without preserving any recursive representation
-        var self = this;
-        return is_instance(other, Poly) ? MultiPolynomial.Add(other, self.clone(), false, false) : self.add(other);
+    ,_sub: function(other) {
+        return multi_add(other, this.clone(), true);
     }
     ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Expr)) return self.toExpr().sub(other);
         else if (is_instance(other, RationalFunc)) return other.neg().add(self);
-        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? MultiPolynomial.Add(other, self.clone(), true, true) : self;
+        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? multi_add(other, self.clone(), true) : self;
     }
-    ,_sub: function(other) {
-        // sub as is without preserving any recursive representation
-        var self = this;
-        return is_instance(other, Poly) ? MultiPolynomial.Add(other, self.clone(), true, false) : self.sub(other);
+    ,_mul: function(other) {
+        return multi_mul(other, this.clone());
     }
     ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Expr)) return self.toExpr().mul(other);
         else if (is_instance(other, RationalFunc)) return other.mul(self);
-        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? MultiPolynomial.Mul(other, self.clone(), true) : self;
+        return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? multi_mul(other, self.clone()) : self;
     }
-    ,_mul: function(other) {
-        // mul as is without preserving any recursive representation
-        var self = this;
-        return is_instance(other, Poly) ? MultiPolynomial.Mul(other, self.clone(), false) : self.mul(other);
+    ,_div: function(other, q_and_r) {
+        return multi_div(this, other, true === q_and_r);
     }
     ,div: function(other, q_and_r) {
         var self = this;
         if (is_instance(other, Expr)) return self.toExpr().div(other);
         else if (is_instance(other, RationalFunc)) return RationalFunc(self).div(other);
         else if (is_instance(other, [Numeric, Poly]) || Abacus.Arithmetic.isNumber(other))
-            return MultiPolynomial.Div(self, other, true === q_and_r, true);
+            return multi_div(self, other, true === q_and_r);
         return self;
     }
-    ,_div: function(other, q_and_r) {
-        // div as is without preserving any recursive representation
-        var self = this;
-        return is_instance(other, Poly) ? MultiPolynomial.Div(self, other, true === q_and_r, false) : self.div(other, q_and_r);
-    }
     ,multidiv: function(others, q_and_r) {
-        var self = this, p, qs, r, n, i, plt, xlt, t, divides, rsym = self._rsym, Arithmetic = Abacus.Arithmetic;
+        var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
 
         q_and_r = (true === q_and_r);
         if (is_instance(others, MultiPolynomial)) others = [others];
@@ -13814,8 +12146,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         n = others.length;
         qs = array(n, function() {return [];});
         r = [];
-        p = self/*.recur(false)*/.clone();
-        //others = others.map(function(xi) {return xi.recur(false);});
+        p = self.clone();
         while (p.terms.length/*!p.equ(Arithmetic.O)*/)
         {
             // Try to divide by a polynomial.
@@ -13835,7 +12166,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 // Perform the division.
                 t = plt.div(xlt);
                 qs[i] = addition_sparse(qs[i], [t], MultiPolyTerm, false, p.ring);
-                p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt){return xt.mul(t);}), MultiPolyTerm, true, p.ring);
+                p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), MultiPolyTerm, true, p.ring);
             }
             else
             {
@@ -13846,33 +12177,31 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         qs = qs.map(function(qi) {
             qi = MultiPolynomial(qi, p.symbol, p.ring);
-            //if (rsym) qi = qi.recur(rsym);
             return qi;
         });
         if (q_and_r)
         {
             r = MultiPolynomial(r, p.symbol, p.ring);
-            //if (rsym) r = r.recur(rsym);
         }
         return q_and_r ? [qs, r] : qs;
     }
-    ,mod: function(other) {
-        var qr = this.div(other, true);
-        return qr[1];
-    }
     ,_mod: function(other) {
         var qr = this._div(other, true);
+        return qr[1];
+    }
+    ,mod: function(other) {
+        var qr = this.div(other, true);
         return qr[1];
     }
     ,multimod: function(others) {
         var qr = this.multidiv(others, true);
         return qr[1];
     }
-    ,divmod: function(other) {
-        return this.div(other, true);
-    }
     ,_divmod: function(other) {
         return this._div(other, true);
+    }
+    ,divmod: function(other) {
+        return this.div(other, true);
     }
     ,multidivmod: function(others) {
         return this.multidiv(others, true);
@@ -13887,8 +12216,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return other.mod(self).equ(Arithmetic.O);
         return false;
     }
-    ,pow: function(n) {
-        var self = this, Arithmetic = Abacus.Arithmetic, pow, b, rsym = self._rsym;
+    ,_pow: function(n) {
+        var self = this, Arithmetic = Abacus.Arithmetic, pow, b, rsym = null;
         n = Integer.cast(n);
         if (n.lt(Arithmetic.O) || n.gt(MAX_DEFAULT)) return null;
         n = Arithmetic.val(n.num);
@@ -13902,22 +12231,24 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         else if (2 === n)
         {
-            return MultiPolynomial.Mul(self, self.clone(), true);
+            return multi_mul(self, self.clone());
         }
         else
         {
             // exponentiation by squaring
-            pow = MultiPolynomial.One(self.symbol, self.ring);
-            b = self/*.recur(false)*/.clone();
+            b = self.clone();
+            pow = MultiPolynomial.One(b.symbol, b.ring);
             while (0 !== n)
             {
-                if (n & 1) pow = MultiPolynomial.Mul(b, pow, false);
+                if (n & 1) pow = multi_mul(b, pow);
                 n >>= 1;
-                b = MultiPolynomial.Mul(b, b, false);
+                b = multi_mul(b, b);
             }
-            //if (rsym) pow = pow.recur(rsym);
             return pow;
         }
+    }
+    ,pow: function(n) {
+        return this._pow(n);
     }
     ,rad: function(n) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -13926,97 +12257,64 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return MultiPolynomial.kthroot(self, n);
     }
     ,compose: function(q) {
-        // composition through variation on recursive Horner scheme
-        var self = this.recur(true), symbol = self.symbol, ring = Ring(self.ring.NumberClass), memo = Obj(),
-            Arithmetic = Abacus.Arithmetic, O = MultiPolynomial.Zero(symbol, ring);
-        function horner(p, q, s, index)
-        {
-            var psymbol = p.symbol, str, t = p.terms, i, j, pq, qi, tc;
-            index = psymbol !== symbol ? (s ? psymbol.indexOf(s) : -1) : (index || 0);
-            if (-1 === index) index = 0;
-            while ((index < psymbol.length) && (0 === p.maxdeg(psymbol[index], true))) ++index;
-            if (index >= psymbol.length) return MultiPolynomial(p.cc(), symbol, ring);
-            if (!t.length) return O;
-            s = psymbol[index];
-            // memoize, sometimes same subpolynomial is re-evaluated
-            str = p.toString(); if (HAS.call(memo, str)) return memo[str];
-            qi = HAS.call(q, s) ? MultiPolynomial(q[s] || O, symbol, ring) : MultiPolynomial([MultiPolyTerm(ring.One(), array(symbol.length, function(i) {return s === symbol[i] ? 1 : 0}), ring)], symbol, ring);
-            tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, q, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : MultiPolynomial(t[0].c, symbol, ring);
-            i = t[0].e[index]; pq = tc; j = 1;
-            while (0 < i)
-            {
-                --i; pq = MultiPolynomial.Mul(qi, pq, false);
-                if ((j < t.length) && (i === t[j].e[index]))
-                {
-                    tc = is_instance(t[j].c, MultiPolynomial) ? horner(t[j].c, q, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[j].c;
-                    pq = MultiPolynomial.Add(tc, pq, false, false);
-                    ++j;
-                }
-            }
-            return pq;
-        };
-        return horner(self, q || {}, symbol[0], 0).recur(false);
+        var self = this;
+        q = q || {};
+        return self.toExpr().compose(KEYS(q).reduce(function(e, x) {
+            e[x] = is_instance(q[x], Poly) ? q[x].toExpr() : Expr('', x);
+            return e;
+        }, {})).toPoly(self.symbol, self.ring);
     }
-
     ,shift: function(x, s) {
         // shift <-> equivalent to multiplication/division by a monomial x^s
         var self = this, symbol = self.symbol, ring = self.ring,
-            Arithmetic = Abacus.Arithmetic, index;
-        x = String(x || symbol[0]); s = s || 0;
-        index = symbol.indexOf(x); if (-1 === index) index = 0;
-        x = symbol[index];
+            Arithmetic = Abacus.Arithmetic, index, t;
+        x = String(x || symbol[0]);
+        s = s || 0;
         s = Arithmetic.val(s);
-        if (0 === s)
-            return self;
+        if (0 === s) return self;
+        index = symbol.indexOf(x);
+        if (-1 === index)
+        {
+            if (is_class(ring.PolynomialClass, [MultiPolynomial, RationalFunc]))
+            {
+                return MultiPolynomial(self.terms.map(function(term) {
+                    return MultiPolyTerm(term.c.shift(x, s), term.e, ring, term.order);
+                }));
+            }
+            else
+            {
+                ring = Ring(ring, symbol, false, true);
+                if (0 > s)
+                {
+                    return MultiPolynomial.Zero([x], ring);
+                }
+                else
+                {
+                    t = {};
+                    t[x+'^'+s] = self;
+                    return MultiPolynomial(t, [x], ring);
+                }
+            }
+        }
+        x = symbol[index];
         if (0 > s) // division by monomial x^|s|
         {
             if (-s > self.maxdeg(x, true)) return MultiPolynomial.Zero(symbol, ring);
             return MultiPolynomial(self.terms.map(function(term) {
-                var k, e;
+                var k, e, i = index;
                 term = term.clone();
-                if (is_instance(term.c, MultiPolynomial))
-                {
-                    e = term.e[index]; k = s;
-                    if (0 < e)
-                    {
-                        if (e >= -k)
-                        {
-                            term.e[index] += k;
-                            k = 0;
-                        }
-                        else
-                        {
-                            term.e[index] = 0;
-                            k += e;
-                        }
-                    }
-                    if (0 > k)
-                        term.c = term.c.shift(x, k);
-                }
+                if (term.e[i] >= -s)
+                    term.e[i] += s;
                 else
-                {
-                    if (term.e[index] >= -s)
-                        term.e[index] += s;
-                    else
-                        term.c = ring.Zero();
-                }
+                    term.c = ring.Zero();
                 return term;
             }).filter(MultiPolyTerm.isNonZero).sort(MultiPolyTerm.sortDecr), symbol, ring);
         }
         //else if (0 < s) // multiplication by monomial x^s
         return MultiPolynomial(self.terms.map(function(term) {
+            var i = index;
             term = term.clone();
-            if (is_instance(term.c, MultiPolynomial))
-            {
-                if (0 < term.c.maxdeg(x, true))
-                    term.c = term.c.shift(x, s);
-                else
-                    term.e[index] += s;
-            }
-            else
-            {
-                term.e[index] += s;
-            }
+            term.e[i] += s;
             return term;
         }).sort(MultiPolyTerm.sortDecr), symbol, ring);
     }
@@ -14029,79 +12327,69 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         n = Arithmetic.val(n);
         if (0 > n) return null; // not supported
         else if (0 === n) return self;
-        index = symbol.indexOf(x); if (-1 === index) index = 0;
-        x = symbol[index];
-        if (n > self.maxdeg(x, true)) return MultiPolynomial.Zero(symbol, ring);
-        dp = MultiPolynomial(self.terms.map(function(term) {
-            var c, j;
-            if (is_instance(term.c, MultiPolynomial))
+        index = symbol.indexOf(x);
+        if (-1 === index)
+        {
+            if (is_class(ring.PolynomialClass, [MultiPolynomial, RationalFunc]))
             {
-                if (term.c.isConst(true))
-                {
-                    if (n > term.e[index])
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        term = term.clone();
-                        for (c=I,j=term.e[index]; j+n>term.e[index]; --j) c = Arithmetic.mul(c, j);
-                        term.c = term.c._mul(c); term.e[index] -= n;
-                        return term;
-                    }
-                }
-                else
-                {
-                    term = term.clone(); j = n;
-                    do {
-                        --j;
-                        term.c = term.c.d(x,1)._add(term.c._mul(term.e[index]));
-                        term.e[index] = stdMath.max(term.e[index]-1, 0);
-                    } while ((0 < j) && !term.c.equ(O))
-                    return term;
-                }
+                return MultiPolynomial(self.terms.map(function(term) {
+                    return MultiPolyTerm(term.c.d(x, n), term.e, ring, term.order);
+                }));
             }
             else
             {
-                if (n > term.e[index])
-                {
-                    return null;
-                }
-                else
-                {
-                    term = term.clone();
-                    for (c=I,j=term.e[index]; j+n>term.e[index]; --j) c = Arithmetic.mul(c, j);
-                    term.c = term.c.mul(c); term.e[index] -= n;
-                    return term;
-                }
+                return MultiPolynomial.Zero([x], Ring(ring, symbol));
+            }
+        }
+        x = symbol[index];
+        if (n > self.maxdeg(x, true)) return MultiPolynomial.Zero(symbol, ring);
+        dp = MultiPolynomial(self.terms.map(function(term) {
+            var c, j, i = index;
+            if (n > term.e[i])
+            {
+                return null;
+            }
+            else
+            {
+                term = term.clone();
+                for (c=I,j=term.e[i]; j+n>term.e[i]; --j) c = Arithmetic.mul(c, j);
+                term.c = term.c.mul(c); term.e[i] -= n;
+                return term;
             }
         }).filter(MultiPolyTerm.isNonZero).sort(MultiPolyTerm.sortDecr), symbol, ring);
         return dp;
     }
     ,evaluate: function(x) {
         // recursive Horner scheme
-        var self = this.recur(true), symbol = self.symbol, ring = Ring(self.ring.NumberClass), O = ring.Zero(), memo = Obj();
-        function horner(p, x, s, index)
+        var self = this, symbol = self.symbol, ring = self.ring, O = ring.Zero(), memo = Obj();
+        function get_val(p, x)
         {
-            var psymbol = p.symbol, str, t = p.terms, i, j, v, xi, tc;
-            index = psymbol !== symbol ? (s ? psymbol.indexOf(s) : -1) : (index || 0);
-            if (-1 === index) index = 0;
-            while ((index < psymbol.length) && (0 === p.maxdeg(psymbol[index], true))) ++index;
-            if (index >= psymbol.length) return p.cc();
+            if (is_instance(p, MultiPolynomial) && (1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+            {
+                return horner(p, x, p.symbol[0]);
+            }
+            else if (is_instance(p, [MultiPolynomial, RationalFunc]) && (ring.CoefficientRing === p.ring))
+            {
+                return p.evaluate(x);
+            }
+            return p;
+        }
+        function horner(p, x, s)
+        {
+            var t = p.terms, str, i, j, v, xi, tc;
             if (!t.length) return O;
-            s = psymbol[index];
             // memoize, sometimes same subpolynomial is re-evaluated
             str = p.toString(); if (HAS.call(memo, str)) return memo[str];
             xi = (HAS.call(x, s) ? x[s] : O) || O;
             //xi = ring.cast(xi);
-            tc = is_instance(t[0].c, MultiPolynomial) ? horner(t[0].c, x, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[0].c;
-            i = t[0].e[index]; v = tc; j = 1;
+            tc = get_val(t[0].c, x);
+            i = t[0].e[0]; v = tc; j = 1;
             while (0 < i)
             {
                 --i; v = v.mul(xi);
-                if (j < t.length && i === t[j].e[index])
+                if ((j < t.length) && (i === t[j].e[0]))
                 {
-                    tc = is_instance(t[j].c, MultiPolynomial) ? horner(t[j].c, x, psymbol !== symbol ? s : psymbol[index+1], psymbol !== symbol ? 0 : (index+1)) : t[j].c;
+                    tc = get_val(t[j].c, x);
                     v = tc.add(v);
                     ++j;
                 }
@@ -14109,55 +12397,35 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             memo[str] = v;
             return v;
         }
-        return horner(self, x || {}, symbol[0], 0);
+        return horner(univariate(self), x || {}, symbol[0]);
     }
-    ,toUnivariate: function(enable, symbol, ring) {
-        var self = this;
-        if (false === enable)
-        {
-            // make multivariate
-            return self.toExpr().toPoly(symbol, ring);
-        }
-        else
-        {
-            // make recursively univariate of univariates
-            return 1 < self.symbol.length ? self.toExpr().toPoly([self.symbol[0]], self.symbol.slice(1).reverse().reduce(function(K, x) {return Ring.K(K, x);}, Ring.K(self.ring.NumberClass))) : self;
-        }
-    }
-    ,toExpr: function(as_it_is) {
+    ,toExpr: function() {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, t, ti, c, x, i, l, term, terms;
         if (null == self._expr)
         {
-            /*if (self.isRecur() && (true !== as_it_is))
+            t = self.terms; x = self.symbol; terms = [];
+            for (i=t.length-1; i>=0; --i)
             {
-                self._expr = self.recur(false).toExpr();
-            }
-            else
-            {*/
-                t = self.terms; x = self.symbol; terms = [];
-                for (i=t.length-1; i>=0; --i)
+                ti = t[i]; c = ti.c;
+                if (!c.equ(O))
                 {
-                    ti = t[i]; c = ti.c;
-                    if (!c.equ(O))
+                    term = ti.toTerm(x, false, true);
+                    c = c.toExpr();
+                    if (term.length)
                     {
-                        term = ti.toTerm(x, false, true);
-                        c = c.toExpr();
-                        if (term.length)
-                        {
-                            term = term.split('*').map(function(x) {
-                                x = x.split('^');
-                                return 1 < x.length ? Expr('^', [x[0], +x[1]]) : Expr('', x[0]);
-                            });
-                            terms.push(c.mul(1 < term.length ? Expr('*', term) : term[0]));
-                        }
-                        else
-                        {
-                            terms.push(c);
-                        }
+                        term = term.split('*').map(function(x) {
+                            x = x.split('^');
+                            return 1 < x.length ? Expr('^', [x[0], +x[1]]) : Expr('', x[0]);
+                        });
+                        terms.push(c.mul(1 < term.length ? Expr('*', term) : term[0]));
+                    }
+                    else
+                    {
+                        terms.push(c);
                     }
                 }
-                self._expr = 1 < terms.length ? Expr('+', terms) : (1 === terms.length ? terms[0] : Expr.Zero());
-            /*}*/
+            }
+            self._expr = 1 < terms.length ? Expr('+', terms) : (1 === terms.length ? terms[0] : Expr.Zero());
         }
         return self._expr;
     }
@@ -14197,7 +12465,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         for (i=0,l=t.length; i<l; ++i)
         {
             ti = t[i];
-            out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst(true)) || (is_instance(ti.c, RationalFunc) && (!ti.c.isConst(true) || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
+            out += (prev && (((is_instance(ti.c, MultiPolynomial) && !ti.c.isConst()) || (is_instance(ti.c, RationalFunc) && (!ti.c.isConst() || !ti.c.den.equ(Arithmetic.I)))) || !ti.c.isReal() || ti.c.gt(Arithmetic.O)) ? '+' : '') + ti.toTerm(x, false, false, true, precision);
             prev = true;
         }
         if (!out.length)
@@ -14213,7 +12481,7 @@ MultiPolynomial.cast = function(a, symbol, ring) {
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
     var type_cast = typecast(function(a) {
-        return is_instance(a, MultiPolynomial) && (a.ring === ring) && (a.symbol === symbol);
+        return is_instance(a, MultiPolynomial) && (a.ring === ring) && is_same_symbol(a.symbol, symbol);
     }, function(a) {
         return is_string(a) ? MultiPolynomial.fromString(a, symbol, ring) : new MultiPolynomial(a, symbol, ring);
     });
@@ -14287,6 +12555,87 @@ var PiecewisePolynomial = Class(Poly, {
 Polynomial.Piecewise = PiecewisePolynomial;
 
 // polynomial utilities
+function is_same_symbol(symbol1, symbol2)
+{
+    if (symbol1 === symbol2) return true;
+    if (is_string(symbol1) && is_array(symbol2)) symbol1 = [symbol1];
+    if (is_string(symbol2) && is_array(symbol1)) symbol2 = [symbol2];
+    if (is_array(symbol1) && is_array(symbol2))
+    {
+        if (symbol1.length !== symbol2.length) return false;
+        var i = 0, n = symbol1.length;
+        while ((i < n) && (symbol1[i] === symbol2[i])) ++i;
+        return i >= n;
+    }
+    return false;
+}
+function ensure_same_monomial_order(q, p)
+{
+    return p.terms.length ? q.order(p.terms[0].order) : q;
+}
+function cmp_monomial_weighted(e1, e2, w)
+{
+    var wl = w.length;
+    return (e1.reduce(function(sum, e, i) {
+        return sum + e*(i < wl ? w[i] : 0);
+    }, 0)) - (e2.reduce(function(sum, e, i) {
+        return sum + e*(i < wl ? w[i] : 0);
+    }, 0));
+}
+function cmp_monomial_total_deg(e1, e2)
+{
+    return (e1.reduce(function(sum, e, i) {return sum + e;}, 0)) - (e2.reduce(function(sum, e, i) {return sum + e;}, 0));
+}
+function cmp_monomial_lex(e1, e2, dir)
+{
+    var l1 = e1.length, l2 = e2.length, l = stdMath.max(l1, l2), /*w = array(l, 0),*/ i, res = 0;
+    if (-1 === dir)
+    {
+        i = l - 1;
+        while ((i >= 0) && (0 === res))
+        {
+            res = (i < l1 ? e1[i] : 0) - (i < l2 ? e2[i] : 0);
+            /*w[i] = 1;
+            res = cmp_monomial_weighted(e1, e2, w);
+            w[i] = 0;*/ --i;
+        }
+    }
+    else
+    {
+        i = 0;
+        while ((i < l) && (0 === res))
+        {
+            res = (i < l1 ? e1[i] : 0) - (i < l2 ? e2[i] : 0);
+            /*w[i] = 1;
+            res = cmp_monomial_weighted(e1, e2, w);
+            w[i] = 0;*/ ++i;
+        }
+    }
+    return res;
+}
+function cmp_monomial_grlex(e1, e2)
+{
+    var l = stdMath.max(e1.length, e2.length), res = /*cmp_monomial_weighted(e1, e2, array(l, 1))*/cmp_monomial_total_deg(e1, e2);
+    return 0 === res ? cmp_monomial_lex(e1, e2, 1) : res;
+}
+function cmp_monomial_grevlex(e1, e2)
+{
+    var l = stdMath.max(e1.length, e2.length), res = /*cmp_monomial_weighted(e1, e2, array(l, 1))*/cmp_monomial_total_deg(e1, e2);
+    return 0 === res ? -cmp_monomial_lex(e1, e2, -1) : res;
+}
+function cmp_exp_i(e1, e2, i)
+{
+    if (null == i) i = 0;
+    if (i >= e1.length && i >= e2.length)
+        return 0;
+    else if (i >= e2.length)
+        return 0 === e1[i] ? cmp_exp_i(e1, e2, i+1) : e1[i];
+    else if (i >= e1.length)
+        return 0 === e2[i] ? cmp_exp_i(e1, e2, i+1) : -e2[i];
+    else if (e1[i] === e2[i])
+        return cmp_exp_i(e1, e2, i+1);
+    return e1[i] - e2[i];
+}
 function addition_sparse(a, b, TermClass, do_subtraction, ring)
 {
     // O(n1+n2) ~ O(max(n1,n2))
@@ -14339,7 +12688,7 @@ function multiplication_sparse(a, b, TermClass, ring)
     if ((0 < n1) && (0 < n2))
     {
         k = 0;
-        c[0] = TermClass(0, a[0].mul(b[0]).e, ring);
+        c[0] = TermClass(0, a[0].mul(b[0]).e, ring, a[0].order);
         heap = Heap(array(n1, function(i) {
             return [a[i].cast(ring).mul(b[0].cast(ring)), i];
         }), "max", function(a, b) {
@@ -14350,7 +12699,7 @@ function multiplication_sparse(a, b, TermClass, ring)
         {
             if (0 !== TermClass.cmp(c[k], max[0]))
             {
-                if (!c[k].equ(O)) c[++k] = TermClass(0, 0, ring);
+                if (!c[k].equ(O)) c[++k] = TermClass(0, 0, ring, a[0].order);
                 c[k].e = max[0].e;
             }
             c[k] = c[k].add(max[0]);
@@ -14420,6 +12769,411 @@ function division_sparse(a, b, TermClass, q_and_r, ring)
 
     return q_and_r ? [q, r] : q;
 }
+function uni_add(x, P, do_sub)
+{
+    var Arithmetic = Abacus.Arithmetic, res, symbol;
+    // O(max(n1,n2))
+    if (is_instance(x, Polynomial))
+    {
+        if (x.symbol === P.symbol)
+        {
+            // O(max(n1,n2))
+            if (x.terms.length)
+                P.terms = addition_sparse(P.terms, x.terms, UniPolyTerm, true === do_sub, P.ring);
+        }
+        else
+        {
+            // upgrade to multivariate polynomial
+            symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
+            return multi_add(MultiPolynomial(x, symbol, P.ring), MultiPolynomial(P, symbol, P.ring), do_sub);
+        }
+    }
+    else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
+    {
+        // O(1)
+        x = UniPolyTerm(x, 0, P.ring);
+        if (!x.equ(Arithmetic.O))
+        {
+            res = P.terms.length ? addition_sparse([P.terms.pop()], [x], UniPolyTerm, true === do_sub, P.ring) : [x];
+            P.terms = P.terms.concat(res);
+        }
+    }
+    return P;
+}
+function uni_mul(x, P)
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i, symbol;
+    if (!P.terms.length) return P;
+
+    if (is_instance(x, Polynomial))
+    {
+        if (x.symbol === P.symbol)
+        {
+            // O(n1*n2)
+            P.terms = x.terms.length ? multiplication_sparse(P.terms, x.terms, UniPolyTerm, P.ring) : [];
+        }
+        else
+        {
+            // upgrade to multivariate polynomial
+            symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
+            return multi_mul(MultiPolynomial(x, symbol, x.ring), MultiPolynomial(P, symbol, P.ring));
+        }
+    }
+    else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
+    {
+        // O(n)
+        /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
+        if (x.equ(O))
+        {
+            P.terms = [];
+        }
+        else if (x.equ(Arithmetic.I))
+        {
+            // do nothing
+        }
+        else
+        {
+            for (i=P.terms.length-1; i>=0; --i)
+                P.terms[i] = P.terms[i].mul(x);
+        }
+    }
+    return P;
+}
+function uni_div(P, x, q_and_r)
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, symbol, q/*, r, d, diff, diff0*/;
+    q_and_r = (true === q_and_r);
+
+    if (is_instance(x, Polynomial))
+    {
+        if (!x.terms.length) throw new Error('Division by zero in Abacus.Polynomial!');
+        if (x.isConst())
+        {
+            // constant polynomial, simple numeric division
+            x = x.cc();
+            q = x.equ(I) ? P : Polynomial(array(P.terms.length, function(i) {
+                return P.terms[i].div(x);
+            }), P.symbol, P.ring);
+            return q_and_r ? [q, Polynomial.Zero(P.symbol, P.ring)] : q;
+        }
+        // polynomial long division
+        // TODO: make it faster
+        /*r = Polynomial(P);
+        diff = r.deg()-x.deg();
+        if (0 <= diff)
+        {
+            q = array(diff+1, function(){return Rational.Zero();});
+            while (0 <= diff)
+            {
+                diff0 = diff;
+                d = x.shift(diff);
+                q[diff] = r.lc().div(d.lc());
+                r = uni_add(uni_mul(q[diff], d), r, true);
+                diff = r.deg()-x.deg();
+                if ((diff === diff0)) break; // remainder won't change anymore
+            }
+        }
+        else
+        {
+            q = [];
+        }
+        q = Polynomial(q, self.symbol);*/
+
+        if (x.symbol === P.symbol)
+        {
+            // sparse polynomial reduction/long division
+            q = division_sparse(P.terms, x.terms, UniPolyTerm, q_and_r, P.ring);
+            return q_and_r ? [Polynomial(q[0], P.symbol, P.ring), Polynomial(q[1], P.symbol, P.ring)] : Polynomial(q, P.symbol, P.ring);
+        }
+        else
+        {
+            // upgrade to multivariate polynomial
+            symbol = P.symbol > x.symbol ? [x.symbol, P.symbol] : [P.symbol, x.symbol];
+            return multi_div(MultiPolynomial(P, symbol, P.ring), MultiPolynomial(x, symbol, x.ring), q_and_r);
+        }
+    }
+    else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
+    {
+        /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
+        if (x.equ(O)) throw new Error('Division by zero in Abacus.Polynomial!');
+        q = x.equ(I) ? P : Polynomial(array(P.terms.length, function(i) {
+            return P.terms[i].div(x);
+        }), P.symbol, P.ring);
+        return q_and_r ? [q, Polynomial.Zero(P.symbol, P.ring)] : q;
+    }
+    return P;
+}
+function multi_add(x, P, do_sub)
+{
+    var Arithmetic = Abacus.Arithmetic, res;
+    if (is_instance(x, Polynomial)) x = MultiPolynomial(x, P.symbol, P.ring);
+
+    if (is_instance(x, MultiPolynomial))
+    {
+        // O(max(n1,n2))
+        if (x.terms.length)
+        {
+            x = ensure_same_monomial_order(x, P);
+            P.terms = addition_sparse(P.terms, x.terms, MultiPolyTerm, true === do_sub, P.ring);
+        }
+    }
+    else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
+    {
+        // O(1)
+        x = MultiPolyTerm(x, array(P.symbol.length, 0), P.ring, P.terms[0].order);
+        if (!x.equ(Arithmetic.O))
+        {
+            res = P.terms.length ? addition_sparse([P.terms.pop()], [x], MultiPolyTerm, true === do_sub, P.ring) : [x];
+            P.terms = P.terms.concat(res);
+        }
+    }
+    return P;
+}
+function multi_mul(x, P)
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, i;
+    if (!P.terms.length) return P;
+
+    if (is_instance(x, Polynomial))
+        x = MultiPolynomial(x, P.symbol, P.ring);
+
+    if (is_instance(x, MultiPolynomial))
+    {
+        // O(n1*n2)
+        if (x.terms.length)
+        {
+            x = ensure_same_monomial_order(x, P);
+            P.terms = multiplication_sparse(P.terms, x.terms, MultiPolyTerm, P.ring);
+        }
+        else
+        {
+            P.terms = [];
+        }
+    }
+    else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
+    {
+        // O(n)
+        /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
+        if (x.equ(O))
+        {
+            P.terms = [];
+        }
+        else if (x.equ(Arithmetic.I))
+        {
+            // do nothing
+        }
+        else
+        {
+            for (i=P.terms.length-1; i>=0; --i)
+                P.terms[i] = P.terms[i].mul(x);
+        }
+    }
+    return P;
+}
+function multi_div(P, x, q_and_r)
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, rsym, q/*, r, d, diff, diff0*/;
+    q_and_r = (true === q_and_r);
+
+    if (is_instance(x, Polynomial)) x = MultiPolynomial(x, P.symbol, P.ring);
+
+    if (is_instance(x, MultiPolynomial))
+    {
+        if (!x.terms.length) throw new Error('Division by zero in Abacus.MultiPolynomial!');
+
+        x = ensure_same_monomial_order(x, P);
+        if (x.isConst())
+        {
+            // constant polynomial, simple numeric division
+            x = x.cc();
+            q = x.equ(I) ? P : MultiPolynomial(array(P.terms.length, function(i) {
+                return P.terms[i].div(x);
+            }), P.symbol, P.ring);
+            return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
+        }
+        // sparse polynomial reduction/long division
+        P = ensure_same_monomial_order(P, x);
+        q = division_sparse(P.terms, x.terms, MultiPolyTerm, q_and_r, P.ring);
+        q = q_and_r ? [MultiPolynomial(q[0], P.symbol, P.ring), MultiPolynomial(q[1], P.symbol, P.ring)] : MultiPolynomial(q, P.symbol, P.ring);
+        return q;
+    }
+    else if (is_instance(x, Numeric) || Arithmetic.isNumber(x))
+    {
+        /*if (Arithmetic.isNumber(x))*/ x = P.ring.cast(x);
+        if (x.equ(O)) throw new Error('Division by zero in Abacus.MultiPolynomial!');
+        q = x.equ(I) ? P : MultiPolynomial(array(P.terms.length, function(i) {
+            return P.terms[i].div(x);
+        }), P.symbol, P.ring);
+        return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
+    }
+    return P;
+}
+function univariate(p, x, field)
+{
+    // make a multivariate recursively univariate of univariates
+    if (1 < p.symbol.length)
+    {
+        if (is_string(x))
+        {
+            var index = p.symbol.indexOf(x);
+            p = p.toExpr().toPoly([x], Ring(p.ring, p.symbol.slice(0, index).concat(p.symbol.slice(index+1)), false, true));
+        }
+        else
+        {
+            p = p.toExpr().toPoly([p.symbol[0]], p.symbol.slice(1).reverse().reduce(function(K, x) {
+                return Ring(K, [x], true === field, true);
+            }, p.ring));
+        }
+    }
+    return p;
+}
+function multivariate(p, x)
+{
+    // unmake univariate, make multivariate again
+    var ring = p.ring;
+    while (ring.PolynomialSymbol)
+    {
+        if (is_array(ring.PolynomialSymbol))
+        {
+            if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
+            {
+                break;
+            }
+        }
+        else
+        {
+            if (-1 === x.indexOf(ring.PolynomialSymbol))
+            {
+                break;
+            }
+        }
+        ring = ring.CoefficientRing;
+    }
+    return p.toExpr().toPoly(x, ring);
+}
+function poly_interpolate(v, x, ring, PolynomialClass)
+{
+    // https://en.wikipedia.org/wiki/Lagrange_polynomial
+    // https://en.wikipedia.org/wiki/Newton_polynomial
+    PolynomialClass = PolynomialClass || Polynomial;
+    ring = ring || Ring.Q();
+    var I = ring.One(), n, d, f, vi, hash, dupl;
+    if (!v || !v.length) return PolynomialClass.Zero(x, ring);
+    if (is_args(v)) v = slice.call(v);
+    if (!is_array(v[0])) v = [v];
+    v = v.map(function(vi) {
+        return [ring.cast(vi[0]), ring.cast(vi[1])];
+    });
+    // check and filter out duplicate values
+    hash = Obj(); dupl = [];
+    for (n=0; n<v.length; ++n)
+    {
+        vi = v[n][0].toString();
+        if (!HAS.call(hash, vi)) hash[vi] = n;
+        else if (!v[hash[vi]][1].equ(v[n][1])) return null; // no polynomial exists
+        else dupl.push(n); // duplicate value to be removed
+    }
+    // remove duplicate values
+    while (dupl.length) v.splice(dupl.pop(), 1);
+    hash = null; dupl = null; n = v.length;
+
+    // Set-up denominators
+    d = array(n, function(j) {
+        var i, dj = I;
+        for (i=0; i<n; ++i)
+        {
+            if (i === j) continue;
+            dj = dj.mul(v[j][0].sub(v[i][0]));
+        }
+        dj = v[j][1].div(dj);
+        return dj;
+    });
+    // Set-up numerator factors
+    f = array(n, function(i) {
+        var terms = {};
+        terms[x] = I;
+        terms['1'] = v[i][0].neg();
+        return PolynomialClass(terms, x, ring);
+    });
+    // Produce each Lj in turn, and sum into p
+    return operate(function(p, j) {
+        return p._add(operate(function(Lj, i){
+            if (j !== i) Lj = Lj._mul(f[i]);
+            return Lj;
+        }, PolynomialClass.Const(d[j], x, ring), null, 0, n-1));
+    }, PolynomialClass.Zero(x, ring), null, 0, n-1);
+}
+function polyfactor(p)
+{
+    // Kronecker method to factorize p over the integers/rationals
+    var i, j, n, y, v, d, q,
+        r = p.ring, x = p.symbol,
+        Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        PolynomialClass = p[CLASS];
+    for (d=1,n=(p.deg()>>1); d<=n; ++d)
+    {
+        y = array(d+1, d>>1, -1).map(function(xi) {
+            xi = r.cast(xi).real();
+            var yi = p.evaluate(xi).real();
+            return [xi, yi.abs()];
+        });
+        for (i=d; i>=0; --i)
+        {
+            if (y[i][1].equ(O))
+            {
+                // found linear factor
+                var terms = {};
+                terms[x] = r.One();
+                terms['1'] = y[i][0].neg();
+                return PolynomialClass(terms, x, r);
+            }
+            else
+            {
+                y[i][1] = Iterator((function(yi) {
+                    var iter = divisors(yi, true), s, d;
+                    return function(curr, dir, state, init) {
+                        if (init)
+                        {
+                            iter.rewind();
+                            s = 1;
+                            d = iter.next();
+                        }
+                        if (null == d) return null;
+                        var sd = Arithmetic.mul(d, s);
+                        s = -s;
+                        if (1 === s) d = iter.next();
+                        return sd;
+                    };
+                })(y[i][1].num));
+            }
+        }
+        v = new Array(y.length);
+        i = d;
+        for (;;)
+        {
+            while ((0 <= i) && !y[i][1].hasNext())
+            {
+                y[i][1].rewind();
+                v[i] = [y[i][0], r.cast(y[i][1].next())];
+                --i;
+            }
+            if (0 > i) break;
+            v[i] = [y[i][0], r.cast(y[i][1].next())];
+            if (null == v[0])
+            {
+                for (j=0; j<i; ++j)
+                {
+                    v[j] = [y[j][0], r.cast(y[j][1].next())];
+                }
+            }
+            q = poly_interpolate(v, x, r, PolynomialClass);
+            // found factor
+            if ((0 < q.deg()) && Arithmetic.equ(O, Arithmetic.mod(p.lc().real().num, q.lc().real().num)) && Arithmetic.equ(O, Arithmetic.mod(p.tc().real().num, q.tc().real().num)) && p.mod(q).equ(O)) return q;
+            i = d;
+        }
+    }
+}
 function polykthroot(p, k, limit)
 {
     // Return the (possibly truncated) k-th root of a polynomial
@@ -14482,11 +13236,11 @@ function polygcd(/* args */)
         }
     }
     // defer to gcd of coefficients and transform back to polynomial
-    if (are_const) return PolynomialClass(R.gcd(array(args.length, function(i) {return args[i].cc();})), S, R);
+    if (are_const) return PolynomialClass.Const(R.gcd(array(args.length, function(i) {return args[i].cc();})), S, R);
 
     // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(R.NumberClass, Integer))
+    if (is_class(R.NumberClass, Integer)/*!R.isField()*/)
     {
         a = args[0];
         if (1 == c)
@@ -14518,7 +13272,8 @@ function polygcd(/* args */)
         while (!b.equ(O))
         {
             a0 = a; b0 = b;
-            r = a.mod(b); a = b; b = r;
+            r = a.mod(b);
+            a = b; b = r;
             if (a.equ(b0) && b.equ(a0)) break; // will not change anymore
         }
     }
@@ -14555,13 +13310,13 @@ function polyxgcd(/* args */)
     }
 
     // defer to xgcd of coefficients and transform back to polynomial
-    if (are_const) return R.xgcd(array(args.length, function(i) {return args[i].cc();})).map(function(g) {return PolynomialClass(g, S, R);});
+    if (are_const) return R.xgcd(array(args.length, function(i) {return args[i].cc();})).map(function(g) {return PolynomialClass.Const(g, S, R);});
 
     a = args[0];
 
     // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(R.NumberClass, Integer))
+    if (is_class(R.NumberClass, Integer)/*!R.isField()*/)
     {
         field = R.associatedField(); // Q[X]
         asign = field.One(); bsign = asign;
@@ -14578,7 +13333,7 @@ function polyxgcd(/* args */)
             {
                 a = a.neg(); asign = asign.neg();
             }
-            return [a, PolynomialClass(asign, S, field)];
+            return [a, PolynomialClass.Const(asign, S, field)];
         }
         else //if (2 <= k)
         {
@@ -14612,7 +13367,7 @@ function polyxgcd(/* args */)
         {
             a = a.neg(); asign = asign.neg();
         }
-        return [a, PolynomialClass(asign, S, R)];
+        return [a, PolynomialClass.Const(asign, S, R)];
     }
     else //if (2 <= k)
     {
@@ -14643,7 +13398,7 @@ function polyxgcd(/* args */)
                 b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
             }
             return array(gcd.length+1,function(i) {
-                return 0 === i ? b : (1 === i ? PolynomialClass(asign, S, R) : gcd[i-1].mul(bsign));
+                return 0 === i ? b : (1 === i ? PolynomialClass.Const(asign, S, R) : gcd[i-1].mul(bsign));
             });
         }
         else if (b.equ(O))
@@ -14660,7 +13415,7 @@ function polyxgcd(/* args */)
                 a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
             }
             return array(gcd.length+1,function(i) {
-                return 0 === i ? a : (1 === i ? PolynomialClass(asign, S, R) : gcd[i-1].mul(bsign));
+                return 0 === i ? a : (1 === i ? PolynomialClass.Const(asign, S, R) : gcd[i-1].mul(bsign));
             });
         }
 
@@ -14885,43 +13640,47 @@ Polynomial.xgcd = polyxgcd;
 Polynomial.lcm = polylcm;
 MultiPolynomial.gcd = function(/*args*/) {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        symbol = null, ring = null, gcd;
+        symbol = null, order, gcd;
     gcd = polygcd([].map.call(args, function(p) {
         if (null == symbol)
         {
             symbol = p.symbol;
-            ring = p.ring;
+            order = p.order();
         }
-        return 1 < symbol.length ? p.toUnivariate() : p;
+        return univariate(p, null, true);
     }));
-    return 1 < symbol.length ? gcd.toUnivariate(false, symbol, ring) : gcd;
+    return multivariate(gcd, symbol).order(order);
 };
 MultiPolynomial.xgcd = function(/*args*/) {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        symbol = null, ring = null;
+        symbol = null, order;
     return polyxgcd([].map.call(args, function(p) {
         if (null == symbol)
         {
             symbol = p.symbol;
-            ring = p.ring;
+            order = p.order();
         }
-        return 1 < symbol.length ? p.toUnivariate() : p;
-    })).map(function(g) {
-        return 1 < symbol.length ? g.toUnivariate(false, symbol, ring) : g;
+        return univariate(p, null, true);
+    })).map(function(g, i) {
+        if (is_instance(g, MultiPolynomial))
+        {
+            g = multivariate(g, symbol).order(order);
+        }
+        return g;
     });
 };
 MultiPolynomial.lcm = function(/*args*/) {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        symbol = null, ring = null, lcm;
+        symbol = null, order, lcm;
     lcm = polylcm([].map.call(args, function(p) {
         if (null == symbol)
         {
             symbol = p.symbol;
-            ring = p.ring;
+            order = p.order();
         }
-        return 1 < symbol.length ? p.toUnivariate() : p;
+        return univariate(p, null, true);
     }));
-    return 1 < symbol.length ? lcm.toUnivariate(false, symbol, ring) : lcm;
+    return multivariate(lcm, symbol).order(order);
 };
 Polynomial.Resultant = function(p, q) {
     return polyres(p, p.deg(), q, q.deg(), p.symbol, false);
@@ -14936,36 +13695,25 @@ MultiPolynomial.Resultant = function(p, q, x) {
     {
         return Polynomial.Resultant(p, q);
     }
-    p = is_instance(p, Polynomial) ? MultiPolynomial(p, q.symbol, q.ring) : p.clone();
-    q = is_instance(q, Polynomial) ? MultiPolynomial(q, p.symbol, p.ring) : q.clone();
+    p = is_instance(p, Polynomial) ? MultiPolynomial(p, q.symbol, q.ring) : p;
+    q = is_instance(q, Polynomial) ? MultiPolynomial(q, p.symbol, p.ring) : q;
+    var symbol = p.symbol;
     x = x || p.symbol[0];
-    p = p.recur(false).recur(x);
-    q = q.recur(false).recur(x);
+    p = univariate(p, x);
+    q = univariate(q, x);
     var res = polyres(p, p.deg(x), q, q.deg(x), x, false);
-    /*if (1 < p.symbol.length)
-    {
-        res = MultiPolynomial(res, p.symbol.reduce(function(other_symbols, symbol) {
-            if (symbol !== x) other_symbols.push(symbol);
-            return other_symbols;
-        }, []), p.ring);
-    }*/
-    return res;
+    return /*multivariate(*/res/*, symbol)*/;
 };
 MultiPolynomial.Discriminant = function(p, x) {
-    p = is_instance(p, Polynomial) ? MultiPolynomial(p, [x || p.symbol], p.ring) : p.clone();
+    p = is_instance(p, Polynomial) ? MultiPolynomial(p, [x || p.symbol], p.ring) : p;
     x = x || p.symbol[0];
-    p = p.recur(false).recur(x);
-    var n = p.deg(x), dp = p.d(x, 1),
+    var symbol = p.symbol, dp = p.d(x, 1);
+    p = univariate(p, x);
+    dp = univariate(dp, x);
+    var n = p.deg(x),
         res = polyres(p, n, dp, n-1, x, true);
     if ((n*(n-1) >> 1) & 1) res = res.neg();
-    /*if (1 < p.symbol.length)
-    {
-        res = MultiPolynomial(res, p.symbol.reduce(function(other_symbols, symbol) {
-            if (symbol !== x) other_symbols.push(symbol);
-            return other_symbols;
-        }, []), p.ring);
-    }*/
-    return res;
+    return /*multivariate(*/res/*, symbol)*/;
 };
 
 
@@ -15027,6 +13775,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         if (den.equ(Arithmetic.O)) throw new Error('Zero denominator in Abacus.RationalFunc!');
         if (num.equ(Arithmetic.O) && !den.equ(Arithmetic.I)) den = MultiPolynomial.One(num.symbol, num.ring);
         if (den.lc().lt(Arithmetic.O)) {den = den.neg(); num = num.neg();}
+        if (den.order() !== num.order()) den = den.order(num.order());
         self.num = num;
         self.den = den;
 
@@ -15066,6 +13815,30 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         }
         ,MinusOne: function(symbol, ring) {
             return new RationalFunc(MultiPolynomial.MinusOne(symbol, ring), null, null, null, true);
+        }
+        ,Const: function(c, symbol, ring) {
+            c = c || Abacus.Arithmetic.O, n = null, d = null;
+            if (is_instance(c, Rational))
+            {
+                n = c.num;
+                d = c.den;
+            }
+            else if (is_instance(c, Complex))
+            {
+                if (c.isReal())
+                {
+                    c = c.real();
+                    n = c.num;
+                    d = c.den;
+                }
+                else if (c.isImag())
+                {
+                    c = c.imag();
+                    n = Complex(0, c.num);
+                    d = Complex(c.den, 0);
+                }
+            }
+            return null != d ? new RationalFunc(MultiPolynomial.Const(n, symbol, ring), MultiPolynomial.Const(d, symbol, ring)) : new RationalFunc(MultiPolynomial.Const(c, symbol, ring), null, null, null, true);
         }
 
         ,cast: null // added below
@@ -15149,13 +13922,28 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         var self = this;
         return (self.num.isReal() && self.den.isImag()) || (self.num.isImag() && self.den.isReal());
     }
-    ,isConst: function(recur) {
+    ,isMono: function() {
         var self = this;
-        return self.num.isConst(recur) && self.den.isConst(recur);
+        return self.num.isMono() && self.den.isConst();
+    }
+    ,isConst: function() {
+        var self = this;
+        return self.num.isConst() && self.den.isConst();
     }
     ,c: function() {
         var self = this;
         return self.num.c().div(self.den.c());
+    }
+    ,order: function(order) {
+        var self = this;
+        if (!arguments.length)
+        {
+            return self.num.order();
+        }
+        else
+        {
+            return RationalFunc(self.num.order(order), self.den.order(order), null, null, self._simpl);
+        }
     }
     ,neg: function() {
         var self = this;
@@ -15290,8 +14078,8 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         return !this.equ(Abacus.Arithmetic.O);
     }
     ,compose: function(q) {
-        var self = this;
         // assume q's are simply multipolynomials, NOT rational functions
+        var self = this;
         return RationalFunc(self.num.compose(q), self.den.compose(q));
     }
     ,pow: function(n) {
@@ -15336,7 +14124,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             d_den = den.pow(2);
             num = d_num; den = d_den; --n;
         }
-        return RationalFunc(d_num, d_den);
+        return RationalFunc(num, den);
     }
     ,simpl: function() {
         var self = this, Arithmetic = Abacus.Arithmetic, num, den, n, d, g, qr;
@@ -15360,12 +14148,19 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
                     self.den = qr[0];
                     self.num = MultiPolynomial.One(self.num.symbol, self.num.ring);
                 }
-                else if (is_callable(MultiPolynomial.gcd))
+                else //if (is_callable(MultiPolynomial.gcd))
                 {
                     // use multipolynomial gcd, if possible
                     qr = MultiPolynomial.gcd(self.num, self.den);
-                    self.num = self.num.div(qr);
-                    self.den = self.den.div(qr);
+                    if (self.num.mod(qr).equ(Arithmetic.O) && self.den.mod(qr).equ(Arithmetic.O))
+                    {
+                        self.num = self.num.div(qr);
+                        self.den = self.den.div(qr);
+                    }
+                    /*else
+                    {
+                        console.error('RationalFunc.simpl gcd("'+self.num.toString()+'","'+self.den.toString()+'") = '+qr.toString()+' does NOT divide num,den!');
+                    }*/
                 }
 
                 num = self.num.primitive(true);
@@ -15429,7 +14224,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         if (null == self._str)
         {
             //self._str = self.toExpr().expand().toString();
-            self._str = self.den.equ(I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst(true) && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + ((self.den.isMono() && self.den.terms[0].c.equ(I)) || (self.den.isConst(true) && (self.den.isReal() /*|| self.den.isImag()*/)) ? self.den.toString() : ('(' + self.den.toString() + ')')));
+            self._str = self.den.equ(I) ? self.num.toString() : ((self.num.isMono() || (self.num.isConst() && (self.num.isReal() || self.num.isImag())) ? self.num.toString() : ('(' + self.num.toString() + ')')) + '/' + ((self.den.isMono() && self.den.terms[0].c.equ(I)) || (self.den.isConst() && (self.den.isReal() /*|| self.den.isImag()*/)) ? self.den.toString() : ('(' + self.den.toString() + ')')));
         }
         return self._str;
     }
@@ -15451,8 +14246,10 @@ RationalFunc.cast = function(a, symbol, ring) {
     ring = ring || Ring.Q();
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
-    var type_cast = typecast([RationalFunc], function(a) {
-        return is_string(a) ? RationalFunc.fromString(a, symbol, ring) : new RationalFunc(MultiPolynomial(a, symbol, ring));
+    var type_cast = typecast(function(a) {
+        return is_instance(a, RationalFunc) && (a.ring === ring) && is_same_symbol(a.symbol, symbol);
+    }, function(a) {
+        return is_string(a) ? RationalFunc.fromString(a, symbol, ring) : (is_instance(a, RationalFunc) ? new RationalFunc(MultiPolynomial(a.num, symbol, ring), MultiPolynomial(a.den, symbol, ring)) : new RationalFunc(MultiPolynomial(a, symbol, ring)));
     });
     return type_cast(a);
 };
@@ -16164,7 +14961,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 }
                 else
                 {
-                    // full-rank, has inverse, generaly in the field of fractions
+                    // full-rank, has inverse, generally in the field of fractions
                     field = ring.associatedField();
                     self._i = Matrix(field, rref[3].map(function(aug_ij, ij) {
                         return field.cast(aug_ij).div(field.cast(rref[0].val[ij[0]][ij[0]]));
@@ -17360,9 +16157,9 @@ Matrix = Abacus.Matrix = Class(INumber, {
 // Abacus.Ring represents an algebraic Ring or Field (even Polynomial Ring)
 Ring = Abacus.Ring = Class({
 
-    constructor: function Ring(NumberClass, PolynomialSymbol, isFraction) {
+    constructor: function Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate) {
         var self = this, ring = null;
-        if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction);
+        if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate);
 
         self.PolynomialClass = null;
         self.CoefficientRing = null;
@@ -17420,7 +16217,7 @@ Ring = Abacus.Ring = Class({
             }
             else
             {
-                if (self.CoefficientRing.PolynomialClass || (1 < PolynomialSymbol.length))
+                if ((true === ForceMultiVariate) || self.CoefficientRing.PolynomialClass || (1 < PolynomialSymbol.length))
                 {
                     self.PolynomialClass = MultiPolynomial;
                     self.PolynomialSymbol = PolynomialSymbol;
@@ -17474,14 +16271,18 @@ Ring = Abacus.Ring = Class({
         ,K: function(/* R, "x","y",.. */) {
             // generic Ring/Field
             var args = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments),
-                R = null, N = null;
+                R = null, N = null, forceMultivariate = false;
+            if (args.length && (true === args[args.length-1] || false === args[args.length-1]))
+            {
+                forceMultivariate = args.pop();
+            }
             if (args.length)
             {
                 // K(C("x","y"), "z","w") ring C("z","w") with coefficients from C("x","y")
                 if (is_instance(args[0], Ring)) {R = args[0]; args = args.slice(1);}
                 else if (is_class(args[0], Numeric)) {N = args[0]; args = args.slice(1);}
                 args = Ring.getSymbols(args);
-                return args.length ? (R || N ? Ring(R || N, args) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
+                return args.length ? (R || N ? Ring(R || N, args, false, forceMultivariate) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
             }
             return Ring.Q();
         }
@@ -17519,6 +16320,10 @@ Ring = Abacus.Ring = Class({
         var self = this;
         return self.PolynomialClass ? self.PolynomialClass.MinusOne(self.PolynomialSymbol, self.CoefficientRing) : self.NumberClass.MinusOne(self.Modulo);
     }
+    ,Const: function(c) {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.Const(c, self.PolynomialSymbol, self.CoefficientRing) : (self.Modulo ? self.NumberClass.cast(c, self.Modulo) : self.NumberClass.cast(c));
+    }
 
     ,isSymbolic: function() {
         var self = this;
@@ -17554,7 +16359,7 @@ Ring = Abacus.Ring = Class({
 
     ,hasGCD: function() {
         var self = this;
-        return self.PolynomialClass ? ((is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) && is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? (/*(is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) &&*/ is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
     }
     ,gcd: function(/*args*/) {
         var self = this, args;
@@ -17604,10 +16409,6 @@ Ring = Abacus.Ring = Class({
         var self = this;
         if (!is_instance(e, Expr)) return null;
         return self.PolynomialClass ? self.PolynomialClass.fromExpr(e, self.PolynomialSymbol, self.CoefficientRing) : self.cast(e.c());
-    }
-    ,fromValues: function(v) {
-        var self = this;
-        return is_class(self.PolynomialClass, Polynomial) ? self.PolynomialClass.fromValues(v, self.PolynomialSymbol, self.CoefficientRing) : null;
     }
     ,toString: function() {
         var self = this, subring, R;
@@ -18012,8 +16813,6 @@ if (('undefined' !== typeof Symbol) && ('undefined' !== typeof Symbol.iterator))
     Iterator[PROTO][Symbol.iterator] = Iterator[PROTO].__iter__;
 }
 
-
-
 // Abacus.CombinatorialIterator, Combinatorial Base Class extends and implements Iterator Interface
 // NOTE: by substituting usual Arithmetic ops with big-integer ops,
 // big-integers can be handled transparently throughout all the combinatorial algorithms
@@ -18203,7 +17002,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                 }
                 return 0 <= i && i < seq.length ? seq[i].next(dir) : null;
             }
-            return null == index ? null : klass.unrank(Arithmetic.add(index, 0>dir?Arithmetic.J:Arithmetic.I), n, $);
+            return null == index ? null : klass.unrank(Arithmetic.add(index, 0 > dir ? Arithmetic.J : Arithmetic.I), n, $);
         }
         ,rand: function(n, $) {
             var item, klass = this, Arithmetic = Abacus.Arithmetic,
@@ -20519,8 +19318,8 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                 });
             } : ID;
         }
-        ,conditional: conditional_combinatorial_tensor
-        ,generate: gen_combinatorial_data
+        ,conditional: null
+        ,generate: null
     }
 });
 function next_tensor(item, N, dir, type, order, TI)
@@ -20597,7 +19396,342 @@ function next_tensor(item, N, dir, type, order, TI)
     }
     return item;
 }
-// https://en.wikipedia.org/wiki/Permutations
+var pos_re = /\[(\d+)\]/g, pos_test_re = /\[(\d+)\]/,
+    in_set_re = /^\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/, not_in_set_re = /^!\{(\d+(?:(?:\.\.\d+)?|(?:,\d+)*))\}$/,
+    V_EQU = 1, V_DIFF = -1, V_INC = 3, V_DEC = -3, V_NONINC = -2, V_NONDEC = 2;
+function conditional_combinatorial_tensor(v, value_conditions, extra_conditions)
+{
+    var k, kl, a, r, l, i, vv, nv = v.length, v0, v1,
+        tensor, t0, t1, ok, nvalid, product, p, pv, pe, pea, pl, npv,
+        seen = null, valid = null, invalid, expr, e, el;
+
+    if (!nv) return [];
+
+    if (is_callable(extra_conditions))
+    {
+        valid = extra_conditions;
+        extra_conditions = true;
+    }
+    else
+    {
+        extra_conditions = false;
+    }
+
+    if (!(V_EQU === value_conditions || V_DIFF === value_conditions || V_INC === value_conditions || V_DEC === value_conditions || V_NONINC === value_conditions || V_NONDEC === value_conditions))
+    {
+        value_conditions = false;
+    }
+
+    pe = new Array(nv); pea = []; pl = 0; pv = [];
+    for (kl=1,k=0; k<nv; ++k)
+    {
+        if (is_callable(v[k][0]))
+        {
+            // fixed expression for position k, store it to be added after actual values are added
+            if (!v[k][1].length)
+            {
+                // autonomous expression, which does not depend on any position
+                pea.push([v[k][0],k]);
+            }
+            else
+            {
+                // depends on one or multiple other positions
+                // expr v[k][0] for pos k, depends on value at positions v[k][1][]
+                for (e=0,el=v[k][1].length; e<el; ++e)
+                {
+                    if (null == pe[v[k][1][e]]) pe[v[k][1][e]] = [[v[k][0],k,v[k][1]]];
+                    else pe[v[k][1][e]].push([v[k][0],k,v[k][1]]);
+                }
+            }
+            // this makes the computation faster, since fixed/expression values
+            // are not counted as extra and then checked if valid, but generated directly validly
+        }
+        else
+        {
+            // values for position k, count them
+            pv.push(k);
+            kl *= v[k].length;
+            if (!kl || 0>=kl) return [];
+        }
+    }
+    if (!pv.length) return [];
+
+    product = new Array(kl); nvalid = 0;
+    t1 = nv-1; npv = pv.length-1;
+    // O(kl), count only necessary values, minus any outliers (as few as possible)
+    for (k=0; k<kl; ++k)
+    {
+        // O(nv)
+        tensor = new Array(nv); invalid = false;
+        // explicit tensor values, not expressions
+        for (r=k,a=npv; a>=0; --a)
+        {
+            p = pv[a];
+            l = v[p].length;
+            i = r % l;
+            r = ~~(r / l);
+            tensor[p] = v[p][i];
+        }
+        // evaluate expressions which are autonomous, do not depend on any position
+        for (a=0,pl=pea.length; a<pl; ++a)
+        {
+            expr = pea[a];
+            tensor[expr[1]] = expr[0]();
+        }
+        // evaluate expressions now after any explicit tensor values were calculated previously
+        for (a=0; a<nv; ++a)
+        {
+            // if expression and not already avaluated (eg by previous expression)
+            if (null != pe[a])
+            {
+                // fill-up any pos values which are expressions based on this pos value
+                expr = pe[a];
+                for (e=0,el=expr.length; e<el; ++e)
+                {
+                    p = expr[e][1];
+                    if (null == tensor[p])
+                    {
+                        // not computed already
+                        ok = true;
+                        vv = expr[e][2].map(function(k) {
+                            if ((null == tensor[k]) || isNaN(tensor[k])) ok = false; // not computed already, abort
+                            return tensor[k];
+                        });
+                        if (ok) tensor[p] = expr[e][0].apply(null, vv);
+                    }
+                }
+            }
+        }
+        if (value_conditions || extra_conditions)
+        {
+            if ((null == tensor[t1]) || isNaN(tensor[t1]) || extra_conditions && !valid(tensor,t1,t1))
+            {
+                invalid = true;
+            }
+            else
+            {
+                v1 = tensor[t1];
+                if (V_DIFF === value_conditions) {seen = {}; seen[v1] = 1;}
+                for (t0=t1-1; t0>=0; --t0)
+                {
+                    v0 = tensor[t0];
+                    if (
+                        (null == v0) || isNaN(v0) ||
+                        (V_EQU === value_conditions && v1 !== v0) ||
+                        (V_DIFF === value_conditions && 1 === seen[v0]) ||
+                        (V_INC === value_conditions && v0 >= v1) ||
+                        (V_DEC === value_conditions && v0 <= v1) ||
+                        (V_NONINC === value_conditions && v0 < v1) ||
+                        (V_NONDEC === value_conditions && v0 > v1) ||
+                        (extra_conditions && !valid(tensor,t0,t1))
+                   )
+                    {
+                        invalid = true;
+                        break;
+                    }
+                    if (V_DIFF === value_conditions) seen[v0] = 1;
+                    v1 = v0;
+                }
+            }
+        }
+        if (invalid) continue;
+        product[nvalid++] = tensor;
+    }
+    // truncate if needed
+    if (product.length > nvalid) product.length = nvalid;
+    return product;
+}
+function gen_combinatorial_data(n, data, pos, value_conditions, options)
+{
+    options = options || {};
+    pos = pos || array(data.length||0, 0, 1);
+    // conditions: ALGEBRAIC(STRING EXPR) AND/OR BOOLEAN(POSITIVE / NEGATIVE) => [values] per position
+    // NOTE: needs at least one non-autonomous expression or one range of values, else will return empty set
+    var min = null == options.min ? 0 : options.min,
+        max = null == options.max ? n-1 : options.max,
+        nn = max-min+1, D = data, m, d, i, a, j, pi, l = D.length, none = false,
+        pos_ref, is_valid, p1, p2, expr, algebraic = [], missing = [], ref = {},
+        in_range = function in_range(x) {return min <= x && x <= max;}, additional_conditions;
+
+    data = []; none = false;
+    for (pi=0,i=0; i<l; ++i,++pi)
+    {
+        d = D[i];
+        if (is_string(d))
+        {
+            if (m=d.match(not_in_set_re))
+            {
+                if (0 < m[1].indexOf('..'))
+                {
+                    m = m[1].split('..').map(Number);
+                    if (m[0] > m[1])
+                        a = complement(n, array(m[0]-m[1]+1, m[1], 1).filter(in_range)).reverse();
+                    else
+                        a = complement(n, array(m[1]-m[0]+1, m[0], 1).filter(in_range));
+                }
+                else
+                {
+                    a = complement(n, m[1].split(',').map(Number).filter(in_range));
+                }
+                if (!a.length) {none = true; break;}
+                data.push(a);
+            }
+            else if (m=d.match(in_set_re))
+            {
+                if (0 < m[1].indexOf('..'))
+                {
+                    m = m[1].split('..').map(Number);
+                    a = (m[0] > m[1] ? array(m[0]-m[1]+1, m[0], -1) : array(m[1]-m[0]+1, m[0], 1)).filter(in_range);
+                }
+                else
+                {
+                    a = m[1].split(',').map(Number).filter(in_range);
+                }
+                if (!a.length) {none = true; break;}
+                data.push(a);
+            }
+            else
+            {
+                is_valid = true; pos_ref = []; expr = null;
+                d = d.replace(pos_re, function(m, d) {
+                    var posref = parseInt(d, 10), varname = 'v' + String(posref);
+                    if (isNaN(posref) || !in_range(posref)) is_valid = false;
+                    if (is_valid && (-1 === pos_ref.indexOf(posref))) pos_ref.push(posref);
+                    return varname;
+                });
+                if (!is_valid)
+                {
+                    if (pos) pos.splice(pi--, 1);
+                    continue;
+                }
+                pos_ref.sort(sorter());
+                try {
+                    expr = new Function(pos_ref.map(function(p) {return 'v' + String(p);}).join(','),'return Math.floor('+d+');');
+                } catch(e) {
+                    expr = null;
+                }
+                if (!is_callable(expr))
+                {
+                    if (pos) pos.splice(pi--, 1);
+                    continue;
+                }
+                for (j=0; j<pos_ref.length; ++j)
+                {
+                    if (!ref[pos_ref[j]]) ref[pos_ref[j]] = [expr];
+                    else ref[pos_ref[j]].push(expr);
+                    if ((-1 === pos.indexOf(pos_ref[j])) && (-1 === missing.indexOf(pos_ref[j]))) missing.push(pos_ref[j]);
+                }
+                algebraic.push([expr,null,null,pos_ref,pos[pi]]);
+                data.push(algebraic[algebraic.length-1]);
+            }
+        }
+        else if (is_array(d))
+        {
+            a = false === d[0] ? complement(n, d.slice(1).filter(in_range)) : (true === d[0] ? d.slice(1).filter(in_range) : d.filter(in_range));
+            if (!a.length) {none = true; break;}
+            data.push(a);
+        }
+    }
+    if (none) data = [];
+
+    if (missing.length)
+    {
+        for (i=0,l=missing.length; i<l; ++i)
+        {
+            // add any missing references
+            pos.push(missing[i]);
+            if (!none) data.push(array(nn, min, 1));
+        }
+    }
+
+    // sort positions ascending if needed and re-arrange data
+    // two parameters change here, adjust [pos] array IN-PLACE, while simply return the new computed [data]
+    i = is_sorted(pos);
+    if (-1 === i)
+    {
+        reflection(pos, pos);
+        if (!none) reflection(data, data);
+    }
+    else if (0 === i)
+    {
+        d = mergesort(pos, 1, false, true);
+        permute(pos, d);
+        if (!none) permute(data, d);
+    }
+    if (none) return [];
+    if (algebraic.length)
+    {
+        for (i=0,l=algebraic.length; i<l; ++i)
+        {
+            m = algebraic[i];
+            // adjust relative positions in algebraic expressions used in data (same reference)
+            m[1] = m[3].map(function(m3) {return pos.indexOf(m3);});
+            m[2] = pos.indexOf(m[4]);
+            for (j=0; j<m[3].length; ++j)
+            {
+                // by the way, filter out some invalid values here for all expr on the same pos ref
+                // for expr that depend on single position only, else leave for actual combinatorial generation later on
+                expr = ref[m[3][j]];
+                if (!is_callable(data[m[1][j]][0]) /*expression does not reference another expression*/)
+                {
+                    a = data[m[1][j]].filter(function(x) {
+                        for (var ex,i=0,l=expr.length; i<l; ++i)
+                        {
+                            // for expr that depend on single position only
+                            if (1 !== expr[i].length /*num of func args*/) continue;
+                            ex = expr[i](x);
+                            if (isNaN(ex) || min > ex || ex > max) return false;
+                        }
+                        return true;
+                    });
+                    if (!a.length) {none = true; break;}
+                    else data[m[1][j]] = a;
+                }
+            }
+            if (none) break;
+        }
+    }
+    if (none) return [];
+
+    // check value conditions
+    if ('=' === value_conditions) value_conditions = V_EQU;
+    else if (('!=' === value_conditions) || ('<>' === value_conditions)) value_conditions = V_DIFF;
+    else if ('<' === value_conditions) value_conditions = V_INC;
+    else if (('<=' === value_conditions) || ('=<' === value_conditions)) value_conditions = V_NONDEC;
+    else if ('>' === value_conditions) value_conditions = V_DEC;
+    else if (('>=' === value_conditions) || ('=>' === value_conditions)) value_conditions = V_NONINC;
+    else value_conditions = false;
+
+    // check additional conditions
+    additional_conditions = is_callable(options.extra_conditions) ? function(v, i0, i1) {
+        var v0 = v[i0];
+        if (
+            // check in range
+            (min > v0 || v0 > max) ||
+            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
+            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
+            (V_INC === value_conditions && pos[i0] > v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
+       ) return false
+        return options.extra_conditions(v ,i0, i1);
+    } : function(v, i0, i1) {
+        var v0 = v[i0];
+        if (
+            // check in range
+            (min > v0 || v0 > max) ||
+            // when strictly increasing sequence then value at pos i cannot be less than i since it has to accomodate the rest values as well before it, complementary for strictly decreasing sequence (for strictly decreasing sequence we do not know the number of elements that come after unlike for strictly increasing sequence where we can know, but as a workaround we can add last possible position in conditions with all possible values simply as a hint/clue on what is last possible position)
+            // (assume values in range 0..n-1 for positions 0..n-1 or reverse)
+            (V_INC === value_conditions && pos[i0] > v0) ||
+            (V_DEC === value_conditions && pos[pos.length-1]-pos[i0] > v0)
+       ) return false
+        return true;
+    };
+
+    // compute valid combinatorial data satisfying conditions
+    return true === options.lazy ? data : conditional_combinatorial_tensor(data, value_conditions, additional_conditions);
+}
+Tensor.conditional = conditional_combinatorial_tensor;
+Tensor.generate = gen_combinatorial_data;// https://en.wikipedia.org/wiki/Permutations
 Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
 
     // extends and implements CombinatorialIterator
@@ -21928,6 +21062,54 @@ function permutation2inverse(ipermutation, permutation)
         ip[pi] = i; return ip;
     }, ipermutation || new Array(permutation.length), permutation);
 }
+function permutation2inversion(inversion, permutation, N)
+{
+    // O(n log n) inversion computation
+    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
+    var n = permutation.length, k = stdMath.ceil(log2(N||n)),
+        twok = 1 << k, Tl = (1<<(1+k))-1, T = array(Tl, 0, 0);
+
+    return operate(function(inv ,ctr, i) {
+        // Starting bottom-up at the leaf associated with pi
+        for (var node=ctr+twok,j=0; j<k; ++j)
+        {
+            // 1) if the current node is the right child of its parent then subtract from the counter the value stored at the left child of the parent
+            if (node & 1) ctr -= T[(node >>> 1) << 1];
+            // 2) increase the value stored at the current node.
+            T[node] += 1;
+            // 3) move-up the tree
+            node >>>= 1;
+        }
+        T[node] += 1; inv[i] = ctr;
+        return inv;
+    }, inversion || new Array(n), permutation);
+}
+function inversion2permutation(permutation, inversion, N)
+{
+    // O(n log n) inversion computation
+    // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
+    var n = inversion.length, k = stdMath.ceil(log2(N||n)),
+        i, i2, j, twok = 1 << k, Tl = (1<<(1+k))-1, T = new Array(Tl);
+
+    for (i=0; i<=k; ++i) for (j=1,i2=1<<i; j<=i2; ++j) T[i2-1+j] = 1 << (k-i);
+    return operate(function(perm, digit, i) {
+        // Starting top-down the tree
+        for (var node=1,j=0; j<k; ++j)
+        {
+            T[node] -= 1;
+            node <<= 1;
+            // next node as the left or right child whether digit is less than the stored value at the left child
+            if (digit >= T[node])
+            {
+                // If the next node is the right child, then the value of the left child is subtracted from digit
+                digit -= T[node];
+                ++node;
+            }
+        }
+        T[node] = 0; perm[i] = node - twok;
+        return perm;
+    }, permutation || new Array(n), inversion);
+}
 function permutation2count(count, permutation, dir)
 {
     // O(n) count computation K(\sigma)_i = \#\{j > i : \sigma_j > i\}
@@ -22289,9 +21471,9 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             sub = $.sub;
         }
         $.base = n; $.dimension = stdMath.max(0, k);
-        if ("binary"===$.output) $.output = function(item,n){ return Combination.toBinary(item,n[0]); };
-        else if ("conjugate"===$.output) $.output = function(item,n){ return Combination.toComplement(item,n[0]); };
-        CombinatorialIterator.call(self, "Combination", [n, k], $, sub?{method:$.submethod,iter:sub,pos:$.subpos,cascade:$.subcascade}:null);
+        if ('binary' === $.output) $.output = function(item, n) {return Combination.toBinary(item, n[0]);};
+        else if ('conjugate' === $.output) $.output = function(item, n) {return Combination.toComplement(item, n[0]);};
+        CombinatorialIterator.call(self, "Combination", [n, k], $, sub ? {method:$.submethod, iter:sub, pos:$.subpos, cascade:$.subcascade} : null);
     }
 
     ,__static__: {
@@ -22301,7 +21483,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
         ,DUAL: CombinatorialIterator.DUAL
         ,count: function(n, $) {
             var type = $ && $.type ? $.type : "combination"/*"unordered"*/;
-            return 0>n[0] || 0>n[1] ? Abacus.Arithmetic.O : (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type) ? (
+            return (0 > n[0]) || (0 > n[1]) ? Abacus.Arithmetic.O : (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type) ? (
                 exp(n[0], n[1])
             ) : (("repeated" === type) || ("combination+repeated" === type) ? (
                 factorial(n[0]+n[1]-1, n[1])
@@ -22315,12 +21497,12 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
             var item, klass = this, type = $ && $.type ? $.type : "combination"/*"unordered"*/,
-                order = $ && null!=$.order ? $.order : LEX;
-            if (0 > n[0] || 0 > n[1]) return null;
-            if (0===n[1]) return [];
+                order = $ && (null != $.order) ? $.order : LEX;
+            if ((0 > n[0]) || (0 > n[1])) return null;
+            if (0 === n[1]) return [];
 
             dir = -1 === dir ? -1 : 1;
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
+            if ((!(COLEX & order) && (REVERSED & order)) || ((COLEX & order) && !(REVERSED & order)))
                 dir = -dir;
 
             // O(k)
@@ -22340,62 +21522,62 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             var klass = this, type = $ && $.type ? $.type : "combination"/*"unordered"*/,
                 k = n[1], N, i, x, dict;
 
-            if (!item || 0 > n[0] || 0 > n[1] || k !== item.length) return false;
+            if (!item || (0 > n[0]) || (0 > n[1]) || (k !== item.length)) return false;
 
             item = klass.DUAL(item.slice(), n, $);
             if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
             {
                 N = n[0];
-                for (i=0; i<k; i++)
+                for (i=0; i<k; ++i)
                 {
-                    if (0 > item[i] || item[i] >= N) return false;
+                    if ((0 > item[i]) || (item[i] >= N)) return false;
                 }
             }
             else if (("repeated" === type) || ("combination+repeated" === type))
             {
                 N = n[0];
-                for (i=0; i<k; i++)
+                for (i=0; i<k; ++i)
                 {
-                    if (0 > item[i] || item[i] >= N || (i+1<k && item[i] > item[i+1])) return false;
+                    if ((0 > item[i]) || (item[i] >= N) || ((i+1 < k) && (item[i] > item[i+1]))) return false;
                 }
             }
             else if (("ordered" === type) || ("variation" === type))
             {
                 N = n[0];
-                for (dict={},i=0; i<k; i++)
+                for (dict={},i=0; i<k; ++i)
                 {
-                    if (0 > item[i] || item[i] >= N || 1 === dict[item[i]]) return false;
+                    if ((0 > item[i]) || (item[i] >= N) || (1 === dict[item[i]])) return false;
                     dict[item[i]] = 1;
                 }
             }
             else//if (("combination" === type) || ("unordered" === type) || ("binary" === type))
             {
                 N = n[0];
-                for (i=0; i<k; i++)
+                for (i=0; i<k; ++i)
                 {
-                    if (0 > item[i] || item[i] >= N || (i+1<k && item[i] >= item[i+1])) return false;
+                    if ((0 > item[i]) || (item[i] >= N) || ((i+1 < k) && (item[i] >= item[i+1]))) return false;
                 }
             }
             return true;
         }
         ,succ: function(item, index, n, $, dir, CI) {
-            if (!n || !n[0] || (0 >= n[0]) || (0>=n[1]) || (null == item)) return null;
+            if (!n || !n[0] || (0 >= n[0]) || (0 >= n[1]) || (null == item)) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_combination(item, n, dir, $ && $.type ? $.type : "combination"/*"unordered"*/, $ && null!=$.order ? $.order : LEX, CI);
+            return next_combination(item, n, dir, $ && $.type ? $.type : "combination"/*"unordered"*/, $ && (null != $.order) ? $.order : LEX, CI);
         }
         ,rand: function(n, $) {
             var klass = this, type = $ && $.type ? $.type : "combination"/*"unordered"*/,
                 item, i, k = n[1], n_k, c,
                 selected, rndInt = Abacus.Math.rndInt;
-            if (0 > n[0] || 0 > n[1]) return null;
-            if (0===k) return [];
+            if ((0 > n[0]) || (0 > n[1])) return null;
+            if (0 === k) return [];
 
             n = n[0]; n_k = n-k; c = n-1;
             // O(klogk) worst/average-case, unbiased
             if (("repeated" === type) || ("combination+repeated" === type) || ("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
             {
                 // p ~ 1 / n^k (ordered+repeated), p ~ 1 / binom(n+k-1,k) (repeated)
-                item = 1 === k ? [rndInt(0, c)] : array(k, function(){return rndInt(0, c);});
+                item = 1 === k ? [rndInt(0, c)] : array(k, function() {return rndInt(0, c);});
                 if ((1 < k) && (("repeated" === type) || ("combination+repeated" === type))) mergesort(item, 1, true);
             }
             else if (("ordered" === type) || ("variation" === type))
@@ -22407,11 +21589,11 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                ) : (n === k ? (
                     shuffle(array(k, 0, 1))
                ) : (
-                    array(k, function(){
+                    array(k, function() {
                         // select uniformly without repetition
                         var selection = rndInt(0, c);
                         // this is NOT an O(1) look-up operation, in general
-                        while (1 === selected[selection]) selection = (selection+1)%n;
+                        while (1 === selected[selection]) selection = (selection+1) % n;
                         selected[selection] = 1;
                         return selection;
                     })
@@ -22426,20 +21608,20 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 ) : (n === k ? (
                     array(k, 0, 1)
                 ) : (n_k < k ? (
-                    complement(n, array(n_k, function(){
+                    complement(n, array(n_k, function() {
                         // select uniformly without repetition
                         var selection = rndInt(0, c);
                         // this is NOT an O(1) look-up operation, in general
-                        while (1 === selected[selection]) selection = (selection+1)%n;
+                        while (1 === selected[selection]) selection = (selection+1) % n;
                         selected[selection] = 1;
                         return selection;
                     }),true)
                 ) : (
-                    mergesort(array(k, function(){
+                    mergesort(array(k, function() {
                         // select uniformly without repetition
                         var selection = rndInt(0, c);
                         // this is NOT an O(1) look-up operation, in general
-                        while (1 === selected[selection]) selection = (selection+1)%n;
+                        while (1 === selected[selection]) selection = (selection+1) % n;
                         selected[selection] = 1;
                         return selection;
                     }),1,true)
@@ -22457,21 +21639,21 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 add = Arithmetic.add, sub = Arithmetic.sub,
                 mul = Arithmetic.mul, O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J,
                 index = O, i, c, j, k = n[1], N, binom, x, dict,
-                order = $ && null!=$.order ? $.order : LEX,
+                order = $ && (null != $.order) ? $.order : LEX,
                 type = $ && $.type ? $.type : "combination"/*"unordered"*/;
 
-            if (!item || 0 > n[0] || 0 > n[1] || k !== item.length) return J;
+            if (!item || (0 > n[0]) || (0 > n[1]) || (k !== item.length)) return J;
 
-            if (0===k) return O;
+            if (0 === k) return O;
             item = klass.DUAL(item, n, $);
 
             if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
             {
                 // O(k)
                 N = n[0];
-                for (i=0; i<k; i++)
+                for (i=0; i<k; ++i)
                 {
-                    if (0 > item[i] || item[i] >= N) return J;
+                    if ((0 > item[i]) || (item[i] >= N)) return J;
                     index = add(mul(index, N), item[i]);
                 }
             }
@@ -22479,16 +21661,16 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             {
                 // O(k)
                 N = n[0]+k-1; binom = $ && $.count ? $.count : factorial(N, k);
-                for (i=1; i<=k; i++)
+                for (i=1; i<=k; ++i)
                 {
                     // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                     // adjust the order to match MSB to LSB
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
-                    if (0 > item[i-1] || item[i-1] >= n[0] || (i<k && item[i-1] > item[i])) return J;
+                    if ((0 > item[i-1]) || (item[i-1] >= n[0]) || ((i < k) && (item[i-1] > item[i]))) return J;
                     c = N-1-item[i-1]-i+1; j = k+1-i;
                     if (j <= c) index = add(index, factorial(c, j));
                 }
-                index = sub(sub(binom,I),index);
+                index = sub(sub(binom, I),index);
             }
             else if (("ordered" === type) || ("variation" === type))
             {
@@ -22496,33 +21678,33 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 // rank(ordered) = rank(k-n-permutation)
                 // O(klgk)
                 N = n[0];
-                for (dict={},i=0; i<k; i++)
+                for (dict={},i=0; i<k; ++i)
                 {
-                    if (0 > item[i] || item[i] >= N || 1 === dict[item[i]]) return J;
+                    if ((0 > item[i]) || (item[i] >= N) || (1 === dict[item[i]])) return J;
                     dict[item[i]] = 1;
                 }
                 item = permutation2inversion(null, item, N);
-                for (i=0; i<k; i++) index = add(mul(index, N-i), item[ i ]);
+                for (i=0; i<k; ++i) index = add(mul(index, N-i), item[i]);
             }
             else//if (("combination" === type) || ("unordered" === type) || ("binary" === type))
             {
                 // O(k)
                 N = n[0];
                 binom = $ && $.count ? $.count : factorial(N, k);
-                for (i=1; i<=k; i++)
+                for (i=1; i<=k; ++i)
                 {
                     // "Algorithms for Unranking Combinations and Other Related Choice Functions", Zbigniew Kokosi´nski 1995 (http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
                     // adjust the order to match MSB to LSB
                     // reverse of wikipedia article http://en.wikipedia.org/wiki/Combinatorial_number_system
-                    if (0 > item[i-1] || item[i-1] >= N || (i<k && item[i-1] >= item[i])) return J;
+                    if ((0 > item[i-1]) || (item[i-1] >= N) || ((i < k) && (item[i-1] >= item[i]))) return J;
                     c = N-1-item[i-1]; j = k+1-i;
                     if (j <= c) index = add(index, factorial(c, j));
                 }
                 index = sub(sub(binom,I),index);
             }
 
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),I), index);
+            if ((!(COLEX & order) && (REVERSED & order)) || ((COLEX & order) && !(REVERSED & order)))
+                index = sub($ && (null != $.last) ? $.last : sub(klass.count(n, $), I), index);
 
             return index;
         }
@@ -22533,24 +21715,24 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 mul = Arithmetic.mul, lte = Arithmetic.lte, gt = Arithmetic.gt,
                 val = Arithmetic.val, item, binom, k = n[1], N, m, t, p,
                 type = $ && $.type ? $.type : "combination"/*"unordered"*/, repeated,
-                order = $ && null!=$.order ? $.order : LEX;
+                order = $ && (null != $.order) ? $.order : LEX;
 
             index = null == index ? null : Arithmetic.num(index);
-            if (null==index || !Arithmetic.inside(index, Arithmetic.J, $ && null!=$.count ? $.count : klass.count(n, $)))
+            if ((null == index) || !Arithmetic.inside(index, Arithmetic.J, $ && (null != $.count) ? $.count : klass.count(n, $)))
                 return null;
 
-            if (0 > n[0] || 0 > n[1]) return null;
-            if (0===k) return [];
+            if ((0 > n[0]) || (0 > n[1])) return null;
+            if (0 === k) return [];
 
-            if ((!(COLEX&order) && (REVERSED&order)) || ((COLEX&order) && !(REVERSED&order)))
-                index = sub($ && null!=$.last?$.last:sub(klass.count(n, $),Arithmetic.I), index);
+            if ((!(COLEX & order) && (REVERSED & order)) || ((COLEX & order) && !(REVERSED & order)))
+                index = sub($ && (null != $.last) ? $.last : sub(klass.count(n, $), Arithmetic.I), index);
 
             n = n[0];
             item = array(k);
             if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
             {
                 // O(k)
-                for (m=index,p=k-1; p>=0; p--)
+                for (m=index,p=k-1; p>=0; --p)
                 {
                     t = mod(m, n); m = div(m, n);
                     item[p] = val(t);
@@ -22561,7 +21743,7 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 // "Efficient Algorithms to Rank and Unrank Permutations in Lexicographic Order", Blai Bonet (http://ldc.usb.ve/~bonet/reports/AAAI08-ws10-ranking.pdf)
                 // unrank(ordered) = unrank(k-n-permutation)
                 // O(klgk)
-                for (m=index,p=k-1; p>=0; p--)
+                for (m=index,p=k-1; p>=0; --p)
                 {
                     N = n-p; t = mod(m, N); m = div(m, N);
                     item[p] = val(t);
@@ -22576,8 +21758,8 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                 repeated = ("repeated" === type) || ("combination+repeated" === type);
                 N = repeated ? n+k-1 : n;
                 binom = $ && $.count ? $.count : factorial(N, k);
-                index = sub(sub(binom,I),index);
-                binom = div(mul(binom,N-k),N);
+                index = sub(sub(binom, I),index);
+                binom = div(mul(binom, N-k),N);
                 t = N-k+1; m = k; p = N-1;
                 do {
                     if (lte(binom, index))
@@ -22586,16 +21768,16 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
                         if (gt(binom, O))
                         {
                             index = sub(index, binom);
-                            binom = div(mul(binom,m),p);
+                            binom = div(mul(binom, m), p);
                         }
-                        m--; p--;
+                        --m; --p;
                     }
                     else
                     {
-                        binom = div(mul(binom,p-m),p);
-                        t--; p--;
+                        binom = div(mul(binom ,p-m), p);
+                        --t; --p;
                     }
-                } while (m > 0);
+                } while (0 < m);
             }
             n = [n, k];
 
@@ -22613,11 +21795,11 @@ Combination = Abacus.Combination = Class(CombinatorialIterator, {
             return binary2subset(item, n);
         }
         ,pick: function(a, k, type) {
-            return (0 < k) && a.length ? pick(a, k, ("ordered+repeated"!==type)&&("variation+repeated"!==type)&&("repeated+variation"!==type)&&("ordered"!==type)&&("variation"!==type), ("ordered+repeated"===type)||("variation+repeated"===type)||("repeated"===type)||("combination+repeated"===type), new Array(k)) : [];
+            return (0 < k) && a.length ? pick(a, k, ("ordered+repeated" !== type) && ("variation+repeated" !== type) && ("repeated+variation" !== type) && ("ordered" !== type) && ("variation" !== type), ("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated" === type) || ("combination+repeated" === type), new Array(k)) : [];
         }
         ,choose: function(arr, comb) {
-            return comb && comb.length ? array(comb.length, function(i){
-                return 0<=comb[i] && comb[i]<arr.length ? arr[comb[i]] : null;
+            return comb && comb.length ? array(comb.length, function(i) {
+                return (0 <= comb[i]) && (comb[i] < arr.length) ? arr[comb[i]] : null;
             }) : [];
         }
     }
@@ -22634,7 +21816,7 @@ function comb_item_(item, n, k, order, type)
 {
     if (null == item) return null;
     var CI = null, i;
-    if (('ordered' === type) || ('variation' === type)) for (CI={},i=0; i<k; i++) CI[item[i]] = 1;
+    if (('ordered' === type) || ('variation' === type)) for (CI={},i=0; i<k; ++i) CI[item[i]] = 1;
     return CI;
 }
 function next_combination(item, N, dir, type, order, CI)
@@ -22642,7 +21824,7 @@ function next_combination(item, N, dir, type, order, CI)
     //maybe "use asm"
     var k = N[1], n = N[0], i, j, index, curr, i0, DI, MIN, MAX, a, b, da, db, inc, repeated;
 
-    if (0 > N[0] || 0 > N[1]) return null;
+    if ((0 > N[0]) || (0 > N[1])) return null;
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
     MIN = 0; MAX = k-1;
@@ -22678,9 +21860,9 @@ function next_combination(item, N, dir, type, order, CI)
         if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
         {
             i = i0;
-            while ((MIN<=i && i<=MAX) && (item[i] === 0)) i-=DI;
-            if (MIN<=i && i<=MAX)
-                for (n=n-1,item[i]=item[i]-1,j=i+DI; MIN<=j && j<=MAX; j+=DI) item[j] = n;
+            while (((MIN <= i) && (i <= MAX)) && (item[i] === 0)) i -= DI;
+            if ((MIN <= i) && (i <= MAX))
+                for (n=n-1,item[i]=item[i]-1,j=i+DI; (MIN<=j) && (j<=MAX); j+=DI) item[j] = n;
             //else last item
             else item = null;
         }
@@ -22688,11 +21870,11 @@ function next_combination(item, N, dir, type, order, CI)
         {
             if (null == CI) CI = comb_item_(item, n, k, order, type);
             i = i0; index = -1;
-            while (-1===index && MIN<=i && i<=MAX)
+            while ((-1 === index) && (MIN <= i) && (i <= MAX))
             {
-                if (a*item[i]+b-a >= 0 )
+                if (a*item[i]+b-a >= 0)
                 {
-                    for (j=a*item[i]+b-a; 0<=j && j<n; j-=a)
+                    for (j=a*item[i]+b-a; (0<=j) && (j<n); j-=a)
                     {
                         curr = a*j+b;
                         if (null == CI[curr])
@@ -22709,9 +21891,9 @@ function next_combination(item, N, dir, type, order, CI)
             if (-1 < index)
             {
                 item[index] = curr;
-                for (j=n-1-b,curr=a*j+b,i=index+DI; MIN<=i && i<=MAX; i+=DI)
+                for (j=n-1-b,curr=a*j+b,i=index+DI; (MIN<=i) && (i<=MAX); i+=DI)
                 {
-                    while ((0<=j && j<n) && (null != CI[curr])) { j-=a; curr=a*j+b; }
+                    while (((0 <= j) && (j < n)) && (null != CI[curr])) {j -= a; curr = a*j+b;}
                     item[i] = curr; CI[curr] = 1;
                 }
             }
@@ -22725,13 +21907,13 @@ function next_combination(item, N, dir, type, order, CI)
             {
                 DI = -DI; i0 = MAX-i0; da = -da; db = MAX-db; i = MAX-i0;
                 j = 0 > DI ? MIN : MAX;
-                if ((!repeated && item[j]+1>k) || (repeated && item[j]>0))
+                if ((!repeated && (item[j]+1 > k)) || (repeated && (item[j] > 0)))
                 {
-                    if (repeated) while (MIN<=i && i<=MAX && 0===item[i]) i+=DI;
-                    else while (MIN<=i && i<=MAX && da*i+db===item[i]) i+=DI;
-                    item[i]-=1; i-=DI;
+                    if (repeated) while ((MIN <= i) && (i <= MAX) && (0 === item[i])) i += DI;
+                    else while ((MIN <= i) && (i <= MAX) && (da*i+db === item[i])) i += DI;
+                    item[i] -= 1; i -= DI;
                     // attach rest of low block:
-                    while (MIN<=i && i<=MAX) { item[i] = item[i+DI]-inc; i-=DI; }
+                    while ((MIN <= i) && (i <= MAX)) {item[i] = item[i+DI]-inc; i -= DI;}
                 }
                 else item = null;
             }
@@ -22739,24 +21921,24 @@ function next_combination(item, N, dir, type, order, CI)
             {
                 /*if (null == CI)
                 {*/
-                    for (index=-1,i=i0; MIN<=i-DI && i-DI<=MAX; i-=DI)
-                        if (item[i]>item[i-DI]+inc) { index = i; break; }
+                    for (index=-1,i=i0; (MIN<=i-DI) && (i-DI<=MAX); i-=DI)
+                        if (item[i] > item[i-DI]+inc) {index = i; break;}
                 /*}
                 else
                 {
                     index = CI[0];
                 }*/
-                if (!(MIN<=index && index<=MAX) && 0 < item[0>DI?MAX:MIN]) index = 0>DI?MAX:MIN;
+                if (!((MIN <= index) && (index <= MAX)) && (0 < item[0>DI ? MAX : MIN])) index = 0 > DI ? MAX : MIN;
                 // adjust next indexes after the moved index
-                if (MIN<=index && index<=MAX)
+                if ((MIN <= index) && (index <= MAX))
                 {
                     curr = n-1+inc;
-                    for (i=i0; MIN<=i && i<=MAX && 0<DI*(i-index); i-=DI)
+                    for (i=i0; (MIN<=i) && (i<=MAX) && (0<DI*(i-index)); i-=DI)
                     {
                         curr -= inc;
                         item[i] = curr;
                     }
-                    item[index]--;
+                    --item[index];
                     //if (CI) CI[0] = index+DI;
                 }
                 else item = null;
@@ -22770,9 +21952,9 @@ function next_combination(item, N, dir, type, order, CI)
         if (("ordered+repeated" === type) || ("variation+repeated" === type) || ("repeated+variation" === type))
         {
             i = i0;
-            while ((MIN<=i && i<=MAX) && (item[i]+1 === n)) i-=DI;
-            if (MIN<=i && i<=MAX)
-                for (item[i]=item[i]+1,j=i+DI; MIN<=j && j<=MAX; j+=DI) item[j] = 0;
+            while (((MIN <= i) && (i <= MAX)) && (item[i]+1 === n)) i -= DI;
+            if ((MIN <= i) && (i <= MAX))
+                for (item[i]=item[i]+1,j=i+DI; (MIN<=j) && (j<=MAX); j+=DI) item[j] = 0;
             //else last item
             else item = null;
         }
@@ -22780,11 +21962,11 @@ function next_combination(item, N, dir, type, order, CI)
         {
             if (null == CI) CI = comb_item_(item, n, k, order, type);
             i = i0; index = -1;
-            while (-1===index && MIN<=i && i<=MAX)
+            while ((-1 === index) && (MIN <= i) && (i <= MAX))
             {
                 if (a*item[i]+b+a < n )
                 {
-                    for (j=a*item[i]+b+a; 0<=j && j<n; j+=a)
+                    for (j=a*item[i]+b+a; (0<=j) && (j<n); j+=a)
                     {
                         curr = a*j+b;
                         if (null == CI[curr])
@@ -22796,14 +21978,14 @@ function next_combination(item, N, dir, type, order, CI)
                     }
                 }
                 CI[item[i]] = null;
-                i-=DI;
+                i -= DI;
             }
             if (-1 < index)
             {
                 item[index] = curr;
-                for (j=b,curr=a*j+b,i=index+DI; MIN<=i && i<=MAX; i+=DI)
+                for (j=b,curr=a*j+b,i=index+DI; (MIN<=i) && (i<=MAX); i+=DI)
                 {
-                    while ((0<=j && j<n) && (null != CI[curr])) { j+=a; curr=a*j+b; }
+                    while (((0 <= j) && (j < n)) && (null != CI[curr])) {j += a; curr = a*j+b;}
                     item[i] = curr; CI[curr] = 1;
                 }
             }
@@ -22816,14 +21998,14 @@ function next_combination(item, N, dir, type, order, CI)
             if (COLEX & order)
             {
                 DI = -DI; i0 = MAX-i0; da = -da; db = MAX-db; i = MAX-i0;
-                if ((!repeated && item[i]+k<n) || (repeated && item[i]+1<n))
+                if ((!repeated && (item[i]+k < n)) || (repeated && (item[i]+1 < n)))
                 {
                     curr = da*i+db;
-                    while (MIN<=i+DI && i+DI<=MAX && item[i]+inc === item[i+DI])
+                    while ((MIN <= i+DI) && (i+DI <= MAX) && (item[i]+inc === item[i+DI]))
                     {
-                        item[i] = curr; i+=DI; curr += inc;
+                        item[i] = curr; i += DI; curr += inc;
                     }
-                    item[i]+=1;
+                    item[i] += 1;
                 }
                 else item = null;
             }
@@ -22833,13 +22015,13 @@ function next_combination(item, N, dir, type, order, CI)
                 {*/
                     if (repeated)
                     {
-                        for (index=-1,j=n-1,i=i0; MIN<=i && i<=MAX; i-=DI)
-                            if (item[i] < j) { index = i; break; }
+                        for (index=-1,j=n-1,i=i0; (MIN<=i) && (i<=MAX); i-=DI)
+                            if (item[i] < j) {index = i; break;}
                     }
                     else
                     {
-                        for (index=-1,j=n-k,i=i0; MIN<=i && i<=MAX; i-=DI)
-                            if (item[i] < j+da*i+db) { index = i; break; }
+                        for (index=-1,j=n-k,i=i0; (MIN<=i) && (i<=MAX); i-=DI)
+                            if (item[i] < j+da*i+db) {index = i; break;}
                     }
                 /*}
                 else
@@ -22847,10 +22029,10 @@ function next_combination(item, N, dir, type, order, CI)
                     index = CI[0];
                 }*/
                 // adjust next indexes after the moved index
-                if (MIN<=index && index<=MAX)
+                if ((MIN <= index) && (index <= MAX))
                 {
                     curr = item[index]+1;
-                    j = repeated ? n-1 : n-k+da*index+db;
+                    j = repeated ? n-1 : (n-k+da*index+db);
                     if (curr === j)
                     {
                         item[index] = curr;
@@ -22858,7 +22040,7 @@ function next_combination(item, N, dir, type, order, CI)
                     }
                     else if (curr < j)
                     {
-                        for (i=index; MIN<=i && i<=MAX; i+=DI) { item[i]=curr; curr+=inc; }
+                        for (i=index; (MIN<=i) && (i<=MAX); i+=DI) {item[i] = curr; curr += inc;}
                         //if (CI) CI[0] = i0;
                     }
                 }
@@ -22886,7 +22068,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        $.type = $.type || 'subset';
+        $.type = $.type || "subset";
         $.rand = $.rand || {};
         $.base = n;
         $.mindimension = 0;
@@ -22903,9 +22085,9 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         ,DUAL: function(item, n, $, dir) {
             if (null == item) return null;
             // some C-P-T dualities, symmetries & processes at play here
-            var klass = this, type = $ && $.type ? $.type : 'subset',
+            var klass = this, type = $ && $.type ? $.type : "subset",
                 order = $ && (null != $.order) ? $.order : LEX, order0 = null;
-            if ('binary' === type)
+            if ("binary" === type)
             {
                 order = LEX;
                 order0 = $.order;
@@ -22932,7 +22114,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
             var item, klass = this,
-                type = $ && $.type ? $.type : 'subset',
+                type = $ && $.type ? $.type : "subset",
                 order = $ && (null != $.order) ? $.order : LEX;
 
             if (0 > n) return null;
@@ -22945,7 +22127,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             item = [];
             if (0 < n)
             {
-                if ((('binary' === type) || (COLEX & order)) && !(MINIMAL & order))
+                if ((("binary" === type) || (COLEX & order)) && !(MINIMAL & order))
                 {
                     //item = 0 > dir ? array(n, 0, 1) : [];
                     if (0 > dir) item = array(n, 0, 1);
@@ -22960,7 +22142,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, is_binary = 'binary' === ($ || {}).type, i, x, l, dict;
+            var klass = this, is_binary = "binary" === ($ || {}).type, i, x, l, dict;
 
             if (!item || (0 > n)) return false;
 
@@ -23019,7 +22201,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 }
                 return null;
             }
-            else if ((COLEX & order) || ('binary' === type))
+            else if ((COLEX & order) || ("binary" === type))
             {
                 dir = -1 === dir ? -1 : 1;
                 //if (REVERSED & order) dir = -dir;
@@ -23050,7 +22232,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 add = Arithmetic.add, sub = Arithmetic.sub,
                 type = $ && $.type ? $.type : "subset",
                 order = $ && (null != $.order) ? $.order : LEX,
-                is_binary = 'binary' === type,
+                is_binary = "binary" === type,
                 is_reflected = REFLECTED & order,
                 index = J, x, y, i, j, k, l, dict;
 
@@ -23105,7 +22287,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                 for (index=O,i=0; i<l; ++i)
                 {
                     x = item[i];
-                    if ((0 > x) || (x >= n) || (1 === dict[x]) || ((i+1 < l) && (x <= item[i+1]))) return J;
+                    if ((0 > x) || (x >= n) || (1 === dict[x]) || ((i+1 < l) && (x >= item[i+1])/*item is in increasing order*/)) return J;
                     index = add(index, subset_bin_rank(n, x));
                     dict[x] = 1;
                 }
@@ -23173,7 +22355,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
                         ++i; index = shr(index, 1);
                     }
                 }
-                else if ('binary' === type)
+                else if ("binary" === type)
                 {
                     if (REVERSED & order)
                         index = sub($ && (null != $.last) ? $.last : sub(count, I), index);
@@ -23225,7 +22407,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
 
     ,_update: function() {
         var self = this, $ = self.$, n = self.n, item = self.__item, itemlen,
-            order = $.order || LEX, is_binary = 'binary' === $.type,
+            order = $.order || LEX, is_binary = "binary" === $.type,
             is_reflected = REFLECTED & order;
         if ((null != item) && (n+1 !== item.length))
         {
@@ -23248,7 +22430,7 @@ Subset = Abacus.Powerset = Abacus.Subset = Class(CombinatorialIterator, {
         var n = this.n;
         if (n+1 === item.length)
         {
-            var $ = this.$, order = $.order || LEX, is_binary = 'binary' === $.type,
+            var $ = this.$, order = $.order || LEX, is_binary = "binary" === $.type,
                 is_reflected = REFLECTED & order;
             item = ((is_binary) && !is_reflected) || (is_reflected && !(is_binary)) ? item.slice(n-item[n], n) : item.slice(0, item[n]);
         }
@@ -23352,6 +22534,62 @@ function next_subset(item, N, dir, order)
     }
     return item;
 }
+function subset2binary(item, n)
+{
+    if (0 >= n) return [];
+    var binary = array(n, 0, 0), i, l = item.length;
+    for (n=n-1,i=0; i<l; ++i) binary[n-item[i]] = 1;
+    return binary;
+}
+function binary2subset(item, n)
+{
+    n = stdMath.min(n || item.length, item.length);
+    var subset = new Array(n), i, j;
+    for (n=n-1,i=0,j=0; i<=n; ++i) if (0 < item[i]) subset[j++] = n - i;
+    if (j < subset.length) subset.length = j; // truncate if needed
+    return subset;
+}
+function subset_lex_rank(n, x, y)
+{
+    var Arithmetic = Abacus.Arithmetic, add = Arithmetic.add,
+        O = Arithmetic.O, I = Arithmetic.I,
+        k, j, index = O, key;
+    key = String(n) + ',' + String(x) + ',' + String(null == y ? null : x-y);
+    if (null == subset_lex_rank.mem[key])
+    {
+        if (null == y)
+        {
+            for (k=I,j=0; j<x; ++j) k = add(k, pow2(n-j-1));
+            index = add(index, k);
+            subset_lex_rank.mem[key] = index;
+        }
+        else
+        {
+            if (x === y+1)
+            {
+                index = add(index, I);
+                subset_lex_rank.mem[key] = index;
+            }
+            else if (x > y+1)
+            {
+                for (k=I,j=y+1; j<x; ++j) k = add(k, pow2(n-j-1));
+                index = add(index, k);
+                subset_lex_rank.mem[key] = index;
+            }
+        }
+    }
+    else
+    {
+        index = subset_lex_rank.mem[key];
+    }
+    return index;
+}
+subset_lex_rank.mem = Obj();
+function subset_bin_rank(n, x, y)
+{
+    var Arithmetic = Abacus.Arithmetic;
+    return (n > x) && (0 <= x) ? Arithmetic.shl(Arithmetic.I, x) : Arithmetic.O;
+}
 // https://en.wikipedia.org/wiki/Partitions
 // https://en.wikipedia.org/wiki/Composition_(combinatorics)
 // integer compositions (resp. restricted k-compositions) have bijections ("isomorphisms") to subsets (resp. k-subsets=combinations)
@@ -23373,9 +22611,9 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        M = null != $["max="] ? ($["max="]|0) : null;
-        W = null != $["min="] ? ($["min="]|0) : null;
-        K = null != $["parts="] ? ($["parts="]|0) : null;
+        M = null != $['max='] ? ($['max=']|0) : null;
+        W = null != $['min='] ? ($['min=']|0) : null;
+        K = null != $['parts='] ? ($['parts=']|0) : null;
         k1 = null != K ? K : (null != W && null != M ? (M === W ? stdMath.ceil(n/W) : stdMath.max(1, stdMath.ceil((n-M)/W))+1) : (null != W ? stdMath.ceil(n/W) : (null != M ? stdMath.max(0, n-M)+1 : n)));
         k0 = null != K ? K : (null != W && null != M ? (M === W ? stdMath.ceil(n/M) : stdMath.max(1, stdMath.ceil((n-W)/M))+1) : (null != W ? 2 : (null != M ? stdMath.ceil(n/M) : 1)));
         $.base = n;
@@ -23394,10 +22632,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,__static__: {
          C: function(item, N, LEN, $, dir) {
             // C process / symmetry, ie Rotation/Complementation/Conjugation, CC = I
-            var klass = this, is_composition = 'composition' === ($ && $.type ? $.type : 'partition'),
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, is_composition = "composition" === ($ && $.type ? $.type : "partition"),
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 reflected = -1 === dir, itemlen;
             if ((null != K) || (null != M) || (null != W)) return item; // TODO
             if (LEN+1 === item.length)
@@ -23418,7 +22656,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,T: CombinatorialIterator.T
         ,DUAL: function(item, n, $, dir) {
             if (null == item) return null;
-            var klass = this, type = $ && $.type ? $.type : 'partition',
+            var klass = this, type = $ && $.type ? $.type : "partition",
                 order = $ && (null != $.order) ? $.order : LEX, order0 = null;
             if (/*('composition' !== type) &&*/ (COLEX & order))
             {
@@ -23431,10 +22669,10 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
         ,count: function(n, $) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
-                type = $ && $.type ? $.type : 'partition';
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
+                type = $ && $.type ? $.type : "partition";
             if (0 > n)
             {
                 return O;
@@ -23445,20 +22683,20 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             }
             else
             {
-                return 'composition' === type ? compositions(n, K, M, W) : partitions(n, K, M, W);
+                return "composition" === type ? compositions(n, K, M, W) : partitions(n, K, M, W);
             }
         }
         ,initial: function(n, $, dir) {
             // some C-P-T dualities, symmetries & processes at play here
             // last (0>dir) is C-symmetric of first (0<dir)
             var klass = this, item, i, k, l, r, w, m,
-                type = $ && $.type ? $.type : 'partition',
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+                type = $ && $.type ? $.type : "partition",
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 order = $ && (null != $.order) ? $.order : LEX,
                 LEN = $ && $.dimension ? $.dimension : 1,
-                is_composition = 'composition' === type, conj = false;
+                is_composition = "composition" === type, conj = false;
 
             if (0 === n)
             {
@@ -23467,12 +22705,12 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             else if (
                 (0 > n)
                 || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || /*(W+(K-1)*(n-W) < n) ||*/ (K*W > n)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
                 || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || ((null != W) && (0 >= W || W > n || (W < n && W+W > n)))
-                || ((null != M) && (0 >= M || M > n))
-                || ((null != K) && (0 >= K || K > n))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return null;
@@ -23847,22 +23085,22 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, type = $ && $.type ? $.type : 'partition',
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, type = $ && $.type ? $.type : "partition",
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 i, l, x, k0, k1, d0, d1;
 
             if (
                 !item || !item.length
                 || (0 > n)
                 || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || K*W > n))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
                 || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || ((null != W) && (0 >= W || W > n || (W < n && W+W > n)))
-                || ((null != M) && (0 >= M || M > n))
-                || ((null != K) && (0 >= K || K > n))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
                 return false;
 
@@ -23873,7 +23111,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             if (d0 > item.length || d1 < item.length) return false;
 
             item = klass.DUAL(item.slice(), n, $, -1);
-            if ('composition' === type)
+            if ("'composition" === type)
             {
                 if ((null != W) && (M === W))
                 {
@@ -23905,58 +23143,87 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         }
         ,succ: function(item, index, n, $, dir, PI) {
             if ((null == n) || (null == item)) return null;
-            var type = $ && $.type ? $.type : 'partition',
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, Arithmetic = Abacus.Arithmetic,
+                type = $ && $.type ? $.type : "partition",
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 dim = $ && $.dimension ? $.dimension : 1,
                 order = $ && (null != $.order) ? $.order : LEX;
 
             if (
                 (0 >= n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             ) return null;
 
+            function next_item(item, n, $, dir)
+            {
+                return klass.unrank(Arithmetic.add(klass.rank(item, n, $), 0 > dir ? Arithmetic.J : Arithmetic.I), n, $);
+            }
+
             dir = -1 === dir ? -1 : 1;
-            return 'composition' === type ? next_composition(item, n, dir, K, M, W, dim, order, PI) : next_partition(item, n, dir, K, M, W, dim, order, PI);
+            if ("composition" === type)
+            {
+                if ((null != W) && (null == K))
+                {
+                    // succ not working correctly, use default rank/unrank
+                    return next_item(item, n, $, dir);
+                }
+                else
+                {
+                    return next_composition(item, n, dir, K, M, W, dim, order, PI);
+                }
+            }
+            else
+            {
+                if ((null != W) && (null == K))
+                {
+                    // succ not working correctly, use default rank/unrank
+                    return next_item(item, n, $, dir);
+                }
+                else
+                {
+                    return next_partition(item, n, dir, K, M, W, dim, order, PI);
+                }
+            }
         }
         ,rand: function(n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
-                type = $ && $.type ? $.type : 'partition',
+                type = $ && $.type ? $.type : "partition",
                 order = $ && (null != $.order) ? $.order : LEX,
-                M = $ && (null != $["max="]) ? ($["max="]|0) : null,
-                W = $ && (null != $["min="]) ? ($["min="]|0) : null,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 O = Arithmetic.O, I = Arithmetic.I,
                 item = null, index, total, last;
 
             if (0 === n)
             {
-                item = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                item = ((null == K) || (0 < K)) && ((null == M) || (0 === M)) && ((null == W) || (0 === W)) ? array(K || 1, 0, 0) : null;
             }
             else if (
                 (0 > n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return null;
             }
             else
             {
-                total = $ && null!=$.count ? $.count : klass.count(n, $);
+                total = $ && (null != $.count) ? $.count : klass.count(n, $);
                 if (Arithmetic.gt(total, O))
                 {
                     last = Arithmetic.sub(total, I);
@@ -23978,70 +23245,70 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,rank: function(item, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
-                order = $ && null!=$.order ? $.order : LEX,
-                M = $ && null!=$["max="] ? $["max="]|0 : null,
-                W = $ && null!=$["min="] ? $["min="]|0 : null,
-                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+                order = $ && (null != $.order) ? $.order : LEX,
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 LEN = $ && $.dimension ? $.dimension : 1,
                 index, J = Arithmetic.J, O = Arithmetic.O,
-                i, x, w, m, c, total, last;
+                i, x, w, m, l, c, total, last;
 
             if (item && (0 === n))
             {
-                if (LEN+1===item.length)
+                if (LEN+1 === item.length)
                 {
-                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0], LEN) : item.slice(0, item[LEN][0]);
                 }
                 //if (REFLECTED & order) item = item.slice().reverse();
                 item = klass.DUAL(item.slice(), n, $, -1);
 
-                index = (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) && (K||1)===item.length && item.length===item.filter(function(x){return 0===x;}).length ? O : J;
+                index = ((null == K) || (0 < K)) && ((null == M) || (0 === M)) && ((null == W) || (0 === W)) && ((K||1) === item.length) && (item.length === item.filter(function(x) {return 0 === x;}).length) ? O : J;
             }
             else if (
                 !item || !item.length
                 || (0 > n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return J;
             }
             else
             {
-                if (LEN+1===item.length)
+                if (LEN+1 === item.length)
                 {
-                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+                    item = REFLECTED & order ? item.slice(LEN-item[LEN][0], LEN) : item.slice(0, item[LEN][0]);
                 }
-                if ($.mindimension > item.length || $.maxdimension < item.length) return J;
+                if (($.mindimension > item.length) || ($.maxdimension < item.length)) return J;
 
                 //if (REFLECTED & order) item = item.slice().reverse();
                 item = klass.DUAL(item.slice(), n, $, -1);
 
-                total = $ && null!=$.count ? $.count : klass.count(n, $);
+                total = $ && (null != $.count) ? $.count : klass.count(n, $);
                 last = Arithmetic.sub(total, 1);
 
                 if ("composition" === type)
                 {
                     index = O;
-                    if (W && M === W)
+                    if (W && (M === W))
                     {
-                        return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? O : J;
+                        return ((null == K) || (n === K*M)) && (0 === item.filter(function(x) {return x !== M;}).length) ? O : J;
                     }
-                    for (w=0,m=0,i=0; i<item.length; i++)
+                    for (w=0,m=0,i=0,l=item.length; i<l; ++i)
                     {
                         x = item[i];
-                        if (0 >= x || x > n || (W && x < W) || (M && x > M)) return J;
+                        if ((0 >= x) || (x > n) || (W && (x < W)) || (M && (x > M))) return J;
                         index = Arithmetic.add(index, W === x ? O : comp_rank(n, x, W, M, K ? K-i : null, w, m));
-                        if (W === x) w++;
-                        if (M === x) m++;
+                        if (W === x) ++w;
+                        if (M === x) ++m;
                         n -= x;
                     }
-                    if (0 !== n || i !== item.length) return J;
+                    if ((0 !== n) || (i !== l)) return J;
                     if (REVERSED & order) index = Arithmetic.sub(last, index);
                 }
                 else
@@ -24049,18 +23316,18 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     index = last;
                     if (W)
                     {
-                        if (M === W) return (null == K || n === K*M) && 0 === item.filter(function(x){return x !== M;}).length ? O : J;
-                        n -= W; if (K) K--;
+                        if (M === W) return ((null == K) || (n === K*M)) && (0 === item.filter(function(x) {return x !== M;}).length) ? O : J;
+                        n -= W; if (K) --K;
                     }
-                    for (i=0; i<item.length; i++)
+                    for (i=0,l=item.length; i<l; ++i)
                     {
                         x = item[i];
-                        if (W && i+1===item.length && W===x && 0===n) continue;
-                        if (0 >= x || x > n || (W && x < W) || (M && x > M) || (i+1<item.length && x < item[i+1])) return J;
-                        index = Arithmetic.sub(index, M && 0 === i ? O : part_rank(n, x, W, M, K ? K-i : null));
+                        if (W && (i+1 === l) && (W === x) && (0 === n)) continue;
+                        if ((0 >= x) || (x > n) || (W && (x < W)) || (M && (x > M)) || ((i+1 < l) && (x < item[i+1]))) return J;
+                        index = Arithmetic.sub(index, M && (0 === i) ? O : part_rank(n, x, W, M, K ? K-i : null));
                         n -= x;
                     }
-                    if (0 !== n || i !== item.length) return J;
+                    if ((0 !== n) || (i !== l)) return J;
                     if (!(REVERSED & order)) index = Arithmetic.sub(last, index);
                 }
             }
@@ -24069,32 +23336,32 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
         ,unrank: function(index, n, $) {
             var klass = this, Arithmetic = Abacus.Arithmetic,
                 type = $ && $.type ? $.type : "partition",
-                order = $ && null!=$.order ? $.order : LEX,
-                M = $ && null!=$["max="] ? $["max="]|0 : null,
-                W = $ && null!=$["min="] ? $["min="]|0 : null,
-                K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+                order = $ && (null != $.order) ? $.order : LEX,
+                M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+                W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 item = [], O = Arithmetic.O, i, x, w, m, c, total, last,
                 LEN = $ && $.dimension ? $.dimension : 1;
 
             index = null == index ? null : Arithmetic.num(index);
-            total = $ && null!=$.count ? $.count : klass.count(n, $);
+            total = $ && (null != $.count) ? $.count : klass.count(n, $);
             last = Arithmetic.sub(total, 1);
 
             if ((0 === n) && (null != index))
             {
-                item = Arithmetic.equ(O, index) && (null == K || 0 < K) && (null == M || 0 === M) && (null == W || 0 === W) ? array(K || 1, 0, 0) : null;
+                item = Arithmetic.equ(O, index) && ((null == K) || (0 < K)) && ((null == M) || (0 === M)) && ((null == W) || (0 === W)) ? array(K || 1, 0, 0) : null;
             }
             else if (
                 (null == index)
                 || Arithmetic.lt(index, O) || Arithmetic.gt(index, last)
                 || (0 > n)
-                || (null!=K && null!=M && null!=W && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
-                || (null!=M && null!=W && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || (M === W && 0 !== n % M) || (M !== W && (M+W > n || (M+W < n && n-(M+W) < W)))))
-                || (null!=K && null!=W && ((0 >= K) || (0 >= W) || K*W > n))
-                || (null!=K && null!=M && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
-                || (null!=W && (0 >= W || W > n || (W < n && W+W > n)))
-                || (null!=M && (0 >= M || M > n))
-                || (null!=K && (0 >= K || K > n))
+                || ((null != K) && (null != M) && (null != W) && ((0 >= K) || (0 >= W) || (0 >= M) || (W > M) || (K*W+M > n+W) || (K*M+W < n+M)))
+                || ((null != M) && (null != W) && ((0 >= M) || (0 >= W) || (W > M) || (M > n) || (W > n) || ((M === W) && (0 !== (n % M))) || ((M !== W) && ((M+W > n) || ((M+W < n) && (n-(M+W) < W))))))
+                || ((null != K) && (null != W) && ((0 >= K) || (0 >= W) || (K*W > n)))
+                || ((null != K) && (null != M) && ((0 >= K) || (0 >= M) || (K+M > n+1) || (K*M < n)))
+                || ((null != W) && ((0 >= W) || (W > n) || ((W < n) && (W+W > n))))
+                || ((null != M) && ((0 >= M) || (M > n)))
+                || ((null != K) && ((0 >= K) || (K > n)))
             )
             {
                 return null;
@@ -24104,20 +23371,20 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                 if (REVERSED & order) index = Arithmetic.sub(last, index);
                 if ("composition" === type)
                 {
-                    if (W && M === W)
+                    if (W && (M === W))
                     {
-                        item = null == K || stdMath.floor(n/M) === K ? array(stdMath.floor(n/M), M) : null;
+                        item = (null == K) || (stdMath.floor(n/M) === K) ? array(stdMath.floor(n/M), M) : null;
                     }
                     if (item && !item.length)
                     {
-                        for (w=0,m=0,i=0; 0<n; i++)
+                        for (w=0,m=0,i=0; 0<n; ++i)
                         {
-                            x = W && 0 === i ? n-W : n;
+                            x = W && (0 === i) ? n-W : n;
                             x = M ? stdMath.min(M, x) : x;
-                            while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=comp_rank(n, x, W, M, K ? K-i : null, w, m), index)) x--;
-                            if (0 >= x || (W && W > x)) break;
-                            if (W === x) w++;
-                            if (M === x) m++;
+                            while ((!W || (W <= x)) && (1 <= x) && Arithmetic.gt(c=comp_rank(n, x, W, M, K ? K-i : null, w, m), index)) --x;
+                            if ((0 >= x) || (W && (W > x))) break;
+                            if (W === x) ++w;
+                            if (M === x) ++m;
                             item.push(x);
                             index = Arithmetic.sub(index, c);
                             n -= x;
@@ -24130,24 +23397,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
                     {
                         if (M === W)
                         {
-                            item = null == K || stdMath.floor(n/M) === K ? array(stdMath.floor(n/M), M) : null;
+                            item = (null == K) || (stdMath.floor(n/M) === K) ? array(stdMath.floor(n/M), M) : null;
                         }
                         else
                         {
-                            n -= W; if (K) K--;
+                            n -= W; if (K) --K;
                         }
                     }
                     if (M)
                     {
-                        n -= M; if (K) K--;
+                        n -= M; if (K) --K;
                     }
                     if (item && !item.length)
                     {
-                        for (i=0; 0<n; i++)
+                        for (i=0; 0<n; ++i)
                         {
                             x = M ? stdMath.min(M, n) : n;
-                            while ((!W || W <= x) && 1 <= x && Arithmetic.gt(c=part_rank(n, x, W, M, K ? K-i : null), index)) x--;
-                            if (0 >= x || (W && W > x)) break;
+                            while ((!W || (W <= x)) && (1 <= x) && Arithmetic.gt(c=part_rank(n, x, W, M, K ? K-i : null), index)) --x;
+                            if ((0 >= x) || (W && (W > x))) break;
                             item.push(x);
                             index = Arithmetic.sub(index, c);
                             n -= x;
@@ -24161,7 +23428,7 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
             return item;
         }
         ,toConjugate: function(item, type) {
-            return conjugatepartition("composition"===type, item);
+            return conjugatepartition("composition" === type, item);
         }
         ,toSubset: function(item) {
             return composition2subset(item);
@@ -24179,24 +23446,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,_update: function() {
         var self = this, $ = self.$, n = self.n, item = self.__item,
             type = $ && $.type ? $.type : "partition",
-            order = $ && null!=$.order ? $.order : LEX,
-            M = $ && null!=$["max="] ? $["max="]|0 : null,
-            W = $ && null!=$["min="] ? $["min="]|0 : null,
-            K = $ && null!=$["parts="] ? $["parts="]|0 : null,
+            order = $ && (null != $.order) ? $.order : LEX,
+            M = $ && (null != $['max=']) ? ($['max=']|0) : null,
+            W = $ && (null != $['min=']) ? ($['min=']|0) : null,
+            K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
             LEN = $.dimension, itemlen, x, y = 0, z = 0;
         if ((null != item) && (LEN+1 !== item.length))
         {
             itemlen = item.length;
             item = item.slice();
-            if (null != M || null != W)
+            if ((null != M) || (null != W))
             {
-                for (x=0,y=0,z=0; x<itemlen; x++)
+                for (x=0,y=0,z=0; x<itemlen; ++x)
                 {
-                    if (M === item[x]) y++;
-                    if (W === item[x]) z++;
+                    if (M === item[x]) ++y;
+                    if (W === item[x]) ++z;
                 }
             }
-            if (itemlen<LEN)
+            if (itemlen < LEN)
             {
                 if (REFLECTED & order) item.unshift.apply(item, new Array(LEN-itemlen));
                 else item.push.apply(item, new Array(LEN-itemlen));
@@ -24209,26 +23476,24 @@ Partition = Abacus.Partition = Class(CombinatorialIterator, {
     ,output: function(item) {
         if (null == item) return null;
         var self = this, $ = self.$, n = self.n,
-            M = null!=$["max="] ? $["max="]|0 : null,
-            W = null!=$["min="] ? $["min="]|0 : null,
-            K = null!=$["parts="] ? $["parts="]|0 : null,
-            order = null!=$.order ? $.order : LEX, LEN = $.dimension;
-        if (LEN+1===item.length)
+            M = null != $['max='] ? ($['max=']|0) : null,
+            W = null != $['min='] ? ($['min=']|0) : null,
+            K = null != $['parts='] ? ($['parts=']|0) : null,
+            order = null != $.order ? $.order : LEX, LEN = $.dimension;
+        if (LEN+1 === item.length)
         {
-            item = REFLECTED & order ? item.slice(LEN-item[LEN][0],LEN) : item.slice(0,item[LEN][0]);
+            item = REFLECTED & order ? item.slice(LEN-item[LEN][0], LEN) : item.slice(0, item[LEN][0]);
         }
         return CombinatorialIterator[PROTO].output.call(self, item);
     }
 });
-// aliases
-Partition.transpose = Partition.conjugate;
 function next_partition(item, N, dir, K, M, W, LN, order, PI)
 {
     //maybe "use asm"
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
 
-    if (0 >= n || (null != K && 0 >= K) || (null != W && 0 >= W) || (null != M && 0 >= M)) return null;
+    if ((0 >= n) || (null != K && 0 >= K) || (null != W && 0 >= W) || (null != M && 0 >= M)) return null;
 
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
@@ -24280,27 +23545,27 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 if ((w < item[j]) && (d+(k<m) < item[j] || stdMath.floor(rem/(K-l-r-k))+(0<(rem%(K-l-r-k))) < item[j])) i = j;
                 k++; rem -= item[j];
             }
-            if (-1 === i || MAX < i+r*DI || MIN > i-l*DI)
+            if ((-1 === i) || (MAX < i+r*DI) || (MIN > i-l*DI))
             {
                 item = null;
             }
             else
             {
-                if (M === item[i]) item[INFO][NMAX]--;
-                item[i]--;
-                if (W === item[i]) item[INFO][NMIN]++;
+                if (M === item[i]) --item[INFO][NMAX];
+                --item[i];
+                if (W === item[i]) ++item[INFO][NMIN];
                 i += DI;
                 rem = 1; k = 0; j = i;
-                while (MIN<=j-l*DI && j+r*DI<=MAX) {k++; rem += item[j]; j += DI;}
-                while (0<k && 0<rem && MIN<=i-l*DI && i+r*DI<=MAX)
+                while ((MIN <= j-l*DI) && (j+r*DI <= MAX)) {++k; rem += item[j]; j += DI;}
+                while ((0 < k) && (0 < rem) && (MIN <= i-l*DI) && (i+r*DI <= MAX))
                 {
-                    k--;
-                    if (M === item[i]) item[INFO][NMAX]--;
-                    if (W === item[i]) item[INFO][NMIN]--;
+                    --k;
+                    if (M === item[i]) --item[INFO][NMAX];
+                    if (W === item[i]) --item[INFO][NMIN];
                     item[i] = stdMath.min(MIN <= i-DI && i-DI <= MAX ? item[i-DI] : n, stdMath.max(w, rem-w*k));
                     rem -= item[i];
-                    if (M === item[i]) item[INFO][NMAX]++;
-                    if (W === item[i]) item[INFO][NMIN]++;
+                    if (M === item[i]) ++item[INFO][NMAX];
+                    if (W === item[i]) ++item[INFO][NMIN];
                     i += DI;
                 }
             }
@@ -24318,43 +23583,43 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
             }
 
             j = M ? i0+DI : i0;
-            if ((MIN <= j && j <= MAX) && (item[j] > w))
+            if (((MIN <= j) && (j <= MAX)) && (item[j] > w))
             {
                 i = i1; rem = 0; l = 0; r = 0;
-                while ((MIN<=i && i<=MAX) && (DI*(i-j) >= 0) && (w === item[i]))
+                while (((MIN <= i) && (i <= MAX)) && (DI*(i-j) >= 0) && (w === item[i]))
                 {
-                    rem+=item[i];
-                    if (M === item[i]) l++;
-                    if (W === item[i]) r++;
-                    i-=DI;
+                    rem += item[i];
+                    if (M === item[i]) ++l;
+                    if (W === item[i]) ++r;
+                    i -= DI;
                 }
-                if (M === item[i]) item[INFO][NMAX]--;
-                m = item[i]-1; rem++; item[i] = m;
+                if (M === item[i]) --item[INFO][NMAX];
+                m = item[i]-1; ++rem; item[i] = m;
                 item[INFO][LEN] = (0 > DI ? LN-i : i+1) + (W ? 1 : 0);
                 item[INFO][NMAX] -= l;
                 item[INFO][NMIN] -= r;
-                if (W === item[i]) item[INFO][NMIN]++;
+                if (W === item[i]) ++item[INFO][NMIN];
                 if (m < rem)
                 {
                     j = rem % m;
                     rem = stdMath.floor(rem/m);
                     while (0 < rem--)
                     {
-                        i+=DI;
+                        i += DI;
                         item[i] = m;
-                        item[INFO][LEN]++;
-                        if (M === item[i]) item[INFO][NMAX]++;
-                        if (W === item[i]) item[INFO][NMIN]++;
+                        ++item[INFO][LEN];
+                        if (M === item[i]) ++item[INFO][NMAX];
+                        if (W === item[i]) ++item[INFO][NMIN];
                     }
                     rem = j;
                 }
                 if (w <= rem)
                 {
-                    i+=DI;
+                    i += DI;
                     item[i] = rem; rem = 0;
-                    item[INFO][LEN]++;
-                    if (M === item[i]) item[INFO][NMAX]++;
-                    if (W === item[i]) item[INFO][NMIN]++;
+                    ++item[INFO][LEN];
+                    if (M === item[i]) ++item[INFO][NMAX];
+                    if (W === item[i]) ++item[INFO][NMIN];
                 }
                 if (0 < rem)
                 {
@@ -24362,7 +23627,7 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 }
                 if (W)
                 {
-                    i+=DI;
+                    i += DI;
                     item[i] = W;
                 }
             }
@@ -24388,48 +23653,48 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 i = i1;
             }
             rem = 0; k = 0;
-            while (MIN <= i && i <= MAX && w === item[i]) {rem += item[i]; k++; i -= DI;}
-            if (i < MIN || i > MAX)
+            while ((MIN <= i) && (i <= MAX) && (w === item[i])) {rem += item[i]; ++k; i -= DI;}
+            if ((i < MIN) || (i > MAX))
             {
                 item = null;
             }
             else
             {
-                if (M === item[i]) item[INFO][NMAX]--;
-                if (W === item[i]-1) item[INFO][NMIN]++;
-                item[i]--; rem += item[i]; k++; i -= DI;
-                if (i < MIN || i > MAX)
+                if (M === item[i]) --item[INFO][NMAX];
+                if (W === item[i]-1) ++item[INFO][NMIN];
+                --item[i]; rem += item[i]; ++k; i -= DI;
+                if ((i < MIN) || (i > MAX))
                 {
                     item = null;
                 }
                 else
                 {
-                    while (MIN<=i && i<=MAX && ((M && M<item[i]+1) || (MIN<=i-DI && i-DI<=MAX && item[i-DI]<item[i]+1))) {rem += item[i]; k++; i -= DI;}
-                    if (i < MIN || i > MAX)
+                    while ((MIN <= i) && (i <= MAX) && ((M && (M < item[i]+1)) || ((MIN <= i-DI) && (i-DI <= MAX) && (item[i-DI] < item[i]+1)))) {rem += item[i]; ++k; i -= DI;}
+                    if ((i < MIN) || (i > MAX))
                     {
                         item = null;
                     }
                     else
                     {
-                        item[i]++;
-                        if (M === item[i]) item[INFO][NMAX]++;
+                        ++item[i];
+                        if (M === item[i]) ++item[INFO][NMAX];
                         m = 0 < k ? rem % k : 0;
                         d = 0 < k ? stdMath.floor(rem/k) : rem;
                         j = 0;
                         while (0 < rem)
                         {
                             i += DI;
-                            if (M === item[i]) item[INFO][NMAX]--;
-                            if (W === item[i]) item[INFO][NMIN]--;
+                            if (M === item[i]) --item[INFO][NMAX];
+                            if (W === item[i]) --item[INFO][NMIN];
                             item[i] = d+(j<m); rem -= item[i];
-                            if (M === item[i]) item[INFO][NMAX]++;
-                            if (W === item[i]) item[INFO][NMIN]++;
-                            j++;
+                            if (M === item[i]) ++item[INFO][NMAX];
+                            if (W === item[i]) ++item[INFO][NMIN];
+                            ++j;
                         }
                         if (W)
                         {
                             item[i1] = W;
-                            //item[INFO][NMIN]++;
+                            //++item[INFO][NMIN];
                         }
                     }
                 }
@@ -24456,7 +23721,7 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 w = 1;
                 m = stdMath.min(M, n-M);
                 k = stdMath.ceil(n/M)-1;
-                m = /*MAX*/item[INFO][LEN] > k+1 || item[i0+(k-1)*DI] < m;
+                m = /*MAX*/(item[INFO][LEN] > k+1) || (item[i0+(k-1)*DI] < m);
                 j = i0+DI;
             }
             else
@@ -24465,40 +23730,40 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                 m = item[i0] < n;
                 j = i0;
             }
-            if (MIN <= j && j <= MAX && m)
+            if ((MIN <= j) && (j <= MAX) && m)
             {
                 l = 0; r = 0; rem = 0;
                 if (0 < MAX)
                 {
                     i = i1-DI;
                     rem += item[i1];
-                    if (M === item[i1]) l++;
-                    if (W === item[i1]) r++;
+                    if (M === item[i1]) ++l;
+                    if (W === item[i1]) ++r;
                 }
                 else
                 {
                     i = i1;
                 }
-                while ((MIN<=i && i<=MAX) && (MIN<=i-DI && i-DI<=MAX) && (DI*(i-j) > 0) && (item[i-DI] === item[i] || (W && (rem-1 < W))))
+                while (((MIN <= i) && (i <= MAX)) && ((MIN <= i-DI) && (i-DI <= MAX)) && (DI*(i-j) > 0) && (item[i-DI] === item[i] || (W && (rem-1 < W))))
                 {
                     rem += item[i];
-                    if (M === item[i]) l++;
-                    if (W === item[i]) r++;
+                    if (M === item[i]) ++l;
+                    if (W === item[i]) ++r;
                     i -= DI;
                 }
                 if (M && (M <= item[i])) return null;
                 item[INFO][LEN] = (0 > DI ? LN-i : i+1);
                 item[INFO][NMAX] -= l;
                 item[INFO][NMIN] -= r;
-                if (W === item[i]) item[INFO][NMIN]--;
-                item[i]++; rem--; j = i;
-                if (M === item[i]) item[INFO][NMAX]++;
+                if (W === item[i]) --item[INFO][NMIN];
+                ++item[i]; --rem; j = i;
+                if (M === item[i]) ++item[INFO][NMAX];
                 while (w <= rem)
                 {
-                    i += DI; item[INFO][LEN]++;
+                    i += DI; ++item[INFO][LEN];
                     item[i] = w; rem -= w;
                     if (W) item[INFO][NMIN]++;
-                    if (M === item[i]) item[INFO][NMAX]++;
+                    if (M === item[i]) ++item[INFO][NMAX];
                 }
                 if (0 < rem)
                 {
@@ -24511,18 +23776,18 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                         MIN = 0; MAX = item[INFO][LEN]-1;
                     }
                     i = j+DI;
-                    while (MIN<=i && i<=MAX && 0 < rem)
+                    while ((MIN <= i) && (i <= MAX) && (0 < rem))
                     {
-                        m = MIN<=i-DI && i-DI<=MAX ? (item[i-DI]>item[i] ? 1 : 0) : stdMath.min(M ? M-item[i] : rem, rem);
+                        m = (MIN <= i-DI) && (i-DI <= MAX) ? (item[i-DI] > item[i] ? 1 : 0) : stdMath.min(M ? M-item[i] : rem, rem);
                         if (W === item[i])
                         {
                             if (1 === item[INFO][NMIN])
                             {
                                 i = j;
-                                while (MIN<=i && i<=MAX && MIN<=i-DI && i-DI<=MAX && item[i-DI]===item[i]) i -= DI;
-                                if (MIN<=i-DI && i-DI<=MAX)
+                                while ((MIN <= i) && (i <= MAX) && (MIN <= i-DI) && (i-DI <= MAX) && (item[i-DI] === item[i])) i -= DI;
+                                if ((MIN <= i-DI) && (i-DI <= MAX))
                                 {
-                                    item[i]++; rem--;
+                                    ++item[i]; --rem;
                                     i += DI;
                                     continue;
                                 }
@@ -24535,11 +23800,11 @@ function next_partition(item, N, dir, K, M, W, LN, order, PI)
                             }
                             else
                             {
-                                item[INFO][NMIN]--;
+                                --item[INFO][NMIN];
                             }
                         }
                         item[i] += m; rem -= m;
-                        if (M === item[i]) item[INFO][NMAX]++;
+                        if (M === item[i]) ++item[INFO][NMAX];
                         i += DI;
                     }
                 }
@@ -24558,7 +23823,7 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
     var n = N, INFO = LN, LEN = 0, NMAX = 1, NMIN = 2,
         i, j, i0, i1, k, nn, m, w, d, l, r, rem, DI = 1, MIN, MAX;
 
-    if (0 >= n || (null != K && 0 >= K) || (null != W && 0 >= W) || (null != M && 0 >= M)) return null;
+    if ((0 >= n) || ((null != K) && (0 >= K)) || ((null != W) && (0 >= W)) || ((null != M) && (0 >= M))) return null;
 
     // some C-P-T dualities, symmetries & processes at play here
     // LEX
@@ -24603,14 +23868,14 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 else
                 {
                     i = i1-DI; j = i1; d = item[i1]-W; rem = item[i1]; k = 1;
-                    while (MIN<=i && i<=MAX && (W===item[i] || M<item[j]+1))
+                    while ((MIN <= i) && (i <= MAX) && ((W === item[i]) || (M < item[j]+1)))
                     {
                         rem += item[i];
-                        k++;
+                        ++k;
                         j = i;
                         i -= DI;
                     }
-                    if (MIN > i || i > MAX)
+                    if ((MIN > i) || (i > MAX))
                     {
                         item = null;
                     }
@@ -24619,52 +23884,52 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         if (0 < d)
                         {
                             m = rem+1-W*(k-1);
-                            if (1 === item[INFO][NMIN] && W === item[j] && (k-1)*M+W < rem+1)
+                            if ((1 === item[INFO][NMIN]) && (W === item[j]) && ((k-1)*M+W < rem+1))
                             {
                                 rem += item[i]-W; item[i] = W;
-                                item[INFO][NMIN]++;
+                                ++item[INFO][NMIN];
                             }
-                            else if (1 === item[INFO][NMAX] && M === item[i] && M > m)
+                            else if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > m))
                             {
                                 item[i] = stdMath.max(item[j], item[i1]); rem += M-item[i];
-                                if (M !== item[i]) item[INFO][NMAX]--;
-                                if (W === item[i]) item[INFO][NMIN]++;
+                                if (M !== item[i]) --item[INFO][NMAX];
+                                if (W === item[i]) ++item[INFO][NMIN];
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                rem++; item[i]--;
-                                if (W === item[i]) item[INFO][NMIN]++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                ++rem; --item[i];
+                                if (W === item[i]) ++item[INFO][NMIN];
                             }
                             m = rem-W*k;
-                            while (0 < rem && MIN <= j && j <= MAX)
+                            while ((0 < rem) && (MIN <= j) && (j <= MAX))
                             {
-                                if (W === item[j]) item[INFO][NMIN]--;
-                                if (M === item[j]) item[INFO][NMAX]--;
+                                if (W === item[j]) --item[INFO][NMIN];
+                                if (M === item[j]) --item[INFO][NMAX];
                                 item[j] = stdMath.min(M, W+m);
                                 rem -= item[j]; m -= item[j]-W;
-                                if (M === item[j]) item[INFO][NMAX]++;
-                                if (W === item[j]) item[INFO][NMIN]++;
+                                if (M === item[j]) ++item[INFO][NMAX];
+                                if (W === item[j]) ++item[INFO][NMIN];
                                 j += DI;
                             }
                         }
                         else
                         {
-                            if (1 === item[INFO][NMIN] && W === item[j])
+                            if ((1 === item[INFO][NMIN]) && (W === item[j]))
                             {
                                 item[j] = item[i]; item[i] = W;
                             }
-                            else if (1 === item[INFO][NMAX] && M === item[i] && M > item[j]+1)
+                            else if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > item[j]+1))
                             {
                                 item[i] = item[j]; item[j] = M;
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                if (W === item[j]) item[INFO][NMIN]--;
-                                item[i]--; item[j]++;
-                                if (M === item[j]) item[INFO][NMAX]++;
-                                if (W === item[i]) item[INFO][NMIN]++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                if (W === item[j]) --item[INFO][NMIN];
+                                --item[i]; ++item[j];
+                                if (M === item[j]) ++item[INFO][NMAX];
+                                if (W === item[i]) ++item[INFO][NMIN];
                             }
                         }
                     }
@@ -24682,18 +23947,18 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-W*(K-1) > m)
                     {
                         i = i1-DI;
-                        while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
+                        while ((MIN <= i) && (i <= MAX) && (W === item[i])) i -= DI;
                         j = i+DI;
-                        if (1 === item[INFO][NMIN] && W === item[j] && j === i1)
+                        if ((1 === item[INFO][NMIN]) && (W === item[j]) && (j === i1))
                         {
                             item[j] = item[i]; item[i] = W;
                         }
                         else
                         {
-                            if (W === item[j]) item[INFO][NMIN]--;
-                            item[i]--; item[i1] = W; item[j] = 1+m;
-                            if (W === item[i]) item[INFO][NMIN]++;
-                            if (item[i1] === W && W !== m) item[INFO][NMIN]++;
+                            if (W === item[j]) --item[INFO][NMIN];
+                            --item[i]; item[i1] = W; item[j] = 1+m;
+                            if (W === item[i]) ++item[INFO][NMIN];
+                            if ((item[i1] === W) && (W !== m)) ++item[INFO][NMIN];
                         }
                     }
                     // last
@@ -24709,14 +23974,14 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 else
                 {
                     i = i1-DI; j = i1; d = item[i1]-1; rem = item[i1]; k = 1;
-                    while (MIN<=i && i<=MAX && (1===item[i] || M<item[j]+1))
+                    while ((MIN <= i) && (i <= MAX) && ((1 === item[i]) || (M < item[j]+1)))
                     {
                         rem += item[i];
-                        k++;
+                        ++k;
                         j = i;
                         i -= DI;
                     }
-                    if (MIN > i || i > MAX)
+                    if ((MIN > i) || (i > MAX))
                     {
                         item = null;
                     }
@@ -24724,37 +23989,37 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     {
                         if (0 < d)
                         {
-                            if (1 === item[INFO][NMAX] && M === item[i] && M > rem-(k-1)+1)
+                            if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > rem-(k-1)+1))
                             {
                                 item[i] = stdMath.max(item[j], item[i1]); rem += M-item[i];
-                                if (M !== item[i]) item[INFO][NMAX]--;
+                                if (M !== item[i]) --item[INFO][NMAX];
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                item[i]--; rem++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                --item[i]; ++rem;
                             }
                             l = 0;
-                            while (0 < rem && MIN <= j && j <= MAX)
+                            while ((0 < rem) && (MIN <= j) && (j <= MAX))
                             {
-                                if (M === item[j]) item[INFO][NMAX]--;
+                                if (M === item[j]) --item[INFO][NMAX];
                                 item[j] = stdMath.min(M, rem-(k-l-1));
                                 rem -= item[j];
-                                if (M === item[j]) item[INFO][NMAX]++;
-                                j += DI; l++;
+                                if (M === item[j]) ++item[INFO][NMAX];
+                                j += DI; ++l;
                             }
                         }
                         else
                         {
-                            if (1 === item[INFO][NMAX] && M === item[i] && M > item[j]+1)
+                            if ((1 === item[INFO][NMAX]) && (M === item[i]) && (M > item[j]+1))
                             {
                                 item[i] = item[j]; item[j] = M;
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                item[i]--; item[j]++;
-                                if (M === item[j]) item[INFO][NMAX]++;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                --item[i]; ++item[j];
+                                if (M === item[j]) ++item[INFO][NMAX];
                             }
                         }
                     }
@@ -24769,9 +24034,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > m)
                     {
                         item[i0] = 1; i = i0+DI;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i+=DI;
-                        item[i]--;
-                        if (MIN <= i-DI && i-DI <= MAX) item[i-DI] = 1+m;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i += DI;
+                        --item[i];
+                        if ((MIN <= i-DI) && (i-DI <= MAX)) item[i-DI] = 1+m;
                     }
                     // last
                     else item = null;
@@ -24782,9 +24047,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > m)
                     {
                         item[i1] = 1; i = i1;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i-=DI;
-                        item[i]--;
-                        if (MIN <= i+DI && i+DI <= MAX) item[i+DI] = 1+m;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i -= DI;
+                        --item[i];
+                        if ((MIN <= i+DI) && (i+DI <= MAX)) item[i+DI] = 1+m;
                     }
                     // last
                     else item = null;
@@ -24809,20 +24074,20 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
             else if (M)
             {
                 rem = 0; i = i1; k = item[INFO][LEN]; l = 0;
-                while (MIN <= i && i <= MAX && 1 === item[i])
+                while ((MIN <= i) && (i <= MAX) && (1 === item[i]))
                 {
-                    if (M === item[i]) l++;
+                    if (M === item[i]) ++l;
                     i -= DI;
-                    rem++;
-                    k--;
+                    ++rem;
+                    --k;
                 }
-                if (i < MIN || i > MAX)
+                if ((i < MIN) || (i > MAX))
                 {
                     item = null;
                 }
                 else
                 {
-                    if (1 === item[INFO][NMAX] && M === item[i])
+                    if ((1 === item[INFO][NMAX]) && (M === item[i]))
                     {
                         if (n === M)
                         {
@@ -24830,40 +24095,40 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         }
                         else if (M <= rem+1)
                         {
-                            if (M === item[i]) item[INFO][NMAX]--;
-                            item[i]--; rem++; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                            if (M === item[i]) --item[INFO][NMAX];
+                            --item[i]; ++rem; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                             while (0 < rem)
                             {
                                 i += DI;
                                 item[i] = stdMath.min(M, rem);
-                                item[INFO][LEN]++;
-                                if (M === item[i]) item[INFO][NMAX]++;
+                                ++item[INFO][LEN];
+                                if (M === item[i]) ++item[INFO][NMAX];
                                 rem -= item[i];
                             }
                         }
                         else if (M < item[i]+rem)
                         {
                             if (M === item[i]) item[INFO][NMAX]--;
-                            item[i]-=M-rem; rem=M; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                            item[i] -= M-rem; rem = M; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                             while (0 < rem)
                             {
                                 i += DI;
                                 item[i] = stdMath.min(M, rem);
-                                item[INFO][LEN]++;
-                                if (M === item[i]) item[INFO][NMAX]++;
+                                ++item[INFO][LEN];
+                                if (M === item[i]) ++item[INFO][NMAX];
                                 rem -= item[i];
                             }
                         }
                         else
                         {
-                            if (M === item[i]) l++;
-                            rem+=item[i]; i-=DI; k--;
-                            while (MIN <= i && i <= MAX && 1 === item[i])
+                            if (M === item[i]) ++l;
+                            rem += item[i]; i -= DI; --k;
+                            while ((MIN <= i) && (i <= MAX) && (1 === item[i]))
                             {
-                                if (M === item[i]) l++;
-                                i-=DI;
-                                rem++;
-                                k--;
+                                if (M === item[i]) ++l;
+                                i -= DI;
+                                ++rem;
+                                --k;
                             }
                             /*if (0 > DI)
                             {
@@ -24873,20 +24138,20 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                             {
                                 MIN = 0; MAX = item[INFO][LEN]-1;
                             }*/
-                            if (i < MIN || i > MAX)
+                            if ((i < MIN) || (i > MAX))
                             {
                                 item = null;
                             }
                             else
                             {
-                                if (M === item[i]) item[INFO][NMAX]--;
-                                item[i]--; rem++; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                                if (M === item[i]) --item[INFO][NMAX];
+                                --item[i]; ++rem; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                                 while (0 < rem)
                                 {
                                     i += DI;
                                     item[i] = stdMath.min(M, rem);
-                                    item[INFO][LEN]++;
-                                    if (M === item[i]) item[INFO][NMAX]++;
+                                    ++item[INFO][LEN];
+                                    if (M === item[i]) ++item[INFO][NMAX];
                                     rem -= item[i];
                                 }
                             }
@@ -24894,14 +24159,14 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     }
                     else
                     {
-                        if (M === item[i]) item[INFO][NMAX]--;
-                        item[i]--; rem++; item[INFO][LEN] = k; item[INFO][NMAX]-=l;
+                        if (M === item[i]) --item[INFO][NMAX];
+                        --item[i]; ++rem; item[INFO][LEN] = k; item[INFO][NMAX] -= l;
                         while (0 < rem)
                         {
                             i += DI;
                             item[i] = stdMath.min(M, rem);
-                            item[INFO][LEN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                             rem -= item[i];
                         }
                     }
@@ -24912,18 +24177,18 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 if (n > item[INFO][LEN])
                 {
                     i = i1; rem = 0;
-                    while (MIN <= i && i <= MAX && 1 === item[i]) {i-=DI; rem++;}
-                    m = item[i]-1; item[i] = m; rem++;
+                    while ((MIN <= i) && (i <= MAX) && (1 === item[i])) {i -= DI; ++rem;}
+                    m = item[i]-1; item[i] = m; ++rem;
                     if (0 < rem)
                     {
-                        if (MIN <= i+DI && i+DI <= MAX)
+                        if ((MIN <= i+DI) && (i+DI <= MAX))
                         {
-                            i+=DI; item[i]=rem; rem=0;
+                            i += DI; item[i] = rem; rem = 0;
                             item[INFO][LEN] = 0 > DI ? LN-i : i+1;
                         }
                         else
                         {
-                            while (0 < rem--) {i+=DI; item[i] = 1; item[INFO][LEN]++;}
+                            while (0 < rem--) {i += DI; item[i] = 1; ++item[INFO][LEN];}
                         }
                     }
                 }
@@ -24946,8 +24211,8 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 if (M === W) return null; // there is only one, if any
                 j = i1; k = 1;
                 i = j-DI; d = M-item[j]; rem = item[j];
-                while (MIN <= i && i <= MAX && (M < item[i]+1 || W === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
-                if (MIN > i || i > MAX)
+                while ((MIN <= i) && (i <= MAX) && ((M < item[i]+1) || (W === item[j]))) {rem += item[i]; ++k; j = i; i -= DI;}
+                if ((MIN > i) || (i > MAX))
                 {
                     item = null;
                 }
@@ -24956,45 +24221,45 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (0 < d)
                     {
                         m = rem-1-W*(k-1);
-                        if (1 === item[INFO][NMIN] && W === item[i] && k <= m)
+                        if ((1 === item[INFO][NMIN]) && (W === item[i]) && (k <= m))
                         {
                             item[i] = item[i1]; item[i1] = W; rem -= item[i]-W;
                         }
-                        else if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > m)
+                        else if ((1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1) && (M > m))
                         {
                             item[j] = item[i]; item[i] = M; rem -= M-item[j];
                         }
                         else
                         {
-                            if (W === item[i]) item[INFO][NMIN]--;
-                            item[i]++; rem--;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (W === item[i]) --item[INFO][NMIN];
+                            ++item[i]; --rem;
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                         i = i1; m = rem-W*k;
-                        while (MIN<=i && i<=MAX && 0<rem)
+                        while ((MIN <= i) && (i <= MAX) && (0 < rem))
                         {
-                            if (M === item[i]) item[INFO][NMAX]--;
-                            if (W === item[i]) item[INFO][NMIN]--;
+                            if (M === item[i]) --item[INFO][NMAX];
+                            if (W === item[i]) --item[INFO][NMIN];
                             item[i] = stdMath.min(M, W+m);
                             rem -= item[i]; m -= item[i]-W;
-                            if (M === item[i]) item[INFO][NMAX]++;
-                            if (W === item[i]) item[INFO][NMIN]++;
-                            i -= DI; l++;
+                            if (M === item[i]) ++item[INFO][NMAX];
+                            if (W === item[i]) ++item[INFO][NMIN];
+                            i -= DI; ++l;
                         }
                     }
                     else
                     {
-                        if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
+                        if ((1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1))
                         {
                             item[j] = item[i]; item[i] = M;
                         }
                         else
                         {
-                            if (M === item[j]) item[INFO][NMAX]--;
-                            if (W === item[i]) item[INFO][NMIN]--;
-                            item[i]++; item[j]--;
-                            if (W === item[j]) item[INFO][NMIN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (M === item[j]) --item[INFO][NMAX];
+                            if (W === item[i]) --item[INFO][NMIN];
+                            ++item[i]; --item[j];
+                            if (W === item[j]) ++item[INFO][NMIN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                     }
                 }
@@ -25004,17 +24269,17 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 if (n-W*(K-1) > item[i0])
                 {
                     i = i1;
-                    while (MIN <= i && i <= MAX && W === item[i]) i-=DI;
+                    while ((MIN <= i) && (i <= MAX) && (W === item[i])) i -= DI;
                     j = i-DI;
-                    if (1 === item[INFO][NMIN] && W === item[j])
+                    if ((1 === item[INFO][NMIN]) && (W === item[j]))
                     {
                         item[j] = item[i]; item[i] = W;
                     }
                     else
                     {
-                        if (W === item[j]) item[INFO][NMIN]--;
-                        item[i]--; item[j]++;
-                        if (W === item[i]) item[INFO][NMIN]++;
+                        if (W === item[j]) --item[INFO][NMIN];
+                        --item[i]; ++item[j];
+                        if (W === item[i]) ++item[INFO][NMIN];
                         m = item[i]; item[i] = item[i1]; item[i1] = m;
                     }
                 }
@@ -25025,8 +24290,8 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
             {
                 j = i1; k = 1;
                 i = j-DI; d = M-item[j]; rem = item[j];
-                while (MIN <= i && i <= MAX && ((M && M < item[i]+1) || 1 === item[j])) {rem+=item[i]; k++; j = i; i-=DI;}
-                if (MIN > i || i > MAX)
+                while ((MIN <= i) && (i <= MAX) && ((M && (M < item[i]+1)) || (1 === item[j]))) {rem += item[i]; ++k; j = i; i -= DI;}
+                if ((MIN > i) || (i > MAX))
                 {
                     item = null;
                 }
@@ -25034,36 +24299,36 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 {
                     if (0 < d)
                     {
-                        if (M && 1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1 && M > rem-(k-1)-1)
+                        if (M && (1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1) && (M > rem-(k-1)-1))
                         {
-                            item[j] = item[i]; item[i] = M; rem-=M-item[j];
+                            item[j] = item[i]; item[i] = M; rem -= M-item[j];
                         }
                         else
                         {
-                            item[i]++; rem--;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[i]; --rem;
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                         l = 0; i = i1;
-                        while (MIN<=i && i<=MAX && 0<rem)
+                        while ((MIN <= i) && (i <= MAX) && (0 < rem))
                         {
-                            if (M === item[i]) item[INFO][NMAX]--;
+                            if (M === item[i]) --item[INFO][NMAX];
                             item[i] = stdMath.min(M, rem-(k-l-1));
                             rem -= item[i];
-                            if (M === item[i]) item[INFO][NMAX]++;
-                            i -= DI; l++;
+                            if (M === item[i]) ++item[INFO][NMAX];
+                            i -= DI; ++l;
                         }
                     }
                     else
                     {
-                        if (1 === item[INFO][NMAX] && M === item[j] && M > item[i]+1)
+                        if ((1 === item[INFO][NMAX]) && (M === item[j]) && (M > item[i]+1))
                         {
                             item[j] = item[i]; item[i] = M;
                         }
                         else
                         {
-                            if (M === item[j]) item[INFO][NMAX]--;
-                            item[i]++; item[j]--;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            if (M === item[j]) --item[INFO][NMAX];
+                            ++item[i]; --item[j];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
                     }
                 }
@@ -25076,9 +24341,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > item[i1])
                     {
                         i = i0;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i+=DI;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i += DI;
                         m = item[i]; item[i] = 1; item[i0] = m-1;
-                        if (MIN <= i+DI && i+DI <= MAX) item[i+DI]++;
+                        if ((MIN <= i+DI) && (i+DI <= MAX)) ++item[i+DI];
                     }
                     // last
                     else item = null;
@@ -25088,9 +24353,9 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     if (n-K+1 > item[i0])
                     {
                         i = i1;
-                        while (MIN <= i && i <= MAX && 1 === item[i]) i-=DI;
+                        while ((MIN <= i) && (i <= MAX) && (1 === item[i])) i -= DI;
                         m = item[i]; item[i] = 1; item[i1] = m-1;
-                        if (MIN <= i-DI && i-DI <= MAX) item[i-DI]++;
+                        if ((MIN <= i-DI) && (i-DI <= MAX)) ++item[i-DI];
                     }
                     // last
                     else item = null;
@@ -25110,19 +24375,19 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 w = W ? W : 1;
                 i = i1;
                 rem = item[i];
-                if (M === item[i]) item[INFO][NMAX]--;
-                if (W && W === item[i]) item[INFO][NMIN]--;
-                item[INFO][LEN]--;
+                if (M === item[i]) --item[INFO][NMAX];
+                if (W && W === item[i]) --item[INFO][NMIN];
+                --item[INFO][LEN];
                 i -= DI;
-                while (null != W && MIN<=i && i<=MAX && rem<1+W)
+                while ((null != W) && (MIN <= i) && (i <= MAX) && (rem < 1+W))
                 {
                     rem += item[i];
-                    item[INFO][LEN]--;
-                    if (M === item[i]) item[INFO][NMAX]--;
-                    if (W === item[i]) item[INFO][NMIN]--;
+                    --item[INFO][LEN];
+                    if (M === item[i]) --item[INFO][NMAX];
+                    if (W === item[i]) --item[INFO][NMIN];
                     i -= DI;
                 }
-                if (MIN > i || MAX < i)
+                if ((MIN > i) || (MAX < i))
                 {
                     return null;
                 }
@@ -25138,33 +24403,33 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         j = i;
                         rem -= M-item[i];
                         item[i] = M;
-                        item[INFO][NMAX]++;
+                        ++item[INFO][NMAX];
                         while (w <= rem)
                         {
                             i += DI;
                             item[i] = w;
                             rem -= w;
-                            item[INFO][LEN]++;
-                            if (W) item[INFO][NMIN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            if (W) ++item[INFO][NMIN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
-                        if (null != W && 0 === item[INFO][NMIN])
+                        if ((null != W) && (0 === item[INFO][NMIN]))
                         {
                             rem += item[i]-W;
                             item[i] = W;
-                            item[INFO][NMIN]++;
+                            ++item[INFO][NMIN];
                         }
                     }
                 }
                 else
                 {
                     l = 0; r = 0; m = 0;
-                    while (MIN <= i && i <= MAX && (M === item[i]))
+                    while ((MIN <= i) && (i <= MAX) && (M === item[i]))
                     {
-                        l++;
+                        ++l;
                         m += item[i];
                         i -= DI;
-                        k--;
+                        --k;
                     }
                     /*if (0 > DI)
                     {
@@ -25174,18 +24439,18 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                     {
                         MIN = 0; MAX = item[INFO][LEN]-1;
                     }*/
-                    if (MIN > i || MAX < i)
+                    if ((MIN > i) || (MAX < i))
                     {
                         return null;
                     }
                     else
                     {
                         j = i;
-                        item[i]++;
+                        ++item[i];
                         rem += m-1;
                         item[INFO][LEN] = k;
                         item[INFO][NMAX] -= l;
-                        if (M === item[i]) item[INFO][NMAX]++;
+                        if (M === item[i]) ++item[INFO][NMAX];
                         if (0 === item[INFO][NMAX])
                         {
                             m = M;
@@ -25200,22 +24465,22 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                             i += DI;
                             item[i] = w;
                             rem -= w;
-                            item[INFO][LEN]++;
-                            if (W) item[INFO][NMIN]++;
-                            if (M === item[i]) item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            if (W) ++item[INFO][NMIN];
+                            if (M === item[i]) ++item[INFO][NMAX];
                         }
-                        if (W && 0 === item[INFO][NMIN])
+                        if (W && (0 === item[INFO][NMIN]))
                         {
                             rem += item[i]-W;
                             item[i] = W;
-                            item[INFO][NMIN]++;
+                            ++item[INFO][NMIN];
                         }
                         if (0 < m)
                         {
                             i += DI;
                             item[i] = M;
-                            item[INFO][LEN]++;
-                            item[INFO][NMAX]++;
+                            ++item[INFO][LEN];
+                            ++item[INFO][NMAX];
                         }
                     }
                     if (0 < rem)
@@ -25228,12 +24493,12 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         {
                             MIN = 0; MAX = item[INFO][LEN]-1;
                         }*/
-                        while(MIN<=i && i<=MAX && /*0<=DI*(i-j) &&*/ 0<rem)
+                        while ((MIN <= i) && (i <= MAX) && /*(0 <= DI*(i-j)) &&*/ (0 < rem))
                         {
                             m = item[i];
                             if (M > m)
                             {
-                                if (W && W === m)
+                                if (W && (W === m))
                                 {
                                     if (1 === item[INFO][NMIN])
                                     {
@@ -25242,17 +24507,17 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                                     }
                                     else
                                     {
-                                        item[INFO][NMIN]--;
+                                        --item[INFO][NMIN];
                                         item[i] = stdMath.min(M, m+rem);
                                         rem -= item[i]-m;
-                                        if (M === item[i]) item[INFO][NMAX]++;
+                                        if (M === item[i]) ++item[INFO][NMAX];
                                     }
                                 }
                                 else
                                 {
                                     item[i] = stdMath.min(M, m+rem);
                                     rem -= item[i]-m;
-                                    if (M === item[i]) item[INFO][NMAX]++;
+                                    if (M === item[i]) ++item[INFO][NMAX];
                                 }
                             }
                             i -= DI;
@@ -25280,49 +24545,49 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                 {
                     i = i1;
                     rem = item[i];
-                    item[INFO][LEN]--;
-                    if (W && W === item[i]) item[INFO][NMIN]--;
+                    --item[INFO][LEN];
+                    if (W && (W === item[i])) --item[INFO][NMIN];
                     i -= DI;
-                    if (W && W === item[i]) item[INFO][NMIN]--;
-                    item[i]++;
-                    rem--;
+                    if (W && (W === item[i])) --item[INFO][NMIN];
+                    ++item[i];
+                    --rem;
                     while (w <= rem)
                     {
                         i += DI;
                         item[i] = w;
                         rem -= w;
-                        item[INFO][LEN]++;
-                        if (W) item[INFO][NMIN]++;
+                        ++item[INFO][LEN];
+                        if (W) ++item[INFO][NMIN];
                     }
-                    if (W && 0 === item[INFO][NMIN])
+                    if (W && (0 === item[INFO][NMIN]))
                     {
                         rem += item[i]-W;
                         item[i] = W;
-                        item[INFO][NMIN]++;
+                        ++item[INFO][NMIN];
                     }
                     if (0 < rem)
                     {
-                        if (W && 1 === item[INFO][NMIN] && W === item[i])
+                        if (W && (1 === item[INFO][NMIN]) && (W === item[i]))
                         {
                             if (W < rem)
                             {
                                 rem += item[i];
-                                item[INFO][LEN]--;
-                                item[INFO][NMIN]--;
+                                --item[INFO][LEN];
+                                --item[INFO][NMIN];
                                 i -= DI;
-                                item[i]++;
-                                rem--;
+                                ++item[i];
+                                --rem;
                                 while (w <= rem)
                                 {
                                     i += DI;
                                     item[i] = w;
                                     rem -= w;
-                                    item[INFO][LEN]++;
-                                    item[INFO][NMIN]++;
+                                    ++item[INFO][LEN];
+                                    ++item[INFO][NMIN];
                                 }
                                 if (0 < rem)
                                 {
-                                    if (W === item[i]) item[INFO][NMIN]--;
+                                    if (W === item[i]) --item[INFO][NMIN];
                                     item[i] += rem;
                                 }
                             }
@@ -25333,7 +24598,7 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
                         }
                         else
                         {
-                            if (W && W === item[i]) item[INFO][NMIN]--;
+                            if (W && W === item[i]) --item[INFO][NMIN];
                             item[i] += rem;
                         }
                         rem = 0;
@@ -25347,6 +24612,852 @@ function next_composition(item, N, dir, K, M, W, LN, order, PI)
     }
     return item;
 }
+function p_nkab(n, k, a, b)
+{
+    // recursively compute the partition count using the recursive relation:
+    // http://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function
+    // http://www.programminglogic.com/integer-partition-algorithm/
+    // compute number of integer partitions of n
+    // into exactly k parts having summands between a and b (inclusive)
+    // k*a <= n <= k*b
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
+        p = O, key, j0, j1;
+
+    if (
+        Arithmetic.lt(n, O)
+        || Arithmetic.lte(k, O)
+        || Arithmetic.lte(a, O)
+        || Arithmetic.gt(a, b)
+        || Arithmetic.gt(mul(k, a), n)
+        || Arithmetic.lt(mul(k, b), n)
+    ) return p;
+
+    if (Arithmetic.gt(a, I)) {n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I); a = I;}
+
+    //if ((Arithmetic.equ(b, n) && Arithmetic.equ(k, I)) || (Arithmetic.equ(k, n) && Arithmetic.equ(b, I))) return I;
+    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.lte(n, b) ? I : p;
+    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.gte(b, I) ? I : p;
+    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : p;
+    if (Arithmetic.equ(add(a, I), b)) return Arithmetic.lte(sub(n, mul(k, a)), k) ? I : p;
+
+    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
+    if (null == p_nkab.mem[key])
+    {
+        // compute it directly
+        j0 = Arithmetic.max(I, Arithmetic.divceil(n, k));
+        k = sub(k, I);
+        j1 = Arithmetic.min(b, sub(n, k));
+        while (Arithmetic.lte(j0, j1))
+        {
+            p = add(p, p_nkab(sub(n, j0), k, I, j0));
+            j0 = add(j0, I);
+        }
+        p_nkab.mem[key] = p;
+    }
+    return p_nkab.mem[key];
+}
+p_nkab.mem = Obj();
+function part_rank(n, limit, min, max, k)
+{
+    if (is_instance(n, Integer)) return new n[CLASS](part_rank(n.num, limit, min, max, k));
+
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I, p = O, key,
+        add = Arithmetic.add, sub = Arithmetic.sub, div = Arithmetic.div, mod = Arithmetic.mod;
+
+    if (is_instance(limit, Integer)) limit = limit.num;
+    if (is_instance(min, Integer)) min = min.num;
+    //if (is_instance(max, Integer)) max = max.num;
+    key = String(n) + ',' + String(limit) + ',' + String(min)/* + ',' + String(max)*/ + ',' + String(k);
+    if (null == part_rank.mem[key])
+    {
+        n = N(n);
+        limit = sub(N(limit), I);
+        //max = null == max ? n : N(max);
+        min = null == min ? I : N(min);
+
+        if (null == k)
+        {
+            k = I;
+            while (Arithmetic.lte(k, n))
+            {
+                p = add(p, p_nkab(n, k, min, limit));
+                k = add(k, I);
+            }
+        }
+        else
+        {
+            p = p_nkab(n, N(k), min, limit);
+        }
+        part_rank.mem[key] = p;
+    }
+    return part_rank.mem[key];
+}
+part_rank.mem = Obj();
+function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
+{
+    if (is_instance(n, Integer)) return new n[CLASS](partitions(n.num, K, M, W));
+
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul, mod = Arithmetic.mod,
+        k0, k1, p = O, k, w, m, key;
+
+    if (is_instance(K, Integer)) K = K.num;
+    if (is_instance(M, Integer)) M = M.num;
+    if (is_instance(W, Integer)) W = W.num;
+    K = null == K ? null : Arithmetic.abs(N(K));
+    M = null == M ? null : Arithmetic.abs(N(M));
+    W = null == W ? null : Arithmetic.abs(N(W));
+    n = N(n);
+    k0 = null!=K ? K : I;
+    k1 = null!=K ? K : n;
+    w = null!=W ? W : I;
+    m = null!=M ? M : n;
+
+    if (Arithmetic.equ(n, O))
+        return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
+    if (
+        Arithmetic.lt(n, O)
+        || ((null != K) && (null != M) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || ((null != M) && (null != W) && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
+        || ((null != K) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
+        || ((null != K) && (null != M) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || ((null != M) && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
+        || ((null != W) && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
+        || ((null != K) && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
+    ) return p;
+
+    if ((null != M) && (null == K) && (null == W)) {m = n; k0 = M; k1 = M; K = M; M = null;} // count the conjugates, same
+
+    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
+    if (null == partitions.mem[key])
+    {
+        if ((null != M) && (null != W))
+        {
+            n = Arithmetic.equ(M, W) ? sub(n, M) : sub(n, add(M, W));
+            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, Arithmetic.equ(M, W) ? I : two))) return I;
+            if (null != K)
+            {
+                k1 = sub(k1, two);
+                k0 = sub(k0, two);
+            }
+        }
+        else if (null != W)
+        {
+            n = sub(n, W);
+            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, I))) return I;
+            if (null != K)
+            {
+                k1 = sub(k1, I);
+                k0 = sub(k0, I);
+            }
+        }
+        else if (null != M)
+        {
+            n = sub(n, M);
+            if (Arithmetic.equ(O, n) && (null == K || Arithmetic.equ(k0, I))) return I;
+            if (null != K)
+            {
+                k1 = sub(k1, I);
+                k0 = sub(k0, I);
+            }
+        }
+        k = k0;
+        while (Arithmetic.lte(k, k1))
+        {
+            p = add(p, p_nkab(n, k, w, m));
+            k = add(k, I);
+        }
+        partitions.mem[key] = p;
+    }
+    return partitions.mem[key];
+}
+partitions.mem = Obj();
+function c_nkab(n, k, a, b)
+{
+    // recursively compute the composition count using the recursive relation:
+    // CLOSED FORM FORMULA FOR THE NUMBER OF RESTRICTED COMPOSITIONS (http://www.fmf.uni-lj.si/~jaklicg/papers/compositions_revision.pdf)
+    // compute number of integer compositions of n
+    // into exactly k parts having summands between a and b (inclusive)
+    var Arithmetic = Abacus.Arithmetic,
+        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
+        O = Arithmetic.O, I = Arithmetic.I, c = O, m, m1, key;
+    if (
+        Arithmetic.lt(n, O)
+        || Arithmetic.lte(k, O)
+        || Arithmetic.lte(a, O)
+        || Arithmetic.gt(a, b)
+        || Arithmetic.gt(mul(k, a), n)
+        || Arithmetic.lt(mul(k, b), n)
+    ) return c;
+
+    if (Arithmetic.gt(a, I)) {n = sub(n, mul(k, sub(a, I))); b = add(sub(b, a), I); a = I;}
+
+    if (Arithmetic.equ(k, I)) return Arithmetic.lte(a, n) && Arithmetic.gte(b, n) ? I : c;
+    if (Arithmetic.equ(n, k)) return Arithmetic.lte(a, I) && Arithmetic.gte(b, I) ? I : c;
+    if (Arithmetic.equ(a, b)) return Arithmetic.equ(mul(k, a), n) ? I : c;
+    if (Arithmetic.equ(n, b)) return factorial(add(sub(n, mul(k, a)), sub(k, I)), sub(k, I));
+    if (Arithmetic.equ(add(a, I), b)) return factorial(k, sub(n, mul(k, a)));
+
+    key = String(n) + ',' + String(k) + ',' + String(a) + ',' + String(b);
+    if (null == c_nkab.mem[key])
+    {
+        // compute it directly
+        m1 = sub(n, a);
+        m = Arithmetic.max(I, sub(n, b));
+        k = sub(k, I);
+        while (Arithmetic.lte(m, m1))
+        {
+            c = add(c, c_nkab(m, k, a, b));
+            m = add(m, I);
+        }
+        c_nkab.mem[key] = c;
+    }
+    return c_nkab.mem[key];
+}
+c_nkab.mem = Obj();
+function comp_rank(n, limit, min, max, k, nmin, nmax)
+{
+    if (is_instance(n, Integer)) return new n[CLASS](comp_rank(n.num, limit, min, max, k, nmin, nmax));
+
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II, c = O, key,
+        W, M, i, j, nn, mm, nm, m, w, l, r, k0, kk,
+        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
+        div = Arithmetic.div, divceil = Arithmetic.divceil, mod = Arithmetic.mod;
+
+    if (is_instance(limit, Integer)) limit = limit.num;
+    if (is_instance(min, Integer)) min = min.num;
+    if (is_instance(max, Integer)) max = max.num;
+    key = String(n) + ',' + String(limit) + ',' + String(min) + ',' + String(max) + ',' + String(k) + ',' + String(0<nmin) + ',' + String(0<nmax);
+    if (null == comp_rank.mem[key])
+    {
+        n = N(n);
+        limit = N(limit);
+        M = null == max ? n : N(max);
+        W = null == min ? I : N(min);
+
+        if ((null == min) && (null == max))
+        {
+            Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I
+            if (null == k)
+            {
+                mm = W;
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    c = add(c, Arithmetic.gte(nn, I) ? pow2(sub(nn, I)) : O);
+                    mm = add(mm, I);
+                }
+            }
+            else
+            {
+                mm = W; k = sub(N(k), I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    c = add(c, c_nkab(sub(n, mm), k, W, M));
+                    mm = add(mm, I);
+                }
+            }
+        }
+        else if (
+            ((0 < nmin) && (0 < nmax))
+            || ((0 < nmin) && (null == max))
+            || ((0 < nmax) && (null == min))
+        )
+        {
+            if (null == k)
+            {
+                mm = W;
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm); k = I;
+                    while (Arithmetic.lte(k, nn))
+                    {
+                        c = add(c, c_nkab(nn, k, W, M));
+                        k = add(k, I);
+                    }
+                    mm = add(mm, I);
+                }
+            }
+            else
+            {
+                mm = W; k = sub(N(k), I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    c = add(c, c_nkab(sub(n, mm), k, W, M));
+                    mm = add(mm, I);
+                }
+            }
+        }
+        else if ((null != max) && ((0 < nmin) || (null == min)))
+        {
+            if (null == k)
+            {
+                mm = W; m = sub(M, I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    if (Arithmetic.equ(M, nn))
+                    {
+                        c = add(c, I);
+                    }
+                    else
+                    {
+
+                        if (Arithmetic.equ(O, mod(nn, M))) c = add(c, I);
+                        j = I; nm = M;
+                        while (Arithmetic.lte(nm, nn))
+                        {
+                            i = I; k = sub(nn, nm);
+                            while (Arithmetic.lte(i, k))
+                            {
+                                kk = c_nkab(k, i, W, m);
+                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
+                                i = add(i, I);
+                            }
+                            nm = add(nm, M); j = add(j, I);
+                        }
+                    }
+                    mm = add(mm, I);
+                }
+            }
+            else
+            {
+                mm = W; k = sub(N(k), I); m = sub(M, I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    if (Arithmetic.equ(mul(k, M), nn))
+                    {
+                        c = add(c, I);
+                    }
+                    else
+                    {
+                        j = I; nm = M;
+                        while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
+                        {
+                            kk = c_nkab(sub(nn, nm), sub(k, j), W, m);
+                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
+                            nm = add(nm, M); j = add(j, I);
+                        }
+                    }
+                    mm = add(mm, I);
+                }
+            }
+        }
+        else if ((null != min) && ((0 < nmax) || (null == max)))
+        {
+            if (null == k)
+            {
+                mm = W; w = add(W, I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    if (Arithmetic.equ(W, nn))
+                    {
+                        c = add(c, I);
+                    }
+                    else
+                    {
+                        if (Arithmetic.equ(O, mod(nn, W))) c = add(c, I);
+                        if (Arithmetic.equ(W, mm))
+                        {
+                            j = O;
+                            nm = O;
+                        }
+                        else
+                        {
+                            j = I;
+                            nm = W;
+                        }
+                        while (Arithmetic.lte(nm, nn))
+                        {
+                            i = I; l = sub(nn, nm); k = div(l, W);
+                            while (Arithmetic.lte(i, k))
+                            {
+                                kk = c_nkab(l, i, w, M);
+                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(i, j), j)));
+                                i = add(i, I);
+                            }
+                            nm = add(nm, W); j = add(j, I);
+                        }
+                    }
+                    mm = add(mm, I);
+                }
+            }
+            else
+            {
+                mm = W; k = sub(N(k), I); w = add(W, I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    if (Arithmetic.equ(mul(k, W), nn))
+                    {
+                        c = add(c, I);
+                    }
+                    else
+                    {
+                        if (Arithmetic.equ(W, mm))
+                        {
+                            j = O;
+                            nm = O;
+                        }
+                        else
+                        {
+                            j = I;
+                            nm = W;
+                        }
+                        while (Arithmetic.lte(nm, nn) && Arithmetic.lte(j, k))
+                        {
+                            kk = c_nkab(sub(nn, nm), sub(k, j), w, M);
+                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, j)));
+                            nm = add(nm, W); j = add(j, I);
+                        }
+                    }
+                    mm = add(mm, I);
+                }
+            }
+        }
+        else
+        {
+            if (null == k)
+            {
+                mm = W; l = add(W, I); r = sub(M, I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    if (Arithmetic.equ(M, W))
+                    {
+                        c = add(c, Arithmetic.equ(O, mod(nn, M)) ? I : O);
+                    }
+                    else
+                    {
+                        m = Arithmetic.max(I, div(nn, M));
+                        w = Arithmetic.max(I, div(nn, W));
+                        j = I;
+                        while (Arithmetic.lte(j, m))
+                        {
+                            i = Arithmetic.equ(W, mm) ? O : I;
+                            while (Arithmetic.lte(i, w))
+                            {
+                                nm = sub(nn, add(mul(j, M), mul(i, W)));
+                                if (Arithmetic.equ(O, nm))
+                                {
+                                    c = add(c, factorial(add(j, i), [j, i]));
+                                }
+                                else if (Arithmetic.gt(nm, O))
+                                {
+                                    k0 = I; k = div(nm, W);
+                                    while (Arithmetic.lte(k0, k))
+                                    {
+                                        kk = c_nkab(nm, k0, l, r);
+                                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k0, add(j, i)), [[j, i]])));
+                                        k0 = add(k0, I);
+                                    }
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                                i = add(i, I);
+                            }
+                            j = add(j, I);
+                        }
+                    }
+                    mm = add(mm, I);
+                }
+            }
+            else
+            {
+                mm = W; k = sub(N(k), I);
+                l = add(W, I); r = sub(M, I);
+                while (Arithmetic.lt(mm, limit))
+                {
+                    nn = sub(n, mm);
+                    if (Arithmetic.equ(M, W))
+                    {
+                        c = add(c, Arithmetic.equ(mul(k, M), nn) ? I : O);
+                    }
+                    else
+                    {
+                        m = Arithmetic.max(I, div(nn, M));
+                        w = Arithmetic.max(I, div(nn, W));
+                        j = I;
+                        while (Arithmetic.lte(j, m))
+                        {
+                            i = Arithmetic.equ(W, mm) ? O : I;
+                            while (Arithmetic.lte(i, w))
+                            {
+                                k0 = sub(k, add(j, i));
+                                nm = sub(nn, add(mul(j, M), mul(i, W)));
+                                if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k0))
+                                {
+                                    c = add(c, factorial(k, [j, i]));
+                                }
+                                else if (Arithmetic.gt(k0, O) && Arithmetic.gt(nm, O))
+                                {
+                                    kk = c_nkab(nm, k0, l, r);
+                                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(k, [[j, i]])));
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                                i = add(i, I);
+                            }
+                            j = add(j, I);
+                        }
+                    }
+                    mm = add(mm, I);
+                }
+            }
+        }
+        comp_rank.mem[key] = c;
+    }
+    return comp_rank.mem[key];
+}
+comp_rank.mem = Obj();
+function compositions(n, K /*exactly K parts or null*/, M /*max part is M or null*/, W /*min part is W or null*/)
+{
+    if (is_instance(n, Integer)) return new n[CLASS](compositions(n.num, K, M, W));
+
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        add = Arithmetic.add, sub = Arithmetic.sub,
+        mul = Arithmetic.mul, div = Arithmetic.div, mod = Arithmetic.mod,
+        c = O, j, i, k, l, r, m, w, kk, k0, nm, mm, p, prod, key;
+
+    if (is_instance(K, Integer)) K = K.num;
+    if (is_instance(M, Integer)) M = M.num;
+    if (is_instance(W, Integer)) W = W.num;
+    K = null == K ? null : Arithmetic.abs(N(K));
+    M = null == M ? null : Arithmetic.abs(N(M));
+    W = null == W ? null : Arithmetic.abs(N(W));
+    n = N(n);
+
+    if (Arithmetic.equ(n, O))
+        return (null == K || Arithmetic.gt(K, O)) && (null == M || Arithmetic.equ(M, O)) && (null == W || Arithmetic.equ(W, O)) ? I : O;
+    if (
+        Arithmetic.lt(n, O)
+        || ((null != K) && (null != M) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(add(mul(K, W), M), add(n, W)) || Arithmetic.lt(add(mul(K, M), W), add(n, M))))
+        || ((null != M) && (null != W) && (Arithmetic.gte(O, W) || Arithmetic.gte(O, M) || Arithmetic.gt(W, M) || Arithmetic.gt(M, n) || Arithmetic.gt(W, n) || (Arithmetic.equ(M, W) && !Arithmetic.equ(O, mod(n, M))) || (!Arithmetic.equ(M, W) && (Arithmetic.gt(add(M, W), n) || (Arithmetic.lt(add(M, W), n) && Arithmetic.lt(sub(n, add(M, W)), W))))))
+        || ((null != K) && (null != W) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, W) || Arithmetic.gt(mul(K, W), n)))
+        || ((null != K) && (null != M) && (Arithmetic.gte(O, K) || Arithmetic.gte(O, M) || Arithmetic.gt(add(K, M), add(n, I)) || Arithmetic.lt(mul(K, M), n)))
+        || ((null != M) && (Arithmetic.gte(O, M) || Arithmetic.gt(M, n)))
+        || ((null != W) && (Arithmetic.gte(O, W) || Arithmetic.gt(W, n) || (Arithmetic.lt(W, n) && Arithmetic.gt(add(W, W), n))))
+        || ((null != K) && (Arithmetic.gte(O, K) || Arithmetic.gt(K, n)))
+    ) return c;
+
+    key = String(n) + '|' + String(K) + '|' + String(M) + '|' + String(W);
+    if (null == compositions.mem[key])
+    {
+        if ((null != K) && (null != M) && (null != W))
+        {
+            if (Arithmetic.equ(M, W))
+            {
+                c = Arithmetic.equ(mul(K, M), n) ? I : O;
+            }
+            else
+            {
+                m = Arithmetic.max(I, div(n, M));
+                w = Arithmetic.max(I, div(n, W));
+                l = add(W, I); r = sub(M, I);
+                j = I;
+                while (Arithmetic.lte(j, m))
+                {
+                    i = I;
+                    while (Arithmetic.lte(i, w))
+                    {
+                        k = sub(K, add(j, i));
+                        nm = sub(n, add(mul(j, M), mul(i, W)));
+                        if (Arithmetic.equ(O, nm) && Arithmetic.equ(O, k))
+                        {
+                            c = add(c, factorial(K, [j, i]));
+                        }
+                        else if (Arithmetic.gt(k, O) && Arithmetic.gt(nm, O))
+                        {
+                            kk = c_nkab(nm, k, l, r);
+                            if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, [[i, j]])));
+                        }
+                        else
+                        {
+                            break;
+                        }
+                        i = add(i, I);
+                    }
+                    j = add(j, I);
+                }
+            }
+        }
+        else if ((null != W) && (null != M))
+        {
+            if (Arithmetic.equ(M, W))
+            {
+                c = Arithmetic.equ(O, mod(n, M)) ? I : O;
+            }
+            else
+            {
+                m = Arithmetic.max(I, div(n, M));
+                w = Arithmetic.max(I, div(n, W));
+                l = add(W, I); r = sub(M, I);
+                j = I;
+                while (Arithmetic.lte(j, m))
+                {
+                    i = I;
+                    while (Arithmetic.lte(i, w))
+                    {
+                        nm = sub(n, add(mul(j, M), mul(i, W)));
+                        if (Arithmetic.equ(O, nm))
+                        {
+                            c = add(c, factorial(add(j, i), [j, i]));
+                        }
+                        else if (Arithmetic.gt(nm, O))
+                        {
+                            k = I; K = div(nm, W);
+                            while (Arithmetic.lte(k, K))
+                            {
+                                kk = c_nkab(nm, k, l, r);
+                                if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, add(j, i)), [[j, i]])));
+                                k = add(k, I);
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                        i = add(i, I);
+                    }
+                    j = add(j, I);
+                }
+            }
+        }
+        else if ((null != K) && (null != W))
+        {
+            if (Arithmetic.equ(mul(K, W), n))
+            {
+                c = I;
+            }
+            else
+            {
+                j = I; nm = W; w = add(W, I);
+                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
+                {
+                    kk = c_nkab(sub(n, nm), sub(K, j), w, n);
+                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
+                    nm = add(nm, W); j = add(j, I);
+                }
+            }
+        }
+        else if ((null != K) && (null != M))
+        {
+            if (Arithmetic.equ(mul(K, M), n))
+            {
+                c = I;
+            }
+            else
+            {
+                j = I; nm = M; m = sub(M, I);
+                while (Arithmetic.lte(nm, n) && Arithmetic.lte(j, K))
+                {
+                    kk = c_nkab(sub(n, nm), sub(K, j), I, m);
+                    if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(K, j)));
+                    nm = add(nm, M); j = add(j, I);
+                }
+            }
+        }
+        else if (null != K)
+        {
+            c = c_nkab(n, K, I, n);
+        }
+        else if (null != W)
+        {
+            if (Arithmetic.equ(W, n))
+            {
+                c = I;
+            }
+            else
+            {
+                if (Arithmetic.equ(O, mod(n, W))) c = I;
+                j = I; nm = W; w = add(W, I);
+                while (Arithmetic.lte(nm, n))
+                {
+                    k = I; l = sub(n, nm); K = div(l, W);
+                    while (Arithmetic.lte(k, K))
+                    {
+                        kk = c_nkab(l, k, w, n);
+                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
+                        k = add(k, I);
+                    }
+                    nm = add(nm, W); j = add(j, I);
+                }
+            }
+        }
+        else if (null != M)
+        {
+            if (Arithmetic.equ(M, n))
+            {
+                c = I;
+            }
+            else
+            {
+
+                if (Arithmetic.equ(O, mod(n, M))) c = I;
+                j = I; nm = M; m = sub(M, I);
+                while (Arithmetic.lte(nm, n))
+                {
+                    k = I; K = sub(n, nm);
+                    while (Arithmetic.lte(k, K))
+                    {
+                        kk = c_nkab(K, k, I, m);
+                        if (! Arithmetic.equ(O, kk)) c = add(c, mul(kk, factorial(add(k, j), j)));
+                        k = add(k, I);
+                    }
+                    nm = add(nm, M); j = add(j, I);
+                }
+            }
+        }
+        else
+        {
+            c = Arithmetic.gt(n, I) ? pow2(sub(n, I)) : I;
+        }
+        compositions.mem[key] = c;
+    }
+    return compositions.mem[key];
+}
+compositions.mem = Obj();
+function conjugatepartition(is_composition, item, dir)
+{
+    if (null == item) return null;
+    var conjugate = null, l = item.length, n;
+    dir = -1 === dir ? -1 : 1;
+    if (is_composition)
+    {
+        // On Conjugates for Set Partitions and Integer Compositions (arxiv.org/abs/math/0508052v3)
+        n = operate(addn, 0, item);
+        if (1 >= n)
+        {
+            conjugate = item.slice();
+        }
+        else
+        {
+            // get the associated n-composition of the complement(conjugate) of the associated (n-1)-subset
+            conjugate = subset2composition(complement(n-1, composition2subset(item, l-1, dir)));
+            // add the remainder
+            if (0 < (n=n-operate(addn, 0, conjugate))) conjugate.push(n);
+            // if reflected, get the reflected composition
+            if (0 > dir) reflection(conjugate, conjugate);
+        }
+    }
+    else
+    {
+        // http://mathworld.wolfram.com/ConjugatePartition.html
+        var i, ii, j, jj, p, a = 1, b = 0, d = 0, push = "push";
+        if (0 > dir) {a = -a; b = l-1-b; push = "unshift";}
+        if (is_array(item[b]))
+        {
+            // multiplicity(packed) representation
+            p = item[b]; conjugate = [[p[1], p[0]]]; i = 0;
+            for (j=1,jj=a+b; j<l; ++j,jj+=a)
+            {
+                p = item[jj]; ii = 0>dir ? 0 : i;
+                if (p[1] === conjugate[ii][0])
+                {
+                    // same part increase multiplicity
+                    conjugate[ii][1] += p[0];
+                }
+                else
+                {
+                    // swap part with multiplicity
+                    conjugate[push]([p[1], p[0]]); ++i;
+                }
+            }
+        }
+        else
+        {
+            // standard(unpacked) representation
+            n = item[b]; conjugate = array(n, 1, 0);
+            if (0 > dir) d = n-1-d;
+            for (j=1,jj=a+b; j<l; ++j,jj+=a)
+            {
+                i = 0; ii = d; p = item[jj];
+                while ((i < n) && (p > 0)) {++conjugate[ii]; --p; ++i; ii += a;}
+            }
+        }
+    }
+    return conjugate;
+}
+function packpartition(partition, dir)
+{
+    if (null == partition) return null;
+    var packed = [], i, j, l = partition.length,
+        reflected = -1 === dir,
+        a = 1, b = 0, push = 'push',
+        last, part;
+
+    if (reflected)
+    {
+        a = -a;
+        b = l-1-b;
+        push = 'unshift';
+    }
+    for (last=partition[b],part=[last, 1],i=1; i<l; ++i)
+    {
+        j = a*i+b;
+        if (last === partition[j])
+        {
+            ++part[1];
+        }
+        else
+        {
+            packed[push](part);
+            last = partition[j];
+            part = [last, 1];
+        }
+    }
+    packed[push](part);
+    return packed;
+}
+function unpackpartition(packed, dir)
+{
+    if (null == packed) return null;
+    var partition = [], i, j, k, v, l = packed.length,
+        cmp, reflected = -1 === dir,
+        a = 1, b = 0, push = 'push';
+    if (reflected)
+    {
+        a = -a;
+        b = l-1-b;
+        push = 'unshift';
+    }
+    for (i=0; i<l; ++i)
+    {
+        cmp = packed[a*i+b];
+        if (1 === cmp[1])
+            partition[push](cmp[0]);
+        else
+            for (k=cmp[1],v=cmp[0],j=0; j<k; ++j)
+                partition[push](v);
+    }
+    return partition;
+}
+function composition2subset(item, n, dir)
+{
+    if (null == item) return null;
+    n = n || item.length;
+    return psum(new Array(n), item, 1, -1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
+}
+function subset2composition(item, n, dir)
+{
+    if (null == item) return null;
+    n = n || item.length;
+    return fdiff(new Array(n), item, 1, 1, -1 === dir ? n-1 : 0, -1 === dir ? 0 : n-1, 0, n-1);
+}
+// aliases
+Partition.transpose = Partition.toTranspose = Partition.conjugate = Partition.toConjugate;
 // https://en.wikipedia.org/wiki/Partition_of_a_set
 // https://en.wikipedia.org/wiki/Bell_number
 SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
@@ -25355,7 +25466,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
     constructor: function SetPartition(n, $) {
         var self = this, sub = null, K;
         if (!is_instance(self, SetPartition)) return new SetPartition(n, $);
-        $ = $ || {}; $.type = 'partition';
+        $ = $ || {}; $.type = "partition";
         n = n||0;
         if (is_instance(n, CombinatorialIterator))
         {
@@ -25366,7 +25477,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         {
             sub = $.sub;
         }
-        K = null != $["parts="] ? ($["parts="]|0) : null;
+        K = null != $['parts='] ? ($['parts=']|0) : null;
         $.base = n;
         $.mindimension = stdMath.max(0, null != K ? K : 1);
         $.maxdimension = stdMath.max(0, null != K ? K : n);
@@ -25383,12 +25494,12 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             return item;
         }
         ,count: function(n, $) {
-            var K = $ && (null != $["parts="]) ? ($["parts="]|0) : null;
+            var K = $ && (null != $['parts=']) ? ($['parts=']|0) : null;
             return 0 < n ? (null == K ? bell(n) : ((0 >= K) || (K > n) ? Abacus.Arithmetic.O : stirling(n, K, 2))) : Abacus.Arithmetic.O;
         }
         ,initial: function(n, $, dir) {
-            var klass = this, item, order = $ && null!=$.order ? $.order : LEX,
-                K = $ && (null != $["parts="]) ? ($["parts="]|0) : null;
+            var klass = this, item, order = $ && (null != $.order) ? $.order : LEX,
+                K = $ && (null != $['parts=']) ? ($['parts=']|0) : null;
 
             if ((0 > n) || ((null != K) && ((0 >= K) || (K > n)))) return null;
 
@@ -25451,7 +25562,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
             return item;
         }
         ,valid: function(item, n, $) {
-            var klass = this, K = $ && (null != $["parts="]) ? ($["parts="]|0) : null, l, k, i, j, s, x, m, dict, d0, d1;
+            var klass = this, K = $ && (null != $['parts=']) ? ($['parts=']|0) : null, l, k, i, j, s, x, m, dict, d0, d1;
             if (!item || (0 > n)) return false;
             d0 = stdMath.max(0, null != K ? K : 1);
             d1 = stdMath.max(0, null != K ? K : n);
@@ -25472,10 +25583,10 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_setpartition(item, n, $ && (null != $["parts="]) ? ($["parts="]|0) : null, dir, $ && (null != $.order) ? $.order : LEX);
+            return next_setpartition(item, n, $ && (null != $['parts=']) ? ($['parts=']|0) : null, dir, $ && (null != $.order) ? $.order : LEX);
         }
         ,rand: function(n, $) {
-            var klass = this, K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            var klass = this, K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
                 rnd = Abacus.Math.rnd, Arithmetic = Abacus.Arithmetic, q, m, l, i, k, prob, cdf;
             if ((0 > n) || ((null != K) && (0 >= K || K > n))) return null;
             q = array(n, 0); m = n; l = 0;
@@ -25486,7 +25597,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
                 k = 1;
                 while (k <= m)
                 {
-                    cdf = cdf.add(Rational(Arithmetic.mul(factorial(m-1, k-1), klass.count(m-k, {"parts=":K})), klass.count(m, {"parts=":K})));
+                    cdf = cdf.add(Rational(Arithmetic.mul(factorial(m-1, k-1), klass.count(m-k, {'parts=':K})), klass.count(m, {'parts=':K})));
                     if (cdf.gte(prob)) break;
                     ++k;
                 }
@@ -25508,10 +25619,10 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         ,randu: CombinatorialIterator.rand
         ,rank: NotImplemented
         ,unrank: NotImplemented
-        ,toConjugate: conjugatesetpartition
+        ,toConjugate: null
     }
     ,_update: function() {
-        var self = this, n = self.n, $ = self.$, K = (null != $["parts="]) ? ($["parts="]|0) : null, item = self.__item, i, j, s, k;
+        var self = this, n = self.n, $ = self.$, K = (null != $['parts=']) ? ($['parts=']|0) : null, item = self.__item, i, j, s, k;
         if (item && (n+1 !== item.length))
         {
             self.__item = new Array(n+1); self.__item[n] = [n, new Array(n)];
@@ -25532,7 +25643,7 @@ SetPartition = Abacus.SetPartition = Class(CombinatorialIterator, {
         if (null == item) return null;
         var self = this, $ = self.$, n = self.n,
             order = (null != $.order) ? $.order : LEX,
-            K = $ && (null != $["parts="]) ? ($["parts="]|0) : null,
+            K = $ && (null != $['parts=']) ? ($['parts=']|0) : null,
             is_reflected = REFLECTED & order;
         if (item && (n+1 === item.length))
         {
@@ -25660,6 +25771,117 @@ function next_setpartition(item, n, K, dir, order)
     }
     return item;
 }
+/*function separateIS(item, S, I)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function separateST(item, S, T)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function combineIS(item, S, I)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > I.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function combineST(item, S, T)
+{
+    return [item.reduce(function(p, set){
+            set = set.reduce(function(set, si){
+                if (0 > S.indexOf(si) && 0 > T.indexOf(si))
+                    set.push(si);
+                return set;
+            }, []);
+            if (set.length) return p.push(set);
+            return p;
+        }, []), S, I];
+}
+function singletons(item, n)
+{
+    var i, j, l = item.length, S = new Array(l);
+    for (i=0,j=0; i<l; ++i)
+    {
+        if (1 === item[i].length)
+            S[j++] = item[i][0];
+    }
+    if (j < S.length) S.length = j; // truncate if needed
+    return S;
+}
+function adjInit(item, n)
+{
+    var i, j, k, l = item.length, I = [];
+    for (i=0,k=0; i<l; ++i)
+    {
+        if (1 === item[i].length)
+        {
+            I.push(item[i][0]);
+        }
+        else
+        {
+            for (j=0,k=item[i].length; j+1<k; ++j)
+            {
+                if (item[i][j]+1 === item[i][j+1])
+                    I.push(item[i][j]);
+            }
+            if (((item[i][j]+1) % n) === item[i][0])
+                    I.push(item[i][j]);
+        }
+    }
+    return I;
+}
+function adjTerm(item, n)
+{
+    var i, j, l, k, T = [];
+    for (i=0,l=item.length; i<l; ++i)
+    {
+        if (1 === item[i].length)
+        {
+            T.push(item[i][0]);
+        }
+        else
+        {
+            for (j=0,k=item[i].length; j+1<k; ++j)
+            {
+                if (item[i][j]+1 === item[i][j+1])
+                    T.push(item[i][j+1]);
+            }
+            if ((item[i][j]+1) % n === item[i][0])
+                    T.push(item[i][0]);
+        }
+    }
+    return T;
+}*/
+function conjugatesetpartition(item, n)
+{
+    // adapted from https://arxiv.org/abs/math/0508052
+    if (null == item) return null;
+    var congugate = null;
+    return conjugate;
+}
+SetPartition.toConjugate = conjugatesetpartition;
 // https://en.wikipedia.org/wiki/Catalan_number
 CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
 
@@ -25667,7 +25889,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
     constructor: function CatalanWord(n, $) {
         var self = this, sub = null, K;
         if (!is_instance(self, CatalanWord)) return new CatalanWord(n, $);
-        $ = $ || {}; $.type = 'catalan';
+        $ = $ || {}; $.type = "catalan";
         n = n || 0;
         if (is_instance(n, CombinatorialIterator))
         {

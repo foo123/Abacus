@@ -24,46 +24,18 @@ function check_div(n, d)
 }
 function check_xgcd(ring, args)
 {
-    let out = '', field = Abacus.Integer===ring.NumberClass ? Abacus.Ring.Q(args[0].symbol) : ring,
+    let out = '', field = ring.associatedField(),
         res = field.Zero(), gcd = ring.xgcd(args);
     for (let i=0; i<args.length; ++i)
     {
         out += (out.length ? ' + ' : '') + '('+args[i].toString()+')'+'('+gcd[i+1].toString()+')';
         res = res.add(gcd[i+1].mul(args[i]));
-        if (!args[i].mod(gcd[0]).equ(0)) echo(args[i].toString()+' is not divided!');
+        if (!args[i].mod(gcd[0]).equ(0)) echo(args[i].toString()+' is not divided!', args[i].mod(gcd[0]).toString());
     }
     out += ' = '+res.toString()+' (gcd: '+gcd[0].toString()+')';
     echo(out, res.equ(gcd[0]));
 }
 
-function check_recursive(p, x)
-{
-    let p_x = p.recur(x), p_xx = p_x.recur(x), p_xy = p_x.recur('x'===x?'y':'x'),
-        p_x_x = p_x.d(x), p_x_y = p_x.d('x'===x?'y':'x'),
-        p_x_xx = p_x.d(x, 2), p_x_yy = p_x.d('x'===x?'y':'x', 2),
-        p_xs = p_x.shift(x, -1), p_xys = p_xy.shift('x'===x?'y':'x', -1),
-        pp = p_x.recur(false), ppp = p_xy.recur(false);
-    echo('Recursive representations by '+x+':');
-    echo(p_x.toString()+', again: '+p_xx.toString()+'('+p_xx.equ(p_x)+'), again on other: '+p_xy.toString());
-    echo(p.toString()+'='+pp.toString()+'='+ppp.toString(), p.equ(pp, false), p.equ(ppp, false));
-    echo('---------------------------');
-    echo('Primitive (on original, same and other):');
-    check_primitive(p);
-    check_primitive(p_x);
-    check_primitive(p_xy);
-    echo('---------------------------');
-    echo('Derivatives:');
-    echo('on same='+p_x_x.toString()+', on other: '+p_x_y.toString());
-    echo('on same='+p_x_xx.toString()+', on other: '+p_x_yy.toString());
-    echo('---------------------------');
-    echo('Recursive operations:');
-    echo('('+p_xy.toString()+')+('+p_x.toString()+')='+p_xy.add(p_x).toString());
-    echo('('+p_xy.toString()+')*('+p_x.toString()+')='+p_xy.mul(p_x).toString());
-    echo('---------------------------');
-    echo('Negative Shifts:');
-    echo('on same='+p_xs.toString()+', on other: '+p_xys.toString());
-    echo('---------------------------');
-}
 function check_primitive(p)
 {
     let prim = p.primitive(true);
@@ -77,7 +49,7 @@ function check_radical(p, k)
 function check_resultant(p, q, x, res)
 {
     let r = p.resultant(q, x);
-    echo('resultant("' + p.toString() + '", "' + q.toString() + '", "'+x+'")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
+    echo('resultant("' + p.toString() + '", "' + q.toString() + '", "'+x+'")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"') : ''));
 }
 
 let o, ring = Abacus.Ring.Q("x", "y"), rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.Q()), "y"), "x");
@@ -85,6 +57,14 @@ let o, ring = Abacus.Ring.Q("x", "y"), rring = Abacus.Ring.K(Abacus.Ring.K(Abacu
 
 echo('Abacus.MultiPolynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
+
+/*
+ring = Abacus.Ring.Q("x", "y", "z");
+o = ring.fromString("x^2 + y^2 + z^2 + x*y + x*z + y*z + x + y + z + 1");
+echo('lex    :', o.order('lex').toString());
+echo('grlex  :', o.order('grlex').toString());
+echo('grevlex:', o.order('grevlex').toString());
+*/
 
 echo('Multivariate Polynomials and Polynomial operations');
 echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
@@ -195,26 +175,10 @@ check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
 */
 
 echo('---');
+/*
 ring = Abacus.Ring.C("x", "y", "z"), rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.C()), "y", "z"), "x");
 echo('ring = '+ring.toString()+' ('+ring.toTex()+')'+' rring = '+rring.toString()+' ('+rring.toTex()+')');
 echo('---');
-echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2").recur("x")');
-check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2"), "x");
-echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2").recur("y")');
-check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2"), "y");
-echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur("x")');
-check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), "x");
-echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur("y")');
-check_recursive(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), "y");
-echo('ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2").recur("x")');
-check_recursive(ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2"), "x");
-echo('ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2").recur("y")');
-check_recursive(ring.fromString("(4+2i)*x^2*y+(2+2i)*x^2*y^2+2x+4y*x+6z*y*x+(2+4i)*z*y+2"), "y");
-echo('----');
-echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").recur(true)');
-o = ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y");
-echo(o.recur(true).toString()+' '+o.recur(true).recur(false).equ(o));
-echo('----');
 echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2").evaluate({"x":1,"y":2})');
 echo(ring.fromString("x^2*y+x^2*y^2+x+y*x+2").evaluate({"x":1,"y":2}).toString());
 echo('rring.fromString("x^2*y+x^2*y^2+x+y*x+2").evaluate({"x":1,"y":2})');
@@ -227,12 +191,18 @@ echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"
 echo(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5}).toString());
 echo('rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5})');
 echo(rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5}).toString());
+*/
+let p1 = ring.fromString("x^2*y + x^3");
+echo("x^2*y + x^3", ',', p1.toString());
+let p2 = ring.fromString("(x + y)^2");
+echo("(x + y)^2", ',', p2.toString());
+let p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
+echo("x^2 + x*y^2 + x*y + x + y^3 + y", ',', p3.toString());
+echo(ring.gcd(p1, p2, p3).toString(), ',', "x + y");
+check_xgcd(ring, [p3, p1, p2]);
 
-let p1 = ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), p1r = p1.recur(true), p2 = rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), p2r = p2.recur(true);
-echo("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"+' -> '+p1r.toString()+' = '+p2r.toString()+(p1r.equ(p2r) ? ' true' : ' false')+(p1.equ(p2, false) ? ' true' : ' false'));
-echo('----');
-
+echo('---');
 
 //check_resultant(ring.fromString("x^2*y+x^2*y^2+x+y*x+2"), ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y"), "x");
-check_resultant(ring.fromString("x^2+y"), ring.fromString("x-2*y"), "x", ring.fromString("4*y^2 + y"));
-check_resultant(ring.fromString("x^2+y"), ring.fromString("x-2*y"), "y", ring.fromString("2*x^2 + x"));
+check_resultant(ring.fromString("x^2+y"), ring.fromString("x-2*y"), "x", "4*y^2 + y");
+check_resultant(ring.fromString("x^2+y"), ring.fromString("x-2*y"), "y", "2*x^2 + x");
