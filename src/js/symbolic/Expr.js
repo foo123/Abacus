@@ -750,46 +750,91 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         KEYS(e.terms).forEach(function(key) {
                             if (!HAS.call(self._terms, key))
                             {
-                                self._terms[key] = e.terms[key];
+                                self._terms[key] = (0 < i) && ('-' === ast.op) ? {e:e.terms[key].e.neg(), c:e.terms[key].c.neg()} : e.terms[key];
                             }
                             else
                             {
-                                self._terms[key].c = (0 < i) && ('-' === ast.op) ? (self._terms[key].c.sub(e.terms[key].c)) : (self._terms[key].c.add(e.terms[key].c));
-                                if (self._terms[key].c.equ(0)) delete self._terms[key];
+                                if ((0 < i) && ('-' === ast.op))
+                                {
+                                    self._terms[key] = {e:self._terms[key].e.sub(e.terms[key].e).expand(), c:self._terms[key].c.sub(e.terms[key].c)};
+                                }
+                                else
+                                {
+                                    self._terms[key] = {e:self._terms[key].e.add(e.terms[key].e).expand(), c:self._terms[key].c.add(e.terms[key].c)};
+                                }
                             }
+                            if (('1' !== key) && self._terms[key].c.equ(0)) delete self._terms[key];
                         });
                     });
                 }
                 else if ('*' === ast.op)
                 {
                     var c = I;
-                    var s = (ast.arg.reduce(function(s, e) {
+                    var f = (ast.arg.reduce(function(f, e) {
                         if ('sym' === e.ast.type)
                         {
-                            s.push([e.ast.arg, I]);
+                            f.push([e, I]);
                         }
                         else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
                         {
-                            s.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
+                            f.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
                         }
                         else if (e.isConst())
                         {
                             c = c.mul(e.c());
                         }
-                        return s;
+                        return f;
                     }, [])
                     .sort(function(a, b) {
                         return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
                     })
-                    .reduce(function(s, a) {
-                        if (s.length && (s[s.length-1][0] === a[0])) s[s.length-1][1] = s[s.length-1][1].add(a[1]);
-                        else s.push(a);
-                        return s;
+                    .reduce(function(f, a) {
+                        if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
+                        else f.push(a);
+                        return f;
                     }, [])
                     .filter(function(a) {
                         return !a[1].equ(0);
                     }));
-                    if (s.length) self._terms[s.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:self, c:c};
+                    if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', f.map(function(a) {return Expr('^', a);}).concat(c)), c:c};
+                }
+                else if ('/' === ast.op)
+                {
+                    var c = I;
+                    var f = (ast.arg.reduce(function(f, e, i) {
+                        if (0 === i)
+                        {
+                            if ('sym' === e.ast.type)
+                            {
+                                f.push([e, I]);
+                            }
+                            else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
+                            {
+                                f.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
+                            }
+                            else if (e.isConst())
+                            {
+                                c = c.mul(e.c());
+                            }
+                        }
+                        else if (e.isConst())
+                        {
+                            c = c.div(e.c());
+                        }
+                        return f;
+                    }, [])
+                    .sort(function(a, b) {
+                        return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
+                    })
+                    .reduce(function(f, a) {
+                        if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
+                        else f.push(a);
+                        return f;
+                    }, [])
+                    .filter(function(a) {
+                        return !a[1].equ(0);
+                    }));
+                    if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', f.map(function(a) {return Expr('^', a);}).concat(c)), c:c};
                 }
                 else if ('^' === ast.op)
                 {
@@ -1557,9 +1602,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }, O);
             }
 
-            function factors(e)
+            function factors(e, do_div)
             {
-                fac = null == fac ? e.f().c : fac.mul(e.f().c);
+                fac = null == fac ? e.f().c : (do_div ? fac.div(e.f().c) : fac.mul(e.f().c));
                 var f = e.f().f.filter(function(f) {return !f.equ(I);});
                 return f.map(function(f) {return '^' === f.ast.op ? {b:f.ast.arg[0], e:f.ast.arg[1]} : {b:f, e:I};});
             }
@@ -1578,8 +1623,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
             var fac = null, a, b, c;
 
-            a = flatten(('*' === e1.ast.op ? e1.ast.arg : [e1]).map(factors));
-            b = flatten(('*' === e2.ast.op ? e2.ast.arg : [e2]).map(factors));
+            a = flatten(('*' === e1.ast.op ? e1.ast.arg : [e1]).map(function(e) {return factors(e, false);}));
+            b = flatten(('*' === e2.ast.op ? e2.ast.arg : [e2]).map(function(e) {return factors(e, do_division);}));
 
             if (fac.equ(0)) return O;
 

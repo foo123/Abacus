@@ -3290,8 +3290,8 @@ function solvedioph(a, b, with_param, with_free_vars)
                 if ('1' !== p)
                 {
                     // re-express partial solution in terms of original symbol
-                    sol2[0] = Expr('+', [Expr('*', [p, sol2[0].c()]), sol2[0].terms[pnew].e]).expand();
-                    sol2[1] = Expr('+', [Expr('*', [p, sol2[1].c()]), sol2[1].terms[pnew].e]).expand();
+                    sol2[0] = Expr('+', [Expr('*', [sol2[0].c(), p]), sol2[0].terms[pnew].e]).expand();
+                    sol2[1] = Expr('+', [Expr('*', [sol2[1].c(), p]), sol2[1].terms[pnew].e]).expand();
                 }
                 if (-1 === free_vars.indexOf(pnew)) free_vars.push(pnew);
 
@@ -3578,7 +3578,7 @@ function solvelineqs(a, b, x)
             }
             if (p.length || n.length)
             {
-                sol.unshift(p.length ? [Expr('<=', [x[i], Expr('min()', p)])] : (n.length ? [Expr('<=', [Expr('max()', n), x[i]])] : []));
+                sol.unshift(p.length ? [Expr('<=', [x[i], 1 === p.length ? p[0] : Expr('min()', p)])] : (n.length ? [Expr('<=', [1 === n.length ? n[0] : Expr('max()', n), x[i]])] : []));
             }
         }
         else
@@ -3609,8 +3609,8 @@ function solvelineqs(a, b, x)
                 }
             }
             sol.unshift([
-                Expr('<=', [Expr('max()', n), x[i]]),
-                Expr('<=', [x[i], Expr('min()', p)])
+                Expr('<=', [1 === n.length ? n[0] : Expr('max()', n), x[i]]),
+                Expr('<=', [x[i], 1 === p.length ? p[0] : Expr('min()', p)])
             ]);
         }
     }
@@ -3657,8 +3657,8 @@ function solvepythag(a, with_param)
         // different sign, parametrised solution:
         // a1^2 x1^2 = a2^2 x2^2 ==> x1 = a2*i_1, x2 = a1*i_1
         return [
-            Expr('*', [param[0], s[1]]),
-            Expr('*', [param[0], s[0]])
+            Expr('*', [s[1], param[0]]),
+            Expr('*', [s[0], param[0]])
         ];
 
     // k >= 3
@@ -3672,9 +3672,9 @@ function solvepythag(a, with_param)
 
     ith = Expr('+', array(param.length, function(i) {return Expr('^', [param[i], 2]);}));
     L = [
-        Expr('+', [ith, Expr('*', [Expr('^', [param[k-2], 2]), Arithmetic.mul(J, two)])]).expand()
+        Expr('+', [ith, Expr('*', [Arithmetic.mul(J, two), Expr('^', [param[k-2], 2])])]).expand()
     ].concat(array(k-2, function(i) {
-        return Expr('*', [param[i], param[k-2], two]);
+        return Expr('*', [two, param[i], param[k-2]]);
     }));
     solutions = L.slice(0, index).concat(ith).concat(L.slice(index));
 
