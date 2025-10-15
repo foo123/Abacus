@@ -147,7 +147,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         {
             self.ring = ring || terms.ring;
             self.symbol = String(symbol || terms.symbol);
-            self.terms = self.ring !== terms.ring ? terms.terms.map(function(t) {
+            self.terms = !self.ring.equ(terms.ring) ? terms.terms.map(function(t) {
                 return UniPolyTerm(t.c, t.e, self.ring);
             }) : terms.terms.slice();
         }
@@ -1242,7 +1242,7 @@ Polynomial.cast = function(a, symbol, ring) {
     ring = ring || Ring.Q();
     symbol = String(symbol || 'x');
     var type_cast = typecast(function(a) {
-        return is_instance(a, Polynomial) && (a.ring === ring);
+        return is_instance(a, Polynomial) && ring.equ(a.ring);
     }, function(a) {
         return is_string(a) ? Polynomial.fromString(a, symbol, ring) : new Polynomial(a, symbol, ring);
     });
@@ -1419,7 +1419,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         {
             self.ring = ring || terms.ring;
             self.symbol = symbol || terms.symbol;
-            if ((self.ring !== terms.ring) || !is_same_symbol(self.symbol, terms.symbol))
+            if (!is_same_symbol(self.symbol, terms.symbol) || !self.ring.equ(terms.ring))
             {
                 index = self.symbol.map(function(symbol) {return terms.symbol.indexOf(symbol);});
                 self.terms = terms.terms.map(function(t) {
@@ -2380,13 +2380,16 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, symbol = self.symbol, ring = self.ring, O = ring.Zero(), memo = Obj();
         function get_val(p, x)
         {
-            if (is_instance(p, MultiPolynomial) && (1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+            if (is_instance(p, [MultiPolynomial, RationalFunc]))
             {
-                return horner(p, x, p.symbol[0]);
-            }
-            else if (is_instance(p, [MultiPolynomial, RationalFunc]) && (ring.CoefficientRing === p.ring))
-            {
-                return p.evaluate(x);
+                if ((1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+                {
+                    return horner(p, x, p.symbol[0]);
+                }
+                else if (p.ring.equ(ring.CoefficientRing))
+                {
+                    return p.evaluate(x);
+                }
             }
             return p;
         }
@@ -2413,7 +2416,54 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             memo[str] = v;
             return v;
         }
-        return horner(univariate(self), x || {}, symbol[0]);
+        return horner(self.univariate(), x || {}, symbol[0]);
+    }
+    ,univariate: function(x, as_field) {
+        var p = this, s = p.symbol, index;
+        // make a multivariate recursively univariate of univariates
+        if (1 < s.length)
+        {
+            if (is_string(x))
+            {
+                index = s.indexOf(x);
+                p = p.toExpr().toPoly([x], Ring(p.ring, s.slice(0, index).concat(s.slice(index+1)), false, true));
+            }
+            else
+            {
+                as_field = true === as_field;
+                p = p.toExpr().toPoly([s[0]], s.slice(1).reverse().reduce(function(K, x) {
+                    return Ring(K, [x], as_field, true);
+                }, p.ring));
+            }
+        }
+        return p;
+    }
+    ,multivariate: function(x) {
+        var p = this, ring = p.ring;
+        // unmake recursive univariate, make multivariate again on x
+        if (1 < x.length)
+        {
+            while (ring.PolynomialSymbol)
+            {
+                if (is_array(ring.PolynomialSymbol))
+                {
+                    if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (-1 === x.indexOf(ring.PolynomialSymbol))
+                    {
+                        break;
+                    }
+                }
+                ring = ring.CoefficientRing;
+            }
+            p = p.toExpr().toPoly(x, ring);
+        }
+        return p;
     }
     ,toExpr: function() {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, t, ti, c, x, i, l, term, terms;
@@ -2497,7 +2547,7 @@ MultiPolynomial.cast = function(a, symbol, ring) {
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
     var type_cast = typecast(function(a) {
-        return is_instance(a, MultiPolynomial) && (a.ring === ring) && is_same_symbol(a.symbol, symbol);
+        return is_instance(a, MultiPolynomial) && is_same_symbol(symbol, a.symbol) && ring.equ(a.ring);
     }, function(a) {
         return is_string(a) ? MultiPolynomial.fromString(a, symbol, ring) : new MultiPolynomial(a, symbol, ring);
     });
@@ -3024,49 +3074,6 @@ function multi_div(P, x, q_and_r)
     }
     return P;
 }
-function univariate(p, x, field)
-{
-    // make a multivariate recursively univariate of univariates
-    if (1 < p.symbol.length)
-    {
-        if (is_string(x))
-        {
-            var index = p.symbol.indexOf(x);
-            p = p.toExpr().toPoly([x], Ring(p.ring, p.symbol.slice(0, index).concat(p.symbol.slice(index+1)), false, true));
-        }
-        else
-        {
-            p = p.toExpr().toPoly([p.symbol[0]], p.symbol.slice(1).reverse().reduce(function(K, x) {
-                return Ring(K, [x], true === field, true);
-            }, p.ring));
-        }
-    }
-    return p;
-}
-function multivariate(p, x)
-{
-    // unmake univariate, make multivariate again
-    var ring = p.ring;
-    while (ring.PolynomialSymbol)
-    {
-        if (is_array(ring.PolynomialSymbol))
-        {
-            if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
-            {
-                break;
-            }
-        }
-        else
-        {
-            if (-1 === x.indexOf(ring.PolynomialSymbol))
-            {
-                break;
-            }
-        }
-        ring = ring.CoefficientRing;
-    }
-    return p.toExpr().toPoly(x, ring);
-}
 function poly_interpolate(v, x, ring, PolynomialClass)
 {
     // https://en.wikipedia.org/wiki/Lagrange_polynomial
@@ -3256,7 +3263,7 @@ function polygcd(/* args */)
 
     // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(R.NumberClass, Integer)/*!R.isField()*/)
+    if (/*is_class(R.NumberClass, Integer)*/!R.isField())
     {
         a = args[0];
         if (1 == c)
@@ -3332,7 +3339,7 @@ function polyxgcd(/* args */)
 
     // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(R.NumberClass, Integer)/*!R.isField()*/)
+    if (/*is_class(R.NumberClass, Integer)*/!R.isField())
     {
         field = R.associatedField(); // Q[X]
         asign = field.One(); bsign = asign;
@@ -3556,7 +3563,7 @@ function polylcm(/* args */)
     }
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         i, l = args.length, LCM, O = Abacus.Arithmetic.O, PolynomialClass = Polynomial, S, R;
-    if (1 >= l) return 1===l ? args[0] : PolynomialClass.Zero();
+    if (1 >= l) return 1 === l ? args[0] : PolynomialClass.Zero();
     PolynomialClass = args[0][CLASS];
     S = args[0].symbol;
     R = args[0].ring;
@@ -3663,9 +3670,9 @@ MultiPolynomial.gcd = function(/*args*/) {
             symbol = p.symbol;
             order = p.order();
         }
-        return univariate(p, null, true);
+        return p.univariate(null, true);
     }));
-    return multivariate(gcd, symbol).order(order);
+    return gcd.multivariate(symbol).order(order);
 };
 MultiPolynomial.xgcd = function(/*args*/) {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
@@ -3676,11 +3683,15 @@ MultiPolynomial.xgcd = function(/*args*/) {
             symbol = p.symbol;
             order = p.order();
         }
-        return univariate(p, null, true);
-    })).map(function(g, i) {
+        return p.univariate(null, true);
+    })).map(function(g) {
         if (is_instance(g, MultiPolynomial))
         {
-            g = multivariate(g, symbol).order(order);
+            g = g.multivariate(symbol).order(order);
+        }
+        else if (is_instance(g, RationalFunc))
+        {
+            g = RationalFunc(g.num.multivariate(symbol).order(order), g.den.multivariate(symbol).order(order));
         }
         return g;
     });
@@ -3694,9 +3705,9 @@ MultiPolynomial.lcm = function(/*args*/) {
             symbol = p.symbol;
             order = p.order();
         }
-        return univariate(p, null, true);
+        return p.univariate(null, true);
     }));
-    return multivariate(lcm, symbol).order(order);
+    return lcm.multivariate(symbol).order(order);
 };
 Polynomial.Resultant = function(p, q) {
     return polyres(p, p.deg(), q, q.deg(), p.symbol, false);
@@ -3715,21 +3726,21 @@ MultiPolynomial.Resultant = function(p, q, x) {
     q = is_instance(q, Polynomial) ? MultiPolynomial(q, p.symbol, p.ring) : q;
     var symbol = p.symbol;
     x = x || p.symbol[0];
-    p = univariate(p, x);
-    q = univariate(q, x);
+    p = p.univariate(x);
+    q = q.univariate(x);
     var res = polyres(p, p.deg(x), q, q.deg(x), x, false);
-    return /*multivariate(*/res/*, symbol)*/;
+    return res;
 };
 MultiPolynomial.Discriminant = function(p, x) {
     p = is_instance(p, Polynomial) ? MultiPolynomial(p, [x || p.symbol], p.ring) : p;
     x = x || p.symbol[0];
     var symbol = p.symbol, dp = p.d(x, 1);
-    p = univariate(p, x);
-    dp = univariate(dp, x);
+    p = p.univariate(x);
+    dp = dp.univariate(x);
     var n = p.deg(x),
         res = polyres(p, n, dp, n-1, x, true);
     if ((n*(n-1) >> 1) & 1) res = res.neg();
-    return /*multivariate(*/res/*, symbol)*/;
+    return res;
 };
 
 
@@ -4263,7 +4274,7 @@ RationalFunc.cast = function(a, symbol, ring) {
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
     var type_cast = typecast(function(a) {
-        return is_instance(a, RationalFunc) && (a.ring === ring) && is_same_symbol(a.symbol, symbol);
+        return is_instance(a, RationalFunc) && is_same_symbol(symbol, a.symbol) && ring.equ(a.ring);
     }, function(a) {
         return is_string(a) ? RationalFunc.fromString(a, symbol, ring) : (is_instance(a, RationalFunc) ? new RationalFunc(MultiPolynomial(a.num, symbol, ring), MultiPolynomial(a.den, symbol, ring)) : new RationalFunc(MultiPolynomial(a, symbol, ring)));
     });

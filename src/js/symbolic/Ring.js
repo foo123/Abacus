@@ -5,6 +5,7 @@ Ring = Abacus.Ring = Class({
         var self = this, ring = null;
         if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate);
 
+        self.Modulo = null;
         self.PolynomialClass = null;
         self.CoefficientRing = null;
         self.PolynomialSymbol = null;
@@ -20,10 +21,6 @@ Ring = Abacus.Ring = Class({
             {
                 self.Modulo = Integer.cast(NumberClass[1]);
                 NumberClass = NumberClass[0];
-            }
-            else
-            {
-                self.Modulo = null;
             }
             if (!is_class(NumberClass, Numeric)) NumberClass = Complex;
             self.NumberClass = NumberClass;
@@ -152,6 +149,31 @@ Ring = Abacus.Ring = Class({
         return self;
     }
 
+    ,clone: function() {
+        var self = this, copy = Ring();
+        copy.NumberClass = self.NumberClass;
+        copy.Modulo = self.Modulo;
+        copy.PolynomialClass = self.PolynomialClass;
+        copy.CoefficientRing = self.CoefficientRing;
+        copy.PolynomialSymbol = self.PolynomialSymbol;
+        return copy;
+    }
+
+    ,equ: function(other) {
+        var self = this;
+        if (
+            (self === other)
+            || (
+            is_instance(other, Ring)
+            && (self.NumberClass === other.NumberClass)
+            && (self.Modulo === other.Modulo)
+            && (self.PolynomialClass === other.PolynomialClass)
+            && ((!self.PolynomialSymbol && !other.PolynomialSymbol) || symbols_match(self.PolynomialSymbol, other.PolynomialSymbol))
+            && ((!self.CoefficientRing && !other.CoefficientRing) || self.CoefficientRing.equ(other.CoefficientRing))
+        )) return true;
+        return false;
+    }
+
     ,Zero: function() {
         var self = this;
         return self.PolynomialClass ? self.PolynomialClass.Zero(self.PolynomialSymbol, self.CoefficientRing) : self.NumberClass.Zero(self.Modulo);
@@ -203,7 +225,7 @@ Ring = Abacus.Ring = Class({
 
     ,hasGCD: function() {
         var self = this;
-        return self.PolynomialClass ? (/*(is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) &&*/ is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
     }
     ,gcd: function(/*args*/) {
         var self = this, args;
@@ -287,3 +309,23 @@ Ring = Abacus.Ring = Class({
         return self._tex;
     }
 });
+
+function symbols_match(symbol1, symbol2)
+{
+    if (symbol1 === symbol2) return true;
+    if (is_array(symbol1) && is_array(symbol2))
+    {
+        if (symbol1.length !== symbol2.length) return false;
+        symbol1 = symbol1.slice().sort();
+        symbol2 = symbol2.slice().sort();
+        for (var i=0,l=symbol1.length; i<l; ++i)
+        {
+            if (symbol1[i] !== symbol2[i]) return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+    return true;
+}
