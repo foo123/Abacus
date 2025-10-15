@@ -732,15 +732,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // collect simple terms only, sums of products of numbers, symbols and powers of symbols
             ast = self.ast;
-            self._terms = {'1': O};
+            self._terms = {'1': {e:Expr.Zero(), c:O}};
 
             if ('sym' === ast.type)
             {
-                self._terms[ast.arg] = I;
+                self._terms[ast.arg] = {e:self, c:I};
             }
             else if (self.isConst())
             {
-                self._terms['1'] = self.c();
+                self._terms['1'] = {e:Expr('', self.c()), c:self.c()};
             }
             else if ('expr' === ast.type)
             {
@@ -754,15 +754,49 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             else
                             {
-                                self._terms[key] = (0 < i) && ('-' === ast.op) ? (self._terms[key].sub(e.terms[key])) : (self._terms[key].add(e.terms[key]));
-                                if (self._terms[key].equ(0)) delete self._terms[key];
+                                self._terms[key].c = (0 < i) && ('-' === ast.op) ? (self._terms[key].c.sub(e.terms[key].c)) : (self._terms[key].c.add(e.terms[key].c));
+                                if (self._terms[key].c.equ(0)) delete self._terms[key];
                             }
                         });
                     });
                 }
-                else if (('*' === ast.op) || ('^' === ast.op))
+                else if ('*' === ast.op)
                 {
-                    self._terms[self.f().f.map(function(f) {return f.toString();}).sort().join('*')] = self.f().c;
+                    var c = I;
+                    var s = (ast.arg.reduce(function(s, e) {
+                        if ('sym' === e.ast.type)
+                        {
+                            s.push([e.ast.arg, I]);
+                        }
+                        else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
+                        {
+                            s.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
+                        }
+                        else if (e.isConst())
+                        {
+                            c = c.mul(e.c());
+                        }
+                        return s;
+                    }, [])
+                    .sort(function(a, b) {
+                        return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
+                    })
+                    .reduce(function(s, a) {
+                        if (s.length && (s[s.length-1][0] === a[0])) s[s.length-1][1] = s[s.length-1][1].add(a[1]);
+                        else s.push(a);
+                        return s;
+                    }, [])
+                    .filter(function(a) {
+                        return !a[1].equ(0);
+                    }));
+                    if (s.length) self._terms[s.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:self, c:c};
+                }
+                else if ('^' === ast.op)
+                {
+                    if (('sym' === ast.arg[0].type) && ast.arg[1].isInt())
+                    {
+                        self._terms[ast.arg[0].arg + (ast.arg[1].gt(1) ? ('^'+String(ast.arg[1])) : '')] = {e:self, c:I};
+                    }
                 }
             }
         }
@@ -770,7 +804,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (null == t) return self._terms;
 
         t = String(t);
-        return HAS.call(self._terms, t) ? self._terms[t] : O;
+        return HAS.call(self._terms, t) ? self._terms[t] : {e:Expr.Zero(), c:O};
     }
 
     ,isSimple: function() {
@@ -2179,6 +2213,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
         }
         return self._tex;
+    }
+    ,valueOf: function() {
+        return (arguments.length ? this.evaluate(arguments[0]) : this.c()).valueOf();
     }
 });
 Expr.cast = typecast([Expr], function(a) {

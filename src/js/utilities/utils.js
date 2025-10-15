@@ -3270,7 +3270,7 @@ function solvedioph(a, b, with_param, with_free_vars)
             symbols = b.symbols();
             for (j=0,m=symbols.length; j<m; ++j)
             {
-                n = b.terms[symbols[j]].c().num;
+                n = b.terms[symbols[j]].c.num;
                 if ('1' === symbols[j])
                 {
                     // constant term
@@ -3290,8 +3290,8 @@ function solvedioph(a, b, with_param, with_free_vars)
                 if ('1' !== p)
                 {
                     // re-express partial solution in terms of original symbol
-                    sol2[0] = Expr('+', [Expr('*', [p, sol2[0].c()]), sol2[0].terms[pnew]]).expand();
-                    sol2[1] = Expr('+', [Expr('*', [p, sol2[1].c()]), sol2[1].terms[pnew]]).expand();
+                    sol2[0] = Expr('+', [Expr('*', [p, sol2[0].c()]), sol2[0].terms[pnew].e]).expand();
+                    sol2[1] = Expr('+', [Expr('*', [p, sol2[1].c()]), sol2[1].terms[pnew].e]).expand();
                 }
                 if (-1 === free_vars.indexOf(pnew)) free_vars.push(pnew);
 
@@ -3321,7 +3321,7 @@ function solvedioph(a, b, with_param, with_free_vars)
 
     solutions = null == solutions ? null : (false === with_param ? solutions.map(function(x) {
         // return particular solution (as number), not general (as expression)
-        return x.c('symbol').num;
+        return x.c().num;
     }) : solutions);
     free_vars.symbol = symbol;
     return null == solutions ? null : (true === with_free_vars ? [solutions, free_vars] : solutions);
@@ -3395,7 +3395,7 @@ function solvediophs(a, b, with_param, with_free_vars)
 
     solutions = null == solutions ? null : (false === with_param ? solutions.map(function(x) {
         // return particular solution (as number), not general (as expression)
-        return x.c('symbol').num;
+        return x.c().num;
     }) : solutions);
     free_vars.symbol = symbol;
     return null == solutions ? null : (true === with_free_vars ? [solutions, free_vars] : solutions);
@@ -3427,7 +3427,7 @@ function solvecongr(a, b, m, with_param, with_free_vars)
         else
         {
             // general solution (as expression)
-            if (x.c('symbol').lt(O))
+            if (x.c().lt(O))
                 x = x.add(m).expand();
         }
         return x;
@@ -3475,11 +3475,10 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
         else
         {
             // general solution (as expression)
-            // expressions/terms use complex numbers by default
             for (t in x.terms)
             {
                 if (!HAS.call(x.terms, t) || ('1' === t)) continue;
-                if (Arithmetic.equ(Arithmetic.O, Arithmetic.mod(M.num, x.terms[t].c('symbol').num)))
+                if (Arithmetic.equ(Arithmetic.O, Arithmetic.mod(M.num, x.terms[t].c.num)))
                 {
                     add_M = false;
                     break;
@@ -3544,7 +3543,7 @@ function solvelineqs(a, b, x)
     var rel0, rel, sol, k, m, i, j, l, p, n, z, pi, ni;
 
     if (!is_instance(a, Matrix)) a = Matrix(Ring.Q(), a);
-    if (!a.nr || !a.nc || (a.ring !== Ring.Q())) return null;
+    if (!a.nr || !a.nc || !Ring.Q().equ(a.ring)) return null;
     b = Matrix(a.ring, b).col(0);
     k = a.nc; m = a.nr;
 
@@ -3553,7 +3552,7 @@ function solvelineqs(a, b, x)
     else if (is_array(x) && (k > x.length)) x = x.concat(array(k-x.length, function(i) {return (x[x.length-1].split('_')[0]) + '_' + String(x.length+i+1);}));
 
     rel0 = array(m, function(j) {
-        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [x[i], v]);})), b[j]]).expand();
+        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [x[i], v]);})), b[j]]);
     });
 
     sol = [];
@@ -3562,8 +3561,8 @@ function solvelineqs(a, b, x)
     {
         p = []; n = [], z = [];
         rel.forEach(function(s) {
-            var f = s.lhs.term(x[i]).c('symbol').sub(s.rhs.term(x[i]).c('symbol')),
-                e = s.rhs.sub(s.rhs.term(x[i])).sub(s.lhs.sub(s.lhs.term(x[i])));
+            var f = s.lhs.term(x[i]).c.sub(s.rhs.term(x[i]).c),
+                e = s.rhs.sub(s.rhs.term(x[i]).e).sub(s.lhs.sub(s.lhs.term(x[i]).e));
             if (f.gt(0)) p.push(e.div(f).expand());
             else if (f.lt(0)) n.push(e.div(f).expand());
             else z.push(e.expand());
@@ -3575,11 +3574,11 @@ function solvelineqs(a, b, x)
             for (j=0; j<l; ++j)
             {
                 if (z[j].isConst() && z[j].lt(0)) return null; // no solution
-                rel[j] = Expr('<=', [Expr.Zero(), z[j]]).expand();
+                rel[j] = Expr('<=', [Expr.Zero(), z[j]]);
             }
             if (p.length || n.length)
             {
-                sol.unshift(p.length ? [Expr('<=', [x[i], Expr('min()', p)]).expand()] : (n.length ? [Expr('<=', [Expr('max()', n), x[i]]).expand()] : []));
+                sol.unshift(p.length ? [Expr('<=', [x[i], Expr('min()', p)])] : (n.length ? [Expr('<=', [Expr('max()', n), x[i]])] : []));
             }
         }
         else
@@ -3591,27 +3590,27 @@ function solvelineqs(a, b, x)
                 if (j < z.length)
                 {
                     if (z[j].isConst() && z[j].lt(0)) return null; // no solution
-                    rel[j] = Expr('<=', [Expr.Zero(), z[j]]).expand();
+                    rel[j] = Expr('<=', [Expr.Zero(), z[j]]);
                 }
                 /*else if (!p.length)
                 {
-                    rel[j] = Expr('<=', [n[j-z.length], x[i]]).expand();
+                    rel[j] = Expr('<=', [n[j-z.length], x[i]]);
                 }
                 else if (!n.length)
                 {
-                    rel[j] = Expr('<=', [x[i], p[j-z.length]]).expand();
+                    rel[j] = Expr('<=', [x[i], p[j-z.length]]);
                 }*/
                 else
                 {
                     pi = stdMath.floor((j-z.length) / n.length);
                     ni = (j-z.length) % n.length;
                     if (p[pi].isConst() && n[ni].isConst() && p[pi].lt(n[ni])) return null; // no solution
-                    rel[j] = Expr('<=', [n[ni], p[pi]]).expand();
+                    rel[j] = Expr('<=', [n[ni], p[pi]]);
                 }
             }
             sol.unshift([
-                Expr('<=', [Expr('max()', n), x[i]]).expand(),
-                Expr('<=', [x[i], Expr('min()', p)]).expand()
+                Expr('<=', [Expr('max()', n), x[i]]),
+                Expr('<=', [x[i], Expr('min()', p)])
             ]);
         }
     }
@@ -3658,8 +3657,8 @@ function solvepythag(a, with_param)
         // different sign, parametrised solution:
         // a1^2 x1^2 = a2^2 x2^2 ==> x1 = a2*i_1, x2 = a1*i_1
         return [
-            Expr('*', [param[0], s[1]]).expand(),
-            Expr('*', [param[0], s[0]]).expand()
+            Expr('*', [param[0], s[1]]),
+            Expr('*', [param[0], s[0]])
         ];
 
     // k >= 3
@@ -3671,11 +3670,11 @@ function solvepythag(a, with_param)
         if (-1 === sign(a[i]))
             index = i; // find last negative coefficient, to be solved with respect to that
 
-    ith = Expr('+', array(param.length, function(i) {return Expr('^', [param[i], 2]);})).expand();
+    ith = Expr('+', array(param.length, function(i) {return Expr('^', [param[i], 2]);}));
     L = [
         Expr('+', [ith, Expr('*', [Expr('^', [param[k-2], 2]), Arithmetic.mul(J, two)])]).expand()
     ].concat(array(k-2, function(i) {
-        return Expr('*', [param[i], param[k-2], two]).expand();
+        return Expr('*', [param[i], param[k-2], two]);
     }));
     solutions = L.slice(0, index).concat(ith).concat(L.slice(index));
 
