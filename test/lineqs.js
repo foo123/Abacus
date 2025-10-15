@@ -20,7 +20,6 @@ echo('Abacus Linear Systems of Inequalities (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // (General) Linear Systems of Inequalities
-
 echo('Solve system AX <= B');
 echo('4x + 5y <= 7');
 echo('o=Abacus.Math.lineqs([[4,5]], [7], ["x", "y"])');

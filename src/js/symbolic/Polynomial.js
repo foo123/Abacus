@@ -4126,7 +4126,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if (n.equ(Arithmetic.I)) return self;
-        return kthroot(self, n);
+        return RationalFunc(self.num.rad(n), self.den.rad(n));
     }
     ,shift: function(x, s) {
         // shift <-> equivalent to multiplication/division by a monomial x^s

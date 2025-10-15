@@ -24,7 +24,7 @@ function print_tex(sol, vars)
 function check_solution(sol, coeff, vars, modulo)
 {
     if (null == sol) return 'No Integer solution';
-    
+
     vars = vars || {};
     let out = '', i, l = sol.length, res = 0;
     for (i=0; i<l; ++i)
@@ -41,7 +41,7 @@ function check_solution(sol, coeff, vars, modulo)
 function check_solution_system(sol, coeff, vars, modulo)
 {
     if (null == sol) return 'No Integer solution';
-    
+
     vars = vars || {};
     let out = '', i, m = coeff.length, j, k = coeff[0].length, res = new Array(m);
     for (i=0; i<m; ++i)
@@ -63,7 +63,7 @@ function check_solution_system(sol, coeff, vars, modulo)
 function check_solution2(sol, coeff, vars)
 {
     if (null == sol) return 'No Integer solution';
-    
+
     vars = vars || {};
     let out = '', i, l = sol.length, res = 0, s2;
     for (i=0; i<l; ++i)

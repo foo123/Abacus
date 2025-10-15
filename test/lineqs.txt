@@ -1,26 +1,26 @@
-Abacus Linear Systems of Inequalities (VERSION = 1.0.6)
+Abacus Linear Systems of Inequalities (VERSION = 2.0.0)
 ---
 Solve system AX <= B
 4x + 5y <= 7
 o=Abacus.Math.lineqs([[4,5]], [7], ["x", "y"])
-y <= 7/5-(4/5)*x
+y <= 7/5 - 4/5*x
 ---
 2x + y + z <= 4, -x -2y -z <= -4, x + y <= 4
 o=Abacus.Math.lineqs([[2,1,1],[-1,-2,-1],[1,1,0]], [4,-4,4], ["x", "y", "z"])
 x <= 2
 
 x <= y
-y <= 4-x
+y <= 4 - x
 
-4-x-2*y <= z
-z <= 4-2*x-y
+4 - x - 2*y <= z
+z <= 4 - 2*x - y
 ---
 2x + y + z <= 4, -x -2y -z <= -4
 o=Abacus.Math.lineqs([[2,1,1],[-1,-2,-1]], [4,-4], ["x", "y", "z"])
 x <= y
 
-4-x-2*y <= z
-z <= 4-2*x-y
+4 - x - 2*y <= z
+z <= 4 - 2*x - y
 ---
 4x <= 4, -4x <= -5
 o=Abacus.Math.lineqs([[4],[-4]], [4,-5], ["x"])

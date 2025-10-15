@@ -3,12 +3,12 @@
 **Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** in progress (333 kB minified)
+**version 2.0.0** almost complete (336 kB minified)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
 
-`Abacus` is a relatively small (333 kB minified) and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
+`Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
 
 `Abacus` uses mostly self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 

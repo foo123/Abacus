@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-14 23:30:53)
+*   @version: 2.0.0 (2025-10-15 22:03:03)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-14 23:30:53)
+*   @version: 2.0.0 (2025-10-15 22:03:03)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -3329,7 +3329,7 @@ function solvedioph(a, b, with_param, with_free_vars)
             symbols = b.symbols();
             for (j=0,m=symbols.length; j<m; ++j)
             {
-                n = b.terms[symbols[j]].c().num;
+                n = b.terms[symbols[j]].c.num;
                 if ('1' === symbols[j])
                 {
                     // constant term
@@ -3349,8 +3349,8 @@ function solvedioph(a, b, with_param, with_free_vars)
                 if ('1' !== p)
                 {
                     // re-express partial solution in terms of original symbol
-                    sol2[0] = Expr('+', [Expr('*', [p, sol2[0].c()]), sol2[0].terms[pnew]]).expand();
-                    sol2[1] = Expr('+', [Expr('*', [p, sol2[1].c()]), sol2[1].terms[pnew]]).expand();
+                    sol2[0] = Expr('+', [Expr('*', [sol2[0].c(), p]), sol2[0].terms[pnew].e]).expand();
+                    sol2[1] = Expr('+', [Expr('*', [sol2[1].c(), p]), sol2[1].terms[pnew].e]).expand();
                 }
                 if (-1 === free_vars.indexOf(pnew)) free_vars.push(pnew);
 
@@ -3380,7 +3380,7 @@ function solvedioph(a, b, with_param, with_free_vars)
 
     solutions = null == solutions ? null : (false === with_param ? solutions.map(function(x) {
         // return particular solution (as number), not general (as expression)
-        return x.c('symbol').num;
+        return x.c().num;
     }) : solutions);
     free_vars.symbol = symbol;
     return null == solutions ? null : (true === with_free_vars ? [solutions, free_vars] : solutions);
@@ -3454,7 +3454,7 @@ function solvediophs(a, b, with_param, with_free_vars)
 
     solutions = null == solutions ? null : (false === with_param ? solutions.map(function(x) {
         // return particular solution (as number), not general (as expression)
-        return x.c('symbol').num;
+        return x.c().num;
     }) : solutions);
     free_vars.symbol = symbol;
     return null == solutions ? null : (true === with_free_vars ? [solutions, free_vars] : solutions);
@@ -3486,7 +3486,7 @@ function solvecongr(a, b, m, with_param, with_free_vars)
         else
         {
             // general solution (as expression)
-            if (x.c('symbol').lt(O))
+            if (x.c().lt(O))
                 x = x.add(m).expand();
         }
         return x;
@@ -3534,11 +3534,10 @@ function solvecongrs(a, b, m, with_param, with_free_vars)
         else
         {
             // general solution (as expression)
-            // expressions/terms use complex numbers by default
             for (t in x.terms)
             {
                 if (!HAS.call(x.terms, t) || ('1' === t)) continue;
-                if (Arithmetic.equ(Arithmetic.O, Arithmetic.mod(M.num, x.terms[t].c('symbol').num)))
+                if (Arithmetic.equ(Arithmetic.O, Arithmetic.mod(M.num, x.terms[t].c.num)))
                 {
                     add_M = false;
                     break;
@@ -3588,7 +3587,7 @@ function solvelinears(a, b, x)
         else if (is_array(x) && ns.nc > x.length) x = x.concat(array(ns.nc-x.length, function(i) {return x[x.length-1].split('_')[0] + '_' + String(x.length+i+1);}));
         return array(bp.nr, function(i) {
             return Expr('+', array(ns.nc, function(j) {
-                return Expr('*', [x[j], ns.val[i][j]]);
+                return Expr('*', [ns.val[i][j], x[j]]);
             })).add(bp.val[i][0]).expand();
         });
     }
@@ -3603,7 +3602,7 @@ function solvelineqs(a, b, x)
     var rel0, rel, sol, k, m, i, j, l, p, n, z, pi, ni;
 
     if (!is_instance(a, Matrix)) a = Matrix(Ring.Q(), a);
-    if (!a.nr || !a.nc || (a.ring !== Ring.Q())) return null;
+    if (!a.nr || !a.nc || !Ring.Q().equ(a.ring)) return null;
     b = Matrix(a.ring, b).col(0);
     k = a.nc; m = a.nr;
 
@@ -3612,7 +3611,7 @@ function solvelineqs(a, b, x)
     else if (is_array(x) && (k > x.length)) x = x.concat(array(k-x.length, function(i) {return (x[x.length-1].split('_')[0]) + '_' + String(x.length+i+1);}));
 
     rel0 = array(m, function(j) {
-        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [x[i], v]);})), b[j]]).expand();
+        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [v, x[i]]);})), b[j]]);
     });
 
     sol = [];
@@ -3621,8 +3620,8 @@ function solvelineqs(a, b, x)
     {
         p = []; n = [], z = [];
         rel.forEach(function(s) {
-            var f = s.lhs.term(x[i]).c('symbol').sub(s.rhs.term(x[i]).c('symbol')),
-                e = s.rhs.sub(s.rhs.term(x[i])).sub(s.lhs.sub(s.lhs.term(x[i])));
+            var f = s.lhs.term(x[i]).c.sub(s.rhs.term(x[i]).c),
+                e = s.rhs.sub(s.rhs.term(x[i]).e).sub(s.lhs.sub(s.lhs.term(x[i]).e));
             if (f.gt(0)) p.push(e.div(f).expand());
             else if (f.lt(0)) n.push(e.div(f).expand());
             else z.push(e.expand());
@@ -3634,11 +3633,11 @@ function solvelineqs(a, b, x)
             for (j=0; j<l; ++j)
             {
                 if (z[j].isConst() && z[j].lt(0)) return null; // no solution
-                rel[j] = Expr('<=', [Expr.Zero(), z[j]]).expand();
+                rel[j] = Expr('<=', [Expr.Zero(), z[j]]);
             }
             if (p.length || n.length)
             {
-                sol.unshift(p.length ? [Expr('<=', [x[i], Expr('min()', p)]).expand()] : (n.length ? [Expr('<=', [Expr('max()', n), x[i]]).expand()] : []));
+                sol.unshift(p.length ? [Expr('<=', [x[i], 1 === p.length ? p[0] : Expr('min()', p)])] : (n.length ? [Expr('<=', [1 === n.length ? n[0] : Expr('max()', n), x[i]])] : []));
             }
         }
         else
@@ -3650,27 +3649,27 @@ function solvelineqs(a, b, x)
                 if (j < z.length)
                 {
                     if (z[j].isConst() && z[j].lt(0)) return null; // no solution
-                    rel[j] = Expr('<=', [Expr.Zero(), z[j]]).expand();
+                    rel[j] = Expr('<=', [Expr.Zero(), z[j]]);
                 }
                 /*else if (!p.length)
                 {
-                    rel[j] = Expr('<=', [n[j-z.length], x[i]]).expand();
+                    rel[j] = Expr('<=', [n[j-z.length], x[i]]);
                 }
                 else if (!n.length)
                 {
-                    rel[j] = Expr('<=', [x[i], p[j-z.length]]).expand();
+                    rel[j] = Expr('<=', [x[i], p[j-z.length]]);
                 }*/
                 else
                 {
                     pi = stdMath.floor((j-z.length) / n.length);
                     ni = (j-z.length) % n.length;
                     if (p[pi].isConst() && n[ni].isConst() && p[pi].lt(n[ni])) return null; // no solution
-                    rel[j] = Expr('<=', [n[ni], p[pi]]).expand();
+                    rel[j] = Expr('<=', [n[ni], p[pi]]);
                 }
             }
             sol.unshift([
-                Expr('<=', [Expr('max()', n), x[i]]).expand(),
-                Expr('<=', [x[i], Expr('min()', p)]).expand()
+                Expr('<=', [1 === n.length ? n[0] : Expr('max()', n), x[i]]),
+                Expr('<=', [x[i], 1 === p.length ? p[0] : Expr('min()', p)])
             ]);
         }
     }
@@ -3717,8 +3716,8 @@ function solvepythag(a, with_param)
         // different sign, parametrised solution:
         // a1^2 x1^2 = a2^2 x2^2 ==> x1 = a2*i_1, x2 = a1*i_1
         return [
-            Expr('*', [param[0], s[1]]).expand(),
-            Expr('*', [param[0], s[0]]).expand()
+            Expr('*', [s[1], param[0]]),
+            Expr('*', [s[0], param[0]])
         ];
 
     // k >= 3
@@ -3730,11 +3729,11 @@ function solvepythag(a, with_param)
         if (-1 === sign(a[i]))
             index = i; // find last negative coefficient, to be solved with respect to that
 
-    ith = Expr('+', array(param.length, function(i) {return Expr('^', [param[i], 2]);})).expand();
+    ith = Expr('+', array(param.length, function(i) {return Expr('^', [param[i], 2]);}));
     L = [
-        Expr('+', [ith, Expr('*', [Expr('^', [param[k-2], 2]), Arithmetic.mul(J, two)])]).expand()
+        Expr('+', [ith, Expr('*', [Arithmetic.mul(J, two), Expr('^', [param[k-2], 2])])]).expand()
     ].concat(array(k-2, function(i) {
-        return Expr('*', [param[i], param[k-2], two]).expand();
+        return Expr('*', [two, param[i], param[k-2]]);
     }));
     solutions = L.slice(0, index).concat(ith).concat(L.slice(index));
 
@@ -5770,7 +5769,7 @@ function kthroot(x, k, limit)
         ObjectClass, r, d, k_1, tries = 0, epsilon = Rational.Epsilon();
     if (k.equ(O)) return null;
     if ((is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x)))) return x;
-    ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational :  x[CLASS];
+    ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational : x[CLASS];
     x = ObjectClass.cast(x);
     if (is_class(ObjectClass, Rational) && x.lt(O) && k.mod(two).equ(O))
     {
@@ -5785,11 +5784,7 @@ function kthroot(x, k, limit)
     }
     if (k.equ(I)) return x;
 
-    if (is_class(ObjectClass, RationalFunc))
-    {
-        r = new ObjectClass(MultiPolynomial.kthroot(x.num, k), MultiPolynomial.kthroot(x.den, k));
-    }
-    else if (is_class(ObjectClass, Rational))
+    if (is_class(ObjectClass, Rational))
     {
         r = new ObjectClass(ikthroot(x.num, k.num), ikthroot(x.den, k.num));
     }
@@ -8530,15 +8525,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // collect simple terms only, sums of products of numbers, symbols and powers of symbols
             ast = self.ast;
-            self._terms = {'1': O};
+            self._terms = {'1': {e:Expr.Zero(), c:O}};
 
             if ('sym' === ast.type)
             {
-                self._terms[ast.arg] = I;
+                self._terms[ast.arg] = {e:self, c:I};
             }
             else if (self.isConst())
             {
-                self._terms['1'] = self.c();
+                self._terms['1'] = {e:Expr('', self.c()), c:self.c()};
             }
             else if ('expr' === ast.type)
             {
@@ -8548,19 +8543,98 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         KEYS(e.terms).forEach(function(key) {
                             if (!HAS.call(self._terms, key))
                             {
-                                self._terms[key] = e.terms[key];
+                                self._terms[key] = (0 < i) && ('-' === ast.op) ? {e:e.terms[key].e.neg(), c:e.terms[key].c.neg()} : e.terms[key];
                             }
                             else
                             {
-                                self._terms[key] = (0 < i) && ('-' === ast.op) ? (self._terms[key].sub(e.terms[key])) : (self._terms[key].add(e.terms[key]));
-                                if (self._terms[key].equ(0)) delete self._terms[key];
+                                if ((0 < i) && ('-' === ast.op))
+                                {
+                                    self._terms[key] = {e:self._terms[key].e.sub(e.terms[key].e).expand(), c:self._terms[key].c.sub(e.terms[key].c)};
+                                }
+                                else
+                                {
+                                    self._terms[key] = {e:self._terms[key].e.add(e.terms[key].e).expand(), c:self._terms[key].c.add(e.terms[key].c)};
+                                }
                             }
+                            if (('1' !== key) && self._terms[key].c.equ(0)) delete self._terms[key];
                         });
                     });
                 }
-                else if (('*' === ast.op) || ('^' === ast.op))
+                else if ('*' === ast.op)
                 {
-                    self._terms[self.f().f.map(function(f) {return f.toString();}).sort().join('*')] = self.f().c;
+                    var c = I;
+                    var f = (ast.arg.reduce(function(f, e) {
+                        if ('sym' === e.ast.type)
+                        {
+                            f.push([e, I]);
+                        }
+                        else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
+                        {
+                            f.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
+                        }
+                        else if (e.isConst())
+                        {
+                            c = c.mul(e.c());
+                        }
+                        return f;
+                    }, [])
+                    .sort(function(a, b) {
+                        return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
+                    })
+                    .reduce(function(f, a) {
+                        if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
+                        else f.push(a);
+                        return f;
+                    }, [])
+                    .filter(function(a) {
+                        return !a[1].equ(0);
+                    }));
+                    if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', f.map(function(a) {return Expr('^', a);}).concat(c)), c:c};
+                }
+                else if ('/' === ast.op)
+                {
+                    var c = I;
+                    var f = (ast.arg.reduce(function(f, e, i) {
+                        if (0 === i)
+                        {
+                            if ('sym' === e.ast.type)
+                            {
+                                f.push([e, I]);
+                            }
+                            else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
+                            {
+                                f.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
+                            }
+                            else if (e.isConst())
+                            {
+                                c = c.mul(e.c());
+                            }
+                        }
+                        else if (e.isConst())
+                        {
+                            c = c.div(e.c());
+                        }
+                        return f;
+                    }, [])
+                    .sort(function(a, b) {
+                        return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
+                    })
+                    .reduce(function(f, a) {
+                        if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
+                        else f.push(a);
+                        return f;
+                    }, [])
+                    .filter(function(a) {
+                        return !a[1].equ(0);
+                    }));
+                    if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', f.map(function(a) {return Expr('^', a);}).concat(c)), c:c};
+                }
+                else if ('^' === ast.op)
+                {
+                    if (('sym' === ast.arg[0].type) && ast.arg[1].isInt())
+                    {
+                        self._terms[ast.arg[0].arg + (ast.arg[1].gt(1) ? ('^'+String(ast.arg[1])) : '')] = {e:self, c:I};
+                    }
                 }
             }
         }
@@ -8568,7 +8642,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (null == t) return self._terms;
 
         t = String(t);
-        return HAS.call(self._terms, t) ? self._terms[t] : O;
+        return HAS.call(self._terms, t) ? self._terms[t] : {e:Expr.Zero(), c:O};
     }
 
     ,isSimple: function() {
@@ -9321,9 +9395,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }, O);
             }
 
-            function factors(e)
+            function factors(e, do_div)
             {
-                fac = null == fac ? e.f().c : fac.mul(e.f().c);
+                fac = null == fac ? e.f().c : (do_div ? fac.div(e.f().c) : fac.mul(e.f().c));
                 var f = e.f().f.filter(function(f) {return !f.equ(I);});
                 return f.map(function(f) {return '^' === f.ast.op ? {b:f.ast.arg[0], e:f.ast.arg[1]} : {b:f, e:I};});
             }
@@ -9342,8 +9416,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
             var fac = null, a, b, c;
 
-            a = flatten(('*' === e1.ast.op ? e1.ast.arg : [e1]).map(factors));
-            b = flatten(('*' === e2.ast.op ? e2.ast.arg : [e2]).map(factors));
+            a = flatten(('*' === e1.ast.op ? e1.ast.arg : [e1]).map(function(e) {return factors(e, false);}));
+            b = flatten(('*' === e2.ast.op ? e2.ast.arg : [e2]).map(function(e) {return factors(e, do_division);}));
 
             if (fac.equ(0)) return O;
 
@@ -9978,6 +10052,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self._tex;
     }
+    ,valueOf: function() {
+        return (arguments.length ? this.evaluate(arguments[0]) : this.c()).valueOf();
+    }
 });
 Expr.cast = typecast([Expr], function(a) {
     return is_string(a) ? Expr.fromString(a) : (is_callable(a.toExpr) ? a.toExpr() : Expr('', a));
@@ -10131,7 +10208,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         {
             self.ring = ring || terms.ring;
             self.symbol = String(symbol || terms.symbol);
-            self.terms = self.ring !== terms.ring ? terms.terms.map(function(t) {
+            self.terms = !self.ring.equ(terms.ring) ? terms.terms.map(function(t) {
                 return UniPolyTerm(t.c, t.e, self.ring);
             }) : terms.terms.slice();
         }
@@ -11226,7 +11303,7 @@ Polynomial.cast = function(a, symbol, ring) {
     ring = ring || Ring.Q();
     symbol = String(symbol || 'x');
     var type_cast = typecast(function(a) {
-        return is_instance(a, Polynomial) && (a.ring === ring);
+        return is_instance(a, Polynomial) && ring.equ(a.ring);
     }, function(a) {
         return is_string(a) ? Polynomial.fromString(a, symbol, ring) : new Polynomial(a, symbol, ring);
     });
@@ -11403,7 +11480,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         {
             self.ring = ring || terms.ring;
             self.symbol = symbol || terms.symbol;
-            if ((self.ring !== terms.ring) || !is_same_symbol(self.symbol, terms.symbol))
+            if (!is_same_symbol(self.symbol, terms.symbol) || !self.ring.equ(terms.ring))
             {
                 index = self.symbol.map(function(symbol) {return terms.symbol.indexOf(symbol);});
                 self.terms = terms.terms.map(function(t) {
@@ -12364,13 +12441,16 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, symbol = self.symbol, ring = self.ring, O = ring.Zero(), memo = Obj();
         function get_val(p, x)
         {
-            if (is_instance(p, MultiPolynomial) && (1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+            if (is_instance(p, [MultiPolynomial, RationalFunc]))
             {
-                return horner(p, x, p.symbol[0]);
-            }
-            else if (is_instance(p, [MultiPolynomial, RationalFunc]) && (ring.CoefficientRing === p.ring))
-            {
-                return p.evaluate(x);
+                if ((1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+                {
+                    return horner(p, x, p.symbol[0]);
+                }
+                else if (p.ring.equ(ring.CoefficientRing))
+                {
+                    return p.evaluate(x);
+                }
             }
             return p;
         }
@@ -12397,7 +12477,54 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             memo[str] = v;
             return v;
         }
-        return horner(univariate(self), x || {}, symbol[0]);
+        return horner(self.univariate(), x || {}, symbol[0]);
+    }
+    ,univariate: function(x, as_field) {
+        var p = this, s = p.symbol, index;
+        // make a multivariate recursively univariate of univariates
+        if (1 < s.length)
+        {
+            if (is_string(x))
+            {
+                index = s.indexOf(x);
+                p = p.toExpr().toPoly([x], Ring(p.ring, s.slice(0, index).concat(s.slice(index+1)), false, true));
+            }
+            else
+            {
+                as_field = true === as_field;
+                p = p.toExpr().toPoly([s[0]], s.slice(1).reverse().reduce(function(K, x) {
+                    return Ring(K, [x], as_field, true);
+                }, p.ring));
+            }
+        }
+        return p;
+    }
+    ,multivariate: function(x) {
+        var p = this, ring = p.ring;
+        // unmake recursive univariate, make multivariate again on x
+        if (1 < x.length)
+        {
+            while (ring.PolynomialSymbol)
+            {
+                if (is_array(ring.PolynomialSymbol))
+                {
+                    if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (-1 === x.indexOf(ring.PolynomialSymbol))
+                    {
+                        break;
+                    }
+                }
+                ring = ring.CoefficientRing;
+            }
+            p = p.toExpr().toPoly(x, ring);
+        }
+        return p;
     }
     ,toExpr: function() {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, t, ti, c, x, i, l, term, terms;
@@ -12481,7 +12608,7 @@ MultiPolynomial.cast = function(a, symbol, ring) {
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
     var type_cast = typecast(function(a) {
-        return is_instance(a, MultiPolynomial) && (a.ring === ring) && is_same_symbol(a.symbol, symbol);
+        return is_instance(a, MultiPolynomial) && is_same_symbol(symbol, a.symbol) && ring.equ(a.ring);
     }, function(a) {
         return is_string(a) ? MultiPolynomial.fromString(a, symbol, ring) : new MultiPolynomial(a, symbol, ring);
     });
@@ -13008,49 +13135,6 @@ function multi_div(P, x, q_and_r)
     }
     return P;
 }
-function univariate(p, x, field)
-{
-    // make a multivariate recursively univariate of univariates
-    if (1 < p.symbol.length)
-    {
-        if (is_string(x))
-        {
-            var index = p.symbol.indexOf(x);
-            p = p.toExpr().toPoly([x], Ring(p.ring, p.symbol.slice(0, index).concat(p.symbol.slice(index+1)), false, true));
-        }
-        else
-        {
-            p = p.toExpr().toPoly([p.symbol[0]], p.symbol.slice(1).reverse().reduce(function(K, x) {
-                return Ring(K, [x], true === field, true);
-            }, p.ring));
-        }
-    }
-    return p;
-}
-function multivariate(p, x)
-{
-    // unmake univariate, make multivariate again
-    var ring = p.ring;
-    while (ring.PolynomialSymbol)
-    {
-        if (is_array(ring.PolynomialSymbol))
-        {
-            if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
-            {
-                break;
-            }
-        }
-        else
-        {
-            if (-1 === x.indexOf(ring.PolynomialSymbol))
-            {
-                break;
-            }
-        }
-        ring = ring.CoefficientRing;
-    }
-    return p.toExpr().toPoly(x, ring);
-}
 function poly_interpolate(v, x, ring, PolynomialClass)
 {
     // https://en.wikipedia.org/wiki/Lagrange_polynomial
@@ -13240,7 +13324,7 @@ function polygcd(/* args */)
 
     // Generalization of Euclid GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(R.NumberClass, Integer)/*!R.isField()*/)
+    if (/*is_class(R.NumberClass, Integer)*/!R.isField())
     {
         a = args[0];
         if (1 == c)
@@ -13316,7 +13400,7 @@ function polyxgcd(/* args */)
 
     // Generalization of Euclid extended GCD Algorithm for polynomials in Z[X]
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#GCD_over_a_ring_and_over_its_field_of_fractions
-    if (is_class(R.NumberClass, Integer)/*!R.isField()*/)
+    if (/*is_class(R.NumberClass, Integer)*/!R.isField())
     {
         field = R.associatedField(); // Q[X]
         asign = field.One(); bsign = asign;
@@ -13540,7 +13624,7 @@ function polylcm(/* args */)
     }
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         i, l = args.length, LCM, O = Abacus.Arithmetic.O, PolynomialClass = Polynomial, S, R;
-    if (1 >= l) return 1===l ? args[0] : PolynomialClass.Zero();
+    if (1 >= l) return 1 === l ? args[0] : PolynomialClass.Zero();
     PolynomialClass = args[0][CLASS];
     S = args[0].symbol;
     R = args[0].ring;
@@ -13647,9 +13731,9 @@ MultiPolynomial.gcd = function(/*args*/) {
             symbol = p.symbol;
             order = p.order();
         }
-        return univariate(p, null, true);
+        return p.univariate(null, true);
     }));
-    return multivariate(gcd, symbol).order(order);
+    return gcd.multivariate(symbol).order(order);
 };
 MultiPolynomial.xgcd = function(/*args*/) {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
@@ -13660,11 +13744,15 @@ MultiPolynomial.xgcd = function(/*args*/) {
             symbol = p.symbol;
             order = p.order();
         }
-        return univariate(p, null, true);
-    })).map(function(g, i) {
+        return p.univariate(null, true);
+    })).map(function(g) {
         if (is_instance(g, MultiPolynomial))
         {
-            g = multivariate(g, symbol).order(order);
+            g = g.multivariate(symbol).order(order);
+        }
+        else if (is_instance(g, RationalFunc))
+        {
+            g = RationalFunc(g.num.multivariate(symbol).order(order), g.den.multivariate(symbol).order(order));
         }
         return g;
     });
@@ -13678,9 +13766,9 @@ MultiPolynomial.lcm = function(/*args*/) {
             symbol = p.symbol;
             order = p.order();
         }
-        return univariate(p, null, true);
+        return p.univariate(null, true);
     }));
-    return multivariate(lcm, symbol).order(order);
+    return lcm.multivariate(symbol).order(order);
 };
 Polynomial.Resultant = function(p, q) {
     return polyres(p, p.deg(), q, q.deg(), p.symbol, false);
@@ -13699,21 +13787,21 @@ MultiPolynomial.Resultant = function(p, q, x) {
     q = is_instance(q, Polynomial) ? MultiPolynomial(q, p.symbol, p.ring) : q;
     var symbol = p.symbol;
     x = x || p.symbol[0];
-    p = univariate(p, x);
-    q = univariate(q, x);
+    p = p.univariate(x);
+    q = q.univariate(x);
     var res = polyres(p, p.deg(x), q, q.deg(x), x, false);
-    return /*multivariate(*/res/*, symbol)*/;
+    return res;
 };
 MultiPolynomial.Discriminant = function(p, x) {
     p = is_instance(p, Polynomial) ? MultiPolynomial(p, [x || p.symbol], p.ring) : p;
     x = x || p.symbol[0];
     var symbol = p.symbol, dp = p.d(x, 1);
-    p = univariate(p, x);
-    dp = univariate(dp, x);
+    p = p.univariate(x);
+    dp = dp.univariate(x);
     var n = p.deg(x),
         res = polyres(p, n, dp, n-1, x, true);
     if ((n*(n-1) >> 1) & 1) res = res.neg();
-    return /*multivariate(*/res/*, symbol)*/;
+    return res;
 };
 
 
@@ -14099,7 +14187,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         n = Integer.cast(n);
         if (n.equ(Arithmetic.I)) return self;
-        return kthroot(self, n);
+        return RationalFunc(self.num.rad(n), self.den.rad(n));
     }
     ,shift: function(x, s) {
         // shift <-> equivalent to multiplication/division by a monomial x^s
@@ -14247,7 +14335,7 @@ RationalFunc.cast = function(a, symbol, ring) {
     symbol = symbol || 'x';
     if (!is_array(symbol)) symbol = [String(symbol)];
     var type_cast = typecast(function(a) {
-        return is_instance(a, RationalFunc) && (a.ring === ring) && is_same_symbol(a.symbol, symbol);
+        return is_instance(a, RationalFunc) && is_same_symbol(symbol, a.symbol) && ring.equ(a.ring);
     }, function(a) {
         return is_string(a) ? RationalFunc.fromString(a, symbol, ring) : (is_instance(a, RationalFunc) ? new RationalFunc(MultiPolynomial(a.num, symbol, ring), MultiPolynomial(a.den, symbol, ring)) : new RationalFunc(MultiPolynomial(a, symbol, ring)));
     });
@@ -16161,6 +16249,7 @@ Ring = Abacus.Ring = Class({
         var self = this, ring = null;
         if (!is_instance(self, Ring)) return new Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate);
 
+        self.Modulo = null;
         self.PolynomialClass = null;
         self.CoefficientRing = null;
         self.PolynomialSymbol = null;
@@ -16176,10 +16265,6 @@ Ring = Abacus.Ring = Class({
             {
                 self.Modulo = Integer.cast(NumberClass[1]);
                 NumberClass = NumberClass[0];
-            }
-            else
-            {
-                self.Modulo = null;
             }
             if (!is_class(NumberClass, Numeric)) NumberClass = Complex;
             self.NumberClass = NumberClass;
@@ -16308,6 +16393,31 @@ Ring = Abacus.Ring = Class({
         return self;
     }
 
+    ,clone: function() {
+        var self = this, copy = Ring();
+        copy.NumberClass = self.NumberClass;
+        copy.Modulo = self.Modulo;
+        copy.PolynomialClass = self.PolynomialClass;
+        copy.CoefficientRing = self.CoefficientRing;
+        copy.PolynomialSymbol = self.PolynomialSymbol;
+        return copy;
+    }
+
+    ,equ: function(other) {
+        var self = this;
+        if (
+            (self === other)
+            || (
+            is_instance(other, Ring)
+            && (self.NumberClass === other.NumberClass)
+            && (self.Modulo === other.Modulo)
+            && (self.PolynomialClass === other.PolynomialClass)
+            && ((!self.PolynomialSymbol && !other.PolynomialSymbol) || symbols_match(self.PolynomialSymbol, other.PolynomialSymbol))
+            && ((!self.CoefficientRing && !other.CoefficientRing) || self.CoefficientRing.equ(other.CoefficientRing))
+        )) return true;
+        return false;
+    }
+
     ,Zero: function() {
         var self = this;
         return self.PolynomialClass ? self.PolynomialClass.Zero(self.PolynomialSymbol, self.CoefficientRing) : self.NumberClass.Zero(self.Modulo);
@@ -16359,7 +16469,7 @@ Ring = Abacus.Ring = Class({
 
     ,hasGCD: function() {
         var self = this;
-        return self.PolynomialClass ? (/*(is_class(self.PolynomialClass, Polynomial) || (1 === self.PolynomialSymbol.length)) &&*/ is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
     }
     ,gcd: function(/*args*/) {
         var self = this, args;
@@ -16443,7 +16553,26 @@ Ring = Abacus.Ring = Class({
         return self._tex;
     }
 });
-// combinatorial objects iterator ordering patterns
+
+function symbols_match(symbol1, symbol2)
+{
+    if (symbol1 === symbol2) return true;
+    if (is_array(symbol1) && is_array(symbol2))
+    {
+        if (symbol1.length !== symbol2.length) return false;
+        symbol1 = symbol1.slice().sort();
+        symbol2 = symbol2.slice().sort();
+        for (var i=0,l=symbol1.length; i<l; ++i)
+        {
+            if (symbol1[i] !== symbol2[i]) return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+    return true;
+}// combinatorial objects iterator ordering patterns
 // https://oeis.org/wiki/Orderings
 function ORDER(o)
 {

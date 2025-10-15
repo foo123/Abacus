@@ -12,8 +12,9 @@ function print(o)
 }
 function print_all(o, prev, f)
 {
+    let item;
     if (-1 === prev)
-        while (o.hasNext(-1)) echo(f ? f(o.next(-1)) : o.next(-1).join(','));
+        while (o.hasNext(-1) && (item=o.next(-1))) echo(f ? f(item) : item.join(','));
     else
         //while (o.hasNext()) echo(o.next());
         // iterator/iterable are supported

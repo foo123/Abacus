@@ -313,7 +313,7 @@ function kthroot(x, k, limit)
         ObjectClass, r, d, k_1, tries = 0, epsilon = Rational.Epsilon();
     if (k.equ(O)) return null;
     if ((is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x)))) return x;
-    ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational :  x[CLASS];
+    ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational : x[CLASS];
     x = ObjectClass.cast(x);
     if (is_class(ObjectClass, Rational) && x.lt(O) && k.mod(two).equ(O))
     {
@@ -328,11 +328,7 @@ function kthroot(x, k, limit)
     }
     if (k.equ(I)) return x;
 
-    if (is_class(ObjectClass, RationalFunc))
-    {
-        r = new ObjectClass(MultiPolynomial.kthroot(x.num, k), MultiPolynomial.kthroot(x.den, k));
-    }
-    else if (is_class(ObjectClass, Rational))
+    if (is_class(ObjectClass, Rational))
     {
         r = new ObjectClass(ikthroot(x.num, k.num), ikthroot(x.den, k.num));
     }

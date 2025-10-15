@@ -3528,7 +3528,7 @@ function solvelinears(a, b, x)
         else if (is_array(x) && ns.nc > x.length) x = x.concat(array(ns.nc-x.length, function(i) {return x[x.length-1].split('_')[0] + '_' + String(x.length+i+1);}));
         return array(bp.nr, function(i) {
             return Expr('+', array(ns.nc, function(j) {
-                return Expr('*', [x[j], ns.val[i][j]]);
+                return Expr('*', [ns.val[i][j], x[j]]);
             })).add(bp.val[i][0]).expand();
         });
     }
@@ -3552,7 +3552,7 @@ function solvelineqs(a, b, x)
     else if (is_array(x) && (k > x.length)) x = x.concat(array(k-x.length, function(i) {return (x[x.length-1].split('_')[0]) + '_' + String(x.length+i+1);}));
 
     rel0 = array(m, function(j) {
-        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [x[i], v]);})), b[j]]);
+        return Expr('<=', [Expr('+', a.row(j).map(function(v, i) {return Expr('*', [v, x[i]]);})), b[j]]);
     });
 
     sol = [];
