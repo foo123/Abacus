@@ -38,10 +38,10 @@ echo('---');
 
 // Rational Solutions of Polynomial Systems
 let o, p1, p2, p3;
-const ring = Abacus.Ring.Q("x", "y", "z");
-p1 = ring.fromString("x^2 + y + z - 1");
-p2 = ring.fromString("x + y^2 + z - 1");
-p3 = ring.fromString("x + y + z^2 - 1");
+const ring1 = Abacus.Ring.Q("x", "y", "z");
+p1 = ring1.fromString("x^2 + y + z - 1");
+p2 = ring1.fromString("x + y^2 + z - 1");
+p3 = ring1.fromString("x + y + z^2 - 1");
 echo('Solve: '+[p1,p2,p3].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x", "y", "z"])');
 o=Abacus.Math.polynomials([p1,p2,p3], ["x", "y", "z"]);
@@ -49,9 +49,20 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2,p3]));
 echo('---');
 
-p1 = ring.fromString("x^2 + y + z - 1");
-p2 = ring.fromString("x + y^2 + z - 1");
-p3 = ring.fromString("x + y + z^2 - 1");
+const ring2 = Abacus.Ring.K(Abacus.Rational, "x", true);
+p1 = ring2.fromString("(x+1)^2");
+p2 = ring2.fromString("x+1");
+p3 = ring2.fromString("x*(x+1)");
+echo('Solve: '+[p1,p2,p3].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x"])');
+o=Abacus.Math.polynomials([p1,p2,p3], ["x"]);
+echo(print_solution(o, ["x"]));
+echo(check_solution_system(o, [p1,p2,p3]));
+echo('---');
+
+p1 = ring1.fromString("x^2 + y + z - 1");
+p2 = ring1.fromString("x + y^2 + z - 1");
+p3 = ring1.fromString("x + y + z^2 - 1");
 echo('Solve approximately: '+[p1,p2,p3].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x", "y", "z"], "approximate")');
 o=Abacus.Math.polynomials([p1,p2,p3], ["x", "y", "z"], "approximate");

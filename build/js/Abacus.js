@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 17:02:25)
+*   @version: 2.0.0 (2025-10-16 20:12:32)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 17:02:25)
+*   @version: 2.0.0 (2025-10-16 20:12:32)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -17173,11 +17173,11 @@ Ring = Abacus.Ring = Class({
             }
             if (self.CoefficientRing.PolynomialClass)
             {
-                return Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true);
+                return Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true, is_array(self.PolynomialSymbol));
             }
             else
             {
-                return Ring(self.Modulo ? [self.NumberClass, self.Modulo] : self.NumberClass, [].concat(self.PolynomialSymbol), true);
+                return Ring(self.Modulo ? [self.NumberClass, self.Modulo] : self.NumberClass, [].concat(self.PolynomialSymbol), true, is_array(self.PolynomialSymbol));
             }
         }
         return is_class(self.NumberClass, Integer) ? Ring.Q() : (self.isField() ? self : null);
