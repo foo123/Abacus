@@ -9,13 +9,14 @@ use_biginteger_arithmetic(Abacus);
 
 function print_solution(sol, vars)
 {
-    return null == sol ? 'No solution' : sol.map(function(s) {
+    return !sol ? 'Inconsistent or not 0-dimensional system' : (!sol.length ? 'No rational solutions' : sol.map(function(s) {
         return '(' + vars.join(',') + ') = (' + s.map(String).join(',') + ')';
-    }).join(', ');
+    }).join(', '));
 }
 function check_solution_system(sol, p)
 {
-    if (null == sol) return 'No solution';
+    if (!sol) return 'Inconsistent or not 0-dimensional system';
+    if (!sol.length) return 'No rational solutions';
 
     let out = '', i, m = p.length, j, k = sol.length, res = new Array(k);
     for (j=0; j<k; ++j)
@@ -36,7 +37,7 @@ function check_solution_system(sol, p)
 echo('Abacus Polynomial Systems (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Rational Solutions of Polynomial Systems
+// Solutions of Polynomial Systems
 let o, p1, p2, p3;
 const ring1 = Abacus.Ring.Q("x", "y", "z");
 p1 = ring1.fromString("x^2 + y + z - 1");

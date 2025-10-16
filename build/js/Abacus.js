@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 20:40:28)
+*   @version: 2.0.0 (2025-10-16 23:26:44)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 20:40:28)
+*   @version: 2.0.0 (2025-10-16 23:26:44)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -3759,49 +3759,54 @@ function solvepolys(p, x, type)
 {
     type = String(type || 'exact').toLowerCase();
 
-    function solve_recursive(p, x)
+    function recursively_solve(p, x, start)
     {
-        var basis, uni, b, xnew,
-            i, j, bj, xi, n, z,
+        var basis, univariate, xnew,
+            i, j, bj, pj, xi, n, z,
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
-        if (basis.length < x.length)
+        if ((1 === basis.length) && basis[0].isConst())
         {
-            // System not zero-dimensional
+            // Inconsistent or Infinite
             return null;
         }
 
-        uni = null;
-        for (j=basis.length-1; j>=0; --j)
+        if (basis.length < x.length)
         {
-            b = basis[j];
+            // Not 0-dimensional
+            return null;
+        }
+
+        bj = -1; xi = -1;
+        for (j=0,n=basis.length; j<n; ++j)
+        {
+            pj = basis[j];
             for (i=x.length-1; i>=0; --i)
             {
-                if (b.isUni(x[i], true))
+                if (pj.isUni(x[i], true))
                 {
-                    uni = b;
                     bj = j;
                     xi = i;
                     break;
                 }
             }
-            if (uni) break;
+            if (-1 < bj) break;
         }
 
-        if (!uni)
+        if (-1 === bj)
         {
-            // System not zero-dimensional
+            // Not 0-dimensional
             return null;
         }
 
         // compute exact rational or approximate complex zeros for this univariate poly
-        uni = Polynomial(uni, x[xi], uni.ring);
-        zeros = 'approximate' === type ? (uni.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (uni.roots().map(function(z) {return z[0];})); // skip multiplicity
+        pj = Polynomial(basis[bj], x[xi]);
+        zeros = 'approximate' === type ? (pj.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (pj.roots().map(function(z) {return z[0];}));
 
         if (!zeros.length)
         {
-            // no exact rational solution
+            // No rational solutions
             return [];
         }
 
@@ -3811,32 +3816,31 @@ function solvepolys(p, x, type)
             return zeros.map(function(z) {return [z];});
         }
 
-        // recursively solve for the rest of the basis
+        // recursively solve for the rest
         solutions = [];
         xnew = x.filter(function(xj) {return xj !== x[xi];});
         for (i=0,n=zeros.length; i<n; ++i)
         {
             z = zeros[i];
-            solution = solve_recursive(
-            // back substitution of solution
-            (basis.filter(function(b, j) {
-                return j !== bj;
-            })
-            .reduce(function(pnew, b) {
-                var eq = b.substitute(z, x[xi]);
-                if (
-                    (('approximate' === type) && !eq.isConst())
-                    || (('approximate' !== type) && !eq.equ(0))
-                )
-                {
-                    pnew.push(eq);
-                }
-                return pnew;
-            }, [])),
-            xnew
+            solution = recursively_solve(
+                // back substitution
+                (basis.filter(function(b, j) {
+                    return j !== bj;
+                })
+                .reduce(function(pnew, b) {
+                    var eq = b.substitute(z, x[xi]);
+                    if (
+                        (('approximate' === type) && !eq.isConst())
+                        || (('approximate' !== type) && !eq.equ(0))
+                    )
+                    {
+                        pnew.push(eq);
+                    }
+                    return pnew;
+                }, [])),
+                xnew
             );
-            if (!solution) return null;
-            if (!solution.length) return [];
+            if (!solution || !solution.length) return solution; // inconsistent, infinite or no rational solution
             solutions = solutions.concat(solution.map(function(s) {
                 s.splice(xi, 0, z);
                 return s;
@@ -3848,7 +3852,7 @@ function solvepolys(p, x, type)
 
     if (!p.length) return [];
 
-    return solve_recursive(p, x);
+    return recursively_solve(p, x, true);
 }
 function pow2(n)
 {
