@@ -275,7 +275,7 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('Polynomial Rational Roots');
+echo('Polynomial Rational and Approximate Roots');
 echo('---');
 
 echo('ring.create([0]).roots()'); // no roots, here infinite roots actually, but for convience denote as no roots
@@ -295,9 +295,20 @@ echo(ring.create([1,1]).roots().map(function(r){return '('+r.toString()+')';}).j
 
 echo('ring.create([-1,1,0,2]).roots()'); // no rational roots
 echo(ring.create([-1,1,0,2]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([-1,1,0,2]).zeros()'); // complex roots
+echo(ring.create([-1,1,0,2]).zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
 
 echo('ring.create([6,-7,0,1]).roots()'); // 1,2,-3
 echo(ring.create([6,-7,0,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([6,-7,0,1]).zeros()'); // complex roots
+echo(ring.create([6,-7,0,1]).zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
+
+echo('ring.fromString("x^2+1").zeros()'); // complex roots
+echo(ring.fromString("x^2+1").zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
+echo('ring.fromString("(x-1)^2").zeros()'); // roots with multiplicity
+echo(ring.fromString("(x-1)^2").zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
+echo('ring.fromString("(x-1)^3").zeros()'); // roots with multiplicity
+echo(ring.fromString("(x-1)^3").zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
 
 echo('ring.create([6,-7,0,1]).shift(2).roots()'); // 0,0,1,2,-3
 echo(ring.create([6,-7,0,1]).shift(2).roots().map(function(r){return '('+r.toString()+')';}).join(', '));

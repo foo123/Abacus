@@ -342,6 +342,9 @@ Abacus.Math = {
         b = is_instance(b, Matrix) ? b : ring.cast(b);
         return solvelinears(a, b, with_param);
     }
+    ,polynomials: function(p, x, type) {
+        return solvepolys(p, x, type);
+    }
     ,lineqs: function(a, b, param) {
         var ring = Ring.Q();
         if (!is_instance(a, Matrix) && !is_array(a) && !is_args(a)) return null;

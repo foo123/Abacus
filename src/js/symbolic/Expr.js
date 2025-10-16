@@ -356,7 +356,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                     (opc2.priority === opc.priority &&
                                     (opc2.associativity < opc.associativity ||
                                     (opc2.associativity === opc.associativity &&
-                                    opc2.associativity < 0))))
+                                    LEFT === opc2.associativity))))
                                 )
                                 {
                                     if (('-' === op2) && (1 === terms.length))
@@ -481,7 +481,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else
                         {
-                            if (!(match = eat(/^\d+/))) throw error('Missing or invalid exponent in "^"', i0);
+                            if (!(match = eat(/^-?\d+/))) throw error('Missing or invalid exponent in "^"', i0);
                             term = Expr('', Rational.fromDec(match[0]));
                         }
                         ops.unshift([op, i0]);
@@ -531,11 +531,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = true;
                         continue;
                     }
-                    if (eat('√') || eat(/^sqrt\b\s*/i))
+                    if (eat('√') || eat(/^sqrt\b/i))
                     {
                         // alternative sqrt
                         if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "sqrt()"', i0);
                         arg = null;
+                        eat(/^\s+/); // space
                         if ('(' === s.charAt(0))
                         {
                             // subexpression
@@ -546,7 +547,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             // subexpression
                             arg = parse_until('}');
                         }
-                        else if (match = eat(/^\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
+                        else if (match = eat(/^-?\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
                         {
                             // number
                             arg = Expr('', Rational.fromDec(match[0]));
@@ -580,12 +581,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             merge();
                         }
                         terms.unshift(term);
-                        /*if (eat(/^\s*[a-z\(]/i, false))
-                        {
-                            // directly following symbol or parenthesis, assume implicit multiplication
-                            ops.unshift(['*', i]);
-                            merge();
-                        }*/
                         prev_term = true;
                         continue;
                     }
@@ -602,12 +597,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             merge();
                         }
                         terms.unshift(term);
-                        /*if ((imagUnit === m) && eat(/^\s*[\d\(]/, false))
-                        {
-                            // directly following number or parenthesis after imaginary symbol, assume implicit multiplication
-                            ops.unshift(['*', i]);
-                            merge();
-                        }*/
                         prev_term = true;
                         continue;
                     }
@@ -726,13 +715,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._op;
     }
     ,term: function(t) {
-        var self = this, ast, key, terms, O = Rational.Zero(), I = Rational.One();
+        var self = this, ast, key, terms, c, f,
+            Z = Expr.Zero(), O = Rational.Zero(), I = Rational.One();
 
         if (null == self._terms)
         {
             // collect simple terms only, sums of products of numbers, symbols and powers of symbols
             ast = self.ast;
-            self._terms = {'1': {e:Expr.Zero(), c:O}};
+            self._terms = {'1': {e:Z, c:O}};
 
             if ('sym' === ast.type)
             {
@@ -742,35 +732,66 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 self._terms['1'] = {e:Expr('', self.c()), c:self.c()};
             }
-            else if ('expr' === ast.type)
+            else if (('+' === ast.op) || ('-' === ast.op))
             {
-                if (('+' === ast.op) || ('-' === ast.op))
-                {
-                    ast.arg.forEach(function(e, i) {
-                        KEYS(e.terms).forEach(function(key) {
-                            if (!HAS.call(self._terms, key))
+                ast.arg.forEach(function(e, i) {
+                    KEYS(e.terms).forEach(function(key) {
+                        if (!HAS.call(self._terms, key))
+                        {
+                            self._terms[key] = (0 < i) && ('-' === ast.op) ? {e:e.terms[key].e.neg().expand(), c:e.terms[key].c.neg()} : e.terms[key];
+                        }
+                        else
+                        {
+                            if ((0 < i) && ('-' === ast.op))
                             {
-                                self._terms[key] = (0 < i) && ('-' === ast.op) ? {e:e.terms[key].e.neg(), c:e.terms[key].c.neg()} : e.terms[key];
+                                self._terms[key] = {e:self._terms[key].e.sub(e.terms[key].e).expand(), c:self._terms[key].c.sub(e.terms[key].c)};
                             }
                             else
                             {
-                                if ((0 < i) && ('-' === ast.op))
-                                {
-                                    self._terms[key] = {e:self._terms[key].e.sub(e.terms[key].e).expand(), c:self._terms[key].c.sub(e.terms[key].c)};
-                                }
-                                else
-                                {
-                                    self._terms[key] = {e:self._terms[key].e.add(e.terms[key].e).expand(), c:self._terms[key].c.add(e.terms[key].c)};
-                                }
+                                self._terms[key] = {e:self._terms[key].e.add(e.terms[key].e).expand(), c:self._terms[key].c.add(e.terms[key].c)};
                             }
-                            if (('1' !== key) && self._terms[key].c.equ(0)) delete self._terms[key];
-                        });
+                        }
+                        if (('1' !== key) && self._terms[key].c.equ(0)) delete self._terms[key];
                     });
-                }
-                else if ('*' === ast.op)
-                {
-                    var c = I;
-                    var f = (ast.arg.reduce(function(f, e) {
+                });
+            }
+            else if ('*' === ast.op)
+            {
+                c = I;
+                f = (ast.arg.reduce(function(f, e) {
+                    if ('sym' === e.ast.type)
+                    {
+                        f.push([e, I]);
+                    }
+                    else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
+                    {
+                        f.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
+                    }
+                    else if (e.isConst())
+                    {
+                        c = c.mul(e.c());
+                    }
+                    return f;
+                }, [])
+                .sort(function(a, b) {
+                    return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
+                })
+                .reduce(function(f, a) {
+                    if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
+                    else f.push(a);
+                    return f;
+                }, [])
+                .filter(function(a) {
+                    return !a[1].equ(0);
+                }));
+                if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', [c].concat(f.map(function(a) {return Expr('^', a);}))), c:c};
+            }
+            else if ('/' === ast.op)
+            {
+                c = I;
+                f = (ast.arg.reduce(function(f, e, i) {
+                    if (0 === i)
+                    {
                         if ('sym' === e.ast.type)
                         {
                             f.push([e, I]);
@@ -783,73 +804,36 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             c = c.mul(e.c());
                         }
-                        return f;
-                    }, [])
-                    .sort(function(a, b) {
-                        return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
-                    })
-                    .reduce(function(f, a) {
-                        if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
-                        else f.push(a);
-                        return f;
-                    }, [])
-                    .filter(function(a) {
-                        return !a[1].equ(0);
-                    }));
-                    if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', f.map(function(a) {return Expr('^', a);}).concat(c)), c:c};
-                }
-                else if ('/' === ast.op)
-                {
-                    var c = I;
-                    var f = (ast.arg.reduce(function(f, e, i) {
-                        if (0 === i)
-                        {
-                            if ('sym' === e.ast.type)
-                            {
-                                f.push([e, I]);
-                            }
-                            else if (('^' === e.ast.op) && ('sym' === e.ast.arg[0].type))
-                            {
-                                f.push([e.ast.arg[0].arg, e.ast.arg[1].c()]);
-                            }
-                            else if (e.isConst())
-                            {
-                                c = c.mul(e.c());
-                            }
-                        }
-                        else if (e.isConst())
-                        {
-                            c = c.div(e.c());
-                        }
-                        return f;
-                    }, [])
-                    .sort(function(a, b) {
-                        return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
-                    })
-                    .reduce(function(f, a) {
-                        if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
-                        else f.push(a);
-                        return f;
-                    }, [])
-                    .filter(function(a) {
-                        return !a[1].equ(0);
-                    }));
-                    if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', f.map(function(a) {return Expr('^', a);}).concat(c)), c:c};
-                }
-                else if ('^' === ast.op)
-                {
-                    if (('sym' === ast.arg[0].type) && ast.arg[1].isInt())
-                    {
-                        self._terms[ast.arg[0].arg + (ast.arg[1].gt(1) ? ('^'+String(ast.arg[1])) : '')] = {e:self, c:I};
                     }
-                }
+                    else if (e.isConst())
+                    {
+                        c = c.div(e.c());
+                    }
+                    return f;
+                }, [])
+                .sort(function(a, b) {
+                    return a[0] === b[0] ? 0 : (a[0] < b[0] ? -1 : 1);
+                })
+                .reduce(function(f, a) {
+                    if (f.length && (f[f.length-1][0] === a[0])) f[f.length-1][1] = f[f.length-1][1].add(a[1]);
+                    else f.push(a);
+                    return f;
+                }, [])
+                .filter(function(a) {
+                    return !a[1].equ(0);
+                }));
+                if (f.length) self._terms[f.map(function(a) {return String(a[0]) + (a[1].gt(1) ? ('^'+String(a[1])) : '');}).join('*')] = {e:Expr('*', [c].concat(f.map(function(a) {return Expr('^', a);}))), c:c};
+            }
+            else if (('^' === ast.op) && ('sym' === ast.arg[0].type))
+            {
+                self._terms[ast.arg[0].arg + (ast.arg[1].gt(1) ? ('^'+String(ast.arg[1])) : '')] = {e:self, c:I};
             }
         }
 
         if (null == t) return self._terms;
 
         t = String(t);
-        return HAS.call(self._terms, t) ? self._terms[t] : {e:Expr.Zero(), c:O};
+        return HAS.call(self._terms, t) ? self._terms[t] : {e:Z, c:O};
     }
 
     ,isSimple: function() {
@@ -995,7 +979,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if ('/' === ast.op)
             {
                 self._f = ast.arg.reduce(function(f, e, i) {
-                    f.c = f.c.mul(0 < i ? e.f().c.inv() : e.f().c);
+                    f.c = 0 < i ? f.c.div(e.f().c) : f.c.mul(e.f().c);
                     f.f.push.apply(f.f, 0 < i ? e.f().f.map(function(e) {return e.inv();}) : e.f().f);
                     return f;
                 }, {c:I, f:[]});
@@ -1732,8 +1716,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (ring.CoefficientRing && ring.CoefficientRing.PolynomialClass)
         {
             if (!is_array(symbol)) symbol = [symbol];
-            symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);}); //hmm..?
-            if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed
+            // incorrect, remove them
+            //symbol = symbol.filter(function(s) {return -1 !== ring.CoefficientRing.PolynomialSymbol.indexOf(s);}); //hmm..?
+            //if (!symbol.length) symbol = ring.PolynomialSymbol.slice(); // needed
         }
         other_symbols = is_array(symbol) ? self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (-1 === symbol.indexOf(s));}) : self.symbols().filter(function(s) {return ((!imagUnit) || (imagUnit !== s)) && ('1' !== s) && (s !== symbol);});
         if (ring.PolynomialClass)
@@ -1953,11 +1938,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
             op = ast.op, arg = ast.arg,
             str, str2, sign, sign2, _str;
 
-        function needs_parentheses(expr)
-        {
-            return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
-        }
-
         type = String(type || '').toLowerCase();
 
         if ('asciimath' === type)
@@ -2111,11 +2091,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,toTex: function() {
         var self = this, ast = self.ast, op = ast.op, arg = ast.arg, tex, tex2, sign, sign2;
 
-        function needs_parentheses(expr)
-        {
-            return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
-        }
-
         if (null == self._tex)
         {
             if ('' === op)
@@ -2266,3 +2241,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
 Expr.cast = typecast([Expr], function(a) {
     return is_string(a) ? Expr.fromString(a) : (is_callable(a.toExpr) ? a.toExpr() : Expr('', a));
 });
+
+function needs_parentheses(expr)
+{
+    return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
+}

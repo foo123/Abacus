@@ -358,6 +358,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,_expr: null
     ,_prim: null
     ,_roots: null
+    ,_zeros: null
     ,_factors: null
 
     ,dispose: function() {
@@ -750,6 +751,80 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         return [self._factors[0].slice(), self._factors[1]];
     }
+    ,zeros: function() {
+        // numerically find real/complex zeros of polynomial
+        // https://en.wikipedia.org/wiki/Aberth_method
+        var self = this, d, tc, lo, hi,
+            roots, found, i, j, m, ri, ratio, offset,
+            epsilon = 1e-10, epsilonz, iter,
+            zero, one,  p, dp, px, dpx;
+        if (null == self._zeros)
+        {
+            epsilonz = nComplex(epsilon);
+            zero = nComplex.Zero();
+            one = nComplex.One();
+            p = function(x) {
+                return self.evaluate(x);
+            };
+            dp = function(x) {
+                return (p(x.add(epsilonz)).sub(p(x))).div(epsilonz);
+            };
+            d = self.deg();
+            if (0 < d)
+            {
+                // init
+                tc = self.terms.map(function(ti) {return ti.c.abs();});
+                // https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots
+                hi = nmax(tc.slice(0, -1)).div(tc[tc.length-1]).add(one).valueOf();
+                lo = tc[0].div(tc[0].add(nmax(tc.slice(1)))).valueOf();
+                roots = array(d, function() {
+                    var radius = lo + (hi-lo)*stdMath.random();
+                    var angle = stdMath.random()*stdMath.PI/2;
+                    return nComplex(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
+                });
+
+                // root finding
+                iter = 0;
+                for (;;)
+                {
+                    found = 0;
+                    for (i=0; i<d; ++i)
+                    {
+                        ri = roots[i];
+                        px = p(ri);
+                        dpx = dp(ri);
+                        if (dpx.equ(0))
+                        {
+                            if ((px.re <= epsilon) && (px.im <= epsilon))
+                            {
+                                ++found;
+                                continue;
+                            }
+                            ratio = nComplex(hi);
+                        }
+                        else
+                        {
+                            ratio = px.div(dpx);
+                        }
+                        offset = ratio.div(one.sub(ratio.mul(roots.reduce(function(s, rj, j) {
+                            if ((j !== i) && !(is_approximately_equal(ri.re, rj.re, epsilon) && is_approximately_equal(ri.im, rj.im, epsilon))) s = s.add((ri.sub(rj)).inv());
+                            return s;
+                        }, zero))));
+                        if ((offset.re <= epsilon) && (offset.im <= epsilon)) ++found;
+                        roots[i] = ri.sub(offset);
+                    }
+                    if (found === d) break;
+                    ++iter; if (iter > 10000) break;
+                }
+            }
+            else
+            {
+                roots = [];
+            }
+            self._zeros = roots.sort(function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);});
+        }
+        return self._zeros.slice();
+    }
     ,equ: function(other) {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             t = self.terms, tp, s, i;
@@ -1074,6 +1149,12 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (n.equ(Arithmetic.I)) return self;
         return Polynomial.kthroot(self, n);
     }
+    ,substitute: function(v, x) {
+        var self = this, sub = {};
+        x = self.symbol;
+        sub[x] = is_callable(v.toExpr) ? v.toExpr() : Expr('', v);
+        return self.toExpr().compose(sub).toPoly(x, self.ring);
+    }
     ,compose: function(q) {
         // functionaly compose one polynomial with another. ie result = P(Q(x))
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, pq, t, i, j;
@@ -1150,16 +1231,17 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         // Horner's algorithm for fast evaluation
         // https://en.wikipedia.org/wiki/Horner%27s_method
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            t = self.terms, i, j, v;
+            t = self.terms, i, j, v, is_ncomplex;
         if (!t.length) return ring.Zero();
         if (!is_instance(x, Numeric) && !Arithmetic.isNumber(x) && is_obj(x)) x = x[self.symbol];
         x = x || O;
+        is_ncomplex = is_instance(x, nComplex);
         //x = ring.cast(x);
         i = t[0].e; v = t[0].c; j = 1;
         while (0 < i)
         {
-            --i; v = v.mul(x);
-            if (j < t.length && i === t[j].e) v = t[j++].c.add(v);
+            --i; v = is_ncomplex ? x.mul(v) : v.mul(x);
+            if (j < t.length && i === t[j].e) v = v.add(t[j++].c);
         }
         return v;
     }
@@ -2272,6 +2354,16 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         if (n.equ(Arithmetic.I)) return self;
         return MultiPolynomial.kthroot(self, n);
     }
+    ,substitute: function(v, xi) {
+        var self = this, sub = {};
+        xi = String(xi || self.symbol[0]);
+        if (-1 < self.symbol.indexOf(xi))
+        {
+            sub[xi] = is_callable(v.toExpr) ? v.toExpr() : Expr('', v);
+            return self.toExpr().compose(sub).toPoly(self.symbol, self.ring);
+        }
+        return self;
+    }
     ,compose: function(q) {
         var self = this;
         q = q || {};
@@ -2395,21 +2487,22 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         function horner(p, x, s)
         {
-            var t = p.terms, str, i, j, v, xi, tc;
+            var t = p.terms, str, i, j, v, xi, tc, is_ncomplex;
             if (!t.length) return O;
             // memoize, sometimes same subpolynomial is re-evaluated
             str = p.toString(); if (HAS.call(memo, str)) return memo[str];
             xi = (HAS.call(x, s) ? x[s] : O) || O;
+            is_ncomplex = is_instance(xi, nComplex);
             //xi = ring.cast(xi);
             tc = get_val(t[0].c, x);
             i = t[0].e[0]; v = tc; j = 1;
             while (0 < i)
             {
-                --i; v = v.mul(xi);
+                --i; v = is_ncomplex ? xi.mul(v) : v.mul(xi);
                 if ((j < t.length) && (i === t[j].e[0]))
                 {
                     tc = get_val(t[j].c, x);
-                    v = tc.add(v);
+                    v = v.add(tc);
                     ++j;
                 }
             }

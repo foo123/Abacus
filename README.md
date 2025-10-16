@@ -3,14 +3,12 @@
 **Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (336 kB minified)
+**version 2.0.0** almost complete (344 kB minified)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
 
 `Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
-
-`Abacus` uses mostly self-contained and standalone methods, so they can be easily copy-pasted in other projects, in case only a few methods are needed and not the whole library.
 
 
 [![Abacus Live](/abacus-live.png)](https://foo123.github.io/examples/abacus)
@@ -160,6 +158,7 @@ See the comments in the code for algorithms and references used.
 * [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
 * [$olving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
+* [Use Gröbner Bases To Solve Polynomial Equations, Jingnan Shi](https://jingnanshi.com/blog/groebner_basis.html)
 
 ### Example API
 
@@ -309,20 +308,22 @@ console.log(m2.inv().mul(m2).toString());
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. **[DONE]**
 * add `LatinSquare`, `MagicSquare` algorithms **[DONE]**
 * add run-time/lazy custom and/or built-in filtering support (with support for filter composition as well) to generate and select custom and complex combinatorial objects from filtering other combinatorial objects as efficiently as possible **[DONE]**
-* support efficient primality tests and prime sieves **[DONE PARTIALLY]**
-* support efficient integer factorization algorithms **[DONE PARTIALLY]**
+* implement efficient primality tests and prime sieves **[DONE PARTIALLY]**
+* implement efficient integer factorization algorithms **[DONE PARTIALLY]**
 * support general symbolic expressions and computations in `Expr` **[DONE]**
-* add `Rank Factorisation` **[DONE]**
+* implement `Rank Factorisation` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
 * implement symbolic/numeric `EVD / SVD` computation (TODO)
 * support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
-* support general and least-squares solutions of arbitrary linear systems **[DONE]**
+* support general and least-squares solutions of **arbitrary linear systems** **[DONE]**
 * support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**
-* use optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
-* support multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
-* support univariate polynomial factorization over the integers, rational root finding **[DONE]**
-* support multivariate polynomial factorization over the integers, rational root finding (TODO)
-* support polynomial approximate root finding (eg `Aberth` algorithm) (TODO)
+* support exact rational solutions of **arbitrary multivariate polynomial systems** **[DONE]**
+* implement optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
+* implement multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
+* implement univariate polynomial factorization over the integers, rational root finding (`Kronecker` algorithm) **[DONE]**
+* implement univariate polynomial approximate root finding (`Aberth` algorithm) **[DONE]**
+* implement multivariate polynomial factorization over the integers, rational root finding (TODO)
+* implement multivariate polynomial approximate root finding (TODO)
 * implement recursive multivariate polynomial `GCD` from univariate polynomial `GCD` **[DONE]**
 * implement more efficient multivariate polynomial `GCD` (TODO)
 * implement polynomial `Resultant`, `Discriminant` computations **[DONE]**
@@ -333,10 +334,10 @@ console.log(m2.inv().mul(m2).toString());
 * support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
 * implement faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
-* add efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
-* add efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
-* add efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
-* add efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE]** (not very efficient)
+* implement efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
+* implement efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
+* implement efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
+* implement efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE]** (not very efficient)
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support *graph* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
 

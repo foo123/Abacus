@@ -37,7 +37,7 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,Node, Heap, ListSet
     ,DefaultArithmetic, INUMBER, INumber
     // numerics
-    ,Numeric, Integer, IntegerMod, Rational, Complex
+    ,Numeric, Integer, IntegerMod, Rational, Complex, nComplex
     // symbolics
     ,Symbolic, Expr, Poly
     ,Polynomial, MultiPolynomial, RationalFunc

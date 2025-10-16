@@ -3696,6 +3696,101 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
+function solvepolys(p, x, type)
+{
+    type = String(type || 'exact').toLowerCase();
+
+    function solve_recursive(p, x)
+    {
+        var basis, uni, b, xnew,
+            i, j, bj, xi, n, z,
+            zeros, solution, solutions;
+
+        basis = buchberger_groebner(p);
+        if (basis.length < x.length)
+        {
+            // System not zero-dimensional
+            return null;
+        }
+
+        uni = null;
+        for (j=basis.length-1; j>=0; --j)
+        {
+            b = basis[j];
+            for (i=x.length-1; i>=0; --i)
+            {
+                if (b.isUni(x[i], true))
+                {
+                    uni = b;
+                    bj = j;
+                    xi = i;
+                    break;
+                }
+            }
+            if (uni) break;
+        }
+
+        if (!uni)
+        {
+            // System not zero-dimensional
+            return null;
+        }
+
+        // compute exact rational or approximate complex zeros for this univariate poly
+        uni = Polynomial(uni, x[xi], uni.ring);
+        zeros = 'approximate' === type ? (uni.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (uni.roots().map(function(z) {return z[0];})); // skip multiplicity
+
+        if (!zeros.length)
+        {
+            // no exact rational solution
+            return [];
+        }
+
+        // single variable
+        if (1 === basis.length)
+        {
+            return zeros.map(function(z) {return [z];});
+        }
+
+        // recursively solve for the rest of the basis
+        solutions = [];
+        xnew = x.filter(function(xj) {return xj !== x[xi];});
+        for (i=0,n=zeros.length; i<n; ++i)
+        {
+            z = zeros[i];
+            solution = solve_recursive(
+            // back substitution of solution
+            (basis.filter(function(b, j) {
+                return j !== bj;
+            })
+            .reduce(function(pnew, b) {
+                var eq = b.substitute(z, x[xi]);
+                if (
+                    (('approximate' === type) && !eq.isConst())
+                    || (('approximate' !== type) && !eq.equ(0))
+                )
+                {
+                    pnew.push(eq);
+                }
+                return pnew;
+            }, [])),
+            xnew
+            );
+            if (!solution) return null;
+            if (!solution.length) return [];
+            solutions = solutions.concat(solution.map(function(s) {
+                s.splice(xi, 0, z);
+                return s;
+            }));
+        }
+
+        return solutions;
+    }
+
+    if (!p.length) return [];
+
+    return solve_recursive(p, x);
+}
 function pow2(n)
 {
     if (is_instance(n, Integer))
@@ -4542,4 +4637,9 @@ function remove_duplicates(a, KEY)
 function rndInt(m, M)
 {
     return stdMath.round((M-m) * Abacus.Math.rnd() + m);
+}
+function is_approximately_equal(a, b, eps)
+{
+    if (null == eps) eps = Number.EPSILON;
+    return stdMath.abs(a - b) < eps;
 }

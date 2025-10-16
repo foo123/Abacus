@@ -311,6 +311,7 @@ function kthroot(x, k, limit)
     // Return the approximate k-th root of a rational number by Newton's method
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         ObjectClass, r, d, k_1, tries = 0, epsilon = Rational.Epsilon();
+    if (is_number(k)) k = Integer.cast(k);
     if (k.equ(O)) return null;
     if ((is_instance(x, Numeric) && (x.equ(O) || x.equ(I))) || (Arithmetic.isNumber(x) && (Arithmetic.equ(O, x) || Arithmetic.equ(I, x)))) return x;
     ObjectClass = Arithmetic.isNumber(x) || is_instance(x, Integer) ? Rational : x[CLASS];
@@ -332,6 +333,18 @@ function kthroot(x, k, limit)
     {
         r = new ObjectClass(ikthroot(x.num, k.num), ikthroot(x.den, k.num));
     }
+    else if (is_class(ObjectClass, nComplex))
+    {
+        if (x.isReal() && ((x.real() >= 0) || !k.mod(two).equ(O)))
+        {
+            r = new ObjectClass(jskthroot(x.real(), k.num.valueOf()), 0);
+        }
+        else
+        {
+            r = new ObjectClass(I, I); // make sure a complex is used, not strictly real or imag
+        }
+        epsilon = 1e-8;
+    }
     else if (is_class(ObjectClass, Complex))
     {
         if (x.isReal() && (x.real().gte(O) || !k.mod(two).equ(O)))
@@ -350,7 +363,15 @@ function kthroot(x, k, limit)
     //if (null == limit) limit = 6; // for up to 6 tries Newton method converges with 64bit precision
     //limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
-    if (is_class(ObjectClass, Complex))
+    if (is_class(ObjectClass, nComplex))
+    {
+        do {
+            d = x.div(r.pow(k_1)).sub(r).div(k);
+            if ((stdMath.abs(d.real()) <= epsilon) && (stdMath.abs(d.imag()) <= epsilon)) break;
+            r = r.add(d);
+        } while (1);
+    }
+    else if (is_class(ObjectClass, Complex))
     {
         do {
             d = x.div(r.pow(k_1)).sub(r).div(k);

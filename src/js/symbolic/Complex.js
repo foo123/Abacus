@@ -240,7 +240,6 @@ Complex = Abacus.Complex = Class(Numeric, {
     ,_i: null
     ,_c: null
     ,_str: null
-    ,_strp: null
     ,_tex: null
     ,_dec: null
     ,_norm: null
@@ -268,7 +267,6 @@ Complex = Abacus.Complex = Class(Numeric, {
         self._i = null;
         self._c = null;
         self._str = null;
-        self._strp = null;
         self._tex = null;
         self._dec = null;
         self._norm = null;
@@ -638,8 +636,8 @@ Complex = Abacus.Complex = Class(Numeric, {
     }
     ,toString: function(parenthesized) {
         var self = this;
-        if (null == self._str) self._strp = self._str = self.toExpr().toString();
-        return parenthesized ? self._strp : self._str;
+        if (null == self._str) self._str = self.toExpr().toString();
+        return self._str;
     }
     ,toTex: function() {
         var self = this;
@@ -674,4 +672,525 @@ Complex = Abacus.Complex = Class(Numeric, {
 });
 Complex.cast = typecast([Complex], function(a) {
     return is_string(a) ? Complex.fromString(a) : new Complex(a);
+});
+
+
+nComplex = Abacus.nComplex = Class(Complex, {
+
+    constructor: function nComplex(/*real, imag*/) {
+        var self = this, args = arguments, real, imag, Arithmetic = Abacus.Arithmetic;
+
+        if (args.length && (is_array(args[0]) || is_args(args[0]))) args = args[0];
+
+        if (1 < args.length)
+        {
+            real = args[0]; imag = args[1];
+        }
+        else if (1 === args.length)
+        {
+            real = args[0]; imag = 0;
+        }
+        else
+        {
+            real = 0; imag = 0;
+        }
+
+        if (is_instance(real, Symbolic)) real = real.c();
+        if (is_instance(imag, Symbolic)) imag = imag.c();
+
+        if (is_instance(real, Complex))
+        {
+            imag = real.imag();
+            real = real.real();
+        }
+        if (is_instance(real, Numeric) || Arithmetic.isNumber(real))
+        {
+            real = real.valueOf();
+        }
+        if (is_instance(imag, Numeric) || Arithmetic.isNumber(imag))
+        {
+            imag = imag.valueOf();
+        }
+
+        if (!is_instance(self, nComplex)) return new nComplex(real, imag);
+
+        self.re = +real;
+        self.im = +imag;
+
+        def(self, 'num', {
+            get: function() {
+                return self;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return nComplex.One();
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+    }
+
+    ,__static__: {
+        Symbol: 'i'
+
+        ,hasInverse: function() {
+            return true;
+        }
+
+        ,Zero: function() {
+            return new nComplex(0, 0);
+        }
+        ,One: function() {
+            return new nComplex(1, 0);
+        }
+        ,MinusOne: function() {
+            return new Complex(-1, 0);
+        }
+        ,Img: function() {
+            return new Complex(0, 1);
+        }
+        ,MinusImg: function() {
+            return new Complex(0, -1);
+        }
+
+        ,cast: null // added below
+
+
+        ,fromString: function(s) {
+            return new nComplex(Expr.fromString(s, Complex.Symbol).c());
+        }
+    }
+
+    ,re: null
+    ,im: null
+    ,_n: null
+    ,_i: null
+    ,_c: null
+    ,_str: null
+    ,_tex: null
+    ,_dec: null
+    ,_norm: null
+
+    ,dispose: function() {
+        var self = this;
+        if (self._n && (self === self._n._n))
+        {
+            self._n._n = null;
+        }
+        if (self._i && (self === self._i._i))
+        {
+            self._i._i = null;
+        }
+        if (self._c && (self === self._c._c))
+        {
+            self._c._c = null;
+        }
+        self.re = null;
+        self.im = null;
+        self._n = null;
+        self._i = null;
+        self._c = null;
+        self._str = null;
+        self._tex = null;
+        self._dec = null;
+        self._norm = null;
+        return self;
+    }
+
+    ,isReal: function() {
+        var self = this;
+        return 0 === self.im;
+    }
+    ,isImag: function() {
+        var self = this;
+        return (0 === self.re) && (0 !== self.im);
+    }
+    ,isComplex: function() {
+        return true;
+    }
+    ,isInt: function() {
+        var self = this;
+        return self.isReal() && Number.isInteger(self.re);
+    }
+    ,isGauss: function() {
+        // is Gaussian integer
+        var self = this;
+        return Number.isInteger(self.re) && Number.isInteger(self.im);
+    }
+
+    ,equ: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            return (self.re === other.re) && (self.im === other.im);
+        }
+        if (is_instance(other, Complex))
+        {
+            return (self.re === other.re.valueOf()) && (self.im === other.im.valueOf());
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return self.isReal() ? self.re === other : false;
+        }
+
+        return false;
+    }
+    ,gt: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            if (self.isReal() && other.isReal()) return self.re > other.re;
+            else if (self.isImag() && other.isImag()) return self.im > other.im;
+            return self.norm() > other.norm();
+        }
+        if (is_instance(other, Complex))
+        {
+            if (self.isReal() && other.isReal()) return self.re > other.re.valueOf();
+            else if (self.isImag() && other.isImag()) return self.im > other.im.valueOf();
+            return self.norm() > other.norm().valueOf();
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return self.isReal() ? self.re > other : false;
+        }
+        return false;
+    }
+    ,gte: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            if (self.isReal() && other.isReal()) return self.re >= other.re;
+            else if (self.isImag() && other.isImag()) return self.im >= other.im;
+            return self.norm() >= other.norm().valueOf();
+        }
+        if (is_instance(other, Complex))
+        {
+            if (self.isReal() && other.isReal()) return self.re >= other.re.valueOf();
+            else if (self.isImag() && other.isImag()) return self.im >= other.im.valueOf();
+            return self.norm() >= other.norm().valueOf();
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return self.isReal() ? self.re >= other : false;
+        }
+        return false;
+    }
+    ,lt: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            if (self.isReal() && other.isReal()) return self.re < other.re;
+            else if (self.isImag() && other.isImag()) return self.im < other.im;
+            return self.norm() < other.norm();
+        }
+        if (is_instance(other, Complex))
+        {
+            if (self.isReal() && other.isReal()) return self.re < other.re.valueOf();
+            else if (self.isImag() && other.isImag()) return self.im < other.im.valueOf();
+            return self.norm() < other.norm().valueOf();
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return self.isReal() ? self.re < other : false;
+        }
+        return false;
+    }
+    ,lte: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            if (self.isReal() && other.isReal()) return self.re <= other.re;
+            else if (self.isImag() && other.isImag()) return self.im <= other.im;
+            return self.norm() <= other.norm();
+        }
+        if (is_instance(other, Complex))
+        {
+            if (self.isReal() && other.isReal()) return self.re <= other.re.valueOf();
+            else if (self.isImag() && other.isImag()) return self.im <= other.im.valueOf();
+            return self.norm() <= other.norm().valueOf();
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return self.isReal() ? self.re <= other : false;
+        }
+        return false;
+    }
+
+    ,real: function() {
+        return this.re;
+    }
+    ,imag: function() {
+        return this.im;
+    }
+    ,norm: function() {
+        var self = this;
+        if (null == self._norm)
+        {
+            self._norm = stdMath.pow(self.re, 2) + stdMath.pow(self.im, 2);
+        }
+        return self._norm;
+    }
+    ,abs: function() {
+        var self = this;
+        return stdMath.sqrt(self.norm());
+    }
+    ,neg: function() {
+        var self = this;
+        if (null == self._n)
+        {
+            self._n = nComplex(-self.re, -self.im);
+            self._n._n = self;
+        }
+        return self._n;
+    }
+    ,conj: function() {
+        var self = this;
+        if (null == self._c)
+        {
+            self._c = nComplex(self.re, -self.im);
+            self._c._c = self;
+        }
+        return self._c;
+    }
+    ,rev: function() {
+        var self = this;
+        return nComplex(self.im, self.re);
+    }
+    ,inv: function() {
+        var self = this, m;
+        if (null == self._i)
+        {
+            if (self.equ(0)) throw new Error('Division by zero in inverse in Abacus.Complex!');
+            m = self.norm();
+            self._i = nComplex(self.re/m, -self.im/m);
+            self._i._i = self;
+        }
+        return self._i;
+    }
+
+    ,add: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            return nComplex(self.re + other.re, self.im + other.im);
+        }
+        if (is_instance(other, Complex))
+        {
+            return nComplex(self.re + other.re.valueOf(), self.im + other.im.valueOf());
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return nComplex(self.re + other, self.im);
+        }
+
+        return self;
+    }
+    ,sub: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, nComplex))
+        {
+            return nComplex(self.re - other.re, self.im - other.im);
+        }
+        if (is_instance(other, Complex))
+        {
+            return nComplex(self.re - other.re.valueOf(), self.im - other.im.valueOf());
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return nComplex(self.re - other, self.im);
+        }
+
+        return self;
+    }
+    ,mul: function(other) {
+        var self = this, k1, k2, k3, x1, x2, y1, y2, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex))
+        {
+            if (self.isReal())
+            {
+                return nComplex(other.re.valueOf()*self.re, other.im.valueOf()*self.re);
+            }
+            else if (self.isImag())
+            {
+                return nComplex(-other.im.valueOf()*self.im, other.re.valueOf()*self.im);
+            }
+            else if (other.isReal())
+            {
+                return nComplex(self.re*other.re.valueOf(), self.im*other.re.valueOf());
+            }
+            else if (other.isImag())
+            {
+                return nComplex(-self.im*other.im.valueOf(), self.re*other.im.valueOf());
+            }
+            else
+            {
+                // fast complex multiplication
+                x1 = self.re; x2 = other.re.valueOf(); y1 = self.im; y2 = other.im.valueOf();
+                k1 = x1*(x2+y2); k2 = y2*(x1+y1); k3 = x2*(y1-x1);
+                return nComplex(k1-k2, k1+k3);
+            }
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            return nComplex(self.re*other, self.im*other);
+        }
+
+        return self;
+    }
+    ,div: function(other) {
+        var self = this, m, k1, k2, k3, x1, x2, y1, y2, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex))
+        {
+            if (other.equ(0))
+                throw new Error('Division by zero in Abacus.nComplex!');
+
+            if (other.isReal())
+            {
+                return nComplex(self.re/other.re.valueOf(), self.im/other.re.valueOf());
+            }
+            else if (other.isImag())
+            {
+                return nComplex(self.im/other.im.valueOf(), -self.re/other.im.valueOf());
+            }
+            else
+            {
+                // fast complex multiplication for inverse
+                m = other.norm(); x1 = self.re; x2 = other.re.valueOf()/m; y1 = self.im; y2 = -other.im.valueOf()/m;
+                k1 = x1*(x2+y2); k2 = y2*(x1+y1); k3 = x2*(y1-x1);
+                return nComplex(k1-k2, k1+k3);
+            }
+        }
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
+            other = other.valueOf();
+        }
+        if (is_number(other))
+        {
+            if (0 === other) throw new Error('Division by zero in Abacus.nComplex!');
+            return nComplex(self.re/other, self.im/other);
+        }
+
+        return self;
+    }
+    ,divides: function(other) {
+        return !this.equ(0);
+    }
+
+    ,pow: function(n) {
+        var self = this, pow, e;
+        n = n.valueOf();
+        if (self.equ(0))
+        {
+            if (n < 0) throw new Error('Zero denominator in negative power in Abacus.nComplex!');
+            return nComplex.Zero();
+        }
+        if (n === 0) return nComplex.One();
+        if (n === 1) return self;
+        if (n < 0)
+        {
+            self = self.inv();
+            n = -n;
+        }
+        e = self; pow = nComplex.One();
+        while (0 !== n)
+        {
+            // exponentiation by squaring
+            if (n & 1) pow = pow.mul(e);
+            n >>= 1;
+            e = e.mul(e);
+        }
+        return pow;
+    }
+    ,rad: function(n) {
+        var self = this, norm;
+        n = n.valueOf();
+        if (n === 1)
+        {
+            return self;
+        }
+        if (n === 2)
+        {
+            // https://en.wikipedia.org/wiki/Complex_number#Square_root
+            if (0 === self.imag())
+            {
+                return self.real() < 0 ? nComplex(0, jskthroot(stdMath.abs(self.real()), n)) : nComplex(jskthroot(self.real(), n), 0);
+            }
+            else
+            {
+                norm = jskthroot(self.norm(), 2);
+                return nComplex(jskthroot((norm + self.real())/2, n), jskthroot((norm - self.real())/2, n)*(self.imag() < 0 ? -1 : 1));
+            }
+        }
+        return kthroot(self, n);
+    }
+    ,tuple: function() {
+        return [this.re, this.im];
+    }
+    ,valueOf: function() {
+        return this.re;
+    }
+    ,toExpr: function() {
+        var self = this;
+        return Expr('+', [Expr('', self.re), Expr('*', [Expr('', self.im), Expr('', Complex.Symbol)])]);
+    }
+    ,toString: function() {
+        var self = this;
+        if (null == self._str) self._str = self.toExpr().toString();
+        return self._str;
+    }
+    ,toTex: function() {
+        var self = this;
+        if (null == self._tex) self._tex = self.toExpr().toTex();
+        return self._tex;
+    }
+    ,toDec: function(precision) {
+        var self = this, zr, dec;
+        if (null == self._dec)
+        {
+            zr = 0 === self.re;
+            self._dec = (zr ? '' : self.re.toFixed(4)) + (0 === self.im ? '' : ((self.im > 0 ? (zr ? '' : '+') : '') + (self.im === 1 ? '' : (self.im === -1 ? '-' : (self.im.toFixed(4)))) + Complex.Symbol));
+            if (!self._dec.length) self._dec = '0';
+        }
+        return self._dec;
+    }
+});
+nComplex.cast = typecast([nComplex], function(a) {
+    return is_string(a) ? nComplex.fromString(a) : new nComplex(a);
 });
