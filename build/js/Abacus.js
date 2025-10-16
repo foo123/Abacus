@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 20:12:32)
+*   @version: 2.0.0 (2025-10-16 20:40:28)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 20:12:32)
+*   @version: 2.0.0 (2025-10-16 20:40:28)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -7628,18 +7628,18 @@ Complex = Abacus.Complex = Class(Numeric, {
     ,imag: function() {
         return this.im;
     }
-    ,norm: function() {
-        var self = this, real, imag, two = Abacus.Arithmetic.II;
+    ,norm: function(abs) {
+        var self = this, n, two = Abacus.Arithmetic.II;
         if (null == self._norm)
         {
-            real = self.re; imag = self.im;
-            self._norm = real.pow(two).add(imag.pow(two));
+            n = self.re.pow(two).add(self.im.pow(two));
+            self._norm = [n, n.rad(two)];
         }
-        return self._norm;
+        return self._norm[true === abs ? 1 : 0];
     }
     ,abs: function() {
         var self = this;
-        return Complex(self.re.abs(), self.im.abs());
+        return self.norm(true);
     }
     ,neg: function() {
         var self = this;
