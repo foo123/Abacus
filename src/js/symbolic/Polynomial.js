@@ -1815,9 +1815,9 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             index = symbol.indexOf(String(x || 'x'));
             if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
             term = operate(function(min, t) {
-                if ((null == min) || (min.e[index] > t.e[index])) min = t;
+                if ((0 < t.e[index]) && ((null == min) || (min.e[index] > t.e[index]))) min = t;
                 return min;
-            }, MultiPolyTerm(ring.Zero(), array(symbol.length, function(i) {return i === index ? Infinity : 0;}), ring), terms);
+            }, null, terms) || MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
             return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
