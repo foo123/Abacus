@@ -1357,6 +1357,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self;
     }
+    ,substitute: function(v, x) {
+        var self = this, sub = {};
+        sub[x] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
+        return self.compose(sub);
+    }
     ,compose: function(g) {
         var self = this;
 

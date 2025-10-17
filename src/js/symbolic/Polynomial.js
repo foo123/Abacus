@@ -4301,7 +4301,15 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
                 }
                 else
                 {
-                    if (is_class(num[0].ring.NumberClass, Complex))
+                    if (is_instance(num[1], [RationalFunc, Poly]))
+                    {
+                        n = den[1].den.mul(num[1].num);
+                        d = num[1].den.mul(den[1].num);
+                        g = n[CLASS].gcd(n, d);
+                        self.num = num[0].mul(n.div(g));
+                        self.den = den[0].mul(d.div(g));
+                    }
+                    else if (is_class(num[0].ring.NumberClass, Complex))
                     {
                         if (num[1].isImag() && den[1].isImag())
                         {

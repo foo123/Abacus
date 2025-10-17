@@ -16,7 +16,18 @@ echo('---');
 
 echo('Rings / Fields');
 echo('--------------');
-/*
+
+/*ring = Ring.Q("x","y","z");
+p1 = ring.fromString("x^2 + z");
+echo(p1.toString(), p1.univariate().toString());
+p2 = ring.fromString("y + z");
+echo(p2.toString(), p2.univariate().toString());
+p3 = ring.gcd(p1, p2);
+echo(p3.toString());
+
+echo('---');
+
+
 ring = Ring.C("x", "y", "z");
 rring = Ring.K(Ring.K(Ring.K(Ring.C()), "y", "z"), "x");
 echo('ring = '+ring.toString()+' ('+ring.toTex()+')'+' rring = '+rring.toString()+' ('+rring.toTex()+')');

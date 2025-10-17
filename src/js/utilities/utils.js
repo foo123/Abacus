@@ -3698,13 +3698,15 @@ function solvepythag(a, with_param)
 }
 function solvepolys(p, x, type)
 {
+    if (!p || !p.length) return p;
+
     //type = String(type || 'exact').toLowerCase();
     type = 'exact';
-    var x0 = x;
+    var param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x.indexOf(s);}).pop();
 
     function recursively_solve(p, x, start)
     {
-        var basis, xnew, linear_eqs,
+        var basis, pnew, xnew, linear_eqs,
             i, j, bj, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
@@ -3721,19 +3723,21 @@ function solvepolys(p, x, type)
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
-            for (i=x.length-1; i>=0; --i)
-            {
-                if (pj.isUni(x[i], true))
-                {
-                    bj = j;
-                    xi = i;
-                    break;
-                }
-            }
-            if (-1 < bj) break;
             if (1 === pj.maxdeg(true))
             {
                 linear_eqs.push(pj);
+            }
+            if (-1 === bj)
+            {
+                for (i=x.length-1; i>=0; --i)
+                {
+                    if (pj.isUni(x[i], true))
+                    {
+                        bj = j;
+                        xi = x[i];
+                        break;
+                    }
+                }
             }
         }
 
@@ -3752,10 +3756,9 @@ function solvepolys(p, x, type)
                 return ab;
             }, {
                 a:[],
-                b:[],
-                p:'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x0.indexOf(s);}).pop()
+                b:[]
             });
-            solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, ab.p);
+            solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, param || false);
 
             if (!solution)
             {
@@ -3764,15 +3767,16 @@ function solvepolys(p, x, type)
             }
             zeros = basis.filter(function(b) {
                 if (-1 < linear_eqs.indexOf(b)) return true;
-                x.reduce(function(b, xi, i) {
+                return x.reduce(function(b, xi, i) {
                     return b.substitute(solution[i], xi);
-                }, b).equ(0);
+                }, b.toExpr()).expand().equ(0);
             });
-            return zeros.length === basis.length ? [solution] : null;
+            // system satisfied or not
+            return zeros.length === basis.length ? [solution.map(function(si) {return is_instance(si, Expr) ? si : (is_callable(si.toExpr) ? si.toExpr() : Expr('', si));})] : null;
         }
 
         // compute exact rational or approximate complex zeros for this univariate poly
-        pj = Polynomial(basis[bj], x[xi]);
+        pj = Polynomial(basis[bj], xi);
         zeros = 'approximate' === type ? (pj.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (pj.roots().map(function(z) {return z[0];}));
 
         if (!zeros.length)
@@ -3784,44 +3788,51 @@ function solvepolys(p, x, type)
         // single variable
         if (1 === basis.length)
         {
-            return zeros.map(function(z) {return [z];});
+            return zeros.map(function(z) {return [Expr('', z)];});
         }
 
         // recursively solve for the rest
         solutions = [];
-        xnew = x.filter(function(xj) {return xj !== x[xi];});
+        xnew = x.filter(function(xj) {return xj !== xi;});
         for (i=0,n=zeros.length; i<n; ++i)
         {
-            z = zeros[i];
-            solution = recursively_solve(
-                // back substitution
-                (basis.filter(function(b, j) {
+            z = Expr('', zeros[i]);
+            pnew = (
+                basis.filter(function(b, j) {
                     return j !== bj;
                 })
                 .reduce(function(pnew, b) {
-                    var eq = b.substitute(z, x[xi]);
+                    var eq = b.toExpr().substitute(z, xi).expand();
                     if (
                         (('approximate' === type) && !eq.isConst())
                         || (('approximate' !== type) && !eq.equ(0))
                     )
                     {
-                        pnew.push(eq);
+                        pnew.push(eq.toPoly(xnew, b.ring));
                     }
                     return pnew;
-                }, [])),
-                xnew
+                }, [])
             );
-            if (!solution || !solution.length) return solution; // inconsistent, infinite or no rational solution
-            solutions = solutions.concat(solution.map(function(s) {
-                s.splice(xi, 0, z);
-                return s;
-            }));
+            if (pnew.length)
+            {
+                solution = recursively_solve(pnew, xnew);
+                if (!solution || !solution.length) return solution; // inconsistent, infinite or no rational solution
+                xi = x.indexOf(xi);
+                solutions = solutions.concat(solution.map(function(s) {
+                    s.splice(xi, 0, z);
+                    return s;
+                }));
+            }
+            else
+            {
+                solutions.push(x.map(function(xj) {
+                    return xj === xi ? z : Expr('', param+'_'+String(i+1));
+                }));
+            }
         }
 
         return solutions;
     }
-
-    if (!p.length) return [];
 
     return recursively_solve(p, x, true);
 }
