@@ -154,6 +154,7 @@ See the comments in the code for algorithms and references used.
 * [Symbolic factoring of polynomials in several variables, Dale E. Jordan, Lewis C. Clapp, Richard Y. Kain](https://dl.acm.org/doi/abs/10.1145/365758.365809)
 * [Aberth method, wikipedia](https://en.wikipedia.org/wiki/Aberth_method)
 * [Numerical computation of polynomial zeros by means of Aberth's method, D. A. Bini](https://www.researchgate.net/publication/225654837_Numerical_computation_of_polynomial_zeros_by_means_of_Aberth's_method)
+* [Improved Aberth-Ehrlich root-finding algorithm and its further application for Binary Microlensing, Hossein Fatheddin, Sedighe Sajadian](https://arxiv.org/abs/2206.00482)
 * [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
 * [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
