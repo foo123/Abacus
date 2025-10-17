@@ -537,7 +537,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             }
             else if (is_class(ring.PolynomialClass, RationalFunc))
             {
-                LCM = iterms.reduce(function(LCM, t) {return t.c.den.mul(LCM);}, ring.One().num);
+                LCM = terms.reduce(function(LCM, t) {return t.c.den.mul(LCM);}, ring.One().num);
                 coeffp = terms.map(function(t) {return t.c.mul(LCM).num;});
                 content = MultiPolynomial.gcd(coeffp);
                 coeffp = coeffp.map(function(c) {return c.div(content);});

@@ -80,6 +80,17 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
+/*
+const ring = Abacus.Ring.Q("x", "y");
+const solutions = Abacus.Math.polynomials([
+ring.fromString("x^2 + y - 1"),
+ring.fromString("x + y^2 - 1")
+], ["x", "y"]);
+
+console.log('Solutions:')
+console.log(solutions ? solutions.map(sol => ('('+["x", "y"].join(',')+')=('+sol.map(String).join(',')+')')).join("\n") : 'No solutions');
+*/
+/*
 p1 = ring1.fromString("x^2 + y + z - 1");
 p2 = ring1.fromString("x + y^2 + z - 1");
 p3 = ring1.fromString("x + y + z^2 - 1");
@@ -89,3 +100,4 @@ o=Abacus.Math.polynomials([p1,p2,p3], ["x", "y", "z"], "approximate");
 echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2,p3]));
 echo('---');
+*/

@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-17 23:27:00)
+*   @version: 2.0.0 (2025-10-18 00:15:57)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-17 23:27:00)
+*   @version: 2.0.0 (2025-10-18 00:15:57)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -3761,7 +3761,7 @@ function solvepolys(p, x, type)
 
     //type = String(type || 'exact').toLowerCase();
     type = 'exact';
-    var param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x.indexOf(s);}).pop();
+    var xo = x, param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x.indexOf(s);}).pop();
 
     function recursively_solve(p, x, start)
     {
@@ -3777,7 +3777,7 @@ function solvepolys(p, x, type)
         }
 
         bj = -1;
-        xi = -1;
+        xi = '';
         linear_eqs = [];
         for (j=0,n=basis.length; j<n; ++j)
         {
@@ -3793,7 +3793,7 @@ function solvepolys(p, x, type)
                     if (pj.isUni(x[i], true))
                     {
                         bj = j;
-                        xi = x[i];
+                        xi = i;
                         break;
                     }
                 }
@@ -3835,7 +3835,7 @@ function solvepolys(p, x, type)
         }
 
         // compute exact rational or approximate complex zeros for this univariate poly
-        pj = Polynomial(basis[bj], xi);
+        pj = Polynomial(basis[bj], x[xi]);
         zeros = 'approximate' === type ? (pj.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (pj.roots().map(function(z) {return z[0];}));
 
         if (!zeros.length)
@@ -3852,31 +3852,28 @@ function solvepolys(p, x, type)
 
         // recursively solve for the rest
         solutions = [];
-        xnew = x.filter(function(xj) {return xj !== xi;});
+        xnew = x.filter(function(xj) {return xj !== x[xi];});
         for (i=0,n=zeros.length; i<n; ++i)
         {
             z = Expr('', zeros[i]);
-            pnew = (
-                basis.filter(function(b, j) {
-                    return j !== bj;
-                })
-                .reduce(function(pnew, b) {
-                    var eq = b.toExpr().substitute(z, xi).expand();
+            pnew = basis.reduce(function(pnew, b) {
+                if (j !== bj)
+                {
+                    var eq = b.toExpr().substitute(z, x[xi]).expand();
                     if (
                         (('approximate' === type) && !eq.isConst())
                         || (('approximate' !== type) && !eq.equ(0))
                     )
                     {
-                        pnew.push(eq.toPoly(xnew, b.ring));
+                        pnew.push(eq.toPoly(xo, b.ring));
                     }
-                    return pnew;
-                }, [])
-            );
+                }
+                return pnew;
+            }, []);
             if (pnew.length)
             {
                 solution = recursively_solve(pnew, xnew);
                 if (!solution || !solution.length) return solution; // inconsistent, infinite or no rational solution
-                xi = x.indexOf(xi);
                 solutions = solutions.concat(solution.map(function(s) {
                     s.splice(xi, 0, z);
                     return s;
@@ -3885,7 +3882,7 @@ function solvepolys(p, x, type)
             else
             {
                 solutions.push(x.map(function(xj) {
-                    return xj === xi ? z : Expr('', param+'_'+String(i+1));
+                    return xj === x[xi] ? z : Expr('', param+'_'+String(i+1));
                 }));
             }
         }
@@ -11271,7 +11268,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             }
             else if (is_class(ring.PolynomialClass, RationalFunc))
             {
-                LCM = iterms.reduce(function(LCM, t) {return t.c.den.mul(LCM);}, ring.One().num);
+                LCM = terms.reduce(function(LCM, t) {return t.c.den.mul(LCM);}, ring.One().num);
                 coeffp = terms.map(function(t) {return t.c.mul(LCM).num;});
                 content = MultiPolynomial.gcd(coeffp);
                 coeffp = coeffp.map(function(c) {return c.div(content);});
