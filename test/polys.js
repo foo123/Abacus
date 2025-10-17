@@ -25,7 +25,7 @@ function check_solution_system(sol, p)
         for (i=0; i<m; i++)
         {
             let o = sol[j].reduce(function(o, s, xi) {
-                o[p[i].symbol[xi]] = s;
+                o[p[i].symbol[xi]] = s.evaluate ? s.evaluate() : s;
                 return o;
             }, {});
             res[j][i] = p[i].evaluate(o).toString();
@@ -59,6 +59,25 @@ echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x"])')
 o=Abacus.Math.polynomials([p1,p2,p3], ["x"]);
 echo(print_solution(o, ["x"]));
 echo(check_solution_system(o, [p1,p2,p3]));
+echo('---');
+
+p1 = ring1.fromString("2x + y + z - 1");
+p2 = ring1.fromString("x + 2y + z - 1");
+p3 = ring1.fromString("x + y + 2z - 1");
+echo('Solve: '+[p1,p2,p3].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1,p2,p3], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1,p2,p3]));
+echo('---');
+
+p1 = ring1.fromString("x + 2y + z - 4");
+p2 = ring1.fromString("x + y + 2z - 4");
+echo('Solve: '+[p1,p2].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1,p2].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1,p2], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
 p1 = ring1.fromString("x^2 + y + z - 1");

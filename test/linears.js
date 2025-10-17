@@ -31,7 +31,7 @@ function check_solution_system(sol, coeff, vars)
     {
         res[i] = 0;
         for (j=0; j<k; j++)
-            res[i] += coeff[i][j] * sol[j].valueOf(vars);
+            res[i] += coeff[i][j] * sol[j].evaluate(vars).valueOf();
     }
     return res;
 }
@@ -47,7 +47,7 @@ echo('o=Abacus.Math.linears([[4,5]], [7], ["w", "z"])');
 o=Abacus.Math.linears([[4,5]], [7], ["w", "z"]);
 echo(print_solution(o, ['x','y']));
 echo(print_tex(o, ['x','y']));
-echo(check_solution_system(o, [[4,5]]), [7]);
+echo(check_solution_system(o, [[4,5]], {w:1,z:1}), [7]);
 echo('---');
 
 echo('x - y = 6, -2x + 2y = 1');
@@ -55,7 +55,7 @@ echo('o=Abacus.Math.linears([[1,-1],[-2,2]], [6,1], ["w", "z"])');
 o=Abacus.Math.linears([[1,-1],[-2,2]], [6,1], ["w", "z"]);
 echo(print_solution(o, ['x','y']));
 echo(print_tex(o, ['x','y']));
-echo(check_solution_system(o, [[1,-1],[-2,2]]), [6,1]);
+echo(check_solution_system(o, [[1,-1],[-2,2]], {w:1,z:1}), [6,1]);
 echo('---');
 
 echo('2x + 5y = -1, -10x - 25y = 5');
@@ -63,5 +63,5 @@ echo('o=Abacus.Math.linears([[2,5],[-10,-25]], [-1,5], ["w", "z"])');
 o=Abacus.Math.linears([[2,5],[-10,-25]], [-1,5], ["w", "z"]);
 echo(print_solution(o, ['x','y']));
 echo(print_tex(o, ['x','y']));
-echo(check_solution_system(o, [[2,5],[-10,-25]]), [-1,5]);
+echo(check_solution_system(o, [[2,5],[-10,-25]], {w:1,z:1}), [-1,5]);
 echo('---');

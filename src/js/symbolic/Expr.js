@@ -509,7 +509,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = true;
                         continue;
                     }
-                    if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i))
+                    if (match = eat(/^\\?([a-z]{2}[a-z]*)\s*([\(\{])/i))
                     {
                         // function
                         m = match[1].toLowerCase() + '()';

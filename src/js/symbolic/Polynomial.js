@@ -709,6 +709,12 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 else if (1 === p.deg())
                 {
                     // linear factor, irreducible
+                    if (p.lc().lt(0))
+                    {
+                        // normalize leading coefficient to be positive
+                        c = c.mul(-1);
+                        p = p.mul(-1);
+                    }
                     k = p.toString();
                     if (HAS.call(factors, k))
                     {
@@ -1152,7 +1158,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,substitute: function(v, x) {
         var self = this, sub = {};
         x = self.symbol;
-        sub[x] = is_callable(v.toExpr) ? v.toExpr() : Expr('', v);
+        sub[x] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
         return self.toExpr().compose(sub).toPoly(x, self.ring);
     }
     ,compose: function(q) {
@@ -1795,7 +1801,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             term = operate(function(max, t) {
                 if ((null == max) || (max.e[index] < t.e[index])) max = t;
                 return max;
-            }, null, terms);
+            }, MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring), terms);
             return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[0]] : [], symbol, ring);
@@ -1811,7 +1817,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             term = operate(function(min, t) {
                 if ((null == min) || (min.e[index] > t.e[index])) min = t;
                 return min;
-            }, null, terms);
+            }, MultiPolyTerm(ring.Zero(), array(symbol.length, function(i) {return i === index ? Infinity : 0;}), ring), terms);
             return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
@@ -2359,7 +2365,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         xi = String(xi || self.symbol[0]);
         if (-1 < self.symbol.indexOf(xi))
         {
-            sub[xi] = is_callable(v.toExpr) ? v.toExpr() : Expr('', v);
+            sub[xi] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
             return self.toExpr().compose(sub).toPoly(self.symbol, self.ring);
         }
         return self;
@@ -4196,6 +4202,9 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     ,divmod: NotImplemented
     ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
+    }
+    ,substitute: function(v, xi) {
+        return RationalFunc(self.num.substitute(v, xi), self.den.substitute(v, xi));
     }
     ,compose: function(q) {
         // assume q's are simply multipolynomials, NOT rational functions

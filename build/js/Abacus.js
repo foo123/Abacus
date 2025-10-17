@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 23:26:44)
+*   @version: 2.0.0 (2025-10-17 16:16:46)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-16 23:26:44)
+*   @version: 2.0.0 (2025-10-17 16:16:46)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -3757,28 +3757,26 @@ function solvepythag(a, with_param)
 }
 function solvepolys(p, x, type)
 {
-    type = String(type || 'exact').toLowerCase();
+    //type = String(type || 'exact').toLowerCase();
+    type = 'exact';
+    var x0 = x;
 
     function recursively_solve(p, x, start)
     {
-        var basis, univariate, xnew,
-            i, j, bj, pj, xi, n, z,
+        var basis, xnew, linear_eqs,
+            i, j, bj, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
-        if ((1 === basis.length) && basis[0].isConst())
+        if ((1 === basis.length) && basis[0].isConst() && !basis[0].equ(0))
         {
             // Inconsistent or Infinite
             return null;
         }
 
-        if (basis.length < x.length)
-        {
-            // Not 0-dimensional
-            return null;
-        }
-
-        bj = -1; xi = -1;
+        bj = -1;
+        xi = -1;
+        linear_eqs = [];
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
@@ -3792,12 +3790,44 @@ function solvepolys(p, x, type)
                 }
             }
             if (-1 < bj) break;
+            if (1 === pj.maxdeg(true))
+            {
+                linear_eqs.push(pj);
+            }
+        }
+
+        if ((0 >= linear_eqs.length) && ((basis.length < x.length) || (-1 === bj)))
+        {
+            // Not 0-dimensional
+            return null;
         }
 
         if (-1 === bj)
         {
-            // Not 0-dimensional
-            return null;
+            //solve underdetermined linear system
+            ab = linear_eqs.reduce(function(ab, eq) {
+                ab.a.push(x.map(function(xi) {return eq.lc(xi);}));
+                ab.b.push(eq.c().neg());
+                return ab;
+            }, {
+                a:[],
+                b:[],
+                p:'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x0.indexOf(s);}).pop()
+            });
+            solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, ab.p);
+
+            if (!solution)
+            {
+                // Inconsistent
+                return null;
+            }
+            zeros = basis.filter(function(b) {
+                if (-1 < linear_eqs.indexOf(b)) return true;
+                x.reduce(function(b, xi, i) {
+                    return b.substitute(solution[i], xi);
+                }, b).equ(0);
+            });
+            return zeros.length === basis.length ? [solution] : null;
         }
 
         // compute exact rational or approximate complex zeros for this univariate poly
@@ -8949,7 +8979,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = true;
                         continue;
                     }
-                    if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i))
+                    if (match = eat(/^\\?([a-z]{2}[a-z]*)\s*([\(\{])/i))
                     {
                         // function
                         m = match[1].toLowerCase() + '()';
@@ -11397,6 +11427,12 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 else if (1 === p.deg())
                 {
                     // linear factor, irreducible
+                    if (p.lc().lt(0))
+                    {
+                        // normalize leading coefficient to be positive
+                        c = c.mul(-1);
+                        p = p.mul(-1);
+                    }
                     k = p.toString();
                     if (HAS.call(factors, k))
                     {
@@ -11840,7 +11876,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,substitute: function(v, x) {
         var self = this, sub = {};
         x = self.symbol;
-        sub[x] = is_callable(v.toExpr) ? v.toExpr() : Expr('', v);
+        sub[x] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
         return self.toExpr().compose(sub).toPoly(x, self.ring);
     }
     ,compose: function(q) {
@@ -12483,7 +12519,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             term = operate(function(max, t) {
                 if ((null == max) || (max.e[index] < t.e[index])) max = t;
                 return max;
-            }, null, terms);
+            }, MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring), terms);
             return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[0]] : [], symbol, ring);
@@ -12499,7 +12535,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             term = operate(function(min, t) {
                 if ((null == min) || (min.e[index] > t.e[index])) min = t;
                 return min;
-            }, null, terms);
+            }, MultiPolyTerm(ring.Zero(), array(symbol.length, function(i) {return i === index ? Infinity : 0;}), ring), terms);
             return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
@@ -13047,7 +13083,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         xi = String(xi || self.symbol[0]);
         if (-1 < self.symbol.indexOf(xi))
         {
-            sub[xi] = is_callable(v.toExpr) ? v.toExpr() : Expr('', v);
+            sub[xi] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
             return self.toExpr().compose(sub).toPoly(self.symbol, self.ring);
         }
         return self;
@@ -14884,6 +14920,9 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     ,divmod: NotImplemented
     ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
+    }
+    ,substitute: function(v, xi) {
+        return RationalFunc(self.num.substitute(v, xi), self.den.substitute(v, xi));
     }
     ,compose: function(q) {
         // assume q's are simply multipolynomials, NOT rational functions

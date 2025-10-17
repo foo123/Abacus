@@ -3698,28 +3698,26 @@ function solvepythag(a, with_param)
 }
 function solvepolys(p, x, type)
 {
-    type = String(type || 'exact').toLowerCase();
+    //type = String(type || 'exact').toLowerCase();
+    type = 'exact';
+    var x0 = x;
 
     function recursively_solve(p, x, start)
     {
-        var basis, univariate, xnew,
-            i, j, bj, pj, xi, n, z,
+        var basis, xnew, linear_eqs,
+            i, j, bj, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
-        if ((1 === basis.length) && basis[0].isConst())
+        if ((1 === basis.length) && basis[0].isConst() && !basis[0].equ(0))
         {
             // Inconsistent or Infinite
             return null;
         }
 
-        if (basis.length < x.length)
-        {
-            // Not 0-dimensional
-            return null;
-        }
-
-        bj = -1; xi = -1;
+        bj = -1;
+        xi = -1;
+        linear_eqs = [];
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
@@ -3733,12 +3731,44 @@ function solvepolys(p, x, type)
                 }
             }
             if (-1 < bj) break;
+            if (1 === pj.maxdeg(true))
+            {
+                linear_eqs.push(pj);
+            }
+        }
+
+        if ((0 >= linear_eqs.length) && ((basis.length < x.length) || (-1 === bj)))
+        {
+            // Not 0-dimensional
+            return null;
         }
 
         if (-1 === bj)
         {
-            // Not 0-dimensional
-            return null;
+            //solve underdetermined linear system
+            ab = linear_eqs.reduce(function(ab, eq) {
+                ab.a.push(x.map(function(xi) {return eq.lc(xi);}));
+                ab.b.push(eq.c().neg());
+                return ab;
+            }, {
+                a:[],
+                b:[],
+                p:'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x0.indexOf(s);}).pop()
+            });
+            solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, ab.p);
+
+            if (!solution)
+            {
+                // Inconsistent
+                return null;
+            }
+            zeros = basis.filter(function(b) {
+                if (-1 < linear_eqs.indexOf(b)) return true;
+                x.reduce(function(b, xi, i) {
+                    return b.substitute(solution[i], xi);
+                }, b).equ(0);
+            });
+            return zeros.length === basis.length ? [solution] : null;
         }
 
         // compute exact rational or approximate complex zeros for this univariate poly
