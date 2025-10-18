@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-18 07:26:30)
+*   @version: 2.0.0 (2025-10-18 08:02:37)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-18 07:26:30)
+*   @version: 2.0.0 (2025-10-18 08:02:37)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -8056,6 +8056,8 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,_n: null
     ,_i: null
     ,_c: null
+    ,_int: null
+    ,_rem: null
     ,_str: null
     ,_tex: null
     ,_dec: null
@@ -8080,6 +8082,8 @@ nComplex = Abacus.nComplex = Class(Complex, {
         self._n = null;
         self._i = null;
         self._c = null;
+        self._int = null;
+        self._rem = null;
         self._str = null;
         self._tex = null;
         self._dec = null;
@@ -8232,17 +8236,18 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,imag: function() {
         return this.im;
     }
-    ,norm: function() {
-        var self = this;
+    ,norm: function(abs) {
+        var self = this, n;
         if (null == self._norm)
         {
-            self._norm = stdMath.pow(self.re, 2) + stdMath.pow(self.im, 2);
+            n = stdMath.pow(self.re, 2) + stdMath.pow(self.im, 2);
+            self._norm = [n, stdMath.sqrt(n)]
         }
-        return self._norm;
+        return self._norm[true === abs ? 1 : 0];
     }
     ,abs: function() {
         var self = this;
-        return stdMath.sqrt(self.norm());
+        return self.norm(true);
     }
     ,neg: function() {
         var self = this;
@@ -8394,6 +8399,17 @@ nComplex = Abacus.nComplex = Class(Complex, {
 
         return self;
     }
+    ,mod: function(other, q) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+            return self.sub((is_instance(q, nComplex) ? q : self.div(other).round()).mul(other));
+
+        return self;
+    }
+    ,divmod: function(other) {
+        var self = this, q = self.div(other).round();
+        return [q, self.mod(other, q)];
+    }
     ,divides: function(other) {
         return !this.equ(0);
     }
@@ -8414,6 +8430,7 @@ nComplex = Abacus.nComplex = Class(Complex, {
             n = -n;
         }
         e = self; pow = nComplex.One();
+        n = n|0;
         while (0 !== n)
         {
             // exponentiation by squaring
@@ -8445,6 +8462,23 @@ nComplex = Abacus.nComplex = Class(Complex, {
         }
         return kthroot(self, n);
     }
+    ,round: function(absolute) {
+        absolute = false !== absolute;
+        var self = this;
+        return nComplex(absolute ? stdMath.abs(stdMath.round(self.re)) : stdMath.round(self.re), absolute ? stdMath.abs(stdMath.round(self.im)) : stdMath.round(self.im)); // return integer part
+    }
+    ,integer: function() {
+        var self = this;
+        if (null == self._int)
+            self._int = nComplex(stdMath.floor(self.re), stdMath.floor(self.im.integer)); // return integer part
+        return self._int;
+    }
+    ,remainder: function() {
+        var self = this;
+        if (null == self._rem)
+            self._rem = nComplex(self.re - stdMath.floor(self.re), self.im - stdMath.floor(self.im)); // return remainder part
+        return self._rem;
+    }
     ,tuple: function() {
         return [this.re, this.im];
     }
@@ -8467,6 +8501,13 @@ nComplex = Abacus.nComplex = Class(Complex, {
     }
     ,toDec: function(precision) {
         var self = this, zr, dec;
+        if (is_number(precision) && (4 !== precision))
+        {
+            zr = 0 === self.re;
+            dec = (zr ? '' : self.re.toFixed(precision)) + (0 === self.im ? '' : ((self.im > 0 ? (zr ? '' : '+') : '') + (self.im === 1 ? '' : (self.im === -1 ? '-' : (self.im.toFixed(precision)))) + Complex.Symbol));
+            if (!dec.length) dec = (0).toFixed(precision);
+            return dec;
+        }
         if (null == self._dec)
         {
             zr = 0 === self.re;
