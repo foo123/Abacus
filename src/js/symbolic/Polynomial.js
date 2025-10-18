@@ -357,6 +357,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,_n: null
     ,_expr: null
     ,_prim: null
+    ,_exact_roots: null
     ,_roots: null
     ,_zeros: null
     ,_factors: null
@@ -380,6 +381,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         self._c = null;
         self._expr = null;
         self._prim = null;
+        self._exact_roots = null;
         self._roots = null;
         self._factors = null;
         return self;
@@ -441,12 +443,30 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         //return terms.length ? (0===terms[terms.length-1].e ? (1<terms.length ? terms[terms.length-2].e : 0) : terms[terms.length-1].e) : 0;
         return terms.length ? terms[terms.length-1].e : 0;
     }
-    ,term: function(i, as_degree) {
+    ,term: function(i, as_degree, term_only) {
         // term(s) matching i as index or as degree
-        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol;
+        var self = this, terms = self.terms,
+            ring = self.ring, symbol = self.symbol,
+            term, t, j, n = terms.length;
+        term = null;
         if (true === as_degree)
-            return Polynomial(terms.reduce(function(matched, t) {return i === t.e ? [t] : matched;}, []), symbol, ring);
-        return Polynomial(0 <= i && i < terms.length ? [terms[i]] : [], symbol, ring);
+        {
+            for (j=0; j<n; ++j)
+            {
+                t = terms[j];
+                if (i === t.e)
+                {
+                    term = t;
+                    break;
+                }
+            }
+        }
+        else if (0 <= i && i < n)
+        {
+            term = terms[i];
+        }
+        term = term || UniPolyTerm(0, 0, ring);
+        return true === term_only ? term : Polynomial([term], symbol, ring);
     }
     ,ltm: function(asPoly) {
         // leading term
@@ -614,7 +634,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return Polynomial.Discriminant(this);
     }
     ,roots: function() {
-        // find all rational roots, if any
+        // find all integer/rational roots of poly, if any
         // https://en.wikipedia.org/wiki/Rational_root_theorem
         // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -624,8 +644,8 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         {
             roots = [];
             // no rational roots or infinite roots for constant polynomials,
-            // no rational roots for strictly complex polynomials
-            if (!self.isConst() && (self.isImag() || self.isReal()))
+            // no rational roots for symbolic or strictly complex polynomials
+            if (!self.isConst() && !ring.PolynomialClass && (self.isImag() || self.isReal()))
             {
                 primitive = self.primitive();
                 c = primitive.terms;
@@ -689,57 +709,50 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return self._roots.map(function(r) {return r.slice();});
     }
     ,factors: function() {
-        // factorize polynomial over Integers/Rationals if factorizable
+        // factorize poly over integers/rationals if factorizable
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
-        var self = this, queue, factors, k, c, q, p;
+        var self = this, queue, factors, t, k, c, q, p;
         if (null == self._factors)
         {
             p = self.primitive(true);
             c = p[1];
             p = p[0];
-            queue = [p];
-            factors = {};
-            do {
-                p = queue.shift();
-                if (1 > p.deg())
+            if (self.ring.PolynomialClass || (self.isComplex() && !(self.isReal() || self.isImag())))
+            {
+                // cannot apply to complex or symbolic coefficients
+                if (p.terms.length && (0 < p.terms[p.terms.length-1].e))
                 {
-                    // const, irreducible
-                    c = c.mul(p.cc());
-                }
-                else if (1 === p.deg())
-                {
-                    // linear factor, irreducible
-                    if (p.lc().lt(0))
-                    {
-                        // normalize leading coefficient to be positive
-                        c = c.mul(-1);
-                        p = p.mul(-1);
-                    }
-                    k = p.toString();
-                    if (HAS.call(factors, k))
-                    {
-                        ++factors[k][1];
-                    }
-                    else
-                    {
-                        factors[k] = [p, 1];
-                    }
+                    k = p.terms[p.terms.length-1].e;
+                    t = {}; t[self.symbol] = ring.One();
+                    q = Polynomial(t, self.symbol, ring);
+                    p = p.shift(-k); // divide by q^k
+                    self._factors = [[[q, k], [p, 1]], c];
                 }
                 else
                 {
-                    q = polyfactor(p);
-                    if (q)
+                    self._factors = [[[p, 1]], c];
+                }
+            }
+            else
+            {
+                queue = [p];
+                factors = {};
+                do {
+                    p = queue.shift();
+                    if (1 > p.deg())
                     {
-                        // found a factor, split p into q and p/q
-                        queue.push(q);
-                        queue.push(p.div(q));
+                        // const, irreducible
+                        c = c.mul(p.cc());
                     }
-                    else
+                    else if (1 === p.deg())
                     {
-                        // other irreducible factor
-                        p = p.monic(true); // same factor can appear with different constants
-                        c = c.mul(p[1]);
-                        p = p[0];
+                        // linear factor, irreducible
+                        if (p.lc().lt(0))
+                        {
+                            // normalize leading coefficient to be positive
+                            c = c.mul(-1);
+                            p = p.mul(-1);
+                        }
                         k = p.toString();
                         if (HAS.call(factors, k))
                         {
@@ -750,15 +763,80 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                             factors[k] = [p, 1];
                         }
                     }
-                }
-            } while (queue.length);
-            factors = KEYS(factors).map(function(k) {return factors[k];});
-            self._factors = [factors, c];
+                    else
+                    {
+                        q = polyfactor(p);
+                        if (q)
+                        {
+                            // found a factor, split p into q and p/q
+                            queue.push(q);
+                            queue.push(p.div(q));
+                        }
+                        else
+                        {
+                            // other irreducible factor
+                            p = p.monic(true); // same factor can appear with different constants
+                            c = c.mul(p[1]);
+                            p = p[0];
+                            k = p.toString();
+                            if (HAS.call(factors, k))
+                            {
+                                ++factors[k][1];
+                            }
+                            else
+                            {
+                                factors[k] = [p, 1];
+                            }
+                        }
+                    }
+                } while (queue.length);
+                factors = KEYS(factors).map(function(k) {return factors[k];});
+                self._factors = [factors, c];
+            }
         }
         return [self._factors[0].slice(), self._factors[1]];
     }
+    ,exactroots: function() {
+        // find exact roots of poly when solvable
+        var self = this;
+        if (null == self._exact_roots)
+        {
+            self._exact_roots = self.factors()[0].reduce(function(roots, factor) {
+                factor = factor[0];
+                switch (factor.deg())
+                {
+                    case 1:
+                    roots.push.apply(roots, poly_linear_roots(factor));
+                    break;
+
+                    case 2:
+                    roots.push.apply(roots, poly_quadratic_roots(factor));
+                    break;
+
+                    case 3:
+                    roots.push.apply(roots, poly_cubic_roots(factor));
+                    break;
+
+                    case 4:
+                    roots.push.apply(roots, poly_quartic_roots(factor));
+                    break;
+
+                    case 5:
+                    roots.push.apply(roots, poly_quintic_roots(factor));
+                    break;
+
+                    default:
+                    // strictly rational roots
+                    roots.push.apply(roots, factor.roots().map(function(r) {return Expr('', r[0]);}));
+                    break;
+                }
+                return roots;
+            }, []);
+        }
+        return self._exact_roots.slice();
+    }
     ,zeros: function() {
-        // numerically find real/complex zeros of polynomial
+        // find approximate real/complex zeros of poly numerically
         // https://en.wikipedia.org/wiki/Aberth_method
         var self = this, d, tc, lo, hi,
             roots, found, i, j, m, ri, ratio, offset,
@@ -1779,17 +1857,51 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return -1 === min ? deg : stdMath.min(min, deg);
         }, -1, terms);
     }
-    ,term: function(i, as_degree) {
+    ,term: function(i, as_degree, term_only) {
         // term(s) matching i as index or as degree
-        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol;
+        var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol,
+            term, t, j, n = terms.length, k, l = symbol.length, matched;
         if (true === as_degree)
-            return terms.reduce(function(matched, t) {
+        {
+            if (is_array(i))
+            {
+                // match term which has i as degree
+                term = MultiPolyTerm(0, i, ring);
+                for (j=0; j<n; ++j)
+                {
+                    t = terms[j];
+                    matched = true;
+                    for (k=0; k<l; ++k)
+                    {
+                        if (t.e[k] !== i[k])
+                        {
+                            matched = false;
+                            break;
+                        }
+                    }
+                    if (matched)
+                    {
+                        term = t;
+                        break;
+                    }
+
+                }
+            }
+            else
+            {
                 // match all terms which have i as aggregate degree
-                if (i === t.e.reduce(addn, 0))
-                    matched = MultiPolynomial([t], symbol, ring)._add(matched);
-                return matched;
-            }, MultiPolynomial.Zero(symbol, ring));
-        return MultiPolynomial(0 <= i && i < terms.length ? [terms[i]] : [], symbol, ring);
+                term = terms.reduce(function(matched, t) {
+                    if (i === t.e.reduce(addn, 0))
+                        matched = MultiPolynomial([t], symbol, ring)._add(matched);
+                    return matched;
+                }, MultiPolynomial.Zero(symbol, ring));
+            }
+        }
+        else
+        {
+            term = 0 <= i && i < n ? terms[i] : MultiPolyTerm(0, array(l, 0), ring);
+        }
+        return true === term_only ? term : (is_instance(term, MultiPolyTerm) ? MultiPolynomial([term], symbol, ring) : term);
     }
     ,ltm: function(asPoly, x) {
         // leading term (per symbol)
@@ -3173,14 +3285,13 @@ function multi_div(P, x, q_and_r)
     }
     return P;
 }
-function poly_interpolate(v, x, ring, PolynomialClass)
+function poly_interpolate(v, x, ring)
 {
     // https://en.wikipedia.org/wiki/Lagrange_polynomial
     // https://en.wikipedia.org/wiki/Newton_polynomial
-    PolynomialClass = PolynomialClass || Polynomial;
     ring = ring || Ring.Q();
     var I = ring.One(), n, d, f, vi, hash, dupl;
-    if (!v || !v.length) return PolynomialClass.Zero(x, ring);
+    if (!v || !v.length) return Polynomial.Zero(x, ring);
     if (is_args(v)) v = slice.call(v);
     if (!is_array(v[0])) v = [v];
     v = v.map(function(vi) {
@@ -3215,15 +3326,64 @@ function poly_interpolate(v, x, ring, PolynomialClass)
         var terms = {};
         terms[x] = I;
         terms['1'] = v[i][0].neg();
-        return PolynomialClass(terms, x, ring);
+        return Polynomial(terms, x, ring);
     });
     // Produce each Lj in turn, and sum into p
     return operate(function(p, j) {
         return p._add(operate(function(Lj, i){
             if (j !== i) Lj = Lj._mul(f[i]);
             return Lj;
-        }, PolynomialClass.Const(d[j], x, ring), null, 0, n-1));
-    }, PolynomialClass.Zero(x, ring), null, 0, n-1);
+        }, Polynomial.Const(d[j], x, ring), null, 0, n-1));
+    }, Polynomial.Zero(x, ring), null, 0, n-1);
+}
+function spoly_interpolate(v, x, ring, PolynomialClass)
+{
+    // https://en.wikipedia.org/wiki/Lagrange_polynomial
+    // https://en.wikipedia.org/wiki/Newton_polynomial
+    PolynomialClass = PolynomialClass || Polynomial;
+    ring = ring || Ring.Q();
+    var I = ring.One(), n, d, f, vi, hash, dupl;
+    if (!v || !v.length) return PolynomialClass.Zero(x, ring);
+    if (is_args(v)) v = slice.call(v);
+    if (!is_array(v[0])) v = [v];
+    v = v.map(function(vi) {
+        return [ring.cast(vi[0]), (is_instance(vi[1], [Poly, RationalFunc]) ? vi[1] : ring.cast(vi[1]))];
+    });
+    // check and filter out duplicate values
+    hash = Obj(); dupl = [];
+    for (n=0; n<v.length; ++n)
+    {
+        vi = v[n][0].toString();
+        if (!HAS.call(hash, vi)) hash[vi] = n;
+        else if (!v[hash[vi]][1].equ(v[n][1])) return null; // no polynomial exists
+        else dupl.push(n); // duplicate value to be removed
+    }
+    // remove duplicate values
+    while (dupl.length) v.splice(dupl.pop(), 1);
+    hash = null; dupl = null; n = v.length;
+
+    // Set-up denominators
+    d = array(n, function(j) {
+        var i, dj = I;
+        for (i=0; i<n; ++i)
+        {
+            if (i === j) continue;
+            dj = dj.mul(v[j][0].sub(v[i][0]));
+        }
+        dj = v[j][1].div(dj);
+        return dj.toExpr();
+    });
+    // Set-up numerator factors
+    f = array(n, function(i) {
+        return Expr('-', [Expr('', x), Expr('', v[i][0])]);
+    });
+    // Produce each Lj in turn, and sum into p
+    return operate(function(p, j) {
+        return p.add(operate(function(Lj, i){
+            if (j !== i) Lj = Lj.mul(f[i]);
+            return Lj;
+        }, d[j], null, 0, n-1));
+    }, Expr.Zero(), null, 0, n-1).toPoly(is_class(PolynomialClass, MultiPolynomial) ? [x] : x, ring);
 }
 function polyfactor(p)
 {
@@ -3231,8 +3391,7 @@ function polyfactor(p)
     var i, j, n, y, v, d, q,
         r = p.ring, x = p.symbol,
         Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O,
-        PolynomialClass = p[CLASS];
+        O = Arithmetic.O;
     for (d=1,n=(p.deg()>>1); d<=n; ++d)
     {
         y = array(d+1, d>>1, -1).map(function(xi) {
@@ -3248,7 +3407,7 @@ function polyfactor(p)
                 var terms = {};
                 terms[x] = r.One();
                 terms['1'] = y[i][0].neg();
-                return PolynomialClass(terms, x, r);
+                return Polynomial(terms, x, r);
             }
             else
             {
@@ -3289,12 +3448,238 @@ function polyfactor(p)
                     v[j] = [y[j][0], r.cast(y[j][1].next())];
                 }
             }
-            q = poly_interpolate(v, x, r, PolynomialClass);
+            q = poly_interpolate(v, x, r);
             // found factor
             if ((0 < q.deg()) && Arithmetic.equ(O, Arithmetic.mod(p.lc().real().num, q.lc().real().num)) && Arithmetic.equ(O, Arithmetic.mod(p.tc().real().num, q.tc().real().num)) && p.mod(q).equ(O)) return q;
             i = d;
         }
     }
+}
+/*function mpolyfactor(p, i)
+{
+    // Extended Kronecker method to factorize p over the integers/rationals
+    var pp, q, k;
+    if (null == i) i = p.symbol.length;
+    if (1 === i)
+    {
+        q = polyfactor(Polynomial(p, p.symbol[0], p.ring));
+        if (!q) return null;
+        q = MultiPolynomial(q, p.symbol, p.ring);
+        return [q, p.div(q)];
+    }
+    else if (1 < i)
+    {
+        q = mpolyfactor(p.symbol.slice(0, -1).reduce(function(p, xi) {
+            return p.substitute(1, xi);
+        }, p), 1);
+        if (!q) return null;
+        k = q.maxdeg(p.symbol[p.symbol.length-1]);
+    }
+    return null;
+}*/
+function poly_linear_roots(poly)
+{
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+    // return Expr(s)
+    // https://en.wikipedia.org/wiki/Linear_equation
+    // ax + b
+    var a = poly.term(1, true, true).c,
+        b = poly.term(0, true, true).c;
+    if (a.equ(0)) return null;
+    if (b.equ(0)) return [Expr.Zero()];
+
+    // a!=0, x = -b/a
+    return [
+        b.neg().div(a).toExpr()
+    ];
+}
+function poly_quadratic_roots(poly)
+{
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+    // return Expr(s)
+    // https://en.wikipedia.org/wiki/Quadratic_equation
+    // ax^2 + bx + c
+    var a = poly.term(2, true, true).c,
+        b = poly.term(1, true, true).c,
+        c = poly.term(0, true, true).c;
+    if (a.equ(0)) return poly_linear_roots(poly);
+    if (c.equ(0)) return poly_linear_roots(poly.shift(-1)).reduce(function(roots, r) {
+            if (!r.equ(0)) roots.push(r);
+            return roots;
+        }, [Expr.Zero()]);
+
+    // a!=0, x = -(b +/- sqrt(b^2 - 4ac)) / 2a
+    var discriminant = b.pow(2).sub(a.mul(c).mul(4));
+    if (discriminant.equ(0))
+    {
+        // double root
+        return [
+            b.neg().toExpr().div(a.mul(2).toExpr())
+        ];
+    }
+    else
+    {
+        // two roots
+        discriminant = discriminant.toExpr().pow(1/2);
+        a = a.mul(2).toExpr();
+        b = b.toExpr();
+        return [
+            (b.sub(discriminant)).neg().div(a),
+            (b.add(discriminant)).neg().div(a)
+        ];
+    }
+}
+function poly_cubic_roots(poly)
+{
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+    // return Expr(s)
+    // https://en.wikipedia.org/wiki/Cubic_equation
+    // ax^3 + bx^2 + cx + d
+    var a = poly.term(3, true, true).c,
+        b = poly.term(2, true, true).c,
+        c = poly.term(1, true, true).c,
+        d = poly.term(0, true, true).c;
+    if (a.equ(0)) return poly_quadratic_roots(poly);
+    if (d.equ(0)) return poly_quadratic_roots(poly.shift(-1)).reduce(function(roots, r) {
+            if (!r.equ(0)) roots.push(r);
+            return roots;
+        }, [Expr.Zero()]);
+/*
+https://www.wolframalpha.com/input?i=ax%5E3+%2B+bx%5E2+%2Bcx+%2Bd+%3D0
+
+a!=0, x = (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (3 a c - b^2))/(3 a (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)) - b/3a
+
+a!=0, x = -((1 - i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3))/(6 2^(1/3) a) + ((1 + i sqrt(3)) (3 a c - b^2))/(3 2^(2/3) a (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)) - b/3a
+
+a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3))/(6 2^(1/3) a) + ((1 - i sqrt(3)) (3 a c - b^2))/(3 2^(2/3) a (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)) - b/3a
+*/
+    var
+        ap2 = a.mul(a),
+        ap3 = ap2.mul(a),
+        ac = a.mul(c),
+        bp2 = b.mul(b),
+        bp3 = bp2.mul(b),
+        abc = ac.mul(b),
+        ap2d = ap2.mul(d),
+        // depressed cubic
+        p = ac.mul(3).sub(bp2).div(ap2.mul(3)),
+        q = bp3.mul(2).sub(abc.mul(9)).add(ap2d.mul(27)).div(ap3.mul(27)),
+        discriminant = (p.pow(3).mul(4).add(q.pow(2).mul(27))).neg(),
+        b_3a = b.div(a.mul(3)).neg(),
+        Delta_0, Delta_1, D, C, isqrt3, z, one, roots
+    ;
+
+    if (discriminant.equ(0))
+    {
+        if (p.equ(0))
+        {
+            // triple root
+            return [
+                b_3a.toExpr()
+            ];
+        }
+        else
+        {
+            // simple and double roots
+            return [
+                q.mul(3).div(p).add(b_3a).toExpr(), // simple root
+                q.mul(3).neg().div(p.mul(2)).add(b_3a).toExpr(), // double root
+            ];
+        }
+    }
+    else
+    {
+        Delta_0 = bp2.sub(ac.mul(2));
+        Delta_1 = bp3.mul(2).sub(abc.mul(9)).add(ap2d.mul(27));
+        if (Delta_0.equ(0) && Delta_1.equ(0))
+        {
+            // triple root
+            return [
+                b_3a.toExpr()
+            ];
+        }
+        else
+        {
+            // three roots
+            Delta_0 = Delta_0.toExpr();
+            Delta_1 = Delta_1.toExpr();
+            D = Delta_1.pow(2).sub(Delta_0.pow(3).mul(4)).pow(1/2);
+            if (Delta_1.add(D).expand().equ(0)) D = D.neg();
+            C = Delta_1.add(D).div(2).pow(Rational(1, 3));
+            roots = new Array(3);
+
+            one = Expr.One();
+            roots[0] = one.neg().div(a.mul(3)).mul(b.add(C).add(Delta_0.div(C)));
+
+            isqrt3 = Complex.Img().toExpr().mul(Expr('^', [3, 1/2]))
+            z = one.neg().add(isqrt3).div(2);
+            roots[1] = one.neg().div(a.mul(3)).mul(b.add(z.mul(C)).add(Delta_0.div(z.mul(C))));
+
+            z = one.neg().sub(isqrt3).div(2);
+            roots[2] = one.neg().div(a.mul(3)).mul(b.add(z.mul(C)).add(Delta_0.div(z.mul(C))));
+
+            return roots;
+        }
+    }
+}
+function poly_quartic_roots(poly)
+{
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+    // return Expr(s)
+    // https://en.wikipedia.org/wiki/Quartic_equation
+    // ax^4 + bx^3 + cx^2 + dx + e
+    var a = poly.term(4, true, true).c,
+        b = poly.term(3, true, true).c,
+        c = poly.term(2, true, true).c,
+        d = poly.term(1, true, true).c,
+        e = poly.term(0, true, true).c;
+    if (a.equ(0)) return poly_cubic_roots(poly);
+    if (e.equ(0)) return poly_cubic_roots(poly.shift(-1)).reduce(function(roots, r) {
+            if (!r.equ(0)) roots.push(r);
+            return roots;
+        }, [Expr.Zero()]);
+    if (b.equ(0) && d.equ(0)) return poly_quadratic_roots(Polynomial([UniPolyTerm(a, 2, poly.ring), UniPolyTerm(e, 0, poly.ring), UniPolyTerm(c, 1, poly.ring)], poly.symbol, poly.ring)).reduce(function(roots, r) {
+            if (r.equ(0))
+            {
+                roots.push(r);
+            }
+            else
+            {
+                roots.push(r.pow(1/2));
+                roots.push(r.pow(1/2).neg());
+            }
+            return roots;
+        }, []);
+/*
+https://www.wolframalpha.com/input?i=ax%5E4+%2B+bx%5E3+%2Bcx%5E2+%2Bdx%2Be+%3D0
+
+a!=0, x = -1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) - 1/2 sqrt(b^2/(2 a^2) - (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
+
+a!=0, x = -1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) + 1/2 sqrt(b^2/(2 a^2) - (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
+
+a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) - 1/2 sqrt(b^2/(2 a^2) + (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
+
+a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) + 1/2 sqrt(b^2/(2 a^2) + (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
+*/
+    return []; // TODO
+}
+function poly_quintic_roots(p)
+{
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+    // return Expr(s)
+    // ax^5 + bx^4 + cx^3 + dx^2 + ex + f
+    var a = p.term(5, true, true).c,
+        b = p.term(4, true, true).c,
+        c = p.term(3, true, true).c,
+        d = p.term(2, true, true).c,
+        e = p.term(1, true, true).c,
+        f = p.term(0, true, true).c;
+    if (a.equ(0)) return poly_quartic_roots(p);
+    if (f.equ(0)) return poly_quartic_roots(poly.shift(-1)).reduce(function(roots, r) {
+            if (!r.equ(0)) roots.push(r);
+            return roots;
+        }, [Expr.Zero()]);
+    return []; // TODO, for solvable quintics
 }
 function polykthroot(p, k, limit)
 {
@@ -3441,7 +3826,7 @@ function polyxgcd(/* args */)
     if (/*is_class(R.NumberClass, Integer)*/!R.isField())
     {
         field = R.associatedField(); // Q[X]
-        asign = field.One(); bsign = asign;
+        asign = PolynomialClass.One(S, field); bsign = asign;
         if (1 == k)
         {
             // normalize it
@@ -3455,7 +3840,7 @@ function polyxgcd(/* args */)
             {
                 a = a.neg(); asign = asign.neg();
             }
-            return [a, PolynomialClass.Const(asign, S, field)];
+            return [a, asign];
         }
         else //if (2 <= k)
         {
@@ -3475,7 +3860,7 @@ function polyxgcd(/* args */)
         }
     }
 
-    asign = R.One(); bsign = asign;
+    asign = PolynomialClass.One(S, R); bsign = asign;
     if (1 === k)
     {
         // normalize it
@@ -3489,7 +3874,7 @@ function polyxgcd(/* args */)
         {
             a = a.neg(); asign = asign.neg();
         }
-        return [a, PolynomialClass.Const(asign, S, R)];
+        return [a, asign];
     }
     else //if (2 <= k)
     {
@@ -3520,7 +3905,7 @@ function polyxgcd(/* args */)
                 b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
             }
             return array(gcd.length+1,function(i) {
-                return 0 === i ? b : (1 === i ? PolynomialClass.Const(asign, S, R) : gcd[i-1].mul(bsign));
+                return 0 === i ? b : (1 === i ? asign : gcd[i-1].mul(bsign));
             });
         }
         else if (b.equ(O))
@@ -3537,7 +3922,7 @@ function polyxgcd(/* args */)
                 a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
             }
             return array(gcd.length+1,function(i) {
-                return 0 === i ? a : (1 === i ? PolynomialClass.Const(asign, S, R) : gcd[i-1].mul(bsign));
+                return 0 === i ? a : (1 === i ? asign : gcd[i-1].mul(bsign));
             });
         }
 
@@ -3552,6 +3937,9 @@ function polyxgcd(/* args */)
         for (;;)
         {
             a0 = a; b0 = b;
+            //console.log('a0', String(a0), 'b0', String(b0));
+            //console.log('a1', String(a1), 'b1', String(b1));
+            //console.log('a2', String(a2), 'b2', String(b2));
 
             if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true))
             {
@@ -3575,6 +3963,8 @@ function polyxgcd(/* args */)
                         a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                    //console.log('a < b, b = 0');
+                    //console.log('a', String(a), 'b', String(b), 'a1', String(a1), 'b1', String(b1));
                     return array(gcd.length+1, function(i) {
                         return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
                     });
@@ -3602,6 +3992,8 @@ function polyxgcd(/* args */)
                         b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a2 = a2.mul(asign); b2 = b2.mul(bsign);
+                    //console.log('a > b, a = 0');
+                    //console.log('a', String(a), 'b', String(b), 'a2', String(a2), 'b2', String(b2));
                     return array(gcd.length+1,function(i) {
                         return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
                     });
@@ -3625,6 +4017,8 @@ function polyxgcd(/* args */)
                         a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a1 = a1.mul(asign); b1 = b1.mul(bsign);
+                    //console.log('a < b, a = a0, b = b0');
+                    //console.log('a', String(a), 'b', String(b), 'a1', String(a1), 'b1', String(b1));
                     return array(gcd.length+1, function(i) {
                         return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
                     });
@@ -3643,6 +4037,8 @@ function polyxgcd(/* args */)
                         b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a2 = a2.mul(asign); b2 = b2.mul(bsign);
+                    //console.log('a > b, a = a0, b = b0');
+                    //console.log('a', String(a), 'b', String(b), 'a2', String(a2), 'b2', String(b2));
                     return array(gcd.length+1,function(i) {
                         return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
                     });

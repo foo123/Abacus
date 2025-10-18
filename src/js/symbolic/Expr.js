@@ -145,6 +145,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: RIGHT
             ,priority     : 11
             ,fn           : function(args, mode) {
+                                if ('evaluate' === mode)
+                                {
+                                    return !args[1].isInt() && args[1].inv().isInt() ? (args[0].rad(args[1].inv())) : (args[0].pow(args[1]));
+                                }
                                 return args[0].pow(args[1]);
                             }
             },
@@ -2249,5 +2253,5 @@ Expr.cast = typecast([Expr], function(a) {
 
 function needs_parentheses(expr)
 {
-    return !(expr.isSimple() && (expr.c().isReal() || expr.c().isImag()/*complex numbers excluded*/) || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
+    return !((expr.isSimple() && ((expr.c().isReal() || expr.c().isImag()) && expr.c().isInt()))/*complex numbers excluded*/ || ('^' === expr.ast.op) || ('()' === expr.ast.op.slice(-2)));
 }
