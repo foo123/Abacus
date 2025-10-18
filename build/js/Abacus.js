@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-18 00:15:57)
+*   @version: 2.0.0 (2025-10-18 07:26:30)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-18 00:15:57)
+*   @version: 2.0.0 (2025-10-18 07:26:30)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -104,29 +104,27 @@ function ID(x)
 {
     return x;
 }
-function is_array(x)
-{
-    return (x instanceof Array) || ('[object Array]' === toString.call(x));
-}
-function is_args(x)
-{
-    return ('[object Arguments]' === toString.call(x)) && (null != x.length);
-}
-function is_obj(x)
-{
-    return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));
-}
-function is_string(x)
-{
-    return (x instanceof String) || ('[object String]' === toString.call(x));
-}
-function is_number(x)
-{
-    return "number" === typeof x;
-}
 function is_callable(x)
 {
     return "function" === typeof x;
+}
+function is_instance(x, C)
+{
+    // x is object of class C
+    if (is_array(C))
+    {
+        for (var i=0,n=C.length; i<n; ++i)
+        {
+            if (is_callable(C[i]) && (x instanceof C[i]))
+                return true;
+
+        }
+    }
+    else if (is_callable(C))
+    {
+        return (x instanceof C);
+    }
+    return false;
 }
 function is_class(C1, C2)
 {
@@ -149,23 +147,25 @@ function is_class(C1, C2)
     }
     return false;
 }
-function is_instance(x, C)
+function is_array(x)
 {
-    // x is object of class C
-    if (is_array(C))
-    {
-        for (var i=0,n=C.length; i<n; ++i)
-        {
-            if (is_callable(C[i]) && (x instanceof C[i]))
-                return true;
-
-        }
-    }
-    else if (is_callable(C))
-    {
-        return (x instanceof C);
-    }
-    return false;
+    return (x instanceof Array) || ('[object Array]' === toString.call(x));
+}
+function is_args(x)
+{
+    return ('[object Arguments]' === toString.call(x)) && (null != x.length);
+}
+function is_obj(x)
+{
+    return /*(x instanceof Object) ||*/ ('[object Object]' === toString.call(x));
+}
+function is_string(x)
+{
+    return (x instanceof String) || ('[object String]' === toString.call(x));
+}
+function is_number(x)
+{
+    return "number" === typeof x;
 }
 function to_fixed_binary_string_32(b)
 {
@@ -1277,6 +1277,456 @@ function pad(x, n, s)
     s = s || ' ';
     return l < n ? ((new Array(n-l+1)).join(s) + x) : x;
 }
+// combinatorial utilities, available as static methods of respective objects
+function kronecker(/* var args here */)
+{
+    var args = arguments, nv = args.length, k, a, r, l, i, j,
+        vv, tensor, tl, kl, product;
+
+    if (!nv) return [];
+
+    if (true === args[0])
+    {
+        // flat tensor product
+        for (kl=args[1].length,k=2; k<nv; ++k) kl *= args[k].length;
+        product = new Array(kl);
+        for (k=0; k<kl; ++k)
+        {
+            tensor = 0;
+            for (j=1,r=k,a=1; a<nv; ++a)
+            {
+                l = args[a].length;
+                i = r % l;
+                r = ~~(r / l);
+                vv = args[a][i];
+                tensor += j*vv;
+                j *= l;
+            }
+            product[k] = tensor;
+        }
+    }
+    else
+    {
+        // component tensor product
+        for (kl=args[0].length,k=1; k<nv; ++k) kl *= args[k].length;
+        product = new Array(kl);
+        for (k=0; k<kl; ++k)
+        {
+            tensor = new Array(nv); tl = 0;
+            for (r=k,a=nv-1; a>=0; --a)
+            {
+                l = args[a].length;
+                i = r % l;
+                r = ~~(r / l);
+                vv = args[a][i];
+                if (is_array(vv) || is_args(vv))
+                {
+                    // kronecker can be re-used to create higher-order products
+                    // i.e kronecker(alpha, beta, gamma) and kronecker(kronecker(alpha, beta), gamma)
+                    // should produce exactly same results
+                    for (j=vv.length-1; j>=0; --j) tensor[nv-(++tl)] = vv[j];
+                }
+                else
+                {
+                    tensor[nv-(++tl)] = vv;
+                }
+            }
+            product[k] = tensor;
+        }
+    }
+    return product;
+}
+function cartesian(/* var args here */)
+{
+    // direct sum product, since the final dimensions = sum of component dimensions it is like cartesian product
+    // whereas tensor product has final dimensions = product of component dimensions
+    var v = arguments, nv = v.length, n=0, k, j;
+    for (j=0; j<nv; ++j) n += v[j].length;
+    k = 0; j = 0;
+    return array(n, function(i) {
+        if (i >= k+v[j].length) k += v[j++].length;
+        return k + v[j][i-k];
+    });
+}
+function summation(a, b, Arithmetic, do_subtraction)
+{
+    // O(max(n1,n2))
+    var i, j, n1 = a.length, n2 = b.length, c;
+    if (true === Arithmetic)
+    {
+        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
+            return i >= n1 ? b[i].neg() : (i >= n2 ? a[i] : a[i].sub(b[i]));
+        } : function(i) {
+            return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i].add(b[i]));
+        });
+    }
+    else if (Arithmetic)
+    {
+        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
+            return i >= n1 ? Arithmetic.neg(b[i]) : (i >= n2 ? a[i] : Arithmetic.sub(a[i], b[i]));
+        } : function(i) {
+            return i >= n1 ? b[i] : (i >= n2 ? a[i] : Arithmetic.add(a[i], b[i]));
+        });
+    }
+    else
+    {
+        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
+            return i >= n1 ? -b[i] : (i >= n2 ? a[i] : a[i] - b[i]);
+        } : function(i) {
+            return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i] + b[i]);
+        });
+    }
+    return c;
+}
+function convolution(a, b, Arithmetic)
+{
+    // O(n1*n2), can be done a bit faster
+    // 1. by using FFT multiplication, not implemented here
+    // 2. by Divide&Conquer and using eg. Strassen multiplication, not implemented here
+    var i, j, n1 = a.length, n2 = b.length, c;
+    if (true === Arithmetic)
+    {
+        c = array(n1+n2-1, function() {return 0;});
+        for (i=0; i<n1; ++i)
+            for (j=0; j<n2; ++j)
+                c[i+j] = 0 === c[i+j] ? a[i].mul(b[j]) : c[i+j].add(a[i].mul(b[j]));
+    }
+    else if (Arithmetic)
+    {
+        c = array(n1+n2-1, function() {return Arithmetic.O;});
+        for (i=0; i<n1; ++i)
+            for (j=0; j<n2; ++j)
+                c[i+j] = Arithmetic.add(c[i+j], Arithmetic.mul(a[i], b[j]));
+    }
+    else
+    {
+        c = array(n1+n2-1, function() {return 0;});
+        for (i=0; i<n1; ++i)
+            for (j=0; j<n2; ++j)
+                c[i+j] += a[i] * b[j];
+    }
+    return c;
+}
+function complement(n, item, sort/*, dupl*/)
+{
+    if ((null == item) || (!item.length) || (1 >= item.length))
+        return 1 === item.length ? array(n-1, function(i) {return i < item[0] ? i : i+1;}) : array(n, 0, 1);
+    if (true === sort)
+    {
+        var d = is_sorted(item);
+        if (-1 === d) item = reflection(new Array(item.length), item);
+        else if (0 === d) item = mergesort(item.slice(), 1, true);
+    }
+    return difference(null, n, item/*, 1, null, null, null, null, dupl*/);
+}
+function permute(a, p, copy)
+{
+    var n = a.length, m = p.length;
+    if (true === copy)
+    {
+        // O(n) time, O(n) space
+        return operate((
+            n < m
+            ? function(ap, i) {ap[i] = p[i] < n ? a[p[i]] : a[i]; return ap;}
+            : (n > m
+            ? function(ap, i) {ap[i] = i < m ? a[p[i]] : a[i]; return ap;}
+            : function(ap, i) {ap[i] = a[p[i]]; return ap;}
+       )), new Array(n), null, 0, n-1, 1);
+    }
+    else
+    {
+        // O(n) time, O(n) space
+        for (var aa=a.slice(),i=0; i<n; ++i) a[i] = aa[p[i]];
+        return a;
+    }
+}
+function find(a, b, nested)
+{
+    if (nested)
+    {
+        if (!a || !a.length) return -1;
+        var index, found, i, j, k, n = a.length, m = b.length;
+        for (i=0; i<n; ++i)
+        {
+            k = a[i];
+            found = true;
+            for (j=0; j<m; ++j)
+            {
+                if (b[j] !== k[j])
+                {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) return i;
+        }
+        return -1;
+    }
+    else
+    {
+        return a && a.length ? a.indexOf(b) : -1;
+    }
+}
+function remove_duplicates(a, KEY)
+{
+    KEY = is_callable(KEY) ? KEY : String;
+    var hash = Obj(), dupl = [], k, i, l;
+    for (i=0,l=a.length; i<l; ++i)
+    {
+        k = KEY(a[i]);
+        if (HAS.call(hash, k)) dupl.push(i);
+        else hash[k] = i;
+    }
+    while (dupl.length) a.splice(dupl.pop(), 1);
+    return a;
+}
+function trailing_zeroes(n, bits, with_remaining)
+{
+    var Arithmetic = Abacus.Arithmetic, z = 0, i;
+    bits = bits || Arithmetic.digits(n, 2);
+    i = bits.length-1;
+    while (0 <= i && '0' === bits.charAt(i)) {--i; ++z;}
+    return with_remaining ? [z, 0 > i ? '0' : bits.slice(0, i+1)] : z;
+}
+var dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/;
+function dec2frac(dec, simplify)
+{
+    // compute fraction (num/denom) for given decimal number (can include repeating decimals through special notation)
+    // eg -123.23[456] , last 456 digits are repeating infinitely
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
+        i, n, d, m, g, k, e, ten, fraction, N = Arithmetic.num,
+        is_neg = false, is_zero, non_repeating = null, repeating = null;
+
+    dec = trim(String(dec)); // convert to string if not already
+    m = dec.match(dec_pattern);
+    if (!m) return null; // not valid decimal
+
+    if (m[1]) is_neg = true; // negative number, keep track
+
+    i = N(m[2]); // integer part
+
+    fraction = [O, I];
+    ten = N(10);
+
+    if (!m[3] || (!m[4] && !m[5]))
+    {
+        fraction[0] = is_neg ? Arithmetic.neg(i) : i;
+        if (m[6])
+        {
+            e = N(m[6].slice(1));
+            if (Arithmetic.lt(e, O)) fraction[1] = Arithmetic.pow(ten, Arithmetic.neg(e));
+            else fraction[0] = Arithmetic.mul(fraction[0], Arithmetic.pow(ten, e));
+        }
+        return fraction; // just integer, no decimal part
+    }
+
+    if (m[4])
+    {
+        non_repeating = m[4];
+    }
+    if (m[5])
+    {
+        repeating = m[5].slice(1,-1); // remove surrounding brackets
+        is_zero = true;
+        for (k=repeating.length-1; k>=0; --k)
+        {
+            if (repeating.charAt(k) !== '0')
+            {
+                is_zero = false;
+                break;
+            }
+        }
+        if (is_zero) repeating = null; // repeating zeroes are trivial
+    }
+
+    if (!repeating)
+    {
+        // no repeating decimals
+        // remove unnecessary trailing zeroes
+        while (non_repeating && (non_repeating.slice(-1) === '0')) non_repeating = non_repeating.slice(0, -1);
+        if (!non_repeating || !non_repeating.length)
+        {
+            d = I;
+            n = i; // only integer part
+        }
+        else
+        {
+            d = Arithmetic.pow(ten, non_repeating.length);
+            n = Arithmetic.add(Arithmetic.mul(d, i), N(non_repeating));
+        }
+        if (m[6])
+        {
+            e = N(m[6].slice(1));
+            if (Arithmetic.lt(e, O)) d = Arithmetic.mul(d, Arithmetic.pow(ten, Arithmetic.neg(e)));
+            else n = Arithmetic.mul(n, Arithmetic.pow(ten, e));
+        }
+    }
+    else
+    {
+        // with repeating decimals
+        if (non_repeating)
+        {
+            // remove common repeating digits from non_repeating digits, in case they are included
+            while ((non_repeating.length >= repeating.length) && (non_repeating.slice(-repeating.length) === repeating))
+                non_repeating = non_repeating.slice(0, -repeating.length);
+            if (!non_repeating.length) non_repeating = null;
+        }
+        d = Arithmetic.sub(Arithmetic.pow(ten, (non_repeating ? non_repeating.length : 0)+repeating.length), non_repeating ? Arithmetic.pow(ten, non_repeating.length) : I);
+        n = Arithmetic.add(Arithmetic.mul(d, i), Arithmetic.sub(N((non_repeating ? non_repeating : '')+repeating), non_repeating ? N(non_repeating) : O));
+    }
+
+    if (false !== simplify)
+    {
+        // remove common factors, simplify
+        g = gcd(n, d);
+        n = Arithmetic.div(n, g);
+        d = Arithmetic.div(d, g);
+    }
+    fraction[0] = is_neg ? Arithmetic.neg(n) : n;
+    fraction[1] = d;
+    return fraction;
+}
+function default_eq(a, b)
+{
+    // default equality between a and b
+    return a === b;
+}
+function floyd_cycle_detection(f, x0, eq)
+{
+    // https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare
+    // floyd tortoise-hare algorithm for cycle detection
+    var tortoise, hare, mu, lam;
+    eq = eq || default_eq;
+    tortoise = f(x0); hare = f(tortoise);
+    while (!eq(tortoise, hare))
+    {
+        tortoise = f(tortoise);
+        hare = f(f(hare));
+    }
+    mu = 0;
+    tortoise = x0;
+    while (!eq(tortoise, hare))
+    {
+        tortoise = f(tortoise);
+        hare = f(hare);
+        ++mu;
+    }
+    lam = 1;
+    hare = f(tortoise);
+    while (!eq(tortoise, hare))
+    {
+        hare = f(hare);
+        ++lam;
+    }
+    return [lam/*period*/, mu/*first_repeat*/];
+}
+function frac2dec(n, d)
+{
+    // fraction to decimal, with optional repeating digits
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
+        q, r, t, decimal, period, i, c, ten,
+        dot, whole, repeating, non_repeating, is_neg = false, is_zero;
+
+    if (Arithmetic.equ(O, d)) return null; // not valid fraction
+
+    is_neg = (Arithmetic.lt(O, n) && Arithmetic.gt(O, d)) || (Arithmetic.lt(O, d) && Arithmetic.gt(O, n)); // keep track if negative number
+
+    n = Arithmetic.abs(n); d = Arithmetic.abs(d);
+    q = Arithmetic.div(n, d); r = Arithmetic.mod(n, d);
+
+    whole = (is_neg ? '-' : '') + String(q); decimal = [];
+
+    ten = Arithmetic.num(10);
+    period = floyd_cycle_detection(
+        function(r) {
+            return Arithmetic.mod(Arithmetic.mul(ten, r), d);
+        },
+        r,
+        function(a, b) {
+            return Arithmetic.equ(a, b);
+        }
+   );
+
+    for (i=0,c=period[0]+period[1]; i<c; ++i)
+    {
+        // long division up to repeating digits
+        t = Arithmetic.mul(ten, r);
+        q = Arithmetic.div(t, d);
+        r = Arithmetic.mod(t, d);
+        decimal.push(String(q));
+    }
+
+    repeating = decimal.slice(period[1]).join('');
+    if (repeating.length)
+    {
+        is_zero = true;
+        for (i=repeating.length-1; i>=0; --i)
+        {
+            if ('0' !== repeating.charAt(i))
+            {
+                is_zero = false;
+                break;
+            }
+        }
+        if (is_zero) repeating = ''; // repeating zeroes are trivial
+        else repeating = '['+repeating+']';
+    }
+
+    non_repeating = decimal.slice(0, period[1]).join('');
+    if (non_repeating.length)
+    {
+        is_zero = true;
+        for (i=non_repeating.length-1; i>=0; --i)
+        {
+            if ('0' !== non_repeating.charAt(i))
+            {
+                is_zero = false;
+                break;
+            }
+        }
+        if (is_zero && !repeating.length) non_repeating = ''; // zeroes are trivial
+    }
+
+    dot = non_repeating.length || repeating.length ? '.' : '';
+    return whole + dot + non_repeating + repeating;
+}
+
+Abacus.Class = Class;
+
+// array/list utilities
+Abacus.Util = {
+     array: array
+    ,operate: operate
+    ,flatten: flatten
+    ,unique: unique
+    ,intersection: intersection
+    ,difference: difference
+    ,multi_difference: multi_difference
+    ,union: merge
+    ,bsearch: binarysearch
+    ,bisect: bisect
+    ,complementation: complementation
+    ,reflection: reflection
+    ,reversion: reversion
+    ,align: align_sequences
+    ,merge: merge_sequences
+    ,gray: gray
+    ,igray: igray
+    ,grayn: grayn
+    ,igrayn: igrayn
+    ,finitedifference: fdiff
+    ,partialsum: psum
+    ,convolution: convolution
+    ,summation: summation
+    ,wheel: wheel
+    ,sort: mergesort
+    ,shuffle: shuffle
+    ,pick: pick
+    ,pluck: pluck
+    ,is_mirror_image: is_mirror_image
+    ,cycle_detection: floyd_cycle_detection
+};
+// math utilities
 function addn(s, a)
 {
     return s + a;
@@ -1663,14 +2113,6 @@ function ilog(x, b)
         log = Arithmetic.add(log, I);
     }
     return log;
-}
-function trailing_zeroes(n, bits, with_remaining)
-{
-    var Arithmetic = Abacus.Arithmetic, z = 0, i;
-    bits = bits || Arithmetic.digits(n, 2);
-    i = bits.length-1;
-    while (0 <= i && '0' === bits.charAt(i)) {--i; ++z;}
-    return with_remaining ? [z, 0 > i ? '0' : bits.slice(0, i+1)] : z;
 }
 function small_primes()
 {
@@ -2516,208 +2958,6 @@ function factorize(n)
         factors = siqs_fac(n);
     }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
-}
-var dec_pattern = /^(-)?(\d+)(\.(\d+)?(\[\d+\])?)?(e-?\d+)?$/;
-function dec2frac(dec, simplify)
-{
-    // compute fraction (num/denom) for given decimal number (can include repeating decimals through special notation)
-    // eg -123.23[456] , last 456 digits are repeating infinitely
-    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
-        i, n, d, m, g, k, e, ten, fraction, N = Arithmetic.num,
-        is_neg = false, is_zero, non_repeating = null, repeating = null;
-
-    dec = trim(String(dec)); // convert to string if not already
-    m = dec.match(dec_pattern);
-    if (!m) return null; // not valid decimal
-
-    if (m[1]) is_neg = true; // negative number, keep track
-
-    i = N(m[2]); // integer part
-
-    fraction = [O, I];
-    ten = N(10);
-
-    if (!m[3] || (!m[4] && !m[5]))
-    {
-        fraction[0] = is_neg ? Arithmetic.neg(i) : i;
-        if (m[6])
-        {
-            e = N(m[6].slice(1));
-            if (Arithmetic.lt(e, O)) fraction[1] = Arithmetic.pow(ten, Arithmetic.neg(e));
-            else fraction[0] = Arithmetic.mul(fraction[0], Arithmetic.pow(ten, e));
-        }
-        return fraction; // just integer, no decimal part
-    }
-
-    if (m[4])
-    {
-        non_repeating = m[4];
-    }
-    if (m[5])
-    {
-        repeating = m[5].slice(1,-1); // remove surrounding brackets
-        is_zero = true;
-        for (k=repeating.length-1; k>=0; --k)
-        {
-            if (repeating.charAt(k) !== '0')
-            {
-                is_zero = false;
-                break;
-            }
-        }
-        if (is_zero) repeating = null; // repeating zeroes are trivial
-    }
-
-    if (!repeating)
-    {
-        // no repeating decimals
-        // remove unnecessary trailing zeroes
-        while (non_repeating && (non_repeating.slice(-1) === '0')) non_repeating = non_repeating.slice(0, -1);
-        if (!non_repeating || !non_repeating.length)
-        {
-            d = I;
-            n = i; // only integer part
-        }
-        else
-        {
-            d = Arithmetic.pow(ten, non_repeating.length);
-            n = Arithmetic.add(Arithmetic.mul(d, i), N(non_repeating));
-        }
-        if (m[6])
-        {
-            e = N(m[6].slice(1));
-            if (Arithmetic.lt(e, O)) d = Arithmetic.mul(d, Arithmetic.pow(ten, Arithmetic.neg(e)));
-            else n = Arithmetic.mul(n, Arithmetic.pow(ten, e));
-        }
-    }
-    else
-    {
-        // with repeating decimals
-        if (non_repeating)
-        {
-            // remove common repeating digits from non_repeating digits, in case they are included
-            while ((non_repeating.length >= repeating.length) && (non_repeating.slice(-repeating.length) === repeating))
-                non_repeating = non_repeating.slice(0, -repeating.length);
-            if (!non_repeating.length) non_repeating = null;
-        }
-        d = Arithmetic.sub(Arithmetic.pow(ten, (non_repeating ? non_repeating.length : 0)+repeating.length), non_repeating ? Arithmetic.pow(ten, non_repeating.length) : I);
-        n = Arithmetic.add(Arithmetic.mul(d, i), Arithmetic.sub(N((non_repeating ? non_repeating : '')+repeating), non_repeating ? N(non_repeating) : O));
-    }
-
-    if (false !== simplify)
-    {
-        // remove common factors, simplify
-        g = gcd(n, d);
-        n = Arithmetic.div(n, g);
-        d = Arithmetic.div(d, g);
-    }
-    fraction[0] = is_neg ? Arithmetic.neg(n) : n;
-    fraction[1] = d;
-    return fraction;
-}
-function default_eq(a, b)
-{
-    // default equality between a and b
-    return a === b;
-}
-function floyd_cycle_detection(f, x0, eq)
-{
-    // https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare
-    // floyd tortoise-hare algorithm for cycle detection
-    var tortoise, hare, mu, lam;
-    eq = eq || default_eq;
-    tortoise = f(x0); hare = f(tortoise);
-    while (!eq(tortoise, hare))
-    {
-        tortoise = f(tortoise);
-        hare = f(f(hare));
-    }
-    mu = 0;
-    tortoise = x0;
-    while (!eq(tortoise, hare))
-    {
-        tortoise = f(tortoise);
-        hare = f(hare);
-        ++mu;
-    }
-    lam = 1;
-    hare = f(tortoise);
-    while (!eq(tortoise, hare))
-    {
-        hare = f(hare);
-        ++lam;
-    }
-    return [lam/*period*/, mu/*first_repeat*/];
-}
-function frac2dec(n, d)
-{
-    // fraction to decimal, with optional repeating digits
-    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-        q, r, t, decimal, period, i, c, ten,
-        dot, whole, repeating, non_repeating, is_neg = false, is_zero;
-
-    if (Arithmetic.equ(O, d)) return null; // not valid fraction
-
-    is_neg = (Arithmetic.lt(O, n) && Arithmetic.gt(O, d)) || (Arithmetic.lt(O, d) && Arithmetic.gt(O, n)); // keep track if negative number
-
-    n = Arithmetic.abs(n); d = Arithmetic.abs(d);
-    q = Arithmetic.div(n, d); r = Arithmetic.mod(n, d);
-
-    whole = (is_neg ? '-' : '') + String(q); decimal = [];
-
-    ten = Arithmetic.num(10);
-    period = floyd_cycle_detection(
-        function(r) {
-            return Arithmetic.mod(Arithmetic.mul(ten, r), d);
-        },
-        r,
-        function(a, b) {
-            return Arithmetic.equ(a, b);
-        }
-   );
-
-    for (i=0,c=period[0]+period[1]; i<c; ++i)
-    {
-        // long division up to repeating digits
-        t = Arithmetic.mul(ten, r);
-        q = Arithmetic.div(t, d);
-        r = Arithmetic.mod(t, d);
-        decimal.push(String(q));
-    }
-
-    repeating = decimal.slice(period[1]).join('');
-    if (repeating.length)
-    {
-        is_zero = true;
-        for (i=repeating.length-1; i>=0; --i)
-        {
-            if ('0' !== repeating.charAt(i))
-            {
-                is_zero = false;
-                break;
-            }
-        }
-        if (is_zero) repeating = ''; // repeating zeroes are trivial
-        else repeating = '['+repeating+']';
-    }
-
-    non_repeating = decimal.slice(0, period[1]).join('');
-    if (non_repeating.length)
-    {
-        is_zero = true;
-        for (i=non_repeating.length-1; i>=0; --i)
-        {
-            if ('0' !== non_repeating.charAt(i))
-            {
-                is_zero = false;
-                break;
-            }
-        }
-        if (is_zero && !repeating.length) non_repeating = ''; // zeroes are trivial
-    }
-
-    dot = non_repeating.length || repeating.length ? '.' : '';
-    return whole + dot + non_repeating + repeating;
 }
 function gcd(/* args */)
 {
@@ -3856,7 +4096,7 @@ function solvepolys(p, x, type)
         for (i=0,n=zeros.length; i<n; ++i)
         {
             z = Expr('', zeros[i]);
-            pnew = basis.reduce(function(pnew, b) {
+            pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
                     var eq = b.toExpr().substitute(z, x[xi]).expand();
@@ -4532,209 +4772,7 @@ function sum_nk(n, k)
     return sum;
 }
 sum_nk.mem = Obj();
-// combinatorial utilities, available as static methods of respective objects
-function kronecker(/* var args here */)
-{
-    var args = arguments, nv = args.length, k, a, r, l, i, j,
-        vv, tensor, tl, kl, product;
 
-    if (!nv) return [];
-
-    if (true === args[0])
-    {
-        // flat tensor product
-        for (kl=args[1].length,k=2; k<nv; ++k) kl *= args[k].length;
-        product = new Array(kl);
-        for (k=0; k<kl; ++k)
-        {
-            tensor = 0;
-            for (j=1,r=k,a=1; a<nv; ++a)
-            {
-                l = args[a].length;
-                i = r % l;
-                r = ~~(r / l);
-                vv = args[a][i];
-                tensor += j*vv;
-                j *= l;
-            }
-            product[k] = tensor;
-        }
-    }
-    else
-    {
-        // component tensor product
-        for (kl=args[0].length,k=1; k<nv; ++k) kl *= args[k].length;
-        product = new Array(kl);
-        for (k=0; k<kl; ++k)
-        {
-            tensor = new Array(nv); tl = 0;
-            for (r=k,a=nv-1; a>=0; --a)
-            {
-                l = args[a].length;
-                i = r % l;
-                r = ~~(r / l);
-                vv = args[a][i];
-                if (is_array(vv) || is_args(vv))
-                {
-                    // kronecker can be re-used to create higher-order products
-                    // i.e kronecker(alpha, beta, gamma) and kronecker(kronecker(alpha, beta), gamma)
-                    // should produce exactly same results
-                    for (j=vv.length-1; j>=0; --j) tensor[nv-(++tl)] = vv[j];
-                }
-                else
-                {
-                    tensor[nv-(++tl)] = vv;
-                }
-            }
-            product[k] = tensor;
-        }
-    }
-    return product;
-}
-function cartesian(/* var args here */)
-{
-    // direct sum product, since the final dimensions = sum of component dimensions it is like cartesian product
-    // whereas tensor product has final dimensions = product of component dimensions
-    var v = arguments, nv = v.length, n=0, k, j;
-    for (j=0; j<nv; ++j) n += v[j].length;
-    k = 0; j = 0;
-    return array(n, function(i) {
-        if (i >= k+v[j].length) k += v[j++].length;
-        return k + v[j][i-k];
-    });
-}
-function summation(a, b, Arithmetic, do_subtraction)
-{
-    // O(max(n1,n2))
-    var i, j, n1 = a.length, n2 = b.length, c;
-    if (true === Arithmetic)
-    {
-        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
-            return i >= n1 ? b[i].neg() : (i >= n2 ? a[i] : a[i].sub(b[i]));
-        } : function(i) {
-            return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i].add(b[i]));
-        });
-    }
-    else if (Arithmetic)
-    {
-        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
-            return i >= n1 ? Arithmetic.neg(b[i]) : (i >= n2 ? a[i] : Arithmetic.sub(a[i], b[i]));
-        } : function(i) {
-            return i >= n1 ? b[i] : (i >= n2 ? a[i] : Arithmetic.add(a[i], b[i]));
-        });
-    }
-    else
-    {
-        c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
-            return i >= n1 ? -b[i] : (i >= n2 ? a[i] : a[i] - b[i]);
-        } : function(i) {
-            return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i] + b[i]);
-        });
-    }
-    return c;
-}
-function convolution(a, b, Arithmetic)
-{
-    // O(n1*n2), can be done a bit faster
-    // 1. by using FFT multiplication, not implemented here
-    // 2. by Divide&Conquer and using eg. Strassen multiplication, not implemented here
-    var i, j, n1 = a.length, n2 = b.length, c;
-    if (true === Arithmetic)
-    {
-        c = array(n1+n2-1, function() {return 0;});
-        for (i=0; i<n1; ++i)
-            for (j=0; j<n2; ++j)
-                c[i+j] = 0 === c[i+j] ? a[i].mul(b[j]) : c[i+j].add(a[i].mul(b[j]));
-    }
-    else if (Arithmetic)
-    {
-        c = array(n1+n2-1, function() {return Arithmetic.O;});
-        for (i=0; i<n1; ++i)
-            for (j=0; j<n2; ++j)
-                c[i+j] = Arithmetic.add(c[i+j], Arithmetic.mul(a[i], b[j]));
-    }
-    else
-    {
-        c = array(n1+n2-1, function() {return 0;});
-        for (i=0; i<n1; ++i)
-            for (j=0; j<n2; ++j)
-                c[i+j] += a[i] * b[j];
-    }
-    return c;
-}
-function complement(n, item, sort/*, dupl*/)
-{
-    if ((null == item) || (!item.length) || (1 >= item.length))
-        return 1 === item.length ? array(n-1, function(i) {return i < item[0] ? i : i+1;}) : array(n, 0, 1);
-    if (true === sort)
-    {
-        var d = is_sorted(item);
-        if (-1 === d) item = reflection(new Array(item.length), item);
-        else if (0 === d) item = mergesort(item.slice(), 1, true);
-    }
-    return difference(null, n, item/*, 1, null, null, null, null, dupl*/);
-}
-function permute(a, p, copy)
-{
-    var n = a.length, m = p.length;
-    if (true === copy)
-    {
-        // O(n) time, O(n) space
-        return operate((
-            n < m
-            ? function(ap, i) {ap[i] = p[i] < n ? a[p[i]] : a[i]; return ap;}
-            : (n > m
-            ? function(ap, i) {ap[i] = i < m ? a[p[i]] : a[i]; return ap;}
-            : function(ap, i) {ap[i] = a[p[i]]; return ap;}
-       )), new Array(n), null, 0, n-1, 1);
-    }
-    else
-    {
-        // O(n) time, O(n) space
-        for (var aa=a.slice(),i=0; i<n; ++i) a[i] = aa[p[i]];
-        return a;
-    }
-}
-function find(a, b, nested)
-{
-    if (nested)
-    {
-        if (!a || !a.length) return -1;
-        var index, found, i, j, k, n = a.length, m = b.length;
-        for (i=0; i<n; ++i)
-        {
-            k = a[i];
-            found = true;
-            for (j=0; j<m; ++j)
-            {
-                if (b[j] !== k[j])
-                {
-                    found = false;
-                    break;
-                }
-            }
-            if (found) return i;
-        }
-        return -1;
-    }
-    else
-    {
-        return a && a.length ? a.indexOf(b) : -1;
-    }
-}
-function remove_duplicates(a, KEY)
-{
-    KEY = is_callable(KEY) ? KEY : String;
-    var hash = Obj(), dupl = [], k, i, l;
-    for (i=0,l=a.length; i<l; ++i)
-    {
-        k = KEY(a[i]);
-        if (HAS.call(hash, k)) dupl.push(i);
-        else hash[k] = i;
-    }
-    while (dupl.length) a.splice(dupl.pop(), 1);
-    return a;
-}
 function rndInt(m, M)
 {
     return stdMath.round((M-m) * Abacus.Math.rnd() + m);
@@ -4744,7 +4782,6 @@ function is_approximately_equal(a, b, eps)
     if (null == eps) eps = Number.EPSILON;
     return stdMath.abs(a - b) < eps;
 }
-Abacus.Class = Class;
 
 // options
 Abacus.Options = {
@@ -5113,40 +5150,6 @@ Abacus.Math = {
     ,orthogonalize: function(v) {
         return (is_array(v) || is_args(v)) && v.length ? gramschmidt(v) : [];
     }
-};
-
-// array/list utilities
-Abacus.Util = {
-     array: array
-    ,operate: operate
-    ,flatten: flatten
-    ,unique: unique
-    ,intersection: intersection
-    ,difference: difference
-    ,multi_difference: multi_difference
-    ,union: merge
-    ,bsearch: binarysearch
-    ,bisect: bisect
-    ,complementation: complementation
-    ,reflection: reflection
-    ,reversion: reversion
-    ,align: align_sequences
-    ,merge: merge_sequences
-    ,gray: gray
-    ,igray: igray
-    ,grayn: grayn
-    ,igrayn: igrayn
-    ,finitedifference: fdiff
-    ,partialsum: psum
-    ,convolution: convolution
-    ,summation: summation
-    ,wheel: wheel
-    ,sort: mergesort
-    ,shuffle: shuffle
-    ,pick: pick
-    ,pluck: pluck
-    ,is_mirror_image: is_mirror_image
-    ,cycle_detection: floyd_cycle_detection
 };
 // Abacus.Node, Node class which can represent (dynamic) Linked Lists, Binary Trees and similar structures
 Node = Abacus.Node = function Node(value, left, right, top) {

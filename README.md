@@ -158,7 +158,7 @@ See the comments in the code for algorithms and references used.
 * [Newton's method, wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method)
 * [Roots of multivariate polynomials, Chapter 11](https://www.math.usm.edu/perry/old_classes/mat681sp14/gbasis_notes.pdf)
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
-* [$olving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
+* [Solving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
 * [Use Gröbner Bases To Solve Polynomial Equations, Jingnan Shi](https://jingnanshi.com/blog/groebner_basis.html)
 
 ### Example API
