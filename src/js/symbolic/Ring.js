@@ -173,6 +173,34 @@ Ring = Abacus.Ring = Class({
         )) return true;
         return false;
     }
+    ,contains: function(object) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(object, RationalFunc))
+        {
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, RationalFunc) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+        }
+        if (is_instance(object, MultiPolynomial))
+        {
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, MultiPolynomial) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+        }
+        if (is_instance(object, Polynomial))
+        {
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, Poly) && ((object.symbol === self.PolynomialSymbol) || (-1 < self.PolynomialSymbol.indexOf(object.symbol))) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+        }
+        if (is_class(self.NumberClass, Complex))
+        {
+            return is_instance(object, Numeric) || Arithmetic.isNumber(object);
+        }
+        if (is_class(self.NumberClass, Rational))
+        {
+            return is_instance(object, [Integer, IntegerMod, Rational]) || Arithmetic.isNumber(object);
+        }
+        if (is_class(self.NumberClass, [Integer, IntegerMod]))
+        {
+            return is_instance(object, [Integer, IntegerMod]) || Arithmetic.isNumber(object);
+        }
+        return false;
+    }
 
     ,Zero: function() {
         var self = this;

@@ -1371,7 +1371,7 @@ function divisors(n, as_generator)
     n = Arithmetic.abs(n);
     if (true === as_generator)
     {
-        if (Arithmetic.gte(n, 10000))
+        if (Arithmetic.gte(n, 1000))
         {
             // for very large numbers,
             // compute divisors through prime factorisation
