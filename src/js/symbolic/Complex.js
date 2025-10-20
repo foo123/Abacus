@@ -630,18 +630,18 @@ Complex = Abacus.Complex = Class(Numeric, {
     ,valueOf: function() {
         return this.re.valueOf();
     }
-    ,toExpr: function() {
+    ,toExpr: function(flat) {
         var self = this;
-        return Expr('+', [self.re.toExpr(), Expr('*', [self.im.toExpr(), Expr('', Complex.Symbol)])]);
+        return true === flat ? Expr('+', [self.re.toExpr(), Expr('*', [self.im.toExpr(), Expr('', Complex.Symbol)])]) : Expr('', self);
     }
     ,toString: function(parenthesized) {
         var self = this;
-        if (null == self._str) self._str = self.toExpr().toString();
+        if (null == self._str) self._str = self.toExpr(true).toString();
         return self._str;
     }
     ,toTex: function() {
         var self = this;
-        if (null == self._tex) self._tex = self.toExpr().toTex();
+        if (null == self._tex) self._tex = self.toExpr(true).toTex();
         return self._tex;
     }
     ,toDec: function(precision) {
@@ -1200,18 +1200,18 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,valueOf: function() {
         return this.re;
     }
-    ,toExpr: function() {
+    ,toExpr: function(flat) {
         var self = this;
-        return Expr('+', [Expr('', self.re), Expr('*', [Expr('', self.im), Expr('', Complex.Symbol)])]);
+        return true === flat ? Expr('+', [Expr('', self.re), Expr('*', [Expr('', self.im), Expr('', Complex.Symbol)])]) : Expr('', self);
     }
     ,toString: function() {
         var self = this;
-        if (null == self._str) self._str = self.toExpr().toString();
+        if (null == self._str) self._str = self.toExpr(true).toString();
         return self._str;
     }
     ,toTex: function() {
         var self = this;
-        if (null == self._tex) self._tex = self.toExpr().toTex();
+        if (null == self._tex) self._tex = self.toExpr(true).toTex();
         return self._tex;
     }
     ,toDec: function(precision) {

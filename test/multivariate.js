@@ -52,19 +52,24 @@ function check_resultant(p, q, x, res)
     echo('resultant("' + p.toString() + '", "' + q.toString() + '", "'+x+'")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"') : ''));
 }
 
-let o, ring = Abacus.Ring.Q("x", "y"), rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.Q()), "y"), "x");
+let o, ring, rring, p1, p2, p3;
 
 
 echo('Abacus.MultiPolynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-/*
+
 ring = Abacus.Ring.Q("x", "y", "z");
 o = ring.fromString("x^2 + y^2 + z^2 + x*y + x*z + y*z + x + y + z + 1");
 echo('lex    :', o.order('lex').toString());
 echo('grlex  :', o.order('grlex').toString());
 echo('grevlex:', o.order('grevlex').toString());
-*/
+
+echo('---');
+
+
+ring = Abacus.Ring.Q("x", "y");
+rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.Q()), "y"), "x");
 
 echo('Multivariate Polynomials and Polynomial operations');
 echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
@@ -175,7 +180,7 @@ check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
 */
 
 echo('---');
-/*
+
 ring = Abacus.Ring.C("x", "y", "z"), rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.C()), "y", "z"), "x");
 echo('ring = '+ring.toString()+' ('+ring.toTex()+')'+' rring = '+rring.toString()+' ('+rring.toTex()+')');
 echo('---');
@@ -191,15 +196,15 @@ echo('ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"
 echo(ring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5}).toString());
 echo('rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5})');
 echo(rring.fromString("x^2*y+x^2*y^2+x+y*x+2+z*y*x+z*y").evaluate({"x":1,"y":2,"z":5}).toString());
-*/
-let p1 = ring.fromString("x^2*y + x^3");
+
+p1 = ring.fromString("x^2*y + x^3");
 echo("x^2*y + x^3", ',', p1.toString());
-let p2 = ring.fromString("(x + y)^2");
+p2 = ring.fromString("(x + y)^2");
 echo("(x + y)^2", ',', p2.toString());
-let p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
+p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
 echo("x^2 + x*y^2 + x*y + x + y^3 + y", ',', p3.toString());
 echo(ring.gcd(p1, p2, p3).toString(), ',', "x + y");
-check_xgcd(ring, [p3, p1, p2]);
+//check_xgcd(ring, [p3, p1, p2]);
 
 echo('---');
 

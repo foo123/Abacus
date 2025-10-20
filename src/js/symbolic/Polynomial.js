@@ -3386,6 +3386,7 @@ function symbolic_interpolate(v, x, ring, PolynomialClass)
 }
 function find_factor(p)
 {
+    // consuming and slow
     var m = p.mindeg(true), M = p.maxdeg(true), q;
     if (1 >= m) m = 2;
     while (m <= M)
@@ -3456,7 +3457,7 @@ function symbolic_divisors(c)
         if (1 !== c.terms.length)
         {
             // handle cases like x^2 + 2xy + y^2 -> (x+y)^2
-            var q = null;//find_factor(c); // very consuming and slow
+            var q = null;//find_factor(c); // consuming and slow
             return Iterator((function(p, f) {
                 var q = f[0], m = f[1], i, pow, q1, q2;
                 return function(curr, dir, state, init) {
@@ -3535,7 +3536,7 @@ function polyfactor(p)
     for (d=1,n=(p.deg()>>1); d<=n; ++d)
     {
         values = array(d+1, d>>1, -1);
-        if (r.PolynomialSymbol) values = values.concat(r.PolynomialSymbol);
+        //if (r.PolynomialSymbol) values = values.concat(r.PolynomialSymbol); // consuming and slow
         selection = Combination(values.length, d+1);
         while (selection.hasNext())
         {
@@ -3674,7 +3675,7 @@ function poly_quadratic_roots(poly)
     else
     {
         // two roots
-        discriminant = Expr('*', [discriminant.lt(0) ? Complex.Img().toExpr() : Expr.One(), Expr('^', [discriminant.abs().toExpr(), 1/2])]);
+        discriminant = discriminant.lt(0) ? Expr('*', [Complex.Img(), Expr('^', [discriminant.neg().toExpr(), 1/2])]) : Expr('^', [discriminant.toExpr(), 1/2]);
         a = a.mul(2).toExpr();
         b = b.toExpr();
         roots = [
@@ -3776,12 +3777,12 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
                 ]),
                 1/2
             ]);
-            if (Delta_1.add(D).expand().equ(0))
+            if (Delta_1.add(D).equ(0))
             {
                 D = D.neg();
             }
             C = Expr('^', [Expr('/', [Expr('+', [Delta_1, D]), 2]), Rational(1, 3)]);
-            isqrt3 = Expr('*', [Complex.Img().toExpr(), Expr('^', [3, 1/2])]);
+            isqrt3 = Expr('*', [Complex.Img(), Expr('^', [3, 1/2])]);
             roots = ([
                 // 3-roots of unity
                 Expr.One(),
@@ -4319,6 +4320,7 @@ Polynomial.gcd = polygcd;
 Polynomial.xgcd = polyxgcd;
 Polynomial.lcm = polylcm;
 MultiPolynomial.gcd = function(/*args*/) {
+    // very slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         symbol = null, order, gcd;
     gcd = polygcd([].map.call(args, function(p) {
@@ -4332,6 +4334,7 @@ MultiPolynomial.gcd = function(/*args*/) {
     return gcd.multivariate(symbol).order(order);
 };
 MultiPolynomial.xgcd = function(/*args*/) {
+    // very slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         symbol = null, order;
     return polyxgcd([].map.call(args, function(p) {
@@ -4354,6 +4357,7 @@ MultiPolynomial.xgcd = function(/*args*/) {
     });
 };
 MultiPolynomial.lcm = function(/*args*/) {
+    // very slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         symbol = null, order, lcm;
     lcm = polylcm([].map.call(args, function(p) {
@@ -4485,7 +4489,8 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     }
 
     ,__static__: {
-        autoSimplify: true
+        __MAXGCD__: 2 // gets quite slow if more variables
+        ,autoSimplify: true
 
         ,hasInverse: function() {
             return true;
@@ -4877,19 +4882,15 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
                     self.den = qr[0];
                     self.num = MultiPolynomial.One(self.num.symbol, self.num.ring);
                 }
-                else //if (is_callable(MultiPolynomial.gcd))
+                else
                 {
-                    // use multipolynomial gcd, if possible
-                    qr = MultiPolynomial.gcd(self.num, self.den);
-                    if (self.num.mod(qr).equ(Arithmetic.O) && self.den.mod(qr).equ(Arithmetic.O))
+                    if (self.num.symbol.length <= RationalFunc.__MAXGCD__) // dont get too slow
                     {
+                        // use multipolynomial gcd, if possible
+                        qr = MultiPolynomial.gcd(self.num, self.den);
                         self.num = self.num.div(qr);
                         self.den = self.den.div(qr);
                     }
-                    /*else
-                    {
-                        console.error('RationalFunc.simpl gcd("'+self.num.toString()+'","'+self.den.toString()+'") = '+qr.toString()+' does NOT divide num,den!');
-                    }*/
                 }
 
                 num = self.num.primitive(true);

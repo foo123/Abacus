@@ -7,6 +7,10 @@ const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js')
 use_biginteger_arithmetic(Abacus);
 
 
+function poly(expr, symbol)
+{
+    return Abacus.Expr(expr).toPoly(symbol);
+}
 function check_div(n, d)
 {
     let nn, qr, q, r;
@@ -14,13 +18,13 @@ function check_div(n, d)
     {
         qr = n.multidivmod(d); q = qr[0]; r = qr[1];
         nn = q.reduce(function(p, qi, i) {return p.add(qi.mul(d[i]));}, r);
-        echo('('+n.toString()+')/['+d.map(String).join(',')+']='+d.map(function(di, i) {return '('+di.toString()+')*('+q[i].toString()+')';}).join('+')+'+('+r.toString()+')='+nn.toString(), nn.equ(n));
+        echo('('+n.toString()+')/['+d.map(String).join(',')+']='+d.map(function(di, i) {return '('+di.toString()+')*('+q[i].toString()+')';}).join('+')+'+('+r.toString()+') = '+nn.toString(), nn.equ(n));
     }
     else
     {
         qr = n.divmod(d); q = qr[0]; r = qr[1];
         nn = q.mul(d).add(r);
-        echo('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+')='+nn.toString(), nn.equ(n));
+        echo('('+n.toString()+')/('+d.toString()+')=('+d.toString()+')*('+q.toString()+')+('+r.toString()+') = '+nn.toString(), nn.equ(n));
     }
 }
 function check_xgcd(ring, args)
@@ -36,45 +40,58 @@ function check_xgcd(ring, args)
     out += ' = '+res.toString()+' (gcd: '+gcd[0].toString()+')';
     echo(out, res.equ(gcd[0]));
 }
-function check_factors(p, factors, constant)
+function check_primitive(p)
 {
-    constant = constant || Abacus.Arithmetic.I;
-    let out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial([1], p.symbol);
+    const prim = p.primitive(true);
+    echo(p.toString()+' = ('+prim[1].toString()+')('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
+}
+function check_radical(p, k)
+{
+    const r = p.rad(k);
+    echo(p.toString()+' = ('+r.toString()+')^'+String(k)+'', p.equ(r.pow(k)));
+}
+function check_factors(p)
+{
+    const f = p.factors(), factors = f[0], constant = f[1];
+    let out = p.toString() + ' = (' + String(constant)+')', res = Abacus.Polynomial.One(p.symbol, p.ring);
     for (let i=0; i<factors.length; ++i)
     {
-        out += '('+factors[i][0].toString()+')'+(1<factors[i][1]?('^'+String(factors[i][1])):'');
+        out += '('+factors[i][0].toString()+')'+(1 < factors[i][1] ? ('^'+String(factors[i][1])) : '');
         res = res.mul(factors[i][0].pow(factors[i][1]));
     }
     echo(out, res.mul(constant).equ(p));
 }
-function check_primitive(p)
+function check_roots(p, exact)
 {
-    let prim = p.primitive(true);
-    echo(p.toString()+'=('+prim[1].toString()+')*('+prim[0].toString()+')', p.equ(prim[0].mul(prim[1])));
-}
-function check_radical(p, k)
-{
-    let r = p.rad(k);
-    echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
+    const roots = exact ? p.exactroots() : p.roots();
+    const pe = p.toExpr();
+    const satisfied = roots.length === roots.filter(function(r) {
+        return pe.substitute(r[0], p.symbol).expand().equ(0);
+    }).length;
+    echo((exact ? 'exactroots' : 'roots')+'('+p.toString()+') = '+roots.map(r => String(r[0])).join(', '), satisfied);
 }
 function check_resultant(p, q, res)
 {
-    let r = p.resultant(q);
-    echo('resultant("' + p.toString() + '", "' + q.toString() + '")=' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
+    const r = p.resultant(q);
+    echo('resultant(' + p.toString() + ', ' + q.toString() + ') = ' + '"' + r.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(r) ? ' true' : ' false')) : ''));
 }
 function check_discriminant(p, res)
 {
-    let d = p.discriminant();
-    echo('discriminant("' + p.toString() + '")=' + '"' + d.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(d) ? ' true' : ' false')) : ''));
+    if (res) res = Abacus.Expr(res);
+    const d = p.discriminant();
+    echo('discriminant(' + p.toString() + ') = ' + '"' + d.toString() + '"' + (res ? (' expected "' + res.toString() + '"' + (res.equ(d) ? ' true' : ' false')) : ''));
 }
-let o, d, ring = Abacus.Ring.Q("x");
+
+let o, d, p1, p2, p3, ring = Abacus.Ring.Q("x");
 
 echo('Abacus.Polynomials (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Polynomials and Polynomial operations');
+
 echo('ring = Abacus.Ring.'+ring.toString()+' ('+ring.toTex()+')');
 echo('---');
+
 echo('o=ring.create()');
 o=ring.create();
 echo('o.toString()');
@@ -88,22 +105,6 @@ echo(o.d().toString());
 echo('o.dispose()');
 o.dispose();
 echo('---');
-
-/*echo('ring.fromValues([[1,0],[1,1]])');
-echo(ring.fromValues([[1,0],[1,1]]));
-
-echo('ring.fromValues([[1,1],[2,1],[3,1]]).toString()');
-echo(ring.fromValues([[1,1],[2,1],[3,1]]).toString());
-
-echo('ring.fromValues([[1,1],[2,4],[3,9]]).toString()');
-echo(ring.fromValues([[1,1],[2,4],[3,9]]).toString());
-
-echo('ring.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString()');
-echo(ring.fromValues([[1,1],[2,4],[1,1],[3,9]]).toString());
-
-echo('ring.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString()');
-echo(ring.fromValues([[1,1],[2,8],[3,27],[4,64]]).toString());
-echo('---');*/
 
 echo('o=ring.create({"x^50":1,"x^2":2})');
 o=ring.create({"x^50":1,"x^2":2});
@@ -275,101 +276,94 @@ echo('o.dispose()');
 o.dispose();
 echo('---');
 
-echo('Polynomial Rational and Approximate Roots');
+echo('Polynomial Exact and Approximate Roots');
 echo('---');
 
-echo('ring.create([0]).roots()'); // no roots, here infinite roots actually, but for convience denote as no roots
-echo(ring.create([0]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([0])'); // no roots, here infinite roots actually, but for convience denote as no roots
+check_roots(ring.create([0]));
 
-echo('ring.create([1]).roots()'); // no roots
-echo(ring.create([1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([1])'); // no roots
+check_roots(ring.create([1]));
 
-echo('ring.create([0,1]).roots()'); // one trivial root
-echo(ring.create([0,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([0,1])'); // one trivial root
+check_roots(ring.create([0,1]));
 
-echo('ring.create([0,0,3]).roots()'); // two trivial roots
-echo(ring.create([0,0,3]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([0,0,3])'); // two trivial roots
+check_roots(ring.create([0,0,3]));
 
-echo('ring.create([1,1]).roots()'); // one root
-echo(ring.create([1,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([1,1])'); // one root
+check_roots(ring.create([1,1]));
 
-echo('ring.create([-1,1,0,2]).roots()'); // no rational roots
-echo(ring.create([-1,1,0,2]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo('ring.create([-1,1,0,2])'); // no rational roots
+check_roots(ring.create([-1,1,0,2]));
+
+echo('ring.create([6,-7,0,1])'); // 1,2,-3
+check_roots(ring.create([6,-7,0,1]));
+
+echo('ring.create([6,-7,0,1]).shift(2)'); // 0,0,1,2,-3
+check_roots(ring.create([6,-7,0,1]).shift(2));
+
+echo('ring.create([-2,5,-5,3])'); // one root
+check_roots(ring.create([-2,5,-5,3]));
+
+echo('ring.create([1,1]).pow(2)'); // multiple root
+check_roots(ring.create([1,1]).pow(2));
+
+echo('ring.create([1,1]).pow(2).mul(ring.create([0,0,1]))'); // multiple roots
+check_roots(ring.create([1,1]).pow(2).mul(ring.create([0,0,1])));
+
+check_roots(poly("(x-1)(x-2)(x-3)(x-4)(x-5)(x-6)", "x"));
+check_roots(poly("(x-a)(x-b)(x-c)", "x"));
+
+check_roots(poly("x^2-1", "x"), true);
+check_roots(poly("x^2+1", "x"), true);
+check_roots(poly("x^4+3x^2+1", "x"), true);
+
+check_roots(poly("ax+b", "x"), true);
+check_roots(poly("ax^2+bx+c", "x"), true);
+check_roots(poly("(x-a)(x-b)(x-c)", "x"), true);
+//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // slow and cannot simplify
+
 echo('ring.create([-1,1,0,2]).zeros()'); // complex roots
-echo(ring.create([-1,1,0,2]).zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
-
-echo('ring.create([6,-7,0,1]).roots()'); // 1,2,-3
-echo(ring.create([6,-7,0,1]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
+echo(ring.create([-1,1,0,2]).zeros().map(r => '('+r.toDec()+')').join(', '));
 echo('ring.create([6,-7,0,1]).zeros()'); // complex roots
-echo(ring.create([6,-7,0,1]).zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
-
+echo(ring.create([6,-7,0,1]).zeros().map(r => '('+r.toDec()+')').join(', '));
 echo('ring.fromString("x^2+1").zeros()'); // complex roots
-echo(ring.fromString("x^2+1").zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
+echo(ring.fromString("x^2+1").zeros().map(r => '('+r.toDec()+')').join(', '));
 echo('ring.fromString("(x-1)^2").zeros()'); // roots with multiplicity
-echo(ring.fromString("(x-1)^2").zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
+echo(ring.fromString("(x-1)^2").zeros().map(r => '('+r.toDec()+')').join(', '));
 echo('ring.fromString("(x-1)^3").zeros()'); // roots with multiplicity
-echo(ring.fromString("(x-1)^3").zeros().map(function(r){return '('+r.toDec()+')';}).join(', '));
+echo(ring.fromString("(x-1)^3").zeros().map(r => '('+r.toDec()+')').join(', '));
 
-echo('ring.create([6,-7,0,1]).shift(2).roots()'); // 0,0,1,2,-3
-echo(ring.create([6,-7,0,1]).shift(2).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
-
-echo('ring.create([-2,5,-5,3]).roots()'); // one root
-echo(ring.create([-2,5,-5,3]).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
-
-echo('ring.create([1,1]).pow(2).roots()'); // multiple root
-echo(ring.create([1,1]).pow(2).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
-
-echo('ring.create([1,1]).pow(2).mul(ring.create([0,0,1])).roots()'); // multiple roots
-echo(ring.create([1,1]).pow(2).mul(ring.create([0,0,1])).roots().map(function(r){return '('+r.toString()+')';}).join(', '));
 echo('---');
 
 echo('Polynomial Factorization');
 echo('---');
 
 echo('ring.create([1]).factors()');
-o=ring.create([1]);
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.create([1]));
 
 echo('ring.create([1,1]).pow(2).factors()');
-o=ring.create([1,1]).pow(2);
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.create([1,1]).pow(2));
 
 echo('ring.create([3,2]).pow(2).factors()');
-o=ring.create([3,2]).pow(2);
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.create([3,2]).pow(2));
 
 echo('ring.create([ring.CoefficientRing.fromString("3/2"),1]).pow(2).factors()');
-o=ring.create([ring.CoefficientRing.fromString("3/2"),1]).pow(2);
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.create([ring.CoefficientRing.fromString("3/2"),1]).pow(2));
 
 echo('ring.create([1,1]).mul(ring.create([0,0,1])).factors()');
-o=ring.create([1,1]).mul(ring.create([0,0,1]));
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.create([1,1]).mul(ring.create([0,0,1])));
 
 echo('ring.create([1,1]).mul(ring.create([1,1,1])).factors()');
-o=ring.create([1,1]).mul(ring.create([1,1,1]));
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.create([1,1]).mul(ring.create([1,1,1])));
 
 echo('ring.fromString("x^2+x+1").factors()');
-o=ring.fromString("x^2+x+1");
-d=o.factors();
-check_factors(o, d[0], d[1]);
+check_factors(ring.fromString("x^2+x+1"));
 
-//echo(Expr('x^5+x^4+x^2+x+2').toPoly('x').mod(Expr('2*x^2 + 2*x + 2').toPoly('x')).toString());
+//echo(poly('x^5+x^4+x^2+x+2', 'x').mod(poly('2*x^2 + 2*x + 2', 'x')).toString());
 echo('poly("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2").factors()');
-o = Abacus.Expr(/*'x^5+x^4+x^2+x+2'*/'(x+1)(x^2 + x + 1)(x^3 - x + 2)^2').toPoly("x");
-d = o.factors();
-/*let s = d[0].reduce(function(s, f) {
-    return s + '('+ f[0].toString() +')'+(1 < f[1] ? '^'+f[1] : '');
-}, d[1].equ(1) ? '' : d[1].toString());
-echo('(x+1)(x^2 + x + 1)(x^3 - x + 2)^2 = ' + s);*/
-check_factors(o, d[0], d[1]);
+check_factors(poly(/*'x^5+x^4+x^2+x+2'*/'(x+1)(x^2 + x + 1)(x^3 - x + 2)^2', "x"));
 echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');
@@ -517,4 +511,7 @@ check_primitive(o);
 echo('------');
 
 check_resultant(ring.fromString("(3/2+(1/2)*i)*x+1+(2/3)*i"), ring.fromString("(1/2)*i*x^2+(1+(2/3)*i)*x"));
-check_discriminant(Abacus.Expr("ax^2 + bx + c").toPoly("x"), Abacus.Expr("b^2 - 4a*c"));
+check_discriminant(poly("ax^2 + bx + c", "x"), "b^2 - 4a*c");
+p1 = poly("ax^2+bx+c", "x");
+p2 = poly("bx+c", "x");
+echo(String(p1)+','+String(p2)+' -> '+String(Abacus.Polynomial.gcd(p1, p2)));
