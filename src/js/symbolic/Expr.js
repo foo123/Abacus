@@ -653,24 +653,28 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,ast: null
     ,_str: null
     ,_tex: null
+    ,_xpnd: null
     ,_symb: null
     ,_op: null
-    ,_terms: null
+    ,_const: null
+    ,_smpl: null
     ,_c: null
     ,_f: null
-    ,_xpnd: null
+    ,_terms: null
 
     ,dispose: function() {
         var self = this;
         self.ast = null;
         self._str = null;
         self._tex = null;
+        self._xpnd = null;
         self._symb = null;
         self._op = null;
-        self._terms = null;
+        self._const = null;
+        self._smpl = null;
         self._c = null;
         self._f = null;
-        self._xpnd = null;
+        self._terms = null;
         return self;
     }
 
@@ -855,55 +859,75 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
 
     ,isSimple: function() {
-        var ast = this.ast, O, I, J, nontrivial;
-        if ('sym' === ast.type)
+        var self = this, ast = self.ast, O, I, J, nontrivial;
+        if (null == self._smpl)
         {
-            return true;
+            if ('sym' === ast.type)
+            {
+                self._smpl = true;
+            }
+            else if ('num' === ast.type)
+            {
+                self._smpl = true; //ast.arg.isReal() || ast.arg.isImag(); // complex numbers are not simple
+            }
+            else
+            {
+                O = Expr.Zero();
+                I = Expr.One();
+                J = Expr.MinusOne();
+                if (('+' === ast.op) || ('-' === ast.op))
+                {
+                    nontrivial = ast.arg.filter(function(subexpr) {return !subexpr.equ(O);});
+                    self._smpl = ((1 === nontrivial.length) && nontrivial[0].isSimple()) || !nontrivial.length;
+                }
+                else if ('*' === ast.op)
+                {
+                    nontrivial = ast.arg.filter(function(subexpr) {return !subexpr.equ(I) && !subexpr.equ(J);});
+                    self._smpl = ((1 === nontrivial.length) && nontrivial[0].isSimple()) || !nontrivial.length;
+                }
+                else if ('/' === ast.op)
+                {
+                    self._smpl = ast.arg[0].isSimple() && (ast.arg[1].equ(I) || ast.arg[1].equ(J));
+                }
+                else if ('^' === ast.op)
+                {
+                    self._smpl = ast.arg[0].isSimple() && ast.arg[1].equ(I);
+                }
+                else
+                {
+                    self._smpl = false;
+                }
+            }
         }
-        else if ('num' === ast.type)
-        {
-            return true; //ast.arg.isReal() || ast.arg.isImag(); // complex numbers are not simple
-        }
-        else
-        {
-            O = Expr.Zero();
-            I = Expr.One();
-            J = Expr.MinusOne();
-            if (('+' === ast.op) || ('-' === ast.op))
-            {
-                nontrivial = ast.arg.filter(function(subexpr) {return !subexpr.equ(O);});
-                return ((1 === nontrivial.length) && nontrivial[0].isSimple()) || !nontrivial.length;
-            }
-            else if ('*' === ast.op)
-            {
-                nontrivial = ast.arg.filter(function(subexpr) {return !subexpr.equ(I) && !subexpr.equ(J);});
-                return ((1 === nontrivial.length) && nontrivial[0].isSimple()) || !nontrivial.length;
-            }
-            else if ('/' === ast.op)
-            {
-                return ast.arg[0].isSimple() && (ast.arg[1].equ(I) || ast.arg[1].equ(J));
-            }
-            else if ('^' === ast.op)
-            {
-                return ast.arg[0].isSimple() && ast.arg[1].equ(I);
-            }
-            return false;
-        }
+        return self._smpl;
     }
     ,isSymbol: function() {
         return 'sym' === this.ast.type;
     }
     ,isConst: function() {
         var self = this;
-        if ('num' === self.ast.type) return true;
-        if (self.symbols().filter(function(s) {return '1' !== s;}).length) return false;
-        // non-exact pow should NOT be considered const
-        return 0 === self.operators('^').filter(function(expr) {
-            var b = expr.ast.arg[0].c(), e = expr.ast.arg[1].c();
-            if (e.isInt()) return false;
-            if (!e.isReal()) return true;
-            return !b.rad(e.den).pow(e.den).equ(b);
-        }).length;
+        if (null == self._const)
+        {
+            if ('num' === self.ast.type)
+            {
+                self._const = true;
+            }
+            else if (self.symbols().filter(function(s) {return '1' !== s;}).length)
+            {
+                self._const = false;
+            }
+            else
+            {
+                // non-exact pow should NOT be considered const
+                self._const = 0 === self.operators('^').filter(function(expr) {
+                    var b = expr.ast.arg[0].c(), e = expr.ast.arg[1].c();
+                    if (e.isInt()) return false;
+                    if (!e.isReal()) return true;
+                    return !b.rad(e.den).pow(e.den).equ(b);
+                }).length;
+            }
+        }
+        return self._const;
     }
     ,isInt: function() {
         var self = this;

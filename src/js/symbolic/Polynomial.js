@@ -1833,16 +1833,17 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         if (arguments.length && (true === x))
         {
             return operate(function(min, xi) {
-                return -1 === min ? self.mindeg(xi) : stdMath.min(min, self.mindeg(xi));
-            }, -1, symbol);
+                var deg = self.mindeg(xi);
+                return 0 < deg ? (0 === min ? deg : stdMath.min(min, deg)) : min;
+            }, 0, symbol);
         }
         index = arguments.length ? symbol.indexOf(String(x || symbol[0])) : 0;
         if ((-1 === index) || !terms.length) return 0;
         x = symbol[index];
         return operate(function(min, t) {
             var deg = t.e[index];
-            return -1 === min ? deg : stdMath.min(min, deg);
-        }, -1, terms);
+            return 0 < deg ? (0 === min ? deg : stdMath.min(min, deg)) : min;
+        }, 0, terms);
     }
     ,term: function(i, as_degree, term_only) {
         // term(s) matching i as index or as degree
@@ -3293,7 +3294,7 @@ function poly_interpolate(v, x, ring)
     if (is_args(v)) v = slice.call(v);
     if (!is_array(v[0])) v = [v];
     v = v.map(function(vi) {
-        return [ring.cast(vi[0]), (is_instance(vi[1], [Poly, RationalFunc]) ? vi[1] : ring.cast(vi[1]))];
+        return [ring.cast(vi[0]), ring.cast(vi[1])];
     });
     // check and filter out duplicate values
     hash = Obj(); dupl = [];
@@ -3334,7 +3335,7 @@ function poly_interpolate(v, x, ring)
         }, Polynomial.Const(d[j], x, ring), null, 0, n-1));
     }, Polynomial.Zero(x, ring), null, 0, n-1);
 }
-function spoly_interpolate(v, x, ring, PolynomialClass)
+function symbolic_interpolate(v, x, ring, PolynomialClass)
 {
     // https://en.wikipedia.org/wiki/Lagrange_polynomial
     // https://en.wikipedia.org/wiki/Newton_polynomial
@@ -3345,7 +3346,7 @@ function spoly_interpolate(v, x, ring, PolynomialClass)
     if (is_args(v)) v = slice.call(v);
     if (!is_array(v[0])) v = [v];
     v = v.map(function(vi) {
-        return [ring.cast(vi[0]), (is_instance(vi[1], [Poly, RationalFunc]) ? vi[1] : ring.cast(vi[1]))];
+        return [ring.cast(vi[0]), (is_instance(vi[1], Symbolic) ? vi[1] : ring.cast(vi[1]))];
     });
     // check and filter out duplicate values
     hash = Obj(); dupl = [];
@@ -3373,7 +3374,7 @@ function spoly_interpolate(v, x, ring, PolynomialClass)
     });
     // Set-up numerator factors
     f = array(n, function(i) {
-        return Expr('-', [Expr('', x), Expr('', v[i][0])]);
+        return Expr('-', [Expr('', x), v[i][0].toExpr()]);
     });
     // Produce each Lj in turn, and sum into p
     return operate(function(p, j) {
@@ -3382,6 +3383,18 @@ function spoly_interpolate(v, x, ring, PolynomialClass)
             return Lj;
         }, d[j], null, 0, n-1));
     }, Expr.Zero(), null, 0, n-1).toPoly(is_class(PolynomialClass, MultiPolynomial) ? [x] : x, ring);
+}
+function find_factor(p)
+{
+    var m = p.mindeg(true), M = p.maxdeg(true), q;
+    if (1 >= m) m = 2;
+    while (m <= M)
+    {
+        q = p.rad(m);
+        if (q.pow(m).equ(p)) return [q, m]; // q^m = p, m factors
+        ++m;
+    }
+    return null;
 }
 function symbolic_divisors(c)
 {
@@ -3440,8 +3453,40 @@ function symbolic_divisors(c)
     }
     else if (is_instance(c, MultiPolynomial))
     {
-        // c.content(); ??
-        if (1 !== c.terms.length) c = MultiPolynomial.One(c.symbol, c.ring);
+        if (1 !== c.terms.length)
+        {
+            // handle cases like x^2 + 2xy + y^2 -> (x+y)^2
+            var q = null;//find_factor(c); // very consuming and slow
+            return Iterator((function(p, f) {
+                var q = f[0], m = f[1], i, pow, q1, q2;
+                return function(curr, dir, state, init) {
+                    var t;
+                    if (init)
+                    {
+                        i = 1;
+                        pow = q;
+                        q1 = q;
+                        q2 = q1.equ(1) ? p : null;
+                    }
+                    if (q1)
+                    {
+                        t = q1;
+                        q1 = null;
+                        return t;
+                    }
+                    if (q2)
+                    {
+                        t = q2;
+                        q2 = null;
+                        return t;
+                    }
+                    ++i;
+                    if (i > m) return null;
+                    pow = pow._mul(q);
+                    return pow;
+                };
+            })(c, q ? q : [MultiPolynomial.One(c.symbol, c.ring), 1]));
+        }
         return Iterator((function(p, t, e) {
             var iter_c = symbolic_divisors(t.c),
                 iter_s = e.length ? Tensor(e.map(function(ei) {return ei+1;})) : null,
@@ -3486,67 +3531,80 @@ function polyfactor(p)
     var i, j, n, y, v, d, q,
         r = p.ring, x = p.symbol,
         Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O;
+        O = Arithmetic.O, values, selection;
     for (d=1,n=(p.deg()>>1); d<=n; ++d)
     {
-        y = array(d+1, d>>1, -1).map(function(xi) {
-            xi = r.cast(xi);
-            return [xi, p.evaluate(xi)];
-        });
-        for (i=d; i>=0; --i)
+        values = array(d+1, d>>1, -1);
+        if (r.PolynomialSymbol) values = values.concat(r.PolynomialSymbol);
+        selection = Combination(values.length, d+1);
+        while (selection.hasNext())
         {
-            if (y[i][1].equ(O))
+            y = selection.next().map(function(i) {
+                var xi = r.cast(values[i]);
+                return [xi, p.evaluate(xi)];
+            });
+            for (i=d; i>=0; --i)
             {
-                // found linear factor
-                var terms = {};
-                terms[x] = r.One();
-                terms['1'] = y[i][0].neg();
-                return Polynomial(terms, x, r);
-            }
-            else
-            {
-                y[i][1] = Iterator((function(yi) {
-                    var iter = symbolic_divisors(yi), s, d;
-                    return function(curr, dir, state, init) {
-                        if (init)
-                        {
-                            iter.rewind();
-                            s = 1;
-                            d = iter.next();
-                        }
-                        if (null == d) return null;
-                        var sd = -1 === s ? d.neg() : d;
-                        s = -s;
-                        if (1 === s) d = iter.next();
-                        return sd;
-                    };
-                })(y[i][1]));
-            }
-        }
-        v = new Array(y.length);
-        i = d;
-        for (;;)
-        {
-            while ((0 <= i) && !y[i][1].hasNext())
-            {
-                y[i][1].rewind();
-                v[i] = [y[i][0], y[i][1].next()];
-                --i;
-            }
-            if (0 > i) break;
-            v[i] = [y[i][0], y[i][1].next()];
-            if (null == v[0])
-            {
-                for (j=0; j<i; ++j)
+                if (y[i][1].equ(O))
                 {
-                    v[j] = [y[j][0], y[j][1].next()];
+                    // found linear factor
+                    var terms = {};
+                    terms[x] = r.One();
+                    terms['1'] = y[i][0].neg();
+                    return Polynomial(terms, x, r);
+                }
+                else
+                {
+                    y[i][1] = Iterator((function(yi) {
+                        var iter = symbolic_divisors(yi), s, d;
+                        return function(curr, dir, state, init) {
+                            if (init)
+                            {
+                                iter.rewind();
+                                s = 1;
+                                d = iter.next();
+                            }
+                            if (null == d) return null;
+                            var sd = -1 === s ? d.neg() : d;
+                            s = -s;
+                            if (1 === s) d = iter.next();
+                            return sd;
+                        };
+                    })(y[i][1]));
                 }
             }
-            q = poly_interpolate(v, x, r);
-            console.log(String(q));
-            // found factor
-            if ((0 < q.deg()) /*&& Arithmetic.equ(O, Arithmetic.mod(p.lc().real().num, q.lc().real().num)) && Arithmetic.equ(O, Arithmetic.mod(p.tc().real().num, q.tc().real().num))*/ && p.mod(q).equ(O)) return q;
+            v = new Array(y.length);
             i = d;
+            for (;;)
+            {
+                while ((0 <= i) && !y[i][1].hasNext())
+                {
+                    y[i][1].rewind();
+                    v[i] = [y[i][0], y[i][1].next()];
+                    --i;
+                }
+                if (0 > i) break;
+                v[i] = [y[i][0], y[i][1].next()];
+                if (null == v[0])
+                {
+                    for (j=0; j<i; ++j)
+                    {
+                        v[j] = [y[j][0], y[j][1].next()];
+                    }
+                }
+                q = poly_interpolate(v, x, r);
+                if (r.PolynomialSymbol || is_class(r.NumberClass, Complex))
+                {
+                    // found factor
+                    if ((0 < q.deg()) && p.mod(q).equ(O)) return q;
+                }
+                else
+                {
+                    // found factor
+                    if ((0 < q.deg()) && Arithmetic.equ(O, Arithmetic.mod(p.lc().real().num, q.lc().real().num)) && Arithmetic.equ(O, Arithmetic.mod(p.tc().real().num, q.tc().real().num)) && p.mod(q).equ(O)) return q;
+                }
+                i = d;
+            }
         }
     }
 }
