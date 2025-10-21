@@ -2278,7 +2278,7 @@ function solvepolys(p, x, type)
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew, linear_eqs,
-            i, j, bj, pj, xi, n, z, ab,
+            i, j, bj, be, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
@@ -2340,26 +2340,29 @@ function solvepolys(p, x, type)
                 if (-1 < linear_eqs.indexOf(b)) return true;
                 return x.reduce(function(b, xi, i) {
                     return b.substitute(solution[i], xi);
-                }, b.toExpr()).expand().equ(0);
+                }, to_expr(b)).expand().equ(0);
             });
             // system satisfied or not
-            return zeros.length === basis.length ? [solution.map(function(si) {return is_instance(si, Expr) ? si : (is_callable(si.toExpr) ? si.toExpr() : Expr('', si));})] : null;
+            return zeros.length === basis.length ? [solution.map(to_expr)] : null;
         }
 
-        // compute exact rational or approximate complex zeros for this univariate poly
+        // compute exact solutions for this univariate poly if possible
         pj = Polynomial(basis[bj], x[xi]);
-        zeros = 'approximate' === type ? (pj.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (pj.roots().map(function(z) {return z[0];}));
+        zeros = pj./*exact*/roots().map(function(z) {return z[0];}).map(to_expr); // TODO exactroots()
+        // discard the solutions that Expr cannot verify so that we can continue
+        //be = to_expr(basis[bj]);
+        //zeros = zeros.filter(function(z) {return be.substitute(z, x[xi]).expand().equ(0);});
 
         if (!zeros.length)
         {
-            // No rational solutions
+            // No verified exact solutions
             return [];
         }
 
         // single variable
         if (1 === basis.length)
         {
-            return zeros.map(function(z) {return [Expr('', z)];});
+            return zeros.map(function(z) {return [z];});
         }
 
         // recursively solve for the rest
@@ -2367,17 +2370,15 @@ function solvepolys(p, x, type)
         xnew = x.filter(function(xj) {return xj !== x[xi];});
         for (i=0,n=zeros.length; i<n; ++i)
         {
-            z = Expr('', zeros[i]);
+            z = zeros[i];
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    var eq = b.toExpr().substitute(z, x[xi]).expand();
-                    if (
-                        (('approximate' === type) && !eq.isConst())
-                        || (('approximate' !== type) && !eq.equ(0))
-                    )
+                    var eq = to_expr(b).substitute(z, x[xi]).expand();
+                    if (!eq.equ(0))
                     {
-                        pnew.push(eq.toPoly(xo, b.ring));
+                        eq = eq.toPoly(xo, b.ring);
+                        if (eq) pnew.push(eq);
                     }
                 }
                 return pnew;
@@ -2385,7 +2386,7 @@ function solvepolys(p, x, type)
             if (pnew.length)
             {
                 solution = recursively_solve(pnew, xnew);
-                if (!solution || !solution.length) return solution; // inconsistent, infinite or no rational solution
+                if (!solution || !solution.length) return solution; // inconsistent, infinite or no exact solution
                 solutions = solutions.concat(solution.map(function(s) {
                     s.splice(xi, 0, z);
                     return s;
@@ -2403,6 +2404,10 @@ function solvepolys(p, x, type)
     }
 
     return recursively_solve(p, x, true);
+}
+function to_expr(x)
+{
+    return is_instance(x, Expr) ? x : (is_callable(x.toExpr) ? x.toExpr() : Expr('', x));
 }
 function pow2(n)
 {

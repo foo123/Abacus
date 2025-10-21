@@ -17,10 +17,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 // expression
                 if (!is_instance(self, Expr)) return new Expr(op, arg);
                 self.ast = {op:op, arg:(is_array(arg) ? arg : [arg]).reduce(function(args, arg) {
-                    if (is_string(arg) || is_instance(arg, [Rational, Complex])) args.push(new Expr('', arg));
-                    else if (is_number(arg)) args.push(new Expr('', Rational.fromDec(arg)));
-                    else if (is_instance(arg, Numeric) || Arithmetic.isNumber(arg)) args.push(new Expr('', new Rational(arg)));
-                    else if (is_instance(arg, Expr)) args.push(arg);
+                    if (is_string(arg) || is_instance(arg, [Rational, Complex])) arg = new Expr('', arg);
+                    else if (is_number(arg)) arg = new Expr('', Rational.fromDec(arg));
+                    else if (is_instance(arg, Numeric) || Arithmetic.isNumber(arg)) arg = new Expr('', new Rational(arg));
+                    else if (!is_instance(arg, Expr) && is_callable(arg.toExpr)) arg = arg.toExpr();
+                    if (is_instance(arg, Expr)) args.push(arg);
                     return args;
                 }, []), type:'expr'};
                 if (!self.ast.arg.length) self.ast = {op:'', arg:Rational.Zero(), type:'num'};
@@ -654,6 +655,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_str: null
     ,_tex: null
     ,_xpnd: null
+    ,_rexpr: null
     ,_symb: null
     ,_op: null
     ,_const: null
@@ -668,6 +670,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         self._str = null;
         self._tex = null;
         self._xpnd = null;
+        self._rexpr = null;
         self._symb = null;
         self._op = null;
         self._const = null;
@@ -904,7 +907,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,isSymbol: function() {
         return 'sym' === this.ast.type;
     }
-    ,isConst: function() {
+    ,isConst: function(loose) {
         var self = this;
         if (null == self._const)
         {
@@ -929,6 +932,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }).length;
             }
         }
+        if (true === loose) return (0 === self.symbols().filter(function(s) {return '1' !== s;}).length);
         return self._const;
     }
     ,isInt: function() {
@@ -987,7 +991,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return false;
     }
 
-    ,c: function() {
+    ,c: function(loose) {
         var self = this, ast = self.ast;
         if (null == self._c)
         {
@@ -1008,6 +1012,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 self._c = Rational.Zero();
             }
+        }
+        if (true === loose)
+        {
+            return self.isConst(true) && !self.isConst() ? self.evaluate() : self._c;
         }
         return self._c;
     }
@@ -1723,7 +1731,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else
                     {
-                        var e = a.e.add(b.e);
+                        var e = add(expand(a.e), expand(b.e));
                         if (e.equ(O)) return null;
                         a.e = e;
                         return a;
@@ -1744,7 +1752,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }, I);
             }
 
-            var base = e1, exp = e2, ret, inverse = false;
+            var base = e1, exp = e2, ret,
+                inverse = false, rad = null;
 
             while ('^' === base.ast.op)
             {
@@ -1753,26 +1762,44 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             //if (exp !== e2) return pow(expand(base), expand(exp));
 
-            if (exp.isInt())
+            if (exp.isConst() && exp.isReal())
             {
-                if (exp.lt(0))
+                /*if (Abacus.Arithmetic.gt(exp.c().real().den, 1))
                 {
-                    inverse = true;
-                    exp = neg(exp);
-                }
-                if (base.isSymbol())
+                    rad = exp.c().den;
+                    exp = Expr('', exp.c().real().num);
+                }*/
+                if (exp.isInt())
                 {
-                    ret = Expr('^', [base, exp]);
-                }
-                else if (base.isConst())
-                {
-                    ret = Expr('', base.c().pow(exp.c().real()));
+                    if (exp.lt(0))
+                    {
+                        inverse = true;
+                        exp = neg(exp);
+                    }
+                    if (base.isSymbol())
+                    {
+                        ret = Expr('^', [base, exp]);
+                    }
+                    else if (base.isConst())
+                    {
+                        ret = Expr('', base.c().pow(exp.c().real()));
+                    }
+                    else
+                    {
+                        ret = expand(npow(base, exp.c().real().integer(true)));
+                    }
+                    ret = inverse ? inv(ret) : ret;
                 }
                 else
                 {
-                    ret = expand(npow(base, exp.c().real().integer(true)));
+                    ret = Expr('^', [base, exp]);
                 }
-                return inverse ? inv(ret) : ret;
+                /*if (rad)
+                {
+                    if (ret.isConst(true) && ret.c(true).rad(rad).pow(rad).equ(ret.c(true))) ret = Expr('', ret.c(true).rad(rad));
+                    else ret = ret.pow(Rational(1, rad));
+                }*/
+                return ret;
             }
             return Expr('^', [base, exp]);
         }
@@ -1816,6 +1843,53 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (null == self._xpnd) self._xpnd = neg_pow_to_inv(expand(self));
 
         return self._xpnd;
+    }
+    ,toRationalExpr: function() {
+        var self = this, I, re;
+        function to_rational_expr(expr)
+        {
+            expr = expr.clone(); // avoid recursive refs
+            var a, b;
+            if ('/' === expr.ast.op)
+            {
+                a = to_rational_expr(expr.ast.arg[0]);
+                b = to_rational_expr(expr.ast.arg[1]);
+                return {
+                    num: a.num.mul(b.den),
+                    den: b.num.mul(a.den)
+                };
+            }
+            if ('*' === expr.ast.op)
+            {
+                a = expr.ast.arg.map(to_rational_expr);
+                return {
+                    num: a.reduce(function(num, re) {return num.mul(re.num);}, I),
+                    den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+                };
+            }
+            if (('+' === expr.ast.op) || ('-' === expr.ast.op))
+            {
+                a = expr.ast.arg.map(to_rational_expr);
+                return {
+                    num: Expr(expr.ast.op, a.map(function(re, i) {
+                        var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I);
+                        return re.num.mul(m);
+                    })),
+                    den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+                };
+            }
+            return {
+                num: expr,
+                den: I
+            };
+        }
+        if (null == self._rexpr)
+        {
+            I = Expr.One();
+            re = to_rational_expr(self);
+            self._rexpr = Expr('/', [re.num, re.den]);
+        }
+        return self._rexpr;
     }
     ,toPoly: function(symbol, ring, imagUnit) {
         var self = this, other_symbols = null, CoefficientRing = null, PolynomialClass;
@@ -1908,10 +1982,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return get_term(ast.arg, (is_array(symbol) && (-1 !== symbol.indexOf(ast.arg))) || (is_string(symbol) && (symbol === ast.arg)));
                 }
             }
-            else if (expr.isConst())
+            else if (expr.isConst(true))
             {
                 // constant
-                return get_term(expr.c());
+                return get_term(expr.c(true));
             }
             else //if ('expr' === ast.type)
             {
@@ -1951,9 +2025,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             var coeff;
                             if (ring.PolynomialClass)
                             {
-                                if (subexpr.num.isConst())
+                                if (subexpr.num.isConst(true))
                                 {
-                                    coeff = subexpr.num.c().inv();
+                                    coeff = subexpr.num.c(true).inv();
                                 }
                                 else if (!is_class(ring.PolynomialClass, RationalFunc))
                                 {
@@ -1999,9 +2073,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             if (ring.PolynomialClass)
                             {
-                                if (ast.arg[0].num.isConst())
+                                if (ast.arg[0].num.isConst(true))
                                 {
-                                    coeff = MultiPolynomial({'1':ast.arg[0].num.c().inv()}, ring.PolynomialSymbol, ring.CoefficientRing);
+                                    coeff = MultiPolynomial({'1':ast.arg[0].num.c(true).inv()}, ring.PolynomialSymbol, ring.CoefficientRing);
                                 }
                                 else if (!is_class(ring.PolynomialClass, RationalFunc))
                                 {
@@ -2043,11 +2117,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return poly(self, symbol, ring, CoefficientRing);
     }
-    ,toRationalFunc: function() {
-        var self = this,
-            num = self.num.toPoly(self.symbols()),
-            den = num ? self.den.toPoly(num.symbol) : null
-        ;
+    ,toRationalFunc: function(symbol, ring) {
+        var self = this.toRationalExpr(), num, den;
+        num = self.num.toPoly(symbol || self.symbols(), ring || null),
+        den = num ? self.den.toPoly(num.symbol, num.ring) : null
         return num && den ? RationalFunc(num, den) : null;
     }
     ,toString: function(type) {

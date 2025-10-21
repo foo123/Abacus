@@ -61,12 +61,16 @@ function check_factors(p)
     }
     echo(out, res.mul(constant).equ(p));
 }
-function check_roots(p, exact)
+function check_roots(p, exact, pow)
 {
     const roots = exact ? p.exactroots() : p.roots();
     const pe = p.toExpr();
     const satisfied = roots.length === roots.filter(function(r) {
-        return pe.substitute(r[0], p.symbol).expand().equ(0);
+        let e = pe.substitute(r[0], p.symbol);
+        //if (pow) e = e.pow(pow);
+        e = e.expand();
+        //echo('('+String(pe)+')('+String(r[0])+') -> ', String(e));
+        return e.equ(0);
     }).length;
     echo((exact ? 'exactroots' : 'roots')+'('+p.toString()+') = '+roots.map(r => String(r[0])).join(', '), satisfied);
 }
@@ -317,12 +321,17 @@ check_roots(poly("(x-a)(x-b)(x-c)", "x"));
 
 check_roots(poly("x^2-1", "x"), true);
 check_roots(poly("x^2+1", "x"), true);
+check_roots(poly("x^3+3x^2+5x+1", "x"), true, 6); // expr cannot simplify
 check_roots(poly("x^4+3x^2+1", "x"), true);
+
+echo('---');
 
 check_roots(poly("ax+b", "x"), true);
 check_roots(poly("ax^2+bx+c", "x"), true);
 check_roots(poly("(x-a)(x-b)(x-c)", "x"), true);
-//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // slow and cannot simplify
+//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // slow and expr cannot simplify
+
+echo('---');
 
 echo('ring.create([-1,1,0,2]).zeros()'); // complex roots
 echo(ring.create([-1,1,0,2]).zeros().map(r => '('+r.toDec()+')').join(', '));

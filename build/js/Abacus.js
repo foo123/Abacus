@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-21 00:07:32)
+*   @version: 2.0.0 (2025-10-21 12:16:29)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-21 00:07:32)
+*   @version: 2.0.0 (2025-10-21 12:16:29)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4006,7 +4006,7 @@ function solvepolys(p, x, type)
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew, linear_eqs,
-            i, j, bj, pj, xi, n, z, ab,
+            i, j, bj, be, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
@@ -4068,26 +4068,29 @@ function solvepolys(p, x, type)
                 if (-1 < linear_eqs.indexOf(b)) return true;
                 return x.reduce(function(b, xi, i) {
                     return b.substitute(solution[i], xi);
-                }, b.toExpr()).expand().equ(0);
+                }, to_expr(b)).expand().equ(0);
             });
             // system satisfied or not
-            return zeros.length === basis.length ? [solution.map(function(si) {return is_instance(si, Expr) ? si : (is_callable(si.toExpr) ? si.toExpr() : Expr('', si));})] : null;
+            return zeros.length === basis.length ? [solution.map(to_expr)] : null;
         }
 
-        // compute exact rational or approximate complex zeros for this univariate poly
+        // compute exact solutions for this univariate poly if possible
         pj = Polynomial(basis[bj], x[xi]);
-        zeros = 'approximate' === type ? (pj.zeros().map(function(z) {return Complex(Rational.fromDec(z.re), Rational.fromDec(z.im));})) : (pj.roots().map(function(z) {return z[0];}));
+        zeros = pj./*exact*/roots().map(function(z) {return z[0];}).map(to_expr); // TODO exactroots()
+        // discard the solutions that Expr cannot verify so that we can continue
+        //be = to_expr(basis[bj]);
+        //zeros = zeros.filter(function(z) {return be.substitute(z, x[xi]).expand().equ(0);});
 
         if (!zeros.length)
         {
-            // No rational solutions
+            // No verified exact solutions
             return [];
         }
 
         // single variable
         if (1 === basis.length)
         {
-            return zeros.map(function(z) {return [Expr('', z)];});
+            return zeros.map(function(z) {return [z];});
         }
 
         // recursively solve for the rest
@@ -4095,17 +4098,15 @@ function solvepolys(p, x, type)
         xnew = x.filter(function(xj) {return xj !== x[xi];});
         for (i=0,n=zeros.length; i<n; ++i)
         {
-            z = Expr('', zeros[i]);
+            z = zeros[i];
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    var eq = b.toExpr().substitute(z, x[xi]).expand();
-                    if (
-                        (('approximate' === type) && !eq.isConst())
-                        || (('approximate' !== type) && !eq.equ(0))
-                    )
+                    var eq = to_expr(b).substitute(z, x[xi]).expand();
+                    if (!eq.equ(0))
                     {
-                        pnew.push(eq.toPoly(xo, b.ring));
+                        eq = eq.toPoly(xo, b.ring);
+                        if (eq) pnew.push(eq);
                     }
                 }
                 return pnew;
@@ -4113,7 +4114,7 @@ function solvepolys(p, x, type)
             if (pnew.length)
             {
                 solution = recursively_solve(pnew, xnew);
-                if (!solution || !solution.length) return solution; // inconsistent, infinite or no rational solution
+                if (!solution || !solution.length) return solution; // inconsistent, infinite or no exact solution
                 solutions = solutions.concat(solution.map(function(s) {
                     s.splice(xi, 0, z);
                     return s;
@@ -4131,6 +4132,10 @@ function solvepolys(p, x, type)
     }
 
     return recursively_solve(p, x, true);
+}
+function to_expr(x)
+{
+    return is_instance(x, Expr) ? x : (is_callable(x.toExpr) ? x.toExpr() : Expr('', x));
 }
 function pow2(n)
 {
@@ -8539,10 +8544,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 // expression
                 if (!is_instance(self, Expr)) return new Expr(op, arg);
                 self.ast = {op:op, arg:(is_array(arg) ? arg : [arg]).reduce(function(args, arg) {
-                    if (is_string(arg) || is_instance(arg, [Rational, Complex])) args.push(new Expr('', arg));
-                    else if (is_number(arg)) args.push(new Expr('', Rational.fromDec(arg)));
-                    else if (is_instance(arg, Numeric) || Arithmetic.isNumber(arg)) args.push(new Expr('', new Rational(arg)));
-                    else if (is_instance(arg, Expr)) args.push(arg);
+                    if (is_string(arg) || is_instance(arg, [Rational, Complex])) arg = new Expr('', arg);
+                    else if (is_number(arg)) arg = new Expr('', Rational.fromDec(arg));
+                    else if (is_instance(arg, Numeric) || Arithmetic.isNumber(arg)) arg = new Expr('', new Rational(arg));
+                    else if (!is_instance(arg, Expr) && is_callable(arg.toExpr)) arg = arg.toExpr();
+                    if (is_instance(arg, Expr)) args.push(arg);
                     return args;
                 }, []), type:'expr'};
                 if (!self.ast.arg.length) self.ast = {op:'', arg:Rational.Zero(), type:'num'};
@@ -9176,6 +9182,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_str: null
     ,_tex: null
     ,_xpnd: null
+    ,_rexpr: null
     ,_symb: null
     ,_op: null
     ,_const: null
@@ -9190,6 +9197,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         self._str = null;
         self._tex = null;
         self._xpnd = null;
+        self._rexpr = null;
         self._symb = null;
         self._op = null;
         self._const = null;
@@ -9426,7 +9434,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,isSymbol: function() {
         return 'sym' === this.ast.type;
     }
-    ,isConst: function() {
+    ,isConst: function(loose) {
         var self = this;
         if (null == self._const)
         {
@@ -9451,6 +9459,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }).length;
             }
         }
+        if (true === loose) return (0 === self.symbols().filter(function(s) {return '1' !== s;}).length);
         return self._const;
     }
     ,isInt: function() {
@@ -9509,7 +9518,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return false;
     }
 
-    ,c: function() {
+    ,c: function(loose) {
         var self = this, ast = self.ast;
         if (null == self._c)
         {
@@ -9530,6 +9539,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 self._c = Rational.Zero();
             }
+        }
+        if (true === loose)
+        {
+            return self.isConst(true) && !self.isConst() ? self.evaluate() : self._c;
         }
         return self._c;
     }
@@ -10245,7 +10258,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else
                     {
-                        var e = a.e.add(b.e);
+                        var e = add(expand(a.e), expand(b.e));
                         if (e.equ(O)) return null;
                         a.e = e;
                         return a;
@@ -10266,7 +10279,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }, I);
             }
 
-            var base = e1, exp = e2, ret, inverse = false;
+            var base = e1, exp = e2, ret,
+                inverse = false, rad = null;
 
             while ('^' === base.ast.op)
             {
@@ -10275,26 +10289,44 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             //if (exp !== e2) return pow(expand(base), expand(exp));
 
-            if (exp.isInt())
+            if (exp.isConst() && exp.isReal())
             {
-                if (exp.lt(0))
+                /*if (Abacus.Arithmetic.gt(exp.c().real().den, 1))
                 {
-                    inverse = true;
-                    exp = neg(exp);
-                }
-                if (base.isSymbol())
+                    rad = exp.c().den;
+                    exp = Expr('', exp.c().real().num);
+                }*/
+                if (exp.isInt())
                 {
-                    ret = Expr('^', [base, exp]);
-                }
-                else if (base.isConst())
-                {
-                    ret = Expr('', base.c().pow(exp.c().real()));
+                    if (exp.lt(0))
+                    {
+                        inverse = true;
+                        exp = neg(exp);
+                    }
+                    if (base.isSymbol())
+                    {
+                        ret = Expr('^', [base, exp]);
+                    }
+                    else if (base.isConst())
+                    {
+                        ret = Expr('', base.c().pow(exp.c().real()));
+                    }
+                    else
+                    {
+                        ret = expand(npow(base, exp.c().real().integer(true)));
+                    }
+                    ret = inverse ? inv(ret) : ret;
                 }
                 else
                 {
-                    ret = expand(npow(base, exp.c().real().integer(true)));
+                    ret = Expr('^', [base, exp]);
                 }
-                return inverse ? inv(ret) : ret;
+                /*if (rad)
+                {
+                    if (ret.isConst(true) && ret.c(true).rad(rad).pow(rad).equ(ret.c(true))) ret = Expr('', ret.c(true).rad(rad));
+                    else ret = ret.pow(Rational(1, rad));
+                }*/
+                return ret;
             }
             return Expr('^', [base, exp]);
         }
@@ -10338,6 +10370,53 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (null == self._xpnd) self._xpnd = neg_pow_to_inv(expand(self));
 
         return self._xpnd;
+    }
+    ,toRationalExpr: function() {
+        var self = this, I, re;
+        function to_rational_expr(expr)
+        {
+            expr = expr.clone(); // avoid recursive refs
+            var a, b;
+            if ('/' === expr.ast.op)
+            {
+                a = to_rational_expr(expr.ast.arg[0]);
+                b = to_rational_expr(expr.ast.arg[1]);
+                return {
+                    num: a.num.mul(b.den),
+                    den: b.num.mul(a.den)
+                };
+            }
+            if ('*' === expr.ast.op)
+            {
+                a = expr.ast.arg.map(to_rational_expr);
+                return {
+                    num: a.reduce(function(num, re) {return num.mul(re.num);}, I),
+                    den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+                };
+            }
+            if (('+' === expr.ast.op) || ('-' === expr.ast.op))
+            {
+                a = expr.ast.arg.map(to_rational_expr);
+                return {
+                    num: Expr(expr.ast.op, a.map(function(re, i) {
+                        var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I);
+                        return re.num.mul(m);
+                    })),
+                    den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+                };
+            }
+            return {
+                num: expr,
+                den: I
+            };
+        }
+        if (null == self._rexpr)
+        {
+            I = Expr.One();
+            re = to_rational_expr(self);
+            self._rexpr = Expr('/', [re.num, re.den]);
+        }
+        return self._rexpr;
     }
     ,toPoly: function(symbol, ring, imagUnit) {
         var self = this, other_symbols = null, CoefficientRing = null, PolynomialClass;
@@ -10430,10 +10509,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return get_term(ast.arg, (is_array(symbol) && (-1 !== symbol.indexOf(ast.arg))) || (is_string(symbol) && (symbol === ast.arg)));
                 }
             }
-            else if (expr.isConst())
+            else if (expr.isConst(true))
             {
                 // constant
-                return get_term(expr.c());
+                return get_term(expr.c(true));
             }
             else //if ('expr' === ast.type)
             {
@@ -10473,9 +10552,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             var coeff;
                             if (ring.PolynomialClass)
                             {
-                                if (subexpr.num.isConst())
+                                if (subexpr.num.isConst(true))
                                 {
-                                    coeff = subexpr.num.c().inv();
+                                    coeff = subexpr.num.c(true).inv();
                                 }
                                 else if (!is_class(ring.PolynomialClass, RationalFunc))
                                 {
@@ -10521,9 +10600,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             if (ring.PolynomialClass)
                             {
-                                if (ast.arg[0].num.isConst())
+                                if (ast.arg[0].num.isConst(true))
                                 {
-                                    coeff = MultiPolynomial({'1':ast.arg[0].num.c().inv()}, ring.PolynomialSymbol, ring.CoefficientRing);
+                                    coeff = MultiPolynomial({'1':ast.arg[0].num.c(true).inv()}, ring.PolynomialSymbol, ring.CoefficientRing);
                                 }
                                 else if (!is_class(ring.PolynomialClass, RationalFunc))
                                 {
@@ -10565,11 +10644,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return poly(self, symbol, ring, CoefficientRing);
     }
-    ,toRationalFunc: function() {
-        var self = this,
-            num = self.num.toPoly(self.symbols()),
-            den = num ? self.den.toPoly(num.symbol) : null
-        ;
+    ,toRationalFunc: function(symbol, ring) {
+        var self = this.toRationalExpr(), num, den;
+        num = self.num.toPoly(symbol || self.symbols(), ring || null),
+        den = num ? self.den.toPoly(num.symbol, num.ring) : null
         return num && den ? RationalFunc(num, den) : null;
     }
     ,toString: function(type) {
@@ -11584,6 +11662,128 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         return self._roots.map(function(r) {return r.slice();});
     }
+    ,exactroots: function() {
+        // find exact roots of poly when solvable
+        var self = this, memo;
+        if (null == self._exact_roots)
+        {
+            memo = self.factors()[0].reduce(function(memo, factor) {
+                var roots = [];
+                switch (factor[0].deg())
+                {
+                    case 1:
+                    roots = poly_linear_roots(factor[0]);
+                    break;
+
+                    case 2:
+                    roots = poly_quadratic_roots(factor[0]);
+                    break;
+
+                    case 3:
+                    roots = poly_cubic_roots(factor[0]);
+                    break;
+
+                    case 4:
+                    roots = poly_quartic_roots(factor[0]);
+                    break;
+
+                    default:
+                    // any rational roots
+                    roots = factor[0].roots().map(function(ri) {return [ri[0].toExpr(), ri[1]];});
+                    break;
+                }
+                roots.forEach(function(r) {
+                    var key = r[0].toString();
+                    if (HAS.call(memo, key))
+                    {
+                        memo[key][1] += factor[1]*r[1];
+                    }
+                    else
+                    {
+                        memo[key] = [r[0], factor[1]*r[1]];
+                    }
+                });
+                return memo;
+            }, {});
+            self._exact_roots = KEYS(memo).map(function(key) {return memo[key];});
+        }
+        return self._exact_roots.map(function(r) {return r.slice();});
+    }
+    ,zeros: function() {
+        // find approximate real/complex zeros of poly numerically
+        // https://en.wikipedia.org/wiki/Aberth_method
+        var self = this, d, tc, lo, hi,
+            roots, found, i, j, m, ri, ratio, offset,
+            epsilon = 1e-10, epsilonz, iter,
+            zero, one,  p, dp, px, dpx;
+        if (null == self._zeros)
+        {
+            epsilonz = nComplex(epsilon);
+            zero = nComplex.Zero();
+            one = nComplex.One();
+            p = function(x) {
+                return self.evaluate(x);
+            };
+            dp = function(x) {
+                return (p(x.add(epsilonz)).sub(p(x))).div(epsilonz);
+            };
+            d = self.deg();
+            if (0 < d)
+            {
+                // init
+                tc = self.terms.map(function(ti) {return ti.c.abs();});
+                // https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots
+                // https://arxiv.org/abs/2206.00482
+                hi = nmax(tc.slice(0, -1)).div(tc[tc.length-1]).add(one).valueOf();
+                lo = tc[0].div(tc[0].add(nmax(tc.slice(1)))).valueOf();
+                roots = array(d, function() {
+                    var radius = lo + (hi-lo)*stdMath.random();
+                    var angle = stdMath.random()*stdMath.PI/2;
+                    return nComplex(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
+                });
+
+                // root finding
+                iter = 0;
+                for (;;)
+                {
+                    found = 0;
+                    for (i=0; i<d; ++i)
+                    {
+                        ri = roots[i];
+                        px = p(ri);
+                        dpx = dp(ri);
+                        if (dpx.equ(0))
+                        {
+                            if ((px.re <= epsilon) && (px.im <= epsilon))
+                            {
+                                ++found;
+                                continue;
+                            }
+                            ratio = nComplex(hi);
+                        }
+                        else
+                        {
+                            ratio = px.div(dpx);
+                        }
+                        offset = ratio.div(one.sub(ratio.mul(roots.reduce(function(s, rj, j) {
+                            if ((j !== i) && !ri.equ(rj)) s = s.add((ri.sub(rj)).inv());
+                            return s;
+                        }, zero))));
+                        if ((offset.re <= epsilon) && (offset.im <= epsilon)) ++found;
+                        roots[i] = ri.sub(offset);
+                    }
+                    if (found === d) break;
+                    ++iter; if (iter > 10000) break;
+                }
+            }
+            else
+            {
+                roots = [];
+            }
+            self._zeros = roots.sort(function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);});
+        }
+        return self._zeros.slice();
+    }
     ,factors: function() {
         // factorize poly over integers/rationals if factorizable
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
@@ -11662,115 +11862,6 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             self._factors = [factors, c];
         }
         return [self._factors[0].slice(), self._factors[1]];
-    }
-    ,exactroots: function() {
-        // find exact roots of poly when solvable
-        var self = this;
-        if (null == self._exact_roots)
-        {
-            self._exact_roots = self.factors()[0].reduce(function(roots, factor) {
-                factor = factor[0];
-                switch (factor.deg())
-                {
-                    case 1:
-                    roots.push.apply(roots, poly_linear_roots(factor));
-                    break;
-
-                    case 2:
-                    roots.push.apply(roots, poly_quadratic_roots(factor));
-                    break;
-
-                    case 3:
-                    roots.push.apply(roots, poly_cubic_roots(factor));
-                    break;
-
-                    case 4:
-                    roots.push.apply(roots, poly_quartic_roots(factor));
-                    break;
-
-                    default:
-                    // any rational roots
-                    roots.push.apply(roots, factor.roots().map(function(r) {return [r[0].toExpr(), r[1]];}));
-                    break;
-                }
-                return roots;
-            }, []);
-        }
-        return self._exact_roots.slice();
-    }
-    ,zeros: function() {
-        // find approximate real/complex zeros of poly numerically
-        // https://en.wikipedia.org/wiki/Aberth_method
-        var self = this, d, tc, lo, hi,
-            roots, found, i, j, m, ri, ratio, offset,
-            epsilon = 1e-10, epsilonz, iter,
-            zero, one,  p, dp, px, dpx;
-        if (null == self._zeros)
-        {
-            epsilonz = nComplex(epsilon);
-            zero = nComplex.Zero();
-            one = nComplex.One();
-            p = function(x) {
-                return self.evaluate(x);
-            };
-            dp = function(x) {
-                return (p(x.add(epsilonz)).sub(p(x))).div(epsilonz);
-            };
-            d = self.deg();
-            if (0 < d)
-            {
-                // init
-                tc = self.terms.map(function(ti) {return ti.c.abs();});
-                // https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots
-                hi = nmax(tc.slice(0, -1)).div(tc[tc.length-1]).add(one).valueOf();
-                lo = tc[0].div(tc[0].add(nmax(tc.slice(1)))).valueOf();
-                roots = array(d, function() {
-                    var radius = lo + (hi-lo)*stdMath.random();
-                    var angle = stdMath.random()*stdMath.PI/2;
-                    return nComplex(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
-                });
-
-                // root finding
-                iter = 0;
-                for (;;)
-                {
-                    found = 0;
-                    for (i=0; i<d; ++i)
-                    {
-                        ri = roots[i];
-                        px = p(ri);
-                        dpx = dp(ri);
-                        if (dpx.equ(0))
-                        {
-                            if ((px.re <= epsilon) && (px.im <= epsilon))
-                            {
-                                ++found;
-                                continue;
-                            }
-                            ratio = nComplex(hi);
-                        }
-                        else
-                        {
-                            ratio = px.div(dpx);
-                        }
-                        offset = ratio.div(one.sub(ratio.mul(roots.reduce(function(s, rj, j) {
-                            if ((j !== i) && !ri.equ(rj)) s = s.add((ri.sub(rj)).inv());
-                            return s;
-                        }, zero))));
-                        if ((offset.re <= epsilon) && (offset.im <= epsilon)) ++found;
-                        roots[i] = ri.sub(offset);
-                    }
-                    if (found === d) break;
-                    ++iter; if (iter > 10000) break;
-                }
-            }
-            else
-            {
-                roots = [];
-            }
-            self._zeros = roots.sort(function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);});
-        }
-        return self._zeros.slice();
     }
     ,equ: function(other) {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -13007,6 +13098,23 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     }
     ,discriminant: function(x) {
         return MultiPolynomial.Discriminant(this, x);
+    }
+    ,roots: function() {
+        return [];
+    }
+    ,exactroots: function() {
+        /*
+        The maximum number of roots of a multivariate polynomial depends on the field; over an infinite field, it can have infinitely many roots, while over a finite field, it is limited to the number of elements in that field. There is no direct multivariate version of the fundamental theorem of algebra. The relationship between the degree of a polynomial and its number of roots is a key consideration in this context. Determining if a multivariate polynomial is identically zero is complex, particularly over finite fields, as it involves confirming that all coefficients are zero. This complexity highlights the challenges in analyzing multivariate polynomials compared to univariate cases.
+        Reference: https://www.physicsforums.com/threads/roots-of-multivariate-polynomials.749772/
+        */
+        return [];
+    }
+    ,zeros: function() {
+        return [];
+    }
+    ,factors: function() {
+        var self = this;
+        return [[[self, 1]], self.ring.One()]; // TODO
     }
     ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -14527,7 +14635,7 @@ function poly_linear_roots(poly)
     var a = poly.term(1, true, true).c,
         b = poly.term(0, true, true).c;
     if (a.equ(0)) return null;
-    if (b.equ(0)) return [Expr.Zero(), 1];
+    if (b.equ(0)) return [[Expr.Zero(), 1]];
 
     // a!=0, x = -b/a
     return [
@@ -14556,18 +14664,16 @@ function poly_quadratic_roots(poly)
     {
         // double root
         roots = [
-            [b.neg().toExpr().div(a.mul(2).toExpr()), 2]
+            [b.neg().div(a.mul(2)).toExpr(), 2]
         ];
     }
     else
     {
         // two roots
-        discriminant = discriminant.lt(0) ? Expr('*', [Complex.Img(), Expr('^', [discriminant.neg().toExpr(), 1/2])]) : Expr('^', [discriminant.toExpr(), 1/2]);
-        a = a.mul(2).toExpr();
-        b = b.toExpr();
+        discriminant = discriminant.lt(0) ? Expr('*', [Complex.Img(), Expr('^', [discriminant.neg(), 1/2])]) : Expr('^', [discriminant, 1/2]);
         roots = [
-            [Expr('*', [-1, Expr('/', [Expr('+', [b, discriminant]), a])]), 1],
-            [Expr('*', [-1, Expr('/', [Expr('-', [b, discriminant]), a])]), 1]
+            [discriminant.add(b).div(a.mul(2)).neg(), 1],
+            [discriminant.neg().add(b).div(a.mul(2)).neg(), 1]
         ];
     }
     return roots;
@@ -14628,7 +14734,7 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
             // simple and double roots
             roots = [
                 [q.mul(3).div(p).add(b_3a).toExpr(), 1], // simple root
-                [q.mul(3).neg().div(p.mul(2)).add(b_3a).toExpr(), 2], // double root
+                [q.mul(3).neg().div(p.mul(2)).add(b_3a).toExpr(), 2] // double root
             ];
         }
     }
@@ -14646,25 +14752,11 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
         else
         {
             // three roots
-            Delta_0 = Delta_0.toExpr();
-            Delta_1 = Delta_1.toExpr();
             D = Expr('^', [
-                Expr('-', [
-                    Expr('^', [
-                        Delta_1,
-                        2
-                    ]),
-                    Expr('*', [
-                        4,
-                        Expr('^', [
-                            Delta_0,
-                            3
-                        ])
-                    ])
-                ]),
+                Delta_1.pow(2).sub(Delta_0.pow(3).mul(4)),
                 1/2
             ]);
-            if (Delta_1.add(D).equ(0))
+            if (D.add(Delta_1).expand().equ(0))
             {
                 D = D.neg();
             }
@@ -14987,9 +15079,6 @@ function polyxgcd(/* args */)
         for (;;)
         {
             a0 = a; b0 = b;
-            //console.log('a0', String(a0), 'b0', String(b0));
-            //console.log('a1', String(a1), 'b1', String(b1));
-            //console.log('a2', String(a2), 'b2', String(b2));
 
             if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true))
             {
@@ -15013,8 +15102,6 @@ function polyxgcd(/* args */)
                         a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                    //console.log('a < b, b = 0');
-                    //console.log('a', String(a), 'b', String(b), 'a1', String(a1), 'b1', String(b1));
                     return array(gcd.length+1, function(i) {
                         return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
                     });
@@ -15042,8 +15129,6 @@ function polyxgcd(/* args */)
                         b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                    //console.log('a > b, a = 0');
-                    //console.log('a', String(a), 'b', String(b), 'a2', String(a2), 'b2', String(b2));
                     return array(gcd.length+1,function(i) {
                         return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
                     });
@@ -15067,8 +15152,6 @@ function polyxgcd(/* args */)
                         a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                    //console.log('a < b, a = a0, b = b0');
-                    //console.log('a', String(a), 'b', String(b), 'a1', String(a1), 'b1', String(b1));
                     return array(gcd.length+1, function(i) {
                         return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
                     });
@@ -15087,8 +15170,6 @@ function polyxgcd(/* args */)
                         b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                    //console.log('a > b, a = a0, b = b0');
-                    //console.log('a', String(a), 'b', String(b), 'a2', String(a2), 'b2', String(b2));
                     return array(gcd.length+1,function(i) {
                         return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
                     });
@@ -15231,16 +15312,8 @@ MultiPolynomial.xgcd = function(/*args*/) {
             order = p.order();
         }
         return p.univariate(null, true);
-    })).map(function(g) {
-        if (is_instance(g, MultiPolynomial))
-        {
-            g = g.multivariate(symbol).order(order);
-        }
-        else if (is_instance(g, RationalFunc))
-        {
-            g = RationalFunc(g.num.multivariate(symbol).order(order), g.den.multivariate(symbol).order(order));
-        }
-        return g;
+    })).map(function(g, i) {
+        return (0 === i ? g : RationalFunc(g)).multivariate(symbol).order(order);
     });
 };
 MultiPolynomial.lcm = function(/*args*/) {
@@ -15835,6 +15908,33 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             self._simpl = true;
         }
         return self;
+    }
+    ,multivariate: function(x) {
+        var p = this, ring = p.ring;
+        // unmake recursive univariate, make multivariate again on x
+        if (1 < x.length)
+        {
+            while (ring.PolynomialSymbol)
+            {
+                if (is_array(ring.PolynomialSymbol))
+                {
+                    if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (-1 === x.indexOf(ring.PolynomialSymbol))
+                    {
+                        break;
+                    }
+                }
+                ring = ring.CoefficientRing;
+            }
+            p = p.num.toExpr().toRationalFunc(x, ring).div(p.den.toExpr().toRationalFunc(x, ring));
+        }
+        return p;
     }
     ,evaluate: function(x) {
         var self = this;

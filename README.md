@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (345 kB minified)
+**version 2.0.0** almost complete (356 kB minified)
 
 ![abacus combinatorial numbers](/abacus.jpg)
 
@@ -83,9 +83,9 @@
 * `successor` methods use **efficient CAT (ie constant amortized time) or Loopless (ie strictly constant time)** algorithms to generate next/prev object from current object (supporting multiple combinatorial orderings along the way, see above) (**note** a couple of methods are **linear time** algorithms because the lib does not use extra space to store information between successive runs and also support static random access to successors so any extra is computed at `run-time`, but can easily be made `CAT` or even `Loopless` by storing extra information, eg current index position)
 * **avoid big-integer arithmetic and computational overhead** (except if explicit `ranking` / `unranking` is needed and objects are large)
 * symbolic polynomials use efficient sparse representation
-* number-theoretic/math computations support pluggable arithmetics (thus if used can compute with arbitrary precision arithmetic), algorithms implemented are efficient but not necessarily the most efficient version (theoretically) possible (eg default Euclidean algorithm for `gcd` used, although optimised), possible to implement even faster algorithms in future verions
+* number-theoretic/math computations support pluggable arithmetics (thus if used can compute with arbitrary precision arithmetic), algorithms implemented are efficient but not necessarily the most efficient version (theoretically) possible (eg default Euclidean algorithm for `gcd` used, although optimized), possible to implement even faster algorithms in future verions
 
-**Note** that `Abacus` can generate **very large** (and also **randomised**) combinatorial objects **without ever using** biginteger arithmetic due to design and implementation except if arbitrary `random`, `ranking` and `unranking` have to be used (see above)
+**Note** that `Abacus` can generate **very large**, and also **randomized**, combinatorial objects **without ever using** biginteger arithmetic due to design and implementation, except if arbitrary `random`, `ranking` and `unranking` have to be used (see above)
 
 
 ### Credits and References
@@ -160,6 +160,7 @@ See the comments in the code for algorithms and references used.
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
 * [Solving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
 * [Use Gröbner Bases To Solve Polynomial Equations, Jingnan Shi](https://jingnanshi.com/blog/groebner_basis.html)
+* [Faster Linear Unification Algorithm, Dennis de Champeaux](https://raw.githubusercontent.com/ddccc/Unification/a5975a47bca1be3f7bf0afe9ad3595a707a29ea4/LinUnify3.pdf)
 
 ### Example API
 
@@ -299,47 +300,50 @@ console.log(m2.inv().mul(m2).toString());
 
 * apply built-in language `iterator`/`iterable` patterns (ES6 `iterator` protocol). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
 * support exact `biginteger` arithmetic computations e.g large factorials **[DONE]**, arithmetic routines have been made **pluggable** and one can use an external implementation, see examples
-* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward **[DONE]**, `random` ordering may be optimised further
+* support **multiple combined custom iterator orderings**, i.e  `lex`, `colex`, `reversed`, `reflected`, `random` seamlessly and uniformly, both forward and backward **[DONE]**, `random` ordering may be optimized further
 * support multiple combinatorial orderings (ie `lex`, `colex`, `reflex`, `refcolex`, `minimal`, ..) **directly in the successor methods**  instead of using post-transformations on object **[DONE]**
-* support **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object **[DONE]**
-* support **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings **[DONE]**
-* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) **[DONE]**, used as custom iterator ordering, may be optimised further
+* implement **efficient successor methods** (preferably `CAT/Loopless` methods) to generate next/prev object from current object **[DONE]**
+* implement **efficient ranking / unranking algorithms** and associated methods (preferably of `O(n)` or `O(nlgn)` complexity) for supported orderings **[DONE]**
+* implement efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
+* implement efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
+* implement efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
+* implement efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE]** (not very efficient)
+* support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
+* support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) **[DONE]**, used as custom iterator ordering, may be optimized further
 * make sure the `random()` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) **[DONE]**
 * support algebraic composition/cascading of combinatorial objects to construct new combinatorial objects (eg `all combinations` = `all permutations` **OF** `all unique combinations`) **[DONE]**
 * support generation of supported combinatorial objects with additional **user-defined patterns/templates of constraints** to satisfy e.g *"only combinatorial objects matching `'(n)(m)(1){2}(){3}(0)((n+1))((n+m)){4}'`"* pattern.. **[DONE]**
-* add `LatinSquare`, `MagicSquare` algorithms **[DONE]**
+* implement `LatinSquare`, `MagicSquare` algorithms **[DONE]**
 * add run-time/lazy custom and/or built-in filtering support (with support for filter composition as well) to generate and select custom and complex combinatorial objects from filtering other combinatorial objects as efficiently as possible **[DONE]**
 * implement efficient primality tests and prime sieves **[DONE PARTIALLY]**
 * implement efficient integer factorization algorithms **[DONE PARTIALLY]**
-* support general symbolic expressions and computations in `Expr` **[DONE]**
+* implement more efficient integer algorithms (maybe fine-tuned if BigInteger Arithmetic is used) (eg `fibonacci`, `factorial`, ..) **[DONE PARTIALLY]**
+* implement more efficient integer `GCD` algorithm (TODO)
 * implement `Rank Factorisation` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
 * implement symbolic/numeric `EVD / SVD` computation (TODO)
-* support solutions of (systems of) **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
-* support general and least-squares solutions of **arbitrary linear systems** **[DONE]**
-* support solutions of (systems of) **linear diophantine and linear congruence inequalities** (with one or many variables) **[DONE PARTIALLY]**
-* support exact rational solutions of **arbitrary multivariate polynomial systems** **[DONE]**
-* implement optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
+* support general symbolic expressions and computations in `Expr` **[DONE]**
+* support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
+* support general and least-squares solutions of **arbitrary linear equations** **[DONE]**
+* support solutions of systems of **linear inequalities** (with one or many variables) **[DONE]**
+* support solutions of systems of **linear diophantine and linear congruence inequalities** (with one or many variables) (TODO)
+* support exact rational solutions of systems of **arbitrary multivariate polynomial equations** **[DONE]**
+* support all exact solutions of systems of **arbitrary multivariate polynomial equations** **[DONE PARTIALLY]**
 * implement multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
-* implement univariate polynomial factorization over the integers, rational root finding (`Kronecker` algorithm) **[DONE]**
+* implement optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
+* implement univariate polynomial factorization, rational root finding (`Kronecker` algorithm) **[DONE]**
 * implement univariate polynomial approximate root finding (`Aberth` algorithm) **[DONE]**
-* implement multivariate polynomial factorization over the integers, rational root finding (TODO)
+* implement multivariate polynomial factorization (TODO)
 * implement multivariate polynomial approximate root finding (TODO)
 * implement recursive multivariate polynomial `GCD` from univariate polynomial `GCD` **[DONE]**
-* implement more efficient multivariate polynomial `GCD` (TODO)
+* implement more efficient polynomial `GCD` algorithm (TODO)
 * implement polynomial `Resultant`, `Discriminant` computations **[DONE]**
 * implement `Groebner Basis` computations (`Buchberger` algorithm) **[DONE]**
 * implement more efficient `Groebner Basis` computations (TODO)
 * implement `LLL` algorithm (TODO)
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
-* implement faster number-theoretic/integer algorithms (maybe fine-tuned further based on if BigInteger Arithmetic is used) if worth the trouble (eg `fibonacci`, `factorial`, `gcd`, ..) **[DONE PARTIALLY]**
 * full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
-* implement efficient `rank`/`unrank` methods for `Composition` &amp; `Partition` **[DONE]**
-* implement efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
-* implement efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
-* implement efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE]** (not very efficient)
-* support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support *graph* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
 
 

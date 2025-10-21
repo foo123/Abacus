@@ -697,6 +697,128 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         return self._roots.map(function(r) {return r.slice();});
     }
+    ,exactroots: function() {
+        // find exact roots of poly when solvable
+        var self = this, memo;
+        if (null == self._exact_roots)
+        {
+            memo = self.factors()[0].reduce(function(memo, factor) {
+                var roots = [];
+                switch (factor[0].deg())
+                {
+                    case 1:
+                    roots = poly_linear_roots(factor[0]);
+                    break;
+
+                    case 2:
+                    roots = poly_quadratic_roots(factor[0]);
+                    break;
+
+                    case 3:
+                    roots = poly_cubic_roots(factor[0]);
+                    break;
+
+                    case 4:
+                    roots = poly_quartic_roots(factor[0]);
+                    break;
+
+                    default:
+                    // any rational roots
+                    roots = factor[0].roots().map(function(ri) {return [ri[0].toExpr(), ri[1]];});
+                    break;
+                }
+                roots.forEach(function(r) {
+                    var key = r[0].toString();
+                    if (HAS.call(memo, key))
+                    {
+                        memo[key][1] += factor[1]*r[1];
+                    }
+                    else
+                    {
+                        memo[key] = [r[0], factor[1]*r[1]];
+                    }
+                });
+                return memo;
+            }, {});
+            self._exact_roots = KEYS(memo).map(function(key) {return memo[key];});
+        }
+        return self._exact_roots.map(function(r) {return r.slice();});
+    }
+    ,zeros: function() {
+        // find approximate real/complex zeros of poly numerically
+        // https://en.wikipedia.org/wiki/Aberth_method
+        var self = this, d, tc, lo, hi,
+            roots, found, i, j, m, ri, ratio, offset,
+            epsilon = 1e-10, epsilonz, iter,
+            zero, one,  p, dp, px, dpx;
+        if (null == self._zeros)
+        {
+            epsilonz = nComplex(epsilon);
+            zero = nComplex.Zero();
+            one = nComplex.One();
+            p = function(x) {
+                return self.evaluate(x);
+            };
+            dp = function(x) {
+                return (p(x.add(epsilonz)).sub(p(x))).div(epsilonz);
+            };
+            d = self.deg();
+            if (0 < d)
+            {
+                // init
+                tc = self.terms.map(function(ti) {return ti.c.abs();});
+                // https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots
+                // https://arxiv.org/abs/2206.00482
+                hi = nmax(tc.slice(0, -1)).div(tc[tc.length-1]).add(one).valueOf();
+                lo = tc[0].div(tc[0].add(nmax(tc.slice(1)))).valueOf();
+                roots = array(d, function() {
+                    var radius = lo + (hi-lo)*stdMath.random();
+                    var angle = stdMath.random()*stdMath.PI/2;
+                    return nComplex(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
+                });
+
+                // root finding
+                iter = 0;
+                for (;;)
+                {
+                    found = 0;
+                    for (i=0; i<d; ++i)
+                    {
+                        ri = roots[i];
+                        px = p(ri);
+                        dpx = dp(ri);
+                        if (dpx.equ(0))
+                        {
+                            if ((px.re <= epsilon) && (px.im <= epsilon))
+                            {
+                                ++found;
+                                continue;
+                            }
+                            ratio = nComplex(hi);
+                        }
+                        else
+                        {
+                            ratio = px.div(dpx);
+                        }
+                        offset = ratio.div(one.sub(ratio.mul(roots.reduce(function(s, rj, j) {
+                            if ((j !== i) && !ri.equ(rj)) s = s.add((ri.sub(rj)).inv());
+                            return s;
+                        }, zero))));
+                        if ((offset.re <= epsilon) && (offset.im <= epsilon)) ++found;
+                        roots[i] = ri.sub(offset);
+                    }
+                    if (found === d) break;
+                    ++iter; if (iter > 10000) break;
+                }
+            }
+            else
+            {
+                roots = [];
+            }
+            self._zeros = roots.sort(function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);});
+        }
+        return self._zeros.slice();
+    }
     ,factors: function() {
         // factorize poly over integers/rationals if factorizable
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials
@@ -775,115 +897,6 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             self._factors = [factors, c];
         }
         return [self._factors[0].slice(), self._factors[1]];
-    }
-    ,exactroots: function() {
-        // find exact roots of poly when solvable
-        var self = this;
-        if (null == self._exact_roots)
-        {
-            self._exact_roots = self.factors()[0].reduce(function(roots, factor) {
-                factor = factor[0];
-                switch (factor.deg())
-                {
-                    case 1:
-                    roots.push.apply(roots, poly_linear_roots(factor));
-                    break;
-
-                    case 2:
-                    roots.push.apply(roots, poly_quadratic_roots(factor));
-                    break;
-
-                    case 3:
-                    roots.push.apply(roots, poly_cubic_roots(factor));
-                    break;
-
-                    case 4:
-                    roots.push.apply(roots, poly_quartic_roots(factor));
-                    break;
-
-                    default:
-                    // any rational roots
-                    roots.push.apply(roots, factor.roots().map(function(r) {return [r[0].toExpr(), r[1]];}));
-                    break;
-                }
-                return roots;
-            }, []);
-        }
-        return self._exact_roots.slice();
-    }
-    ,zeros: function() {
-        // find approximate real/complex zeros of poly numerically
-        // https://en.wikipedia.org/wiki/Aberth_method
-        var self = this, d, tc, lo, hi,
-            roots, found, i, j, m, ri, ratio, offset,
-            epsilon = 1e-10, epsilonz, iter,
-            zero, one,  p, dp, px, dpx;
-        if (null == self._zeros)
-        {
-            epsilonz = nComplex(epsilon);
-            zero = nComplex.Zero();
-            one = nComplex.One();
-            p = function(x) {
-                return self.evaluate(x);
-            };
-            dp = function(x) {
-                return (p(x.add(epsilonz)).sub(p(x))).div(epsilonz);
-            };
-            d = self.deg();
-            if (0 < d)
-            {
-                // init
-                tc = self.terms.map(function(ti) {return ti.c.abs();});
-                // https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots
-                hi = nmax(tc.slice(0, -1)).div(tc[tc.length-1]).add(one).valueOf();
-                lo = tc[0].div(tc[0].add(nmax(tc.slice(1)))).valueOf();
-                roots = array(d, function() {
-                    var radius = lo + (hi-lo)*stdMath.random();
-                    var angle = stdMath.random()*stdMath.PI/2;
-                    return nComplex(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
-                });
-
-                // root finding
-                iter = 0;
-                for (;;)
-                {
-                    found = 0;
-                    for (i=0; i<d; ++i)
-                    {
-                        ri = roots[i];
-                        px = p(ri);
-                        dpx = dp(ri);
-                        if (dpx.equ(0))
-                        {
-                            if ((px.re <= epsilon) && (px.im <= epsilon))
-                            {
-                                ++found;
-                                continue;
-                            }
-                            ratio = nComplex(hi);
-                        }
-                        else
-                        {
-                            ratio = px.div(dpx);
-                        }
-                        offset = ratio.div(one.sub(ratio.mul(roots.reduce(function(s, rj, j) {
-                            if ((j !== i) && !ri.equ(rj)) s = s.add((ri.sub(rj)).inv());
-                            return s;
-                        }, zero))));
-                        if ((offset.re <= epsilon) && (offset.im <= epsilon)) ++found;
-                        roots[i] = ri.sub(offset);
-                    }
-                    if (found === d) break;
-                    ++iter; if (iter > 10000) break;
-                }
-            }
-            else
-            {
-                roots = [];
-            }
-            self._zeros = roots.sort(function(a, b) {return a.equ(b) ? 0 : (a.lt(b) ? -1 : 1);});
-        }
-        return self._zeros.slice();
     }
     ,equ: function(other) {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -2120,6 +2133,23 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     }
     ,discriminant: function(x) {
         return MultiPolynomial.Discriminant(this, x);
+    }
+    ,roots: function() {
+        return [];
+    }
+    ,exactroots: function() {
+        /*
+        The maximum number of roots of a multivariate polynomial depends on the field; over an infinite field, it can have infinitely many roots, while over a finite field, it is limited to the number of elements in that field. There is no direct multivariate version of the fundamental theorem of algebra. The relationship between the degree of a polynomial and its number of roots is a key consideration in this context. Determining if a multivariate polynomial is identically zero is complex, particularly over finite fields, as it involves confirming that all coefficients are zero. This complexity highlights the challenges in analyzing multivariate polynomials compared to univariate cases.
+        Reference: https://www.physicsforums.com/threads/roots-of-multivariate-polynomials.749772/
+        */
+        return [];
+    }
+    ,zeros: function() {
+        return [];
+    }
+    ,factors: function() {
+        var self = this;
+        return [[[self, 1]], self.ring.One()]; // TODO
     }
     ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -3640,7 +3670,7 @@ function poly_linear_roots(poly)
     var a = poly.term(1, true, true).c,
         b = poly.term(0, true, true).c;
     if (a.equ(0)) return null;
-    if (b.equ(0)) return [Expr.Zero(), 1];
+    if (b.equ(0)) return [[Expr.Zero(), 1]];
 
     // a!=0, x = -b/a
     return [
@@ -3669,18 +3699,16 @@ function poly_quadratic_roots(poly)
     {
         // double root
         roots = [
-            [b.neg().toExpr().div(a.mul(2).toExpr()), 2]
+            [b.neg().div(a.mul(2)).toExpr(), 2]
         ];
     }
     else
     {
         // two roots
-        discriminant = discriminant.lt(0) ? Expr('*', [Complex.Img(), Expr('^', [discriminant.neg().toExpr(), 1/2])]) : Expr('^', [discriminant.toExpr(), 1/2]);
-        a = a.mul(2).toExpr();
-        b = b.toExpr();
+        discriminant = discriminant.lt(0) ? Expr('*', [Complex.Img(), Expr('^', [discriminant.neg(), 1/2])]) : Expr('^', [discriminant, 1/2]);
         roots = [
-            [Expr('*', [-1, Expr('/', [Expr('+', [b, discriminant]), a])]), 1],
-            [Expr('*', [-1, Expr('/', [Expr('-', [b, discriminant]), a])]), 1]
+            [discriminant.add(b).div(a.mul(2)).neg(), 1],
+            [discriminant.neg().add(b).div(a.mul(2)).neg(), 1]
         ];
     }
     return roots;
@@ -3741,7 +3769,7 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
             // simple and double roots
             roots = [
                 [q.mul(3).div(p).add(b_3a).toExpr(), 1], // simple root
-                [q.mul(3).neg().div(p.mul(2)).add(b_3a).toExpr(), 2], // double root
+                [q.mul(3).neg().div(p.mul(2)).add(b_3a).toExpr(), 2] // double root
             ];
         }
     }
@@ -3759,25 +3787,11 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
         else
         {
             // three roots
-            Delta_0 = Delta_0.toExpr();
-            Delta_1 = Delta_1.toExpr();
             D = Expr('^', [
-                Expr('-', [
-                    Expr('^', [
-                        Delta_1,
-                        2
-                    ]),
-                    Expr('*', [
-                        4,
-                        Expr('^', [
-                            Delta_0,
-                            3
-                        ])
-                    ])
-                ]),
+                Delta_1.pow(2).sub(Delta_0.pow(3).mul(4)),
                 1/2
             ]);
-            if (Delta_1.add(D).equ(0))
+            if (D.add(Delta_1).expand().equ(0))
             {
                 D = D.neg();
             }
@@ -4100,9 +4114,6 @@ function polyxgcd(/* args */)
         for (;;)
         {
             a0 = a; b0 = b;
-            //console.log('a0', String(a0), 'b0', String(b0));
-            //console.log('a1', String(a1), 'b1', String(b1));
-            //console.log('a2', String(a2), 'b2', String(b2));
 
             if (0 > PolynomialClass.Term.cmp(a.ltm(), b.ltm(), true))
             {
@@ -4126,8 +4137,6 @@ function polyxgcd(/* args */)
                         a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                    //console.log('a < b, b = 0');
-                    //console.log('a', String(a), 'b', String(b), 'a1', String(a1), 'b1', String(b1));
                     return array(gcd.length+1, function(i) {
                         return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
                     });
@@ -4155,8 +4164,6 @@ function polyxgcd(/* args */)
                         b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                    //console.log('a > b, a = 0');
-                    //console.log('a', String(a), 'b', String(b), 'a2', String(a2), 'b2', String(b2));
                     return array(gcd.length+1,function(i) {
                         return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
                     });
@@ -4180,8 +4187,6 @@ function polyxgcd(/* args */)
                         a = a.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a1 = a1.mul(asign); b1 = b1.mul(bsign);
-                    //console.log('a < b, a = a0, b = b0');
-                    //console.log('a', String(a), 'b', String(b), 'a1', String(a1), 'b1', String(b1));
                     return array(gcd.length+1, function(i) {
                         return 0 === i ? a : (1 === i ? a1 : gcd[i-1].mul(b1));
                     });
@@ -4200,8 +4205,6 @@ function polyxgcd(/* args */)
                         b = b.neg(); asign = asign.neg(); bsign = bsign.neg();
                     }
                     a2 = a2.mul(asign); b2 = b2.mul(bsign);
-                    //console.log('a > b, a = a0, b = b0');
-                    //console.log('a', String(a), 'b', String(b), 'a2', String(a2), 'b2', String(b2));
                     return array(gcd.length+1,function(i) {
                         return 0 === i ? b : (1 === i ? a2 : gcd[i-1].mul(b2));
                     });
@@ -4344,16 +4347,8 @@ MultiPolynomial.xgcd = function(/*args*/) {
             order = p.order();
         }
         return p.univariate(null, true);
-    })).map(function(g) {
-        if (is_instance(g, MultiPolynomial))
-        {
-            g = g.multivariate(symbol).order(order);
-        }
-        else if (is_instance(g, RationalFunc))
-        {
-            g = RationalFunc(g.num.multivariate(symbol).order(order), g.den.multivariate(symbol).order(order));
-        }
-        return g;
+    })).map(function(g, i) {
+        return (0 === i ? g : RationalFunc(g)).multivariate(symbol).order(order);
     });
 };
 MultiPolynomial.lcm = function(/*args*/) {
@@ -4948,6 +4943,33 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             self._simpl = true;
         }
         return self;
+    }
+    ,multivariate: function(x) {
+        var p = this, ring = p.ring;
+        // unmake recursive univariate, make multivariate again on x
+        if (1 < x.length)
+        {
+            while (ring.PolynomialSymbol)
+            {
+                if (is_array(ring.PolynomialSymbol))
+                {
+                    if (ring.PolynomialSymbol.filter(function(xi) {return -1 === x.indexOf(xi);}).length)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (-1 === x.indexOf(ring.PolynomialSymbol))
+                    {
+                        break;
+                    }
+                }
+                ring = ring.CoefficientRing;
+            }
+            p = p.num.toExpr().toRationalFunc(x, ring).div(p.den.toExpr().toRationalFunc(x, ring));
+        }
+        return p;
     }
     ,evaluate: function(x) {
         var self = this;

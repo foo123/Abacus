@@ -9,14 +9,14 @@ use_biginteger_arithmetic(Abacus);
 
 function print_solution(sol, vars)
 {
-    return !sol ? 'Inconsistent or not 0-dimensional system' : (!sol.length ? 'No rational solutions' : sol.map(function(s) {
+    return !sol ? 'Inconsistent or not 0-dimensional system' : (!sol.length ? 'No exact solutions' : sol.map(function(s) {
         return '(' + vars.join(',') + ') = (' + s.map(String).join(',') + ')';
     }).join(', '));
 }
 function check_solution_system(sol, p)
 {
     if (!sol) return 'Inconsistent or not 0-dimensional system';
-    if (!sol.length) return 'No rational solutions';
+    if (!sol.length) return 'No exact solutions';
 
     let out = '', i, m = p.length, j, k = sol.length, res = new Array(k);
     for (j=0; j<k; ++j)
@@ -79,25 +79,3 @@ o=Abacus.Math.polynomials([p1,p2], ["x", "y", "z"]);
 echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2]));
 echo('---');
-
-/*
-const ring = Abacus.Ring.Q("x", "y");
-const solutions = Abacus.Math.polynomials([
-ring.fromString("x^2 + y - 1"),
-ring.fromString("x + y^2 - 1")
-], ["x", "y"]);
-
-console.log('Solutions:')
-console.log(solutions ? solutions.map(sol => ('('+["x", "y"].join(',')+')=('+sol.map(String).join(',')+')')).join("\n") : 'No solutions');
-*/
-/*
-p1 = ring1.fromString("x^2 + y + z - 1");
-p2 = ring1.fromString("x + y^2 + z - 1");
-p3 = ring1.fromString("x + y + z^2 - 1");
-echo('Solve approximately: '+[p1,p2,p3].map(String).join(','));
-echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x", "y", "z"], "approximate")');
-o=Abacus.Math.polynomials([p1,p2,p3], ["x", "y", "z"], "approximate");
-echo(print_solution(o, ["x", "y", "z"]));
-echo(check_solution_system(o, [p1,p2,p3]));
-echo('---');
-*/
