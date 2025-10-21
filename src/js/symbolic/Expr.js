@@ -2126,15 +2126,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,toString: function(type) {
         var self = this, ast = self.ast,
             op = ast.op, arg = ast.arg,
-            str, str2, sign, sign2, _str;
+            str, str2, sign, sign2, _str,
+            Arithmetic = Abacus.Arithmetic;
 
         type = String(type || '').toLowerCase();
 
-        if ('asciimath' === type)
+        /*if ('asciimath' === type)
         {
             _str = self._str;
             self._str = null;
-        }
+        }*/
         if (null == self._str)
         {
             if ('' === op)
@@ -2182,10 +2183,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             self._str = str;
                         }
-                        else if (('asciimath' === type) && (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1)))
+                        else if (
+                            /*('asciimath' === type) &&*/
+                            arg[1].isConst()
+                            && arg[1].c().isReal()
+                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().den, 1)
+                        )
                         {
                             // radical sqrt
-                            self._str = (arg[1].den.c().equ(2) ? 'sqrt ' : ('root(' + arg[1].den.c().toString() + ')')) + '(' + str + ')';
+                            self._str = (Arithmetic.equ(arg[1].c().real().den, 2) ? 'sqrt' : ('root(' + String(arg[1].c().real().den) + ')')) + '(' + str + ')';
                         }
                         else
                         {
@@ -2270,16 +2277,17 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 self._str = '0';
             }
         }
-        if ('asciimath' === type)
+        /*if ('asciimath' === type)
         {
             str = self._str;
             self._str = _str;
             return str;
-        }
+        }*/
         return self._str;
     }
     ,toTex: function() {
-        var self = this, ast = self.ast, op = ast.op, arg = ast.arg, tex, tex2, sign, sign2;
+        var self = this, ast = self.ast, op = ast.op, arg = ast.arg,
+            Arithmetic = Abacus.Arithmetic, tex, tex2, sign, sign2;
 
         if (null == self._tex)
         {
@@ -2335,10 +2343,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             self._tex = tex;
                         }
-                        else if (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1))
+                        else if (
+                            arg[1].isConst()
+                            && arg[1].c().isReal()
+                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().den, 1)
+                        )
                         {
                             // radical sqrt
-                            self._tex = '\\sqrt' + (arg[1].den.c().equ(2) ? '' : ('[' + Tex(arg[1].den.c()) + ']')) + '{' + tex + '}';
+                            self._tex = '\\sqrt' + (Arithmetic.equ(arg[1].c().real().den, 2) ? '' : ('[' + Tex(arg[1].c().real().den) + ']')) + '{' + tex + '}';
                         }
                         else
                         {

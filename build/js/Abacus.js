@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-21 12:16:29)
+*   @version: 2.0.0 (2025-10-21 16:57:40)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
-*   @version: 2.0.0 (2025-10-21 12:16:29)
+*   @version: 2.0.0 (2025-10-21 16:57:40)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -10653,15 +10653,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,toString: function(type) {
         var self = this, ast = self.ast,
             op = ast.op, arg = ast.arg,
-            str, str2, sign, sign2, _str;
+            str, str2, sign, sign2, _str,
+            Arithmetic = Abacus.Arithmetic;
 
         type = String(type || '').toLowerCase();
 
-        if ('asciimath' === type)
+        /*if ('asciimath' === type)
         {
             _str = self._str;
             self._str = null;
-        }
+        }*/
         if (null == self._str)
         {
             if ('' === op)
@@ -10709,10 +10710,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             self._str = str;
                         }
-                        else if (('asciimath' === type) && (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1)))
+                        else if (
+                            /*('asciimath' === type) &&*/
+                            arg[1].isConst()
+                            && arg[1].c().isReal()
+                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().den, 1)
+                        )
                         {
                             // radical sqrt
-                            self._str = (arg[1].den.c().equ(2) ? 'sqrt ' : ('root(' + arg[1].den.c().toString() + ')')) + '(' + str + ')';
+                            self._str = (Arithmetic.equ(arg[1].c().real().den, 2) ? 'sqrt' : ('root(' + String(arg[1].c().real().den) + ')')) + '(' + str + ')';
                         }
                         else
                         {
@@ -10797,16 +10804,17 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 self._str = '0';
             }
         }
-        if ('asciimath' === type)
+        /*if ('asciimath' === type)
         {
             str = self._str;
             self._str = _str;
             return str;
-        }
+        }*/
         return self._str;
     }
     ,toTex: function() {
-        var self = this, ast = self.ast, op = ast.op, arg = ast.arg, tex, tex2, sign, sign2;
+        var self = this, ast = self.ast, op = ast.op, arg = ast.arg,
+            Arithmetic = Abacus.Arithmetic, tex, tex2, sign, sign2;
 
         if (null == self._tex)
         {
@@ -10862,10 +10870,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             self._tex = tex;
                         }
-                        else if (arg[1].num.equ(1) && arg[1].den.isInt() && arg[1].den.c().gt(1))
+                        else if (
+                            arg[1].isConst()
+                            && arg[1].c().isReal()
+                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().den, 1)
+                        )
                         {
                             // radical sqrt
-                            self._tex = '\\sqrt' + (arg[1].den.c().equ(2) ? '' : ('[' + Tex(arg[1].den.c()) + ']')) + '{' + tex + '}';
+                            self._tex = '\\sqrt' + (Arithmetic.equ(arg[1].c().real().den, 2) ? '' : ('[' + Tex(arg[1].c().real().den) + ']')) + '{' + tex + '}';
                         }
                         else
                         {
@@ -14626,6 +14639,11 @@ function polyfactor(p)
     }
     return null;
 }*/
+function sqrt(e, n)
+{
+    if (null == n) n = 2;
+    return Expr('^', [e, Rational(1, n)]);
+}
 function poly_linear_roots(poly)
 {
     if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
@@ -14670,7 +14688,7 @@ function poly_quadratic_roots(poly)
     else
     {
         // two roots
-        discriminant = discriminant.lt(0) ? Expr('*', [Complex.Img(), Expr('^', [discriminant.neg(), 1/2])]) : Expr('^', [discriminant, 1/2]);
+        discriminant = discriminant.lt(0) ? sqrt(discriminant.neg()).mul(Complex.Img()) : sqrt(discriminant);
         roots = [
             [discriminant.add(b).div(a.mul(2)).neg(), 1],
             [discriminant.neg().add(b).div(a.mul(2)).neg(), 1]
@@ -14752,28 +14770,25 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
         else
         {
             // three roots
-            D = Expr('^', [
-                Delta_1.pow(2).sub(Delta_0.pow(3).mul(4)),
-                1/2
-            ]);
+            D = sqrt(Delta_1.pow(2).sub(Delta_0.pow(3).mul(4)));
             if (D.add(Delta_1).expand().equ(0))
             {
                 D = D.neg();
             }
-            C = Expr('^', [Expr('/', [Expr('+', [Delta_1, D]), 2]), Rational(1, 3)]);
-            isqrt3 = Expr('*', [Complex.Img(), Expr('^', [3, 1/2])]);
+            C = sqrt(D.add(Delta_1).div(2), 3);
+            isqrt3 = sqrt(3).mul(Complex.Img());
             roots = ([
                 // 3-roots of unity
                 Expr.One(),
-                Expr('/', [Expr('+', [-1, isqrt3]), 2]),
-                Expr('/', [Expr('-', [-1, isqrt3]), 2])
+                isqrt3.add(-1).div(2),
+                isqrt3.neg().add(-1).div(2)
             ]).map(function(z) {
                 return [Expr('*', [
                     a3.inv().neg(),
                     Expr('+', [
                         b,
-                        Expr('*', [z, C]),
-                        Expr('/', [Delta_0, Expr('*', [z, C])])
+                        z.mul(C),
+                        Expr('/', [Delta_0, z.mul(C)])
                     ])
                 ]), 1];
             });
@@ -14801,12 +14816,12 @@ function poly_quartic_roots(poly)
     if (b.equ(0) && d.equ(0)) return poly_quadratic_roots(Polynomial([UniPolyTerm(a, 2, poly.ring), UniPolyTerm(c, 1, poly.ring), UniPolyTerm(e, 0, poly.ring)], poly.symbol, poly.ring)).reduce(function(roots, r) {
             if (r[0].equ(0))
             {
-                roots.push(r);
+                roots.push([r[0], 2*r[1]]);
             }
             else
             {
-                roots.push([r[0].pow(1/2), r[1]]);
-                roots.push([r[0].pow(1/2).neg(), r[1]]);
+                roots.push([sqrt(r[0]), r[1]]);
+                roots.push([sqrt(r[0]).neg(), r[1]]);
             }
             return roots;
         }, []);
@@ -14821,7 +14836,54 @@ a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c 
 
 a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) + 1/2 sqrt(b^2/(2 a^2) + (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
 */
-    return []; // TODO
+    var b_a = b.div(a),
+        c_a = c.div(a),
+        d_a = d.div(a),
+        e_a = e.div(a),
+        b_ap2 = b_a.mul(b_a),
+        b_ap3 = b_ap2.mul(b_a),
+        A = b_ap2.mul(Rational(-3, 8).add(c_a)),
+        B = b_ap3.div(8).sub(b_a.mul(c_a).div(2)).add(d_a),
+        C = b_ap3.mul(b_a).mul(Rational(-3, 256)).add(b_ap2.mul(c_a).div(16)).sub(b_a.mul(d_a).div(4)).add(e_a),
+        y, ya, sqrt_ya, b_ya, half, roots
+    ;
+
+    b_a = b_a.div(a).neg();
+    if (B.equ(0))
+    {
+        // biquadratic
+        // quadraple root or one double root and two simple roots or four roots
+        roots = poly_quadratic_roots(Polynomial([UniPolyTerm(1, 2, poly.ring), UniPolyTerm(A, 1, poly.ring), UniPolyTerm(C, 0, poly.ring)], poly.symbol, poly.ring)).reduce(function(roots, r) {
+                if (r[0].equ(0))
+                {
+                    roots.push([b_a.toExpr(), 2*r[1]]);
+                }
+                else
+                {
+                    roots.push([sqrt(r[0]).add(b_a), r[1]]);
+                    roots.push([sqrt(r[0]).neg().add(b_a), r[1]]);
+                }
+                return roots;
+        }, []);
+    }
+    else
+    {
+        // quartic
+        // any solution of the cubic
+        y = poly_cubic_roots(Polynomial([UniPolyTerm(2, 3, poly.ring), UniPolyTerm(A.neg(), 2, poly.ring), UniPolyTerm(C.mul(-2), 1, poly.ring), UniPolyTerm(A.mul(C).sub(B.mul(B).div(4)), 0, poly.ring)], poly.symbol, poly.ring))[0][0];
+        half = Rational(1, 2).toExpr();
+        ya = y.mul(-2).sub(A);
+        sqrt_ya = sqrt(y.mul(2).sub(A));
+        b_ya = B.mul(2).div(sqrt_ya);
+        // four roots
+        roots = [
+            [half.mul(sqrt_ya.neg().add(sqrt(ya.add(b_ya)))).add(b_a), 1],
+            [half.mul(sqrt_ya.neg().sub(sqrt(ya.add(b_ya)))).add(b_a), 1],
+            [half.mul(sqrt_ya.add(sqrt(ya.sub(b_ya)))).add(b_a), 1],
+            [half.mul(sqrt_ya.sub(sqrt(ya.sub(b_ya)))).add(b_a), 1]
+        ];
+    }
+    return roots;
 }
 function polykthroot(p, k, limit)
 {

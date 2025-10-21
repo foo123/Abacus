@@ -61,15 +61,13 @@ function check_factors(p)
     }
     echo(out, res.mul(constant).equ(p));
 }
-function check_roots(p, exact, pow)
+function check_roots(p, exact)
 {
     const roots = exact ? p.exactroots() : p.roots();
     const pe = p.toExpr();
     const satisfied = roots.length === roots.filter(function(r) {
         let e = pe.substitute(r[0], p.symbol);
-        //if (pow) e = e.pow(pow);
         e = e.expand();
-        //echo('('+String(pe)+')('+String(r[0])+') -> ', String(e));
         return e.equ(0);
     }).length;
     echo((exact ? 'exactroots' : 'roots')+'('+p.toString()+') = '+roots.map(r => String(r[0])).join(', '), satisfied);
@@ -321,8 +319,9 @@ check_roots(poly("(x-a)(x-b)(x-c)", "x"));
 
 check_roots(poly("x^2-1", "x"), true);
 check_roots(poly("x^2+1", "x"), true);
-check_roots(poly("x^3+3x^2+5x+1", "x"), true, 6); // expr cannot simplify
+check_roots(poly("x^3+3x^2+5x+1", "x"), true); // expr cannot simplify
 check_roots(poly("x^4+3x^2+1", "x"), true);
+check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true);
 
 echo('---');
 
@@ -330,6 +329,7 @@ check_roots(poly("ax+b", "x"), true);
 check_roots(poly("ax^2+bx+c", "x"), true);
 check_roots(poly("(x-a)(x-b)(x-c)", "x"), true);
 //check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // slow and expr cannot simplify
+//check_roots(poly("ax^4+bx^3+cx^2+dx+e", "x"), true); // slow and expr cannot simplify
 
 echo('---');
 
