@@ -309,6 +309,7 @@ console.log(m2.inv().mul(m2).toString());
 * implement efficient `rank`/`unrank` methods for `DerangementPermutation`  **[DONE]**
 * implement efficient `rank`/`unrank` methods for `ConnectedPermutation` **[DONE]**
 * implement efficient `rank`/`unrank` methods for `InvolutionPermutation` **[DONE]** (not very efficient)
+* full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
 * support `minimal`/`gray` ordering (and successor) for all supported combinatorial objects (TODO)
 * support **unique and uniform random ordering traversals** for all combinatorial objects, so that the space of a combinatorial object can be traversed in **any random ordering uniquely and unbiasedly** (useful in some applications, eg backtracking) **[DONE]**, used as custom iterator ordering, may be optimized further
 * make sure the `random()` methods **uniformly and unbiasedly sample the combinatorial object space** (methods use unbiased sampling algorithms, however results in certain cases might depend on [quality of PRNGs](http://www0.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)) **[DONE]**
@@ -344,7 +345,6 @@ console.log(m2.inv().mul(m2).toString());
 * implement `LLL` algorithm (TODO)
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
-* full support for `colex` ordering `Composition` &amp; `Partition` **[DONE PARTIALLY]**
 * support *graph* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
 
 
