@@ -1,7 +1,7 @@
 /**
 *
 *   Abacus
-*   Combinatorics and Algebraic Number Theory Symbolic Computation library for JavaScript
+*   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
 *   @version: @@VERSION@@ (@@DATE@@)
 *   https://github.com/foo123/Abacus
 **/
@@ -22,32 +22,43 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
 
 var  Abacus = {VERSION: "@@VERSION@@"}
 
+    // stdMath
     ,stdMath = Math
+
+    // consts
     ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MAX_SAFE_INTEGER
     ,EPSILON = 1e-6 //Number.EPSILON // maximum precision (ie 6 significant decimal digits) for irrational floating point operations, eg kthroot
-
     ,REVERSED = 1, REFLECTED = 2
     ,LEX = 4, COLEX = 8, MINIMAL = 16, RANDOM = 32, GRADED = 64
     ,LEXICAL = LEX | COLEX | MINIMAL
     ,MONOMIAL = LEX | GRADED
     ,ORDERINGS = LEXICAL | RANDOM | REVERSED | REFLECTED
+    ,LEFT = -2, RIGHT = 2
+    ,NONCOMMUTATIVE = 0, COMMUTATIVE = 1, ANTICOMMUTATIVE = -1
+    ,PREFIX = 2, INFIX = 4, POSTFIX = 8
 
-    ,LEFT = -2, RIGHT = 2, PREFIX = 2, INFIX = 4, POSTFIX = 8
-
+    // utils
     ,Node, Heap, ListSet
     ,DefaultArithmetic, INUMBER, INumber
+
     // numerics
     ,Numeric, Integer, IntegerMod, Rational, Complex, nComplex
+
     // symbolics
     ,Symbolic, Expr, Poly
-    ,Polynomial, MultiPolynomial, RationalFunc
+    ,Polynomial, MultiPolynomial, RationalFunc, Radical
     ,Ring, Matrix
+
     // iterators
-    ,Iterator, CombinatorialIterator, CombinatorialProxy, Filter
+    ,Iterator, CombinatorialIterator
+    ,CombinatorialProxy, Filter
+
     // progressions, sieves
-    ,Progression, PrimeSieve, Diophantine
+    ,Progression, PrimeSieve
+
     // combinatorics
     ,Tensor, Permutation, Combination
-    ,Subset, Partition, SetPartition
-    ,CatalanWord, LatinSquare, MagicSquare
+    ,Subset, Partition, SetPartition, CatalanWord
+    ,Diophantine // TODO
+    ,LatinSquare, MagicSquare
 ;

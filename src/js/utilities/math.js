@@ -1361,6 +1361,20 @@ function xgcd(/* args */)
         }
     }
 }
+function moebius(n)
+{
+    // https://en.wikipedia.org/wiki/M%C3%B6bius_function
+    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
+        three, five, seven, four, six, eight, ten, inc, i, p, p2, m;
+
+    // use factorization of n
+    p = factorize(n); m = p.length;
+    for (i=0; i<m; ++i)
+        if (Arithmetic.lt(I, p[i][1]))
+            return O; // is not square-free
+    return m & 1 ? I : Arithmetic.J;
+}
 function divisors(n, as_generator)
 {
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
@@ -1473,19 +1487,137 @@ function divisors(n, as_generator)
         });
     }
 }
-function moebius(n)
+function symbolic_divisors(c)
 {
-    // https://en.wikipedia.org/wiki/M%C3%B6bius_function
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        three, five, seven, four, six, eight, ten, inc, i, p, p2, m;
-
-    // use factorization of n
-    p = factorize(n); m = p.length;
-    for (i=0; i<m; ++i)
-        if (Arithmetic.lt(I, p[i][1]))
-            return O; // is not square-free
-    return m & 1 ? I : Arithmetic.J;
+    var Arithmetic = Abacus.Arithmetic;
+    if (Arithmetic.isNumber(c)) c = Integer(c);
+    if (c.equ(Arithmetic.O))
+    {
+        // return just 0 for completeness
+        return Iterator([c[CLASS].Zero(c.symbol || null, c.ring || null)]);
+    }
+    else if (is_instance(c, Numeric))
+    {
+        return (is_instance(c, Complex) && !c.isReal() && !c.isImag()
+            ? Iterator((function(c) {
+                var iter_gcd = symbolic_divisors(Rational.gcd(c.real(), c.imag())),
+                    iter_i = [Complex.One(), Complex.Img()], i, g;
+                return function(curr, dir, state, init) {
+                    if (init)
+                    {
+                        iter_gcd.rewind();
+                        g = iter_gcd.next();
+                        i = 0;
+                    }
+                    if (i >= iter_i.length)
+                    {
+                        i = 0;
+                        g = iter_gcd.next();
+                    }
+                    if (null == g) return null;
+                    ++i;
+                    return iter_i[i-1].mul(g);
+                };
+            })(c))
+            : Iterator((function(c, is_imag) {
+                var iter_num = divisors(Arithmetic.abs(c.num), true),
+                    iter_den = divisors(c.den, true),
+                    img = Complex.Img(),
+                    num, den, with_img, ret;
+                return function(curr, dir, state, init) {
+                    if (init)
+                    {
+                        with_img = false;
+                        iter_num.rewind();
+                        iter_den.rewind();
+                        den = iter_den.next();
+                    }
+                    if (is_imag)
+                    {
+                        if (!with_img) num = iter_num.next();
+                    }
+                    else
+                    {
+                        num = iter_num.next();
+                    }
+                    if (null == num)
+                    {
+                        with_img = false;
+                        iter_num.rewind();
+                        num = iter_num.next();
+                        den = iter_den.next();
+                    }
+                    if (null == den) return null;
+                    if (is_imag)
+                    {
+                        ret = with_img ? img.mul(Rational(num, den)) : Rational(num, den);
+                        with_img = !with_img;
+                    }
+                    else
+                    {
+                        ret = is_instance(c, Integer) ? Integer(num) : Rational(num, den);
+                    }
+                    return ret;
+                };
+            })(c.isImag() ? c.imag() : c.real(), c.isImag())));
+    }
+    else if (is_instance(c, RationalFunc))
+    {
+        return Iterator((function(c) {
+            var iter_num = symbolic_divisors(c.num),
+                iter_den = symbolic_divisors(c.den),
+                num, den;
+            return function(curr, dir, state, init) {
+                if (init)
+                {
+                    iter_num.rewind();
+                    iter_den.rewind();
+                    den = iter_den.next();
+                }
+                num = iter_num.next();
+                if (null == num)
+                {
+                    iter_num.rewind();
+                    num = iter_num.next();
+                    den = iter_den.next();
+                }
+                if (null == den) return null;
+                return RationalFunc(num, den);
+            };
+        })(c));
+    }
+    else if (is_instance(c, MultiPolynomial))
+    {
+        return Iterator((function(p, f) {
+            var iter_c = symbolic_divisors(f[1]),
+                iter_q = Tensor(f[0].map(function(fi) {return fi[1]+1;})),
+                c, q;
+            return function(curr, dir, state, init) {
+                if (init)
+                {
+                    iter_c.rewind();
+                    iter_q.rewind();
+                    c = iter_c.next();
+                }
+                q = iter_q.next();
+                if (null == q)
+                {
+                    iter_q.rewind();
+                    q = iter_q.next();
+                    c = iter_c.next();
+                }
+                if (null == c) return null;
+                return q.reduce(function(q, ei, i) {
+                    return 0 === ei ? q : (1 === ei ? (q._mul(f[0][i][0])) : (q._mul(f[0][i][0].pow(ei))));
+                }, MultiPolynomial.Const(c, p.symbol, p.ring));
+            };
+        })(c, c.factors()));
+    }
+    else
+    {
+        // trivial divisors
+        return Iterator(c.equ(Arithmetic.I) ? [c] : [c[CLASS].One(c.symbol || null, c.ring || null), c]);
+    }
 }
 function dotp(a, b, Arithmetic)
 {
@@ -2267,33 +2399,100 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
+function solvesemilinears(polys, symbol, x)
+{
+    // solve general system of semi-linear polynomial equations
+    // where polynomials must be linear in at least some of the terms
+    // so they can be solved with exact symbolic operations wrt the rest
+    if (!polys || !polys.length) return polys;
+    var maxdeg, triang, free_vars, j, has_solution, solution;
+    maxdeg = polys.map(function(pi) {
+        var terms = 0,
+            deg = symbol.map(function(xj) {
+                var dij = pi.maxdeg(xj);
+                terms += 0 < dij ? 1 : 0;
+                return dij;
+            });
+        return {deg:deg, terms:terms};
+    });
+    // triangularization
+    triang = {};
+    polys.forEach(function(pi, i) {
+        symbol.forEach(function(xj, j) {
+            if (1 === maxdeg[i].deg[j])
+            {
+                if (!HAS.call(triang, xj))
+                {
+                    triang[xj] = i;
+                }
+                else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
+                {
+                    triang[xj] = i; // has fewer terms
+                }
+            }
+        });
+    });
+    if (!KEYS(triang).length) return null; // not semi-linear
+    j = 0;
+    free_vars = symbol.reduce(function(free_vars, xi) {
+        if (!HAS.call(triang, xi))
+        {
+            free_vars[xi] = x ? Expr('', String(x)+'_'+String(++j)) : Expr('', Rational.Zero());
+        }
+        return free_vars;
+    }, {});
+    // back-substitution
+    solution = {};
+    KEYS(free_vars).forEach(function(xi) {
+        solution[xi] = free_vars[xi];
+    });
+    KEYS(triang).forEach(function(xi) {
+        var pi = polys[triang[xi]],
+            term = pi.term(pi.symbol.map(function(xj) {return xj === xi ? 1 : 0;}), true);
+        solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
+        free_vars[xi] = solution[xi]; // use it in subsequent substitutions
+    });
+    KEYS(solution).forEach(function(xi) {
+        solution[xi] = solution[xi].compose(free_vars); // do any additional substitutions left
+    });
+    has_solution = (polys.filter(function(pi) {
+        return to_expr(pi).compose(solution).expand().equ(0);
+    }).length === polys.length);
+    return has_solution ? symbol.map(function(xi) {return solution[xi];}) : null;
+}
 function solvepolys(p, x, type)
 {
     if (!p || !p.length) return p;
 
     //type = String(type || 'exact').toLowerCase();
     type = 'exact';
-    var xo = x, param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x.indexOf(s);}).pop();
+    var xo = x, param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === xo.indexOf(s);}).pop();
 
     function recursively_solve(p, x, start)
     {
-        var basis, pnew, xnew, linear_eqs,
+        var basis, pnew, xnew,
+            linear_eqs, semi_linear_eqs,
             i, j, bj, be, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
         if ((1 === basis.length) && basis[0].isConst() && !basis[0].equ(0))
         {
-            // Inconsistent or Infinite
+            // No solution
             return null;
         }
 
         bj = -1;
         xi = '';
         linear_eqs = [];
+        semi_linear_eqs = false;
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
+            if (!semi_linear_eqs && pj.symbol.filter(function(xi) {return 1 === pj.maxdeg(xi);}).length)
+            {
+                semi_linear_eqs = true;
+            }
             if (1 === pj.maxdeg(true))
             {
                 linear_eqs.push(pj);
@@ -2312,50 +2511,51 @@ function solvepolys(p, x, type)
             }
         }
 
-        if ((0 >= linear_eqs.length) && ((basis.length < x.length) || (-1 === bj)))
+        if ((!linear_eqs.length) && (!semi_linear_eqs) && ((basis.length < x.length) || (-1 === bj)))
         {
-            // Not 0-dimensional
+            // No solution
             return null;
         }
 
         if (-1 === bj)
         {
-            //solve underdetermined linear system
-            ab = linear_eqs.reduce(function(ab, eq) {
-                ab.a.push(x.map(function(xi) {return eq.lc(xi);}));
-                ab.b.push(eq.c().neg());
-                return ab;
-            }, {
-                a:[],
-                b:[]
-            });
-            solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, param || false);
-
-            if (!solution)
+            if (linear_eqs.length)
             {
-                // Inconsistent
-                return null;
+                // solve underdetermined linear system
+                ab = linear_eqs.reduce(function(ab, eq) {
+                    ab.a.push(x.map(function(xi) {return eq.lc(xi);}));
+                    ab.b.push(eq.c().neg());
+                    return ab;
+                }, {
+                    a:[],
+                    b:[]
+                });
+                solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, param || false);
+                if (!solution) return null; // no solution
+                zeros = basis.filter(function(b) {
+                    if (-1 < linear_eqs.indexOf(b)) return true;
+                    return to_expr(b).compose(solution).expand().equ(0);
+                });
+                // if system satisfied
+                return zeros.length === basis.length ? [solution.map(to_expr)] : null;
             }
-            zeros = basis.filter(function(b) {
-                if (-1 < linear_eqs.indexOf(b)) return true;
-                return x.reduce(function(b, xi, i) {
-                    return b.substitute(solution[i], xi);
-                }, to_expr(b)).expand().equ(0);
-            });
-            // system satisfied or not
-            return zeros.length === basis.length ? [solution.map(to_expr)] : null;
+            if (semi_linear_eqs)
+            {
+                // solve underdetermined semi-linear system
+                solution = solvesemilinears(basis, x, param || false);
+                // if system satisfied
+                return solution ? [solution.map(to_expr)] : null;
+            }
+            // No solution
+            return null;
         }
 
-        // compute exact solutions for this univariate poly if possible
-        pj = Polynomial(basis[bj], x[xi]);
-        zeros = pj./*exact*/roots().map(function(z) {return z[0];}).map(to_expr); // TODO exactroots()
-        // discard the solutions that Expr cannot verify so that we can continue
-        //be = to_expr(basis[bj]);
-        //zeros = zeros.filter(function(z) {return be.substitute(z, x[xi]).expand().equ(0);});
+        // find exact rational solutions for univariate poly if any
+        zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return z[0];}).map(to_expr); // TODO exactroots()
 
         if (!zeros.length)
         {
-            // No verified exact solutions
+            // No rational solutions
             return [];
         }
 
@@ -2375,18 +2575,14 @@ function solvepolys(p, x, type)
                 if (j !== bj)
                 {
                     var eq = to_expr(b).substitute(z, x[xi]).expand();
-                    if (!eq.equ(0))
-                    {
-                        eq = eq.toPoly(xo, b.ring);
-                        if (eq) pnew.push(eq);
-                    }
+                    if (!eq.equ(0)) pnew.push(eq.toPoly(xo, b.ring));
                 }
                 return pnew;
             }, []);
             if (pnew.length)
             {
                 solution = recursively_solve(pnew, xnew);
-                if (!solution || !solution.length) return solution; // inconsistent, infinite or no exact solution
+                if (!solution || !solution.length) return solution; // no solution
                 solutions = solutions.concat(solution.map(function(s) {
                     s.splice(xi, 0, z);
                     return s;
@@ -2394,8 +2590,9 @@ function solvepolys(p, x, type)
             }
             else
             {
+                j = 0;
                 solutions.push(x.map(function(xj) {
-                    return xj === x[xi] ? z : Expr('', param+'_'+String(i+1));
+                    return xj === x[xi] ? z : Expr('', String(param)+'_'+String(++j));
                 }));
             }
         }
@@ -2404,10 +2601,6 @@ function solvepolys(p, x, type)
     }
 
     return recursively_solve(p, x, true);
-}
-function to_expr(x)
-{
-    return is_instance(x, Expr) ? x : (is_callable(x.toExpr) ? x.toExpr() : Expr('', x));
 }
 function pow2(n)
 {
@@ -3254,6 +3447,10 @@ Abacus.Math = {
     ,divisors: function(n, as_generator) {
         var Arithmetic = Abacus.Arithmetic;
         return divisors(is_instance(n, Integer) ? n : Arithmetic.num(n), true === as_generator);
+    }
+    ,symdivisors: function(x, as_generator) {
+        var symdivs = symbolic_divisors(x);
+        return true === as_generator ? symdivs : (symdivs.get());
     }
     ,legendre: function(a, p) {
         var Arithmetic = Abacus.Arithmetic;

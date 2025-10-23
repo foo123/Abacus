@@ -1317,7 +1317,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
             t = self.terms, i, j, v, is_ncomplex;
         if (!t.length) return ring.Zero();
-        if (!is_instance(x, [Numeric, RationalFunc]) && !Arithmetic.isNumber(x) && is_obj(x)) x = x[self.symbol];
+        if (!is_instance(x, [Numeric, Symbolic]) && !Arithmetic.isNumber(x) && is_obj(x)) x = x[self.symbol];
         x = x || O;
         is_ncomplex = is_instance(x, nComplex);
         //x = ring.cast(x);
@@ -1741,6 +1741,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,_tex: null
     ,_expr: null
     ,_prim: null
+    ,_factors: null
 
     ,dispose: function() {
         var self = this;
@@ -1761,6 +1762,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         self._tex = null;
         self._expr = null;
         self._prim = null;
+        self._factors = null;
         return self;
     }
     ,isInt: function() {
@@ -2148,8 +2150,151 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return [];
     }
     ,factors: function() {
-        var self = this;
-        return [[[self, 1]], self.ring.One()]; // TODO
+        var self = this, queue, factors, t, k, c, q, p;
+        if (null == self._factors)
+        {
+            p = self.primitive(true);
+            c = p[1];
+            p = p[0];
+            factors = {};
+            queue = [p];
+            do {
+                p = queue.shift();
+                if (p.isConst())
+                {
+                    // const, irreducible
+                    c = c.mul(p.cc());
+                    continue;
+                }
+                if (1 === p.terms.length)
+                {
+                    // single combined monomial, split into separate monomials
+                    p.terms[0].e.forEach(function(e, i) {
+                        if (0 < e)
+                        {
+                            q = MultiPolynomial([MultiPolyTerm(1, array(self.symbol.length, function(j) {
+                                return i === j ? 1 : 0;
+                            }), self.ring, p.terms[0].order)], self.symbol, self.ring);
+                            k = q.toString();
+                            if (HAS.call(factors, k))
+                            {
+                                factors[k][1] += e;
+                            }
+                            else
+                            {
+                                factors[k] = [q, e];
+                            }
+                        }
+                    });
+                    continue;
+                }
+                if (1 === p.maxdeg(true))
+                {
+                    // linear factor, irreducible
+                    if (p.lc().lt(0))
+                    {
+                        // normalize leading coefficient to be positive
+                        c = c.mul(-1);
+                        p = p.mul(-1);
+                    }
+                    q = p;
+                    k = q.toString();
+                    if (HAS.call(factors, k))
+                    {
+                        ++factors[k][1];
+                    }
+                    else
+                    {
+                        factors[k] = [q, 1];
+                    }
+                    continue;
+                }
+                if (p.cc().equ(0))
+                {
+                    // check monomial factors
+                    t = false;
+                    p = self.symbol.reduce(function(monomial, xi, i) {
+                        var e = Infinity;
+                        var monomial_present_in_all_terms = (p.terms.length === p.terms.filter(function(t) {
+                            e = stdMath.min(e, t.e[i]);
+                            return 0 < t.e[i];
+                        }).length);
+                        if (monomial_present_in_all_terms) monomial.push([i, e]);
+                        return monomial;
+                    }, []).reduce(function(p, monomial) {
+                        q = MultiPolynomial([MultiPolyTerm(1, array(self.symbol.length, function(i) {
+                            return i === monomial[0] ? 1 : 0;
+                        }), self.ring, p.terms[0].order)], self.symbol, self.ring);
+                        k = q.toString();
+                        if (HAS.call(factors, k))
+                        {
+                            factors[k][1] += monomial[1];
+                        }
+                        else
+                        {
+                            factors[k] = [q, monomial[1]];
+                        }
+                        t = true;
+                        p = p.shift(self.symbol[monomial[0]], -monomial[1]);
+                        return p;
+                    }, p);
+                    if (t)
+                    {
+                        queue.push(p);
+                        continue;
+                    }
+                }
+                // check if univariate
+                t = self.symbol.reduce(function(x, xi) {
+                    if ((!x) && p.isUni(xi, true)) x = xi;
+                    return x;
+                }, null);
+                if (t)
+                {
+                    // is univariate on t
+                    q = Polynomial(p, t, self.ring).factors();
+                    c = c.mul(q[1]);
+                    q[0].forEach(function(f) {
+                        q = MultiPolynomial(f[0], self.symbol, self.ring);
+                        k = q.toString();
+                        if (HAS.call(factors, k))
+                        {
+                            factors[k][1] += f[1];
+                        }
+                        else
+                        {
+                            factors[k] = [q, f[1]];
+                        }
+                    });
+                    continue;
+                }
+                // try to factor recursively
+                q = mpolyfactor(p);
+                if (q)
+                {
+                    // found a factor, split p into q and p/q
+                    queue.push(q);
+                    queue.push(p.div(q));
+                    continue;
+                }
+                // other irreducible factor
+                p = p.monic(true); // same factor can appear with different constants
+                c = c.mul(p[1]);
+                q = p[0];
+                k = q.toString();
+                if (HAS.call(factors, k))
+                {
+                    ++factors[k][1];
+                }
+                else
+                {
+                    factors[k] = [q, 1];
+                }
+            } while (queue.length);
+            factors = KEYS(factors).map(function(k) {return factors[k];});
+            self._factors = [factors, c];
+        }
+        return [self._factors[0].slice(), self._factors[1]];
     }
     ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -2614,20 +2759,23 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }).filter(MultiPolyTerm.isNonZero).sort(MultiPolyTerm.sortDecr), symbol, ring);
         return dp;
     }
-    ,evaluate: function(x) {
+    ,evaluate: function(x, all) {
         // recursive Horner scheme
         var self = this, symbol = self.symbol, ring = self.ring, O = ring.Zero(), memo = Obj();
         function get_val(p, x)
         {
-            if (is_instance(p, [MultiPolynomial, RationalFunc]))
+            if ((false !== all) || (1 < symbol.length))
             {
-                if ((1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+                if (is_instance(p, [MultiPolynomial, RationalFunc]))
                 {
-                    return horner(p, x, p.symbol[0]);
-                }
-                else if (p.ring.equ(ring.CoefficientRing))
-                {
-                    return p.evaluate(x);
+                    if ((1 === p.symbol.length) && (-1 < symbol.indexOf(p.symbol[0])))
+                    {
+                        return horner(p, x, p.symbol[0]);
+                    }
+                    else if (p.ring.equ(ring.CoefficientRing))
+                    {
+                        return p.evaluate(x);
+                    }
                 }
             }
             return p;
@@ -2659,19 +2807,20 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return horner(self.univariate(), x || {}, symbol[0]);
     }
     ,univariate: function(x, as_field) {
-        var p = this, s = p.symbol, index;
+        var p = this, s = p.symbol, xs = s, index;
         // make a multivariate recursively univariate of univariates
         if (1 < s.length)
         {
             if (is_string(x))
             {
-                index = s.indexOf(x);
-                p = p.toExpr().toPoly([x], Ring(p.ring, s.slice(0, index).concat(s.slice(index+1)), false, true));
+                index = xs.indexOf(x);
+                p = p.toExpr().toPoly([x], Ring(p.ring, xs.slice(0, index).concat(xs.slice(index+1)), true === as_field, true));
             }
             else
             {
+                if (is_array(x) && (x.length === s.length)) xs = x;
                 as_field = true === as_field;
-                p = p.toExpr().toPoly([s[0]], s.slice(1).reverse().reduce(function(K, x) {
+                p = p.toExpr().toPoly([xs[0]], xs.slice(1).reverse().reduce(function(K, x) {
                     return Ring(K, [x], as_field, true);
                 }, p.ring));
             }
@@ -3314,13 +3463,12 @@ function multi_div(P, x, q_and_r)
     }
     return P;
 }
-function poly_interpolate(v, x, ring)
+function poly_interpolate(v, x, PolynomialClass, symbol, ring)
 {
     // https://en.wikipedia.org/wiki/Lagrange_polynomial
     // https://en.wikipedia.org/wiki/Newton_polynomial
-    ring = ring || Ring.Q();
     var I = ring.One(), n, d, f, vi, hash, dupl;
-    if (!v || !v.length) return Polynomial.Zero(x, ring);
+    if (!v || !v.length) return PolynomialClass.Zero(symbol, ring);
     if (is_args(v)) v = slice.call(v);
     if (!is_array(v[0])) v = [v];
     v = v.map(function(vi) {
@@ -3355,231 +3503,41 @@ function poly_interpolate(v, x, ring)
         var terms = {};
         terms[x] = I;
         terms['1'] = v[i][0].neg();
-        return Polynomial(terms, x, ring);
-    });
-    // Produce each Lj in turn, and sum into p
-    return operate(function(p, j) {
-        return p._add(operate(function(Lj, i){
-            if (j !== i) Lj = Lj._mul(f[i]);
-            return Lj;
-        }, Polynomial.Const(d[j], x, ring), null, 0, n-1));
-    }, Polynomial.Zero(x, ring), null, 0, n-1);
-}
-function symbolic_interpolate(v, x, ring, PolynomialClass)
-{
-    // https://en.wikipedia.org/wiki/Lagrange_polynomial
-    // https://en.wikipedia.org/wiki/Newton_polynomial
-    PolynomialClass = PolynomialClass || Polynomial;
-    ring = ring || Ring.Q();
-    var I = ring.One(), n, d, f, vi, hash, dupl;
-    if (!v || !v.length) return PolynomialClass.Zero(x, ring);
-    if (is_args(v)) v = slice.call(v);
-    if (!is_array(v[0])) v = [v];
-    v = v.map(function(vi) {
-        return [ring.cast(vi[0]), (is_instance(vi[1], Symbolic) ? vi[1] : ring.cast(vi[1]))];
-    });
-    // check and filter out duplicate values
-    hash = Obj(); dupl = [];
-    for (n=0; n<v.length; ++n)
-    {
-        vi = v[n][0].toString();
-        if (!HAS.call(hash, vi)) hash[vi] = n;
-        else if (!v[hash[vi]][1].equ(v[n][1])) return null; // no polynomial exists
-        else dupl.push(n); // duplicate value to be removed
-    }
-    // remove duplicate values
-    while (dupl.length) v.splice(dupl.pop(), 1);
-    hash = null; dupl = null; n = v.length;
-
-    // Set-up denominators
-    d = array(n, function(j) {
-        var i, dj = I;
-        for (i=0; i<n; ++i)
-        {
-            if (i === j) continue;
-            dj = dj.mul(v[j][0].sub(v[i][0]));
-        }
-        dj = v[j][1].div(dj);
-        return dj.toExpr();
-    });
-    // Set-up numerator factors
-    f = array(n, function(i) {
-        return Expr('-', [Expr('', x), v[i][0].toExpr()]);
+        return is_class(PolynomialClass, RationalFunc) ? PolynomialClass(MultiPolynomial(terms, symbol, ring)) : PolynomialClass(terms, symbol, ring);
     });
     // Produce each Lj in turn, and sum into p
     return operate(function(p, j) {
         return p.add(operate(function(Lj, i){
             if (j !== i) Lj = Lj.mul(f[i]);
             return Lj;
-        }, d[j], null, 0, n-1));
-    }, Expr.Zero(), null, 0, n-1).toPoly(is_class(PolynomialClass, MultiPolynomial) ? [x] : x, ring);
-}
-function find_factor(p)
-{
-    // consuming and slow
-    var m = p.mindeg(true), M = p.maxdeg(true), q;
-    if (1 >= m) m = 2;
-    while (m <= M)
-    {
-        q = p.rad(m);
-        if (q.pow(m).equ(p)) return [q, m]; // q^m = p, m factors
-        ++m;
-    }
-    return null;
-}
-function symbolic_divisors(c)
-{
-    var Arithmetic = Abacus.Arithmetic;
-    if (is_instance(c, Numeric) || Arithmetic.isNumber(c))
-    {
-        return is_instance(c, Complex) && !c.isReal() && !c.isImag()
-            ? Iterator([Complex.One(), Complex.Img()])
-            : Iterator((function(c, imag) {
-            var iter_num = divisors(Arithmetic.abs(c.num), true),
-                iter_den = divisors(c.den, true),
-                num, den;
-            return function(curr, dir, state, init) {
-                if (init)
-                {
-                    iter_num.rewind();
-                    iter_den.rewind();
-                    den = iter_den.next();
-                }
-                num = iter_num.next();
-                if (null == num)
-                {
-                    iter_num.rewind();
-                    num = iter_num.next();
-                    den = iter_den.next();
-                }
-                if (null == den) return null;
-                return imag ? Complex(0, Rational(num, den)) : (is_instance(c, Integer) ? Integer(num) : Rational(num, den));
-            };
-        })(Arithmetic.isNumber(c) ? Integer(c) : (c.isImag() ? c.imag() : c.real()), c.isImag()));
-    }
-    else if (is_instance(c, RationalFunc))
-    {
-        return Iterator((function(c) {
-            var iter_num = symbolic_divisors(c.num),
-                iter_den = symbolic_divisors(c.den),
-                num, den;
-            return function(curr, dir, state, init) {
-                if (init)
-                {
-                    iter_num.rewind();
-                    iter_den.rewind();
-                    den = iter_den.next();
-                }
-                num = iter_num.next();
-                if (null == num)
-                {
-                    iter_num.rewind();
-                    num = iter_num.next();
-                    den = iter_den.next();
-                }
-                if (null == den) return null;
-                return RationalFunc(num, den);
-            };
-        })(c));
-    }
-    else if (is_instance(c, MultiPolynomial))
-    {
-        if (1 !== c.terms.length)
-        {
-            // handle cases like x^2 + 2xy + y^2 -> (x+y)^2
-            var q = null;//find_factor(c); // consuming and slow
-            return Iterator((function(p, f) {
-                var q = f[0], m = f[1], i, pow, q1, q2;
-                return function(curr, dir, state, init) {
-                    var t;
-                    if (init)
-                    {
-                        i = 1;
-                        pow = q;
-                        q1 = q;
-                        q2 = q1.equ(1) ? p : null;
-                    }
-                    if (q1)
-                    {
-                        t = q1;
-                        q1 = null;
-                        return t;
-                    }
-                    if (q2)
-                    {
-                        t = q2;
-                        q2 = null;
-                        return t;
-                    }
-                    ++i;
-                    if (i > m) return null;
-                    pow = pow._mul(q);
-                    return pow;
-                };
-            })(c, q ? q : [MultiPolynomial.One(c.symbol, c.ring), 1]));
-        }
-        return Iterator((function(p, t, e) {
-            var iter_c = symbolic_divisors(t.c),
-                iter_s = e.length ? Tensor(e.map(function(ei) {return ei+1;})) : null,
-                c = null, x = null;
-            return function(curr, dir, state, init) {
-                if (init)
-                {
-                    iter_c.rewind();
-                    if (iter_s)
-                    {
-                        iter_s.rewind();
-                        c = iter_c.next();
-                    }
-                }
-                if (iter_s)
-                {
-                    x = iter_s.next();
-                    if (null == x)
-                    {
-                        iter_s.rewind();
-                        x = iter_s.next();
-                        c = iter_c.next();
-                    }
-                }
-                else
-                {
-                    c = iter_c.next();
-                }
-                if (null == c) return null;
-                var j = 0;
-                return MultiPolynomial([MultiPolyTerm(c, t.e.map(function(ei) {
-                    return 0 === ei ? 0 : x[j++];
-                }), p.ring)], p.symbol, p.ring);
-            };
-        })(c, c.terms[0], c.terms[0].e.filter(function(ei) {return 0 !== ei;})));
-    }
-    return symbolic_divisors(Arithmetic.I);
+        }, PolynomialClass.Const(d[j], symbol, ring), null, 0, n-1));
+    }, PolynomialClass.Zero(symbol, ring), null, 0, n-1);
 }
 function polyfactor(p)
 {
     // Kronecker method to factorize p over the integers/rationals
-    var i, j, n, y, v, d, q,
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O, values, selection,
         r = p.ring, x = p.symbol,
-        Arithmetic = Abacus.Arithmetic,
-        O = Arithmetic.O, values, selection;
+        i, j, n, y, v, d, q, terms;
     for (d=1,n=(p.deg()>>1); d<=n; ++d)
     {
         values = array(d+1, d>>1, -1);
         //if (r.PolynomialSymbol) values = values.concat(r.PolynomialSymbol); // consuming and slow
-        selection = Combination(values.length, d+1);
-        while (selection.hasNext())
+        //selection = Combination(values.length, d+1);
+        //while (selection.hasNext())
         {
-            y = selection.next().map(function(i) {
-                var xi = r.cast(values[i]);
-                return [xi, p.evaluate(xi)];
+            y = /*selection.next()*/values.map(function(i) {
+                var xi = r.cast(/*values[*/i/*]*/),
+                    yi = p.evaluate(xi);
+                return [xi, yi];
             });
             for (i=d; i>=0; --i)
             {
                 if (y[i][1].equ(O))
                 {
                     // found linear factor
-                    var terms = {};
+                    terms = {};
                     terms[x] = r.One();
                     terms['1'] = y[i][0].neg();
                     return Polynomial(terms, x, r);
@@ -3623,7 +3581,7 @@ function polyfactor(p)
                         v[j] = [y[j][0], y[j][1].next()];
                     }
                 }
-                q = poly_interpolate(v, x, r);
+                q = poly_interpolate(v, x, Polynomial, x, r);
                 if (r.PolynomialSymbol || is_class(r.NumberClass, Complex))
                 {
                     // found factor
@@ -3639,32 +3597,146 @@ function polyfactor(p)
         }
     }
 }
-/*function mpolyfactor(p, i)
+function mpolyfactor(p)
 {
-    // Extended Kronecker method to factorize p over the integers/rationals
-    var pp, q, k;
-    if (null == i) i = p.symbol.length;
-    if (1 === i)
+    // Recursive Kronecker method to factorize p over the integers/rationals
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O, values,
+        maxdeg = p.symbol.reduce(function(maxdeg, x) {
+            maxdeg[x] = p.maxdeg(x);
+            return maxdeg;
+        }, {}),
+        x = p.symbol.slice().sort(function(a, b) {
+            return maxdeg[a] - maxdeg[b];
+        }),
+        i, j, k, n, y, yi, v, d, q, pu,
+        terms, divisor, o, res;
+    for (k=1; k<=2; ++k)
     {
-        q = polyfactor(Polynomial(p, p.symbol[0], p.ring));
-        if (!q) return null;
-        q = MultiPolynomial(q, p.symbol, p.ring);
-        return [q, p.div(q)];
+        // can find factors if taken in different order
+        pu = 1 === p.symbol.length ? p : (p.univariate(1 === k ? x[0] : x[x.length-1], true));
+        for (d=1,n=(pu.maxdeg(pu.symbol[0])>>1); d<=n; ++d)
+        {
+            values = array(d+1, d>>1, -1);
+            y = values.map(function(i) {
+                var xi = pu.ring.cast(values[i]),
+                    yi = pu.evaluate(pu.symbol.reduce(function(o, x) {
+                        o[x] = xi;
+                        return o;
+                    }, {}), false);
+                return [xi, yi];
+            });
+            for (i=d; i>=0; --i)
+            {
+                yi = 1 < p.symbol.length ? (y[i][1].evaluate({})) : (y[i][1]);
+                if (yi.equ(O))
+                {
+                    // found linear factor
+                    if (1 === p.symbol.length)
+                    {
+                        terms = {};
+                        terms[p.symbol[0]] = p.ring.One();
+                        terms['1'] = yi.neg();
+                        return MultiPolynomial(terms, p.symbol, p.ring);
+                    }
+                    else
+                    {
+                        divisor = symbolic_divisors(pu.cc());
+                        while (divisor.hasNext())
+                        {
+                            o = {};
+                            o[pu.symbol[0]] = divisor.next();
+                            res = pu.evaluate(o, false);
+                            if (res.equ(O))
+                            {
+                                terms = {};
+                                terms[pu.symbol[0]] = pu.ring.One();
+                                terms['1'] = o[pu.symbol[0]].neg();
+                                return MultiPolynomial(terms, pu.symbol, pu.ring).multivariate(p.symbol);
+                            }
+                            o[pu.symbol[0]] = o[pu.symbol[0]].neg();
+                            res = pu.evaluate(o, false);
+                            if (res.equ(O))
+                            {
+                                terms = {};
+                                terms[pu.symbol[0]] = pu.ring.One();
+                                terms['1'] = o[pu.symbol[0]].neg();
+                                return MultiPolynomial(terms, pu.symbol, pu.ring).multivariate(p.symbol);
+                            }
+                        }
+                    }
+                    y[i][1] = Iterator((function(yi) {
+                        var iter = symbolic_divisors(yi), s, d;
+                        return function(curr, dir, state, init) {
+                            if (init)
+                            {
+                                iter.rewind();
+                                s = 1;
+                                d = iter.next();
+                            }
+                            if (null == d) return null;
+                            var sd = -1 === s ? d.neg() : d;
+                            s = -s;
+                            if (1 === s) d = iter.next();
+                            return sd;
+                        };
+                    })(y[i][1]));
+                }
+                else
+                {
+                    y[i][1] = Iterator((function(yi) {
+                        var iter = symbolic_divisors(yi), s, d;
+                        return function(curr, dir, state, init) {
+                            if (init)
+                            {
+                                iter.rewind();
+                                s = 1;
+                                d = iter.next();
+                            }
+                            if (null == d) return null;
+                            var sd = -1 === s ? d.neg() : d;
+                            s = -s;
+                            if (1 === s) d = iter.next();
+                            return sd;
+                        };
+                    })(y[i][1]));
+                }
+            }
+            v = new Array(y.length);
+            i = d;
+            for (;;)
+            {
+                while ((0 <= i) && !y[i][1].hasNext())
+                {
+                    y[i][1].rewind();
+                    v[i] = [y[i][0], y[i][1].next()];
+                    --i;
+                }
+                if (0 > i) break;
+                v[i] = [y[i][0], y[i][1].next()];
+                if (null == v[0])
+                {
+                    for (j=0; j<i; ++j)
+                    {
+                        v[j] = [y[j][0], y[j][1].next()];
+                    }
+                }
+                q = poly_interpolate(v, pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring);
+                if (q)
+                {
+                    if (is_instance(q, RationalFunc))
+                    {
+                        q = q.num;
+                    }
+                    q = q.multivariate(p.symbol);
+                    // found factor
+                    if ((0 < q.maxdeg(true)) && p.mod(q).equ(O)) return q;
+                }
+                i = d;
+            }
+        }
+        if (1 === p.symbol.length) break;
     }
-    else if (1 < i)
-    {
-        q = mpolyfactor(p.symbol.slice(0, -1).reduce(function(p, xi) {
-            return p.substitute(1, xi);
-        }, p), 1);
-        if (!q) return null;
-        k = q.maxdeg(p.symbol[p.symbol.length-1]);
-    }
-    return null;
-}*/
-function sqrt(e, n)
-{
-    if (null == n) n = 2;
-    return Expr('^', [e, Rational(1, n)]);
 }
 function poly_linear_roots(poly)
 {
@@ -3864,13 +3936,14 @@ a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c 
         e_a = e.div(a),
         b_ap2 = b_a.mul(b_a),
         b_ap3 = b_ap2.mul(b_a),
+        // depressed quartic
         A = b_ap2.mul(Rational(-3, 8).add(c_a)),
         B = b_ap3.div(8).sub(b_a.mul(c_a).div(2)).add(d_a),
         C = b_ap3.mul(b_a).mul(Rational(-3, 256)).add(b_ap2.mul(c_a).div(16)).sub(b_a.mul(d_a).div(4)).add(e_a),
         y, ya, sqrt_ya, b_ya, half, roots
     ;
 
-    b_a = b_a.div(a).neg();
+    b_a = b_a.div(4).neg();
     if (B.equ(0))
     {
         // biquadratic

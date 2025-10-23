@@ -6,7 +6,6 @@ const Abacus = isNode ? require('../build/js/Abacus.js') : window.Abacus;
 const use_biginteger_arithmetic = isNode ? require('./biginteger/arithmetic.js') : window.use_biginteger_arithmetic;
 use_biginteger_arithmetic(Abacus);
 
-
 function poly(expr, symbol)
 {
     return Abacus.Expr(expr).toPoly(symbol);
@@ -321,7 +320,7 @@ check_roots(poly("x^2-1", "x"), true);
 check_roots(poly("x^2+1", "x"), true);
 check_roots(poly("x^3+3x^2+5x+1", "x"), true); // expr cannot simplify
 check_roots(poly("x^4+3x^2+1", "x"), true);
-check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true);
+check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // expr cannot simplify
 
 echo('---');
 

@@ -46,6 +46,17 @@ function check_radical(p, k)
     let r = p.rad(k);
     echo(p.toString()+'=('+r.toString()+')^'+k+'', p.equ(r.pow(k)));
 }
+function check_factors(p)
+{
+    const f = p.factors(), factors = f[0], constant = f[1];
+    let out = p.toString() + ' = (' + String(constant)+')', res = Abacus.MultiPolynomial.One(p.symbol, p.ring);
+    for (let i=0; i<factors.length; ++i)
+    {
+        out += '('+factors[i][0].toString()+')'+(1 < factors[i][1] ? ('^'+String(factors[i][1])) : '');
+        res = res.mul(factors[i][0].pow(factors[i][1]));
+    }
+    echo(out, res.mul(constant).equ(p));
+}
 function check_resultant(p, q, x, res)
 {
     let r = p.resultant(q, x);
@@ -66,7 +77,6 @@ echo('grlex  :', o.order('grlex').toString());
 echo('grevlex:', o.order('grevlex').toString());
 
 echo('---');
-
 
 ring = Abacus.Ring.Q("x", "y");
 rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.Q()), "y"), "x");
@@ -166,6 +176,33 @@ echo('ring.fromString("x+y+1").rad(2)');
 check_radical(ring.fromString("x+y+1"), 2);
 echo('---');
 
+echo('Polynomial Factorization');
+echo('---');
+ring = Abacus.Ring.Q("x", "y", "z");
+echo("((x+1)(x^2 + x + 1)(x^3 - x + 2)^2).factors()");
+check_factors(ring.fromString("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2"));
+echo("(xyz(x+y+z)).factors()");
+check_factors(ring.fromString("xyz(x+y+z)"));
+echo("(x^2*y + x^3).factors()");
+check_factors(ring.fromString("x^2*y + x^3"));
+echo("(z^3-3xyz+x^3+y^3).factors()");
+check_factors(ring.fromString("z^3-3xyz+x^3+y^3"));
+echo("((x+y)(x^2+y+z)).factors()");
+check_factors(ring.fromString("(x+y)(x^2+y+z)"));
+echo("((x+yz)(y^2+x+z)).factors()");
+check_factors(ring.fromString("(x+yz)(y^2+x+z)"));
+echo("((x+yz+1)(y^2+x+z)).factors()");
+check_factors(ring.fromString("(x+yz+1)(y^2+x+z)"));
+echo("((x+yz)(y^2+x)(z^2+y)).factors()");
+check_factors(ring.fromString("(x+yz)(y^2+x)(z^2+y)"));
+echo("((x+yz+2)(y^2+x)(z^2+y)).factors()");
+check_factors(ring.fromString("(x+yz+2)(y^2+x)(z^2+y)"));
+echo("((x+yz)(y^2+x)(z^2+y)(x^2+y^2)).factors()");
+check_factors(ring.fromString("(x+yz)(y^2+x)(z^2+y)(x^2+y^2)"));
+echo('---');
+
+ring = Abacus.Ring.Q("x", "y");
+rring = Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.K(Abacus.Ring.Q()), "y"), "x");
 echo('Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("x*y-x"),ring.fromString("y^2-y")])');
 echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),ring.fromString("x*y-x"),ring.fromString("y^2-y")]).map(String).join(','));
 

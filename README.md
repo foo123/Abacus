@@ -1,17 +1,17 @@
 # Abacus
 
-**Computer Algebra System** for Symbolic Computation for Combinatorics and Algebraic Number Theory for JavaScript and Python
+**Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (356 kB minified)
+**version 2.0.0** almost complete (362 kB minified)
 
-![abacus combinatorial numbers](/abacus.jpg)
+![abacus computer algebra system](/abacus.jpg)
 
 
 `Abacus` is a relatively small and versatile computer algebra and symbolic computation system containing methods and math utilities for fast combinatorial object computation and algebraic / number theoretic computation. It builds on, and extends, a deprecated previous project `Simulacra`.
 
 
-[![Abacus Live](/abacus-live.png)](https://foo123.github.io/examples/abacus)
+[![Abacus Live Demo](/abacus-live.png)](https://foo123.github.io/examples/abacus)
 
 
 
@@ -30,7 +30,7 @@
 
 **Supports:** (see: `test/test.bat`)
 
-**Combinatorics**
+**Combinatorics:**
 * `Tensor` (`test/tensors.js`)
 * `Tuple` (`test/tuples.js`)
 * `Permutation` (`test/permutations.js`, `test/permutations-bigint.js`)
@@ -60,18 +60,19 @@
 * **arbitrary range** of combinatorial objects in a number of supported orderings (ie `lex`, `colex`, `random`,..) (and with filtering applied, if set). **Note** `unrank` methods have to be implemented for this feature to work
 * **efficient and unbiased generation, (un)ranking, succession &amp; random methods** for supported combinatorial objects (see below)
 
-**Symbolic Computations**
+**Symbolic Computations:**
 * Numbers, eg `fibonacci`, `catalan`, `bell`, `factorial`, `partition`, `polygonal`, .. (`test/numbers.js`)
 * Number Theory Functions, eg `gcd` / `xgcd` / `polygcd` / `polyxgcd` / `groebner`, `divisors`, `moebius`, `legendre`, `jacobi`, `isqrt`, `ikthroot`, .. (`test/number_theory.js`)
-* `Integer` (`test/integers.js`), `Rational` (`test/rationals.js`), `Complex` (`test/complex.js`) **supporting arbitrary precision arithmetic**
-* `Polynomial`, `MultiPolynomial` (`test/polynomials.js`, `test/multivariate.js`) **univariate / multivariate with coefficients from a Ring/Field**
-* `RationalFunc` (`test/ratfuncs.js`) **Rational functions as fractions of multivariate polynomials**
-* Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/ratfuncs.js`)
-* `Matrix` (`test/matrices.js`) **with coefficients from a Ring/Field**
-* `Expr` (`test/expressions.js`) **general Symbolic Expressions**
+* `Integer`, `Rational`, `Complex` **supporting arbitrary precision arithmetic** (`test/integers.js`, `test/rationals.js`, `test/complex.js`)
+* `Polynomial`, `MultiPolynomial` **univariate / multivariate with coefficients from a Ring/Field** (`test/polynomials.js`, `test/multivariate.js`)
+* `RationalFunc` **Rational functions as fractions of multivariate polynomials** (`test/ratfuncs.js`)
+* Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`)
+* `Matrix` **with coefficients from a Ring/Field**  (`test/matrices.js`)
+* `Expr` **general Symbolic Expressions** (`test/expressions.js`)
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
-* `Diophantine`, Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
+* Diophantine Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
+* Linear Systems, Polynomial Systems, Linear Inequalities (`test/linears.js`, `test/polys.js`, `test/lineqs.js`)
 
 * `big-integer arithmetic`, `PRNG`s and other `math` utilities are **pluggable using external implementations**, making the lib very flexible especialy with respect to handling big-integers &amp; (pseudo-)random number generators (examples use the excellent [BigInteger.js](https://github.com/peterolson/BigInteger.js))
 
@@ -324,7 +325,7 @@ console.log(m2.inv().mul(m2).toString());
 * implement symbolic/numeric `EVD / SVD` computation (TODO)
 * support general symbolic expressions and computations in `Expr` **[DONE]**
 * support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
-* support general and least-squares solutions of **arbitrary linear equations** **[DONE]**
+* support general and least-squares solutions of systems of **arbitrary linear equations** **[DONE]**
 * support solutions of systems of **linear inequalities** (with one or many variables) **[DONE]**
 * support solutions of systems of **linear diophantine and linear congruence inequalities** (with one or many variables) (TODO)
 * support exact rational solutions of systems of **arbitrary multivariate polynomial equations** **[DONE]**
@@ -333,7 +334,7 @@ console.log(m2.inv().mul(m2).toString());
 * implement optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
 * implement univariate polynomial factorization, rational root finding (`Kronecker` algorithm) **[DONE]**
 * implement univariate polynomial approximate root finding (`Aberth` algorithm) **[DONE]**
-* implement multivariate polynomial factorization (TODO)
+* implement multivariate polynomial factorization (recursive `Kronecker` algorithm) **[DONE]**
 * implement multivariate polynomial approximate root finding (TODO)
 * implement recursive multivariate polynomial `GCD` from univariate polynomial `GCD` **[DONE]**
 * implement more efficient polynomial `GCD` algorithm (TODO)

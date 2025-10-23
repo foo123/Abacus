@@ -9,14 +9,14 @@ use_biginteger_arithmetic(Abacus);
 
 function print_solution(sol, vars)
 {
-    return !sol ? 'Inconsistent or not 0-dimensional system' : (!sol.length ? 'No exact solutions' : sol.map(function(s) {
+    return !sol ? 'No solution' : (!sol.length ? 'No rational solutions' : sol.map(function(s) {
         return '(' + vars.join(',') + ') = (' + s.map(String).join(',') + ')';
     }).join(', '));
 }
 function check_solution_system(sol, p)
 {
-    if (!sol) return 'Inconsistent or not 0-dimensional system';
-    if (!sol.length) return 'No exact solutions';
+    if (!sol) return 'No solution';
+    if (!sol.length) return 'No rational solutions';
 
     let out = '', i, m = p.length, j, k = sol.length, res = new Array(k);
     for (j=0; j<k; ++j)
@@ -48,6 +48,15 @@ echo('o=Abacus.Math.polynomials(['+[p1,p2,p3].map(String).join(',')+'], ["x", "y
 o=Abacus.Math.polynomials([p1,p2,p3], ["x", "y", "z"]);
 echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2,p3]));
+echo('---');
+
+p1 = ring1.fromString("x^2 + y^2 + z - 1");
+p2 = ring1.fromString("y^2 + z");
+echo('Solve: '+[p1,p2].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1,p2].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1,p2], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
 const ring2 = Abacus.Ring.K(Abacus.Rational, "x", true);

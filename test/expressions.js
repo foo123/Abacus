@@ -9,7 +9,7 @@ use_biginteger_arithmetic(Abacus);
 const Expr = Abacus.Expr, Ring = Abacus.Ring;
 
 
-let o, o2, ring;
+let o, o2;
 
 echo('Abacus.Expressions (VERSION = '+Abacus.VERSION+')');
 echo('---');
@@ -104,3 +104,6 @@ echo('o=Expr("(x*y^2 + z)^3")');
 o=Expr("(x*y^2 + z)^3");
 echo(o.expand().toString());
 echo(Expr(o.expand().toString()).toString())
+
+//echo(String(Expr('x^3 - x')), String(Expr('x^3 - x').expand()));
+//echo(String(Expr("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2")));
