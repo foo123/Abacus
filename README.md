@@ -334,6 +334,7 @@ console.log(m2.inv().mul(m2).toString());
 * implement multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
 * implement optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
 * implement univariate polynomial factorization, rational root finding (`Kronecker` algorithm) **[DONE]**
+* implement univariate polynomial exact root finding for solvable polynomials **[DONE]**
 * implement univariate polynomial approximate root finding (`Aberth` algorithm) **[DONE]**
 * implement multivariate polynomial factorization (recursive `Kronecker` algorithm) **[DONE]**
 * implement multivariate polynomial approximate root finding (TODO)
