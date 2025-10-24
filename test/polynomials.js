@@ -66,8 +66,7 @@ function check_roots(p, exact)
     const pe = p.toExpr();
     const satisfied = roots.length === roots.filter(function(r) {
         let e = pe.substitute(r[0], p.symbol);
-        e = e.expand();
-        return e.equ(0);
+        return e.num.expand().equ(0);
     }).length;
     echo((exact ? 'exactroots' : 'roots')+'('+p.toString()+') = '+roots.map(r => String(r[0])).join(', '), satisfied);
 }
