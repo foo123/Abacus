@@ -1,7 +1,7 @@
 # Combinatorial Solutions to Popular Problems using Abacus
 
 
-The solutions, to popular problems, below exhibit the combinatorial and number theoretic capabilities, for solving complex combinatorial and number theoretic problems, of `Abacus` library. Sometimes a solution is found by exhaustive search, other times better than full exhaustive search can be achieved and other times the solution does not require search at all but simply smart composition and manipulation of appropriate combinatorial objects and functions.
+The solutions to popular problems below exhibit the combinatorial and number theoretic capabilities for solving complex combinatorial and number theoretic problems of `Abacus` library. Sometimes a solution is found by exhaustive search, other times better than full exhaustive search can be achieved and other times the solution does not require search at all but simply smart composition and manipulation of appropriate combinatorial objects and functions.
 
 
 ### Contents
@@ -29,7 +29,7 @@ With these utilities available we can start directly using an exhaustive search 
 
 
 ```javascript
-solutions = Abacus.Combination(N*N, N).mapTo(row_column).filterBy(is_valid).get().map(make_grid);
+const solutions = Abacus.Combination(N*N, N).mapTo(row_column).filterBy(is_valid).get().map(make_grid);
 
 echo(''+solutions.length+' Solutions for '+N+' Queens (exhaustive search):');
 echo(solutions.map(print_grid).join("\n---\n"));
@@ -55,7 +55,7 @@ O X O O
 However searching among all combinations as above is inefficient, we can be a little smarter and assume from the beginning that each queen is placed on different row (or column). Then we simply check among all permutations of assigning each queen on a specific (different) column.
 
 ```javascript
-solutions = Abacus.Permutation(N).mapTo(row_column_perm).filterBy(is_valid).get().map(make_grid);
+const solutions = Abacus.Permutation(N).mapTo(row_column_perm).filterBy(is_valid).get().map(make_grid);
 
 echo(''+solutions.length+' Solutions for '+N+' Queens (reduced exhaustive search):');
 echo(solutions.map(print_grid).join("\n---\n"));
@@ -95,9 +95,9 @@ If we only need to find one solution, any solution, then there is an interesting
 Since `Abacus` can generate `LatinSquare`s and also generates **pan-diagonal latin squares** by default if possible (for example for `N=5` it is possible), then we can generate a solution to the 5-Queens problem as follows:
 
 ```javascript
-solutions = [];
-latin = Abacus.LatinSquare.make(N);
-for(i=1; i<=N; i++) solutions.push(from_latin_square(latin, i));
+const solutions = [];
+const latin = Abacus.LatinSquare.make(N);
+for (let i=1; i<=N; i++) solutions.push(from_latin_square(latin, i));
 
 echo(''+solutions.length+' Solutions for '+N+' Queens (pan-diagonal latin square):');
 echo(solutions.map(print_grid).join("\n---\n"));
@@ -156,7 +156,7 @@ Let's try to find all possible magic squares (including rotated and reflected on
 First we can try an exhaustive search over all permutations of numbers `1..N^2` arranged in a square grid.
 
 ```javascript
-solutions = Abacus.Permutation(N*N).mapTo(square).filterBy(Abacus.MagicSquare.isMagic).get();
+const solutions = Abacus.Permutation(N*N).mapTo(square).filterBy(Abacus.MagicSquare.isMagic).get();
 
 echo(''+solutions.length+' Solutions for '+N+'x'+N+' Magic Squares (exhaustive search):');
 echo(solutions.map(print_square).join("\n---\n"));
@@ -214,10 +214,10 @@ We can try something else. We can generate a magic square (for example using `Ab
 Let's try this:
 
 ```javascript
-square = Abacus.MagicSquare.make(N);
-solutions = Abacus.Permutation(N).juxtaposeWith(Abacus.Permutation(N)).get().reduce(function(solutions, permutation){
-    var permuted = permute_rows_cols(square, permutation[0], permutation[1]);
-    if ( Abacus.MagicSquare.isMagic(permuted) ) solutions.push(permuted);
+const square = Abacus.MagicSquare.make(N);
+const solutions = Abacus.Permutation(N).juxtaposeWith(Abacus.Permutation(N)).get().reduce(function(solutions, permutation){
+    const permuted = permute_rows_cols(square, permutation[0], permutation[1]);
+    if (Abacus.MagicSquare.isMagic(permuted)) solutions.push(permuted);
     return solutions;
 }, []);
 
@@ -273,7 +273,7 @@ First of all we can generate all prime numbers up to some limit simply by exhaus
 We use an infinite arithmetic progression which enumerates all numbers `>= 1` and check if each one is prime and return it.
 
 ```javascript
-primes = Abacus.Progression(1 /*start*/, 1 /*step*/, Abacus.Arithmetic.INF /*end*/).filterBy(Abacus.Math.isPrime).get(N);
+const primes = Abacus.Progression(1 /*start*/, 1 /*step*/, Abacus.Arithmetic.INF /*end*/).filterBy(Abacus.Math.isPrime).get(N);
 ```
 
 For `N=100` (first 100 primes) we get:
@@ -285,7 +285,7 @@ For `N=100` (first 100 primes) we get:
 We can be a **little more efficient** and **check only odd numbers** for primality (since, except `2`, **all other primes are odd**). Let's implement this new exhaustive search with two arithmetic progressions one constant (`2`) and one infinite for all odd numbers `>= 3`).
 
 ```javascript
-primes = Abacus.Iterator([Abacus.Progression(2, 0, 2)/*only 2*/, Abacus.Progression(3, 2, Abacus.Arithmetic.INF)/*odds >= 3*/]).filterBy(Abacus.Math.isPrime).get(N);
+const primes = Abacus.Iterator([Abacus.Progression(2, 0, 2)/*only 2*/, Abacus.Progression(3, 2, Abacus.Arithmetic.INF)/*odds >= 3*/]).filterBy(Abacus.Math.isPrime).get(N);
 ```
 
 For this new exhaustive search for `N=100` (first 100 primes) we get again:
@@ -299,7 +299,7 @@ For this new exhaustive search for `N=100` (first 100 primes) we get again:
 We can be **even more efficient** and generate prime numbers directly **without using `isPrime`** (which can be inefficient if used over and over) using a Sieve (eg [Prime Sieve of Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)). Let's do that:
 
 ```javascript
-primes = Abacus.PrimeSieve().get(N);
+const primes = Abacus.PrimeSieve().get(N);
 ```
 
 For `N=100` (first 100 primes) again we get:
@@ -311,7 +311,7 @@ For `N=100` (first 100 primes) again we get:
 We can even generate all prime numbers less than a given prime. For example let's count how many primes are `< 1000000`. Easy.
 
 ```javascript
-count = Abacus.PrimeSieve().get(function( prime ){ return Abacus.Arithmetic.lt(prime, 1000000); }).length;
+const count = Abacus.PrimeSieve().get(function(prime) {return Abacus.Arithmetic.lt(prime, 1000000);}).length;
 ```
 We get `78498` primes less than `1000000`.
 
@@ -321,14 +321,14 @@ We get `78498` primes less than `1000000`.
 There is still another way to generate sequences of primes with `Abacus` which is somewhat slower but more versatile (for example it can generate all primes in an arbitrary range). The trick is to use `Abacus.Math.nextPrime` function. Let's see that in action.
 
 ```javascript
-function prime_sequence( p, N )
+function prime_sequence(p, N)
 {
     p = Abacus.Arithmetic.num(p)
-    var primes = Abacus.Math.isPrime(p) ? [p] : [];
-    while( primes.length < N )
+    const primes = Abacus.Math.isPrime(p) ? [p] : [];
+    while (primes.length < N)
     {
         // get next prime from value of previous run and also store it as current value
-        primes.push( p=Abacus.Math.nextPrime(p) );
+        primes.push(p=Abacus.Math.nextPrime(p));
     }
     return primes;
 }
@@ -351,7 +351,7 @@ Now let's try something more fun. Let us find all primes (up to a limit) which a
 Let's assume we have a function `is_mirror_image` which checks if a certain number is its own mirror image. Then using a prime sieve we can generate all `N` mirror-image primes by:
 
 ```javascript
-primes = Abacus.PrimeSieve().filterBy(Abacus.Util.is_mirror_image).get(N);
+const primes = Abacus.PrimeSieve().filterBy(Abacus.Util.is_mirror_image).get(N);
 ```
 
 For `N=100` (first 100 primes that are also their own mirror image), we get:
@@ -363,15 +363,15 @@ For `N=100` (first 100 primes that are also their own mirror image), we get:
 We can also follow another approach which is more combinatorial in nature. Generate directly mirror image numbers (for a given number of digits) using a `Tensor` and **then** simply check if the number generated in this way is also prime. Lets do that.
 
 ```javascript
-function mirror_image_primes( ndigits )
+function mirror_image_primes(ndigits)
 {
     // since we are looking for mirror images which are also primes
     // and primes are odd, this means the first (and last) digits
     // can only be one of [1,3,5,7,9], the rest can be anything.
-    var first = '13579', rest = '0123456789';
+    const first = '13579', rest = '0123456789';
 
     // odd number of digits
-    return Abacus.Tensor(Abacus.Util.array((ndigits>>1)+1, function(i){return 0===i?first.length:rest.length;}))
+    return Abacus.Tensor(Abacus.Util.array((ndigits>>1)+1, function(i) {return 0 === i ? first.length : rest.length;}))
         .mapTo(make_mirror_image(ndigits, first, rest))
         .filterBy(Abacus.Math.isPrime)
         .get();
@@ -390,24 +390,26 @@ To get the 5-digit primes which are their own mirror image, we get running above
 [Goldbach's Conjecture](https://en.wikipedia.org/wiki/Goldbach%27s_conjecture) states that every even number greater than 2 is the sum of two primes. Let's **prove** the conjecture for the first `N` even numbers. Using our previous `nextPrime` method it is easy.
 
 ```javascript
-function sum_of_two_primes( n )
+function sum_of_two_primes(n)
 {
-    var Arithmetic = Abacus.Arithmetic,
-        p1 = Arithmetic.div(n, 2), p2 = p1, sum;
+    const Arithmetic = Abacus.Arithmetic;
+    let p1 = Arithmetic.div(n, 2), p2 = p1, sum;
 
-    if ( Abacus.Math.isPrime(p1) )
+    if (Abacus.Math.isPrime(p1))
         return String(n)+' = '+String(p1)+'+'+String(p2);
 
-    p1 = Abacus.Math.nextPrime(p1, -1); p2 = Abacus.Math.nextPrime(p2);
-    do{
+    p1 = Abacus.Math.nextPrime(p1, -1);
+    p2 = Abacus.Math.nextPrime(p2);
+    for (;;)
+    {
         sum = Arithmetic.add(p1, p2);
-        if ( Arithmetic.equ(sum, n) ) return String(n)+' = '+String(p1)+'+'+String(p2);
-        else if ( Arithmetic.lt(sum, n) ) p2 = Abacus.Math.nextPrime(p2);
-        else if ( Arithmetic.gt(sum, n) ) p1 = Abacus.Math.nextPrime(p1, -1);
-        if ( null == p1 ) return String(n)+' is not the sum of 2 primes!';
-    }while(true);
+        if (Arithmetic.equ(sum, n)) return String(n)+' = '+String(p1)+'+'+String(p2);
+        else if (Arithmetic.lt(sum, n)) p2 = Abacus.Math.nextPrime(p2);
+        else if (Arithmetic.gt(sum, n)) p1 = Abacus.Math.nextPrime(p1, -1);
+        if (null == p1) return String(n)+' is not the sum of 2 primes!';
+    }
 }
-results = Abacus.Progression(4, 2, Abacus.Arithmetic.INF).mapTo(sum_of_two_primes).get(N);
+const results = Abacus.Progression(4, 2, Abacus.Arithmetic.INF).mapTo(sum_of_two_primes).get(N);
 ```
 
 For the first 25 even numbers greater than 2 we get:
@@ -463,8 +465,8 @@ First we setup our exhaustive search method:
 function exhaustive_search(N, constraints)
 {
     return Abacus.Permutation(N).filterBy(function(p){
-        for(var pos in constraints)
-            if ( !constraints[pos](p) )
+        for (let pos in constraints)
+            if (!constraints[pos](p))
                 return false;
         return true;
     });
@@ -474,7 +476,7 @@ function exhaustive_search(N, constraints)
 Then we define our constraints:
 
 ```javascript
-solutions = exhaustive_search(6, {
+const solutions = exhaustive_search(6, {
     0:function(p){return 0<=p[0]&&p[0]<=4;},
     1:function(p){return p[0]+1===p[1];},
     2:function(p){return p[1]+1===p[2];}
@@ -547,8 +549,8 @@ We define a utility function to setup a constrained permutation combinatorial ob
 ```javascript
 function direct_generation(N, constraints)
 {
-    var T = Abacus.Tensor(N,{type:"partial",data:constraints,ordering:"<>"});
-    if ( T.dimension() < N ) T.completeWith(Abacus.Permutation(N-T.dimension()));
+    const T = Abacus.Tensor(N, {type:"partial", data:constraints, ordering:"<>"});
+    if (T.dimension() < N) T.completeWith(Abacus.Permutation(N-T.dimension()));
     return T;
 }
 ```
@@ -556,7 +558,7 @@ function direct_generation(N, constraints)
 Now it is easy to generate our desired combinatorial object, we simply define our constraints per position:
 
 ```javascript
-solutions = direct_generation(6, {0:"{0..4}",1:"[0]+1",2:"[1]+1"}).get();
+const solutions = direct_generation(6, {0:"{0..4}",1:"[0]+1",2:"[1]+1"}).get();
 
 echo(''+solutions.length+' solutions (combinatorial tensor)');
 echo(solutions.map(String).join("\n"));
@@ -610,7 +612,7 @@ function kcycles(N, k)
     }, Abacus.CombinatorialProxy(item => item.reverse().reduce((p,i) => 1 < i.length ? Abacus.Permutation(i.length-1).juxtaposeWith(p) : p, null)));
 }
 
-solutions = kcycles(5, 3).get();
+const solutions = kcycles(5, 3).get();
 echo(''+solutions.length+' 3-cycle permutations of 5 elements');
 echo(solutions.map(String).join("\n"));
 ```

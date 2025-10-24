@@ -69,6 +69,14 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1]));
 echo('---');
 
+p1 = ring1.fromString("x+y+z^2+1");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
 p1 = ring1.fromString("(x+y)(y^2+z)");
 echo('Solve: '+[p1].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');

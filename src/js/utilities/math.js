@@ -2418,8 +2418,9 @@ function solvesemilinears(polys, symbol, x)
     // triangularization
     triang = {};
     polys.forEach(function(pi, i) {
+        var used = {};
         symbol.forEach(function(xj, j) {
-            if ((1 === maxdeg[i].deg[j]) && !pi.term(pi.symbol.map(function(xi) {return xj === xi ? 1 : 0;}), true).equ(0))
+            if (!used[i] && (1 === maxdeg[i].deg[j]) && !pi.term(pi.symbol.map(function(xi) {return xj === xi ? 1 : 0;}), true).equ(0))
             {
                 if (!HAS.call(triang, xj))
                 {
@@ -2429,6 +2430,7 @@ function solvesemilinears(polys, symbol, x)
                 {
                     triang[xj] = i; // has fewer terms
                 }
+                used[i] = 1;
             }
         });
     });

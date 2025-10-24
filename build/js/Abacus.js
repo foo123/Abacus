@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-24 06:20:56)
+*   @version: 2.0.0 (2025-10-24 06:57:16)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-24 06:20:56)
+*   @version: 2.0.0 (2025-10-24 06:57:16)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4157,8 +4157,9 @@ function solvesemilinears(polys, symbol, x)
     // triangularization
     triang = {};
     polys.forEach(function(pi, i) {
+        var used = {};
         symbol.forEach(function(xj, j) {
-            if ((1 === maxdeg[i].deg[j]) && !pi.term(pi.symbol.map(function(xi) {return xj === xi ? 1 : 0;}), true).equ(0))
+            if (!used[i] && (1 === maxdeg[i].deg[j]) && !pi.term(pi.symbol.map(function(xi) {return xj === xi ? 1 : 0;}), true).equ(0))
             {
                 if (!HAS.call(triang, xj))
                 {
@@ -4168,6 +4169,7 @@ function solvesemilinears(polys, symbol, x)
                 {
                     triang[xj] = i; // has fewer terms
                 }
+                used[i] = 1;
             }
         });
     });
