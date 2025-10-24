@@ -9,13 +9,13 @@ use_biginteger_arithmetic(Abacus);
 
 function print_solution(sol, vars)
 {
-    return !sol ? 'No solution' : (!sol.length ? 'No rational solutions' : sol.map(function(s) {
+    return !sol ? 'Inconsistent system' : (!sol.length ? 'No rational solutions' : sol.map(function(s) {
         return '(' + vars.join(',') + ') = (' + s.map(String).join(',') + ')';
     }).join(', '));
 }
 function check_solution_system(sol, p)
 {
-    if (!sol) return 'No solution';
+    if (!sol) return 'Inconsistent system';
     if (!sol.length) return 'No rational solutions';
 
     let out = '', i, m = p.length, j, k = sol.length, res = new Array(k);
@@ -24,11 +24,10 @@ function check_solution_system(sol, p)
         res[j] = new Array(m);
         for (i=0; i<m; i++)
         {
-            let o = sol[j].reduce(function(o, s, xi) {
-                o[p[i].symbol[xi]] = s.evaluate ? s.evaluate() : s;
+            res[j][i] = p[i].toExpr().compose(sol[j].reduce(function(o, s, xi) {
+                o[p[i].symbol[xi]] = s;
                 return o;
-            }, {});
-            res[j][i] = p[i].evaluate(o).toString();
+            }, {})).num.expand().toString();
         }
     }
     return res;

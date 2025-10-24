@@ -1921,7 +1921,18 @@ function sqrt(x, n)
 }
 function rational_expr(expr)
 {
-    var a, b;
+    var a, b, I = Expr.One();
+    if ('^' === expr.ast.op)
+    {
+        a = rational_expr(expr.ast.arg[0]);
+        return expr.ast.arg[1].lt(0) ? {
+            num: a.den.equ(I) ? I : Expr('^', [a.den, , expr.ast.arg[1].neg()]),
+            den: Expr('^', [a.num, expr.ast.arg[1].neg()])
+        } : {
+            num: Expr('^', [a.num, , expr.ast.arg[1]]),
+            den: a.den.equ(I) ? I : Expr('^', [a.den, expr.ast.arg[1]])
+        };
+    }
     if ('/' === expr.ast.op)
     {
         a = rational_expr(expr.ast.arg[0]);
@@ -1935,8 +1946,8 @@ function rational_expr(expr)
     {
         a = expr.ast.arg.map(rational_expr);
         return {
-            num: a.reduce(function(num, re) {return num.mul(re.num);}, Expr.One()),
-            den: a.reduce(function(den, re) {return den.mul(re.den);}, Expr.One())
+            num: a.reduce(function(num, re) {return num.mul(re.num);}, I),
+            den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
         };
     }
     if (('+' === expr.ast.op) || ('-' === expr.ast.op))
@@ -1944,15 +1955,15 @@ function rational_expr(expr)
         a = expr.ast.arg.map(rational_expr);
         return {
             num: Expr(expr.ast.op, a.map(function(re, i) {
-                var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, Expr.One());
+                var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I);
                 return re.num.mul(m);
             })),
-            den: a.reduce(function(den, re) {return den.mul(re.den);}, Expr.One())
+            den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
         };
     }
     return {
         num: expr,
-        den: Expr.One()
+        den: I
     };
 }
 function expr_replace(f, x, g)

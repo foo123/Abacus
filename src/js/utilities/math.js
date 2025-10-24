@@ -2399,13 +2399,13 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
-function solvesemilinears(polys, symbol, x)
+function solvequasilinears(polys, symbol, x)
 {
-    // solve general system of semi-linear polynomial equations
+    // solve general system of quasi-linear polynomial equations
     // where polynomials must be linear in at least some of the terms
     // so they can be solved with exact symbolic operations wrt the rest
     if (!polys || !polys.length) return polys;
-    var maxdeg, triang, solve_for, free_vars, j, has_solution, solution;
+    var maxdeg, triang, already_used, solve_for, free_vars, j, has_solution, solution;
     maxdeg = polys.map(function(pi) {
         var terms = 0,
             deg = symbol.map(function(xj) {
@@ -2417,10 +2417,10 @@ function solvesemilinears(polys, symbol, x)
     });
     // triangularization
     triang = {};
+    already_used = array(polys.length, false);
     polys.forEach(function(pi, i) {
-        var used = {};
         symbol.forEach(function(xj, j) {
-            if (!used[i] && (1 === maxdeg[i].deg[j]) && !pi.term(pi.symbol.map(function(xi) {return xj === xi ? 1 : 0;}), true).equ(0))
+            if (!already_used[i] && (1 === maxdeg[i].deg[j]))
             {
                 if (!HAS.call(triang, xj))
                 {
@@ -2428,20 +2428,41 @@ function solvesemilinears(polys, symbol, x)
                 }
                 else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
                 {
-                    triang[xj] = i; // has fewer terms
+                    // has fewer terms
+                    already_used[triang[xj]] = false;
+                    triang[xj] = i;
                 }
-                used[i] = 1;
+                already_used[i] = true;
+            }
+        });
+    });
+    // maybe find eqs with fewer terms next time if not already_used
+    polys.forEach(function(pi, i) {
+        symbol.forEach(function(xj, j) {
+            if (!already_used[i] && (1 === maxdeg[i].deg[j]))
+            {
+                if (!HAS.call(triang, xj))
+                {
+                    triang[xj] = i;
+                }
+                else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
+                {
+                    // has fewer terms
+                    already_used[triang[xj]] = false;
+                    triang[xj] = i;
+                }
+                already_used[i] = true;
             }
         });
     });
     solve_for = KEYS(triang);
-    if (!solve_for.length) return null; // not semi-linear
+    if (!solve_for.length) return null; // not quasi-linear
 
     j = 0;
     free_vars = symbol.reduce(function(free_vars, xi) {
         if (!HAS.call(triang, xi))
         {
-            free_vars[xi] = x ? Expr('', String(x)+'_'+String(++j)) : Expr('', Rational.Zero());
+            free_vars[xi] = x ? Expr('', String(x)+'_'+String(++j)) : Expr('', Rational.Zero()/*if this free var is denominator should be One()*/);
         }
         return free_vars;
     }, {});
@@ -2455,14 +2476,24 @@ function solvesemilinears(polys, symbol, x)
     }).forEach(function(xi) {
         var pi = polys[triang[xi]],
             term = pi.term(pi.symbol.map(function(xj) {return xj === xi ? 1 : 0;}), true);
-        solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
+        if (term.equ(0))
+        {
+            // eg xz+x, xy+1
+            term = pi.univariate(xi).term([1], true);
+            solution[xi] = pi.sub(term.multivariate(pi.symbol)).toExpr().div(term.lc().neg()).compose(free_vars);
+        }
+        else
+        {
+            // eg x, y
+            solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
+        }
         free_vars[xi] = solution[xi]; // use it in subsequent substitutions
     });
     KEYS(solution).forEach(function(xi) {
         solution[xi] = solution[xi].compose(free_vars); // do any additional substitutions left
     });
     has_solution = (polys.filter(function(pi) {
-        return to_expr(pi).compose(solution).expand().equ(0);
+        return to_expr(pi).compose(solution).num.expand().equ(0);
     }).length === polys.length);
     return has_solution ? symbol.map(function(xi) {return solution[xi];}) : null;
 }
@@ -2484,8 +2515,8 @@ function solvepolys(p, x, type)
         basis = buchberger_groebner(p);
         if ((1 === basis.length) && basis[0].isConst())
         {
-            // Infinite or Inconsistent
-            return basis[0].equ(0) ? [x.map(function(xi, i) {return Expr('', param+'_'+String(i+1))})] : null;
+            // Trivial or Inconsistent
+            return basis[0].equ(0) ? [x.map(function(xi, i) {return Expr('', param+'_'+String(i+1));})] : null;
         }
 
         bj = -1;
@@ -2542,22 +2573,23 @@ function solvepolys(p, x, type)
                     if (-1 < linear_eqs.indexOf(b)) return true;
                     return to_expr(b).compose(solution).expand().equ(0);
                 });
-                // if system satisfied
+                // if not system inconsistent
                 return zeros.length === basis.length ? [solution.map(to_expr)] : null;
             }
             if (semi_linear_eqs)
             {
-                // solve underdetermined semi-linear system
-                solution = solvesemilinears(basis, x, param || false);
-                // if system satisfied
+                // solve underdetermined quasi-linear system
+                solution = solvequasilinears(basis, x, param || false);
+                // if not system inconsistent
                 return solution ? [solution.map(to_expr)] : null;
             }
-            // No solution
-            return null;
+            // No rational solution
+            return [];
         }
 
         // find exact rational solutions for univariate poly if any
-        zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return z[0];}).map(to_expr); // TODO exactroots()
+        // TODO with exactroots()
+        zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return z[0];}).map(to_expr);
 
         if (!zeros.length)
         {
