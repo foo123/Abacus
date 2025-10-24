@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-24 09:50:13)
+*   @version: 2.0.0 (2025-10-24 17:18:29)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-24 09:50:13)
+*   @version: 2.0.0 (2025-10-24 17:18:29)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4144,7 +4144,9 @@ function solvequasilinears(polys, symbol, x)
     // where polynomials must be linear in at least some of the terms
     // so they can be solved with exact symbolic operations wrt the rest
     if (!polys || !polys.length) return polys;
+
     var maxdeg, triang, already_used, solve_for, free_vars, j, has_solution, solution;
+
     maxdeg = polys.map(function(pi) {
         var terms = 0,
             deg = symbol.map(function(xj) {
@@ -4154,6 +4156,7 @@ function solvequasilinears(polys, symbol, x)
             });
         return {deg:deg, terms:terms};
     });
+
     // triangularization
     triang = {};
     already_used = array(polys.length, false);
@@ -4163,39 +4166,35 @@ function solvequasilinears(polys, symbol, x)
             {
                 if (!HAS.call(triang, xj))
                 {
+                    already_used[i] = true;
                     triang[xj] = i;
                 }
                 else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
                 {
-                    // has fewer terms
+                    // has fewer terms, use this instead
                     already_used[triang[xj]] = false;
+                    already_used[i] = true;
                     triang[xj] = i;
                 }
-                already_used[i] = true;
             }
         });
     });
-    // maybe find eqs with fewer terms next time if not already_used
-    polys.forEach(function(pi, i) {
-        symbol.forEach(function(xj, j) {
-            if (!already_used[i] && (1 === maxdeg[i].deg[j]))
-            {
-                if (!HAS.call(triang, xj))
-                {
-                    triang[xj] = i;
-                }
-                else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
-                {
-                    // has fewer terms
-                    already_used[triang[xj]] = false;
-                    triang[xj] = i;
-                }
-                already_used[i] = true;
-            }
-        });
-    });
+
     solve_for = KEYS(triang);
     if (!solve_for.length) return null; // not quasi-linear
+
+    // try find eqs with fewer terms if not already_used
+    polys.forEach(function(pi, i) {
+        symbol.forEach(function(xj, j) {
+            if (!already_used[i] && HAS.call(triang, xj) && (1 === maxdeg[i].deg[j]) && (maxdeg[i].terms < maxdeg[triang[xj]].terms))
+            {
+                // has fewer terms, use this instead
+                already_used[triang[xj]] = false;
+                already_used[i] = true;
+                triang[xj] = i;
+            }
+        });
+    });
 
     j = 0;
     free_vars = symbol.reduce(function(free_vars, xi) {
@@ -4205,6 +4204,7 @@ function solvequasilinears(polys, symbol, x)
         }
         return free_vars;
     }, {});
+
     // back-substitution
     solution = {};
     KEYS(free_vars).forEach(function(xi) {
@@ -4223,7 +4223,7 @@ function solvequasilinears(polys, symbol, x)
         }
         else
         {
-            // eg x, y
+            // eg 2x, 5y
             solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
         }
         free_vars[xi] = solution[xi]; // use it in subsequent substitutions
@@ -4231,9 +4231,11 @@ function solvequasilinears(polys, symbol, x)
     KEYS(solution).forEach(function(xi) {
         solution[xi] = solution[xi].compose(free_vars); // do any additional substitutions left
     });
+
     has_solution = (polys.filter(function(pi) {
         return to_expr(pi).compose(solution).num.expand().equ(0);
     }).length === polys.length);
+
     return has_solution ? symbol.map(function(xi) {return solution[xi];}) : null;
 }
 function solvepolys(p, x, type)
@@ -4242,12 +4244,14 @@ function solvepolys(p, x, type)
 
     //type = String(type || 'exact').toLowerCase();
     type = 'exact';
-    var xo = x, param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === xo.indexOf(s);}).pop();
+    var xo = x,
+        param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === xo.indexOf(s);}).pop()
+    ;
 
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew,
-            linear_eqs, semi_linear_eqs,
+            linear_eqs, quasi_linear_eqs,
             i, j, bj, be, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
@@ -4255,19 +4259,19 @@ function solvepolys(p, x, type)
         if ((1 === basis.length) && basis[0].isConst())
         {
             // Trivial or Inconsistent
-            return basis[0].equ(0) ? [x.map(function(xi, i) {return Expr('', param+'_'+String(i+1));})] : null;
+            return basis[0].equ(0) ? [x.map(function(xi) {return Expr('', String(param)+'_'+String(xo.indexOf(xi)+1));})] : false;
         }
 
         bj = -1;
-        xi = '';
+        xi = -1;
         linear_eqs = [];
-        semi_linear_eqs = false;
+        quasi_linear_eqs = false;
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
-            if (!semi_linear_eqs && pj.symbol.filter(function(xi) {return 1 === pj.maxdeg(xi);}).length)
+            if (!quasi_linear_eqs && pj.symbol.filter(function(xi) {return 1 === pj.maxdeg(xi);}).length)
             {
-                semi_linear_eqs = true;
+                quasi_linear_eqs = true;
             }
             if (1 === pj.maxdeg(true))
             {
@@ -4287,9 +4291,9 @@ function solvepolys(p, x, type)
             }
         }
 
-        if ((!linear_eqs.length) && (!semi_linear_eqs) && ((basis.length < x.length) || (-1 === bj)))
+        if ((!linear_eqs.length) && (!quasi_linear_eqs) && ((basis.length < x.length) || (-1 === bj)))
         {
-            // No solution
+            // Not zero-dimensional
             return null;
         }
 
@@ -4307,27 +4311,29 @@ function solvepolys(p, x, type)
                     b:[]
                 });
                 solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, param || false);
-                if (!solution) return null; // no solution
+                if (!solution) return false; // inconsistent
                 zeros = basis.filter(function(b) {
                     if (-1 < linear_eqs.indexOf(b)) return true;
-                    return to_expr(b).compose(solution).expand().equ(0);
+                    return to_expr(b).compose(solution).num.expand().equ(0);
                 });
                 // if not system inconsistent
-                return zeros.length === basis.length ? [solution.map(to_expr)] : null;
+                return zeros.length === basis.length ? [solution.map(to_expr)] : false;
             }
-            if (semi_linear_eqs)
+
+            if (quasi_linear_eqs)
             {
                 // solve underdetermined quasi-linear system
                 solution = solvequasilinears(basis, x, param || false);
                 // if not system inconsistent
-                return solution ? [solution.map(to_expr)] : null;
+                return solution ? [solution.map(to_expr)] : false;
             }
-            // No rational solution
-            return [];
+
+            // Not zero-dimensional
+            return null;
         }
 
-        // find exact rational solutions for univariate poly if any
-        // TODO with exactroots()
+        // find exact rational solutions for univariate poly
+        // TODO use exactroots()
         zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return z[0];}).map(to_expr);
 
         if (!zeros.length)
@@ -4351,8 +4357,11 @@ function solvepolys(p, x, type)
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    var eq = to_expr(b).substitute(z, x[xi]).expand();
-                    if (!eq.equ(0)) pnew.push(eq.toPoly(xo, b.ring));
+                    var eq = to_expr(b).substitute(z, x[xi]);
+                    if (!eq.num.expand().equ(0))
+                    {
+                        pnew.push(eq.toPoly(xo, b.ring));
+                    }
                 }
                 return pnew;
             }, []);
@@ -4367,9 +4376,8 @@ function solvepolys(p, x, type)
             }
             else
             {
-                j = 0;
                 solutions.push(x.map(function(xj) {
-                    return xj === x[xi] ? z : Expr('', String(param)+'_'+String(++j));
+                    return xj === x[xi] ? z : Expr('', String(param)+'_'+String(xo.indexOf(xj)+1));
                 }));
             }
         }
@@ -9243,11 +9251,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         i += 6;
                     }
                     i0 = i;
-                    if (match = eat(/^(\\lnot|\\land|\\lor|not|and|or)[^a-z]/i, 1))
+                    if (match = eat(/^(\\lnot|\\land|\\lor|\\neg|not|and|or)[^a-z]/i, 1))
                     {
                         // logical op
                         op = match[1].toLowerCase();
-                        if ('\\lnot' === op) op = 'not';
+                        if ('\\lnot' === op || '\\neg' === op) op = 'not';
                         else if ('\\land' === op) op = 'and';
                         else if ('\\lor' === op) op = 'or';
                         ops.unshift([op, i0]);
@@ -9344,64 +9352,72 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = true;
                         continue;
                     }
-                    if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i)))
+                    if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i, false)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i, false)))
                     {
                         // generalized radical sqrt/root
                         m = match[1].toLowerCase();
-                        if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
-                        n = parseInt(match[2], 10);
-                        if (!n || (0 >= n)) throw error('Invalid 1st argument in "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
-                        term = parse_until('{' === match[3] ? '}' : ')');
-                        if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
-                        term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
-                        if (prev_term)
+                        if (HAS.call(Expr.FN, 'sqrt()'))
                         {
-                            ops.unshift(['*', i0]); // implicit multiplication assumed
-                            merge();
+                            s = s.slice(match[0].length);
+                            i += match[0].length;
+                            n = parseInt(match[2], 10);
+                            if (!n || (0 >= n)) throw error('Invalid 1st argument in "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
+                            term = parse_until('{' === match[3] ? '}' : ')');
+                            if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
+                            term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            terms.unshift(term);
+                            prev_term = true;
+                            continue;
                         }
-                        terms.unshift(term);
-                        prev_term = true;
-                        continue;
                     }
-                    if (eat('√') || eat(/^sqrt\b/i))
+                    if ((match = eat('√', false)) || (match = eat(/^sqrt\b/i, false)))
                     {
                         // alternative sqrt
-                        if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "sqrt()"', i0);
-                        arg = null;
-                        eat(/^\s+/); // space
-                        if ('(' === s.charAt(0))
+                        if (HAS.call(Expr.FN, 'sqrt()'))
                         {
-                            // subexpression
-                            arg = parse_until(')');
+                            s = s.slice(match[0].length);
+                            i += match[0].length;
+                            arg = null;
+                            eat(/^\s+/); // space
+                            if ('(' === s.charAt(0))
+                            {
+                                // subexpression
+                                arg = parse_until(')');
+                            }
+                            else if ('{' === s.charAt(0))
+                            {
+                                // subexpression
+                                arg = parse_until('}');
+                            }
+                            else if (match = eat(/^-?\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
+                            {
+                                // number
+                                arg = Expr('', Rational.fromDec(match[0]));
+                            }
+                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            {
+                                // symbol
+                                m = match[0];
+                                if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                                if ('}' === m.slice(-1)) m = m.slice(0, -1);
+                                arg = Expr('', m);
+                            }
+                            if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
+                            term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            terms.unshift(term);
+                            prev_term = true;
+                            continue;
                         }
-                        else if ('{' === s.charAt(0))
-                        {
-                            // subexpression
-                            arg = parse_until('}');
-                        }
-                        else if (match = eat(/^-?\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
-                        {
-                            // number
-                            arg = Expr('', Rational.fromDec(match[0]));
-                        }
-                        else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
-                        {
-                            // symbol
-                            m = match[0];
-                            if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
-                            if ('}' === m.slice(-1)) m = m.slice(0, -1);
-                            arg = Expr('', m);
-                        }
-                        if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
-                        term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
-                        if (prev_term)
-                        {
-                            ops.unshift(['*', i0]); // implicit multiplication assumed
-                            merge();
-                        }
-                        terms.unshift(term);
-                        prev_term = true;
-                        continue;
                     }
                     if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i, false))
                     {
@@ -18593,6 +18609,11 @@ Ring = Abacus.Ring = Class({
             return is_instance(object, [Integer, IntegerMod]) || Arithmetic.isNumber(object);
         }
         return false;
+    }
+    ,characteristic: function(k) {
+        // the characteristic of the ring/field
+        var self = this, p = null != self.Modulo ? self.Modulo.valueOf() : 0;
+        return arguments.length ? (k === p) : p;
     }
 
     ,Zero: function() {

@@ -201,6 +201,11 @@ Ring = Abacus.Ring = Class({
         }
         return false;
     }
+    ,characteristic: function(k) {
+        // the characteristic of the ring/field
+        var self = this, p = null != self.Modulo ? self.Modulo.valueOf() : 0;
+        return arguments.length ? (k === p) : p;
+    }
 
     ,Zero: function() {
         var self = this;

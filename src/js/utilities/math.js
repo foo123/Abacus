@@ -2405,7 +2405,9 @@ function solvequasilinears(polys, symbol, x)
     // where polynomials must be linear in at least some of the terms
     // so they can be solved with exact symbolic operations wrt the rest
     if (!polys || !polys.length) return polys;
+
     var maxdeg, triang, already_used, solve_for, free_vars, j, has_solution, solution;
+
     maxdeg = polys.map(function(pi) {
         var terms = 0,
             deg = symbol.map(function(xj) {
@@ -2415,6 +2417,7 @@ function solvequasilinears(polys, symbol, x)
             });
         return {deg:deg, terms:terms};
     });
+
     // triangularization
     triang = {};
     already_used = array(polys.length, false);
@@ -2424,39 +2427,35 @@ function solvequasilinears(polys, symbol, x)
             {
                 if (!HAS.call(triang, xj))
                 {
+                    already_used[i] = true;
                     triang[xj] = i;
                 }
                 else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
                 {
-                    // has fewer terms
+                    // has fewer terms, use this instead
                     already_used[triang[xj]] = false;
+                    already_used[i] = true;
                     triang[xj] = i;
                 }
-                already_used[i] = true;
             }
         });
     });
-    // maybe find eqs with fewer terms next time if not already_used
-    polys.forEach(function(pi, i) {
-        symbol.forEach(function(xj, j) {
-            if (!already_used[i] && (1 === maxdeg[i].deg[j]))
-            {
-                if (!HAS.call(triang, xj))
-                {
-                    triang[xj] = i;
-                }
-                else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
-                {
-                    // has fewer terms
-                    already_used[triang[xj]] = false;
-                    triang[xj] = i;
-                }
-                already_used[i] = true;
-            }
-        });
-    });
+
     solve_for = KEYS(triang);
     if (!solve_for.length) return null; // not quasi-linear
+
+    // try find eqs with fewer terms if not already_used
+    polys.forEach(function(pi, i) {
+        symbol.forEach(function(xj, j) {
+            if (!already_used[i] && HAS.call(triang, xj) && (1 === maxdeg[i].deg[j]) && (maxdeg[i].terms < maxdeg[triang[xj]].terms))
+            {
+                // has fewer terms, use this instead
+                already_used[triang[xj]] = false;
+                already_used[i] = true;
+                triang[xj] = i;
+            }
+        });
+    });
 
     j = 0;
     free_vars = symbol.reduce(function(free_vars, xi) {
@@ -2466,6 +2465,7 @@ function solvequasilinears(polys, symbol, x)
         }
         return free_vars;
     }, {});
+
     // back-substitution
     solution = {};
     KEYS(free_vars).forEach(function(xi) {
@@ -2484,7 +2484,7 @@ function solvequasilinears(polys, symbol, x)
         }
         else
         {
-            // eg x, y
+            // eg 2x, 5y
             solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
         }
         free_vars[xi] = solution[xi]; // use it in subsequent substitutions
@@ -2492,9 +2492,11 @@ function solvequasilinears(polys, symbol, x)
     KEYS(solution).forEach(function(xi) {
         solution[xi] = solution[xi].compose(free_vars); // do any additional substitutions left
     });
+
     has_solution = (polys.filter(function(pi) {
         return to_expr(pi).compose(solution).num.expand().equ(0);
     }).length === polys.length);
+
     return has_solution ? symbol.map(function(xi) {return solution[xi];}) : null;
 }
 function solvepolys(p, x, type)
@@ -2503,12 +2505,14 @@ function solvepolys(p, x, type)
 
     //type = String(type || 'exact').toLowerCase();
     type = 'exact';
-    var xo = x, param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === xo.indexOf(s);}).pop();
+    var xo = x,
+        param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === xo.indexOf(s);}).pop()
+    ;
 
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew,
-            linear_eqs, semi_linear_eqs,
+            linear_eqs, quasi_linear_eqs,
             i, j, bj, be, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
@@ -2516,19 +2520,19 @@ function solvepolys(p, x, type)
         if ((1 === basis.length) && basis[0].isConst())
         {
             // Trivial or Inconsistent
-            return basis[0].equ(0) ? [x.map(function(xi, i) {return Expr('', param+'_'+String(i+1));})] : null;
+            return basis[0].equ(0) ? [x.map(function(xi) {return Expr('', String(param)+'_'+String(xo.indexOf(xi)+1));})] : false;
         }
 
         bj = -1;
-        xi = '';
+        xi = -1;
         linear_eqs = [];
-        semi_linear_eqs = false;
+        quasi_linear_eqs = false;
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
-            if (!semi_linear_eqs && pj.symbol.filter(function(xi) {return 1 === pj.maxdeg(xi);}).length)
+            if (!quasi_linear_eqs && pj.symbol.filter(function(xi) {return 1 === pj.maxdeg(xi);}).length)
             {
-                semi_linear_eqs = true;
+                quasi_linear_eqs = true;
             }
             if (1 === pj.maxdeg(true))
             {
@@ -2548,9 +2552,9 @@ function solvepolys(p, x, type)
             }
         }
 
-        if ((!linear_eqs.length) && (!semi_linear_eqs) && ((basis.length < x.length) || (-1 === bj)))
+        if ((!linear_eqs.length) && (!quasi_linear_eqs) && ((basis.length < x.length) || (-1 === bj)))
         {
-            // No solution
+            // Not zero-dimensional
             return null;
         }
 
@@ -2568,27 +2572,29 @@ function solvepolys(p, x, type)
                     b:[]
                 });
                 solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, param || false);
-                if (!solution) return null; // no solution
+                if (!solution) return false; // inconsistent
                 zeros = basis.filter(function(b) {
                     if (-1 < linear_eqs.indexOf(b)) return true;
-                    return to_expr(b).compose(solution).expand().equ(0);
+                    return to_expr(b).compose(solution).num.expand().equ(0);
                 });
                 // if not system inconsistent
-                return zeros.length === basis.length ? [solution.map(to_expr)] : null;
+                return zeros.length === basis.length ? [solution.map(to_expr)] : false;
             }
-            if (semi_linear_eqs)
+
+            if (quasi_linear_eqs)
             {
                 // solve underdetermined quasi-linear system
                 solution = solvequasilinears(basis, x, param || false);
                 // if not system inconsistent
-                return solution ? [solution.map(to_expr)] : null;
+                return solution ? [solution.map(to_expr)] : false;
             }
-            // No rational solution
-            return [];
+
+            // Not zero-dimensional
+            return null;
         }
 
-        // find exact rational solutions for univariate poly if any
-        // TODO with exactroots()
+        // find exact rational solutions for univariate poly
+        // TODO use exactroots()
         zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return z[0];}).map(to_expr);
 
         if (!zeros.length)
@@ -2612,8 +2618,11 @@ function solvepolys(p, x, type)
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    var eq = to_expr(b).substitute(z, x[xi]).expand();
-                    if (!eq.equ(0)) pnew.push(eq.toPoly(xo, b.ring));
+                    var eq = to_expr(b).substitute(z, x[xi]);
+                    if (!eq.num.expand().equ(0))
+                    {
+                        pnew.push(eq.toPoly(xo, b.ring));
+                    }
                 }
                 return pnew;
             }, []);
@@ -2628,9 +2637,8 @@ function solvepolys(p, x, type)
             }
             else
             {
-                j = 0;
                 solutions.push(x.map(function(xj) {
-                    return xj === x[xi] ? z : Expr('', String(param)+'_'+String(++j));
+                    return xj === x[xi] ? z : Expr('', String(param)+'_'+String(xo.indexOf(xj)+1));
                 }));
             }
         }

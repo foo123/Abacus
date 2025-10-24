@@ -470,11 +470,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         i += 6;
                     }
                     i0 = i;
-                    if (match = eat(/^(\\lnot|\\land|\\lor|not|and|or)[^a-z]/i, 1))
+                    if (match = eat(/^(\\lnot|\\land|\\lor|\\neg|not|and|or)[^a-z]/i, 1))
                     {
                         // logical op
                         op = match[1].toLowerCase();
-                        if ('\\lnot' === op) op = 'not';
+                        if ('\\lnot' === op || '\\neg' === op) op = 'not';
                         else if ('\\land' === op) op = 'and';
                         else if ('\\lor' === op) op = 'or';
                         ops.unshift([op, i0]);
@@ -571,64 +571,72 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = true;
                         continue;
                     }
-                    if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i)))
+                    if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i, false)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i, false)))
                     {
                         // generalized radical sqrt/root
                         m = match[1].toLowerCase();
-                        if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
-                        n = parseInt(match[2], 10);
-                        if (!n || (0 >= n)) throw error('Invalid 1st argument in "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
-                        term = parse_until('{' === match[3] ? '}' : ')');
-                        if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
-                        term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
-                        if (prev_term)
+                        if (HAS.call(Expr.FN, 'sqrt()'))
                         {
-                            ops.unshift(['*', i0]); // implicit multiplication assumed
-                            merge();
+                            s = s.slice(match[0].length);
+                            i += match[0].length;
+                            n = parseInt(match[2], 10);
+                            if (!n || (0 >= n)) throw error('Invalid 1st argument in "'+('root' === m ? 'root()' : 'sqrt[]')+'()"', i0);
+                            term = parse_until('{' === match[3] ? '}' : ')');
+                            if (!term) throw error('Missing or invalid 2nd argument in "'+('root' === m ? ('root('+n+')') : ('sqrt['+n+']'))+'()"', i0);
+                            term = Expr.OP['^'].fn([term, Rational(1, n, true)/*1/n*/]);
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            terms.unshift(term);
+                            prev_term = true;
+                            continue;
                         }
-                        terms.unshift(term);
-                        prev_term = true;
-                        continue;
                     }
-                    if (eat('√') || eat(/^sqrt\b/i))
+                    if ((match = eat('√', false)) || (match = eat(/^sqrt\b/i, false)))
                     {
                         // alternative sqrt
-                        if (!HAS.call(Expr.FN, 'sqrt()')) throw error('Unsupported function "sqrt()"', i0);
-                        arg = null;
-                        eat(/^\s+/); // space
-                        if ('(' === s.charAt(0))
+                        if (HAS.call(Expr.FN, 'sqrt()'))
                         {
-                            // subexpression
-                            arg = parse_until(')');
+                            s = s.slice(match[0].length);
+                            i += match[0].length;
+                            arg = null;
+                            eat(/^\s+/); // space
+                            if ('(' === s.charAt(0))
+                            {
+                                // subexpression
+                                arg = parse_until(')');
+                            }
+                            else if ('{' === s.charAt(0))
+                            {
+                                // subexpression
+                                arg = parse_until('}');
+                            }
+                            else if (match = eat(/^-?\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
+                            {
+                                // number
+                                arg = Expr('', Rational.fromDec(match[0]));
+                            }
+                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            {
+                                // symbol
+                                m = match[0];
+                                if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                                if ('}' === m.slice(-1)) m = m.slice(0, -1);
+                                arg = Expr('', m);
+                            }
+                            if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
+                            term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            terms.unshift(term);
+                            prev_term = true;
+                            continue;
                         }
-                        else if ('{' === s.charAt(0))
-                        {
-                            // subexpression
-                            arg = parse_until('}');
-                        }
-                        else if (match = eat(/^-?\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
-                        {
-                            // number
-                            arg = Expr('', Rational.fromDec(match[0]));
-                        }
-                        else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
-                        {
-                            // symbol
-                            m = match[0];
-                            if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
-                            if ('}' === m.slice(-1)) m = m.slice(0, -1);
-                            arg = Expr('', m);
-                        }
-                        if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
-                        term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
-                        if (prev_term)
-                        {
-                            ops.unshift(['*', i0]); // implicit multiplication assumed
-                            merge();
-                        }
-                        terms.unshift(term);
-                        prev_term = true;
-                        continue;
                     }
                     if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i, false))
                     {
