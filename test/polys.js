@@ -38,8 +38,10 @@ echo('Abacus Polynomial Systems (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 // Solutions of Polynomial Systems
-let o, p1, p2, p3;
 const ring1 = Abacus.Ring.Q("x", "y", "z");
+const ring2 = Abacus.Ring.K(Abacus.Rational, "x", true);
+let o, p1, p2, p3;
+
 p1 = ring1.fromString("x^2 + y + z - 1");
 p2 = ring1.fromString("x + y^2 + z - 1");
 p3 = ring1.fromString("x + y + z^2 - 1");
@@ -59,7 +61,22 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
-const ring2 = Abacus.Ring.K(Abacus.Rational, "x", true);
+p1 = ring1.fromString("x^2 + y^2 + z - 1");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
+p1 = ring1.fromString("(x+y)(y^2+z)");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
 p1 = ring2.fromString("(x+1)^2");
 p2 = ring2.fromString("x+1");
 p3 = ring2.fromString("x*(x+1)");

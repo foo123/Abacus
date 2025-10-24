@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-23 22:47:38)
+*   @version: 2.0.0 (2025-10-24 06:20:56)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-23 22:47:38)
+*   @version: 2.0.0 (2025-10-24 06:20:56)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4144,7 +4144,7 @@ function solvesemilinears(polys, symbol, x)
     // where polynomials must be linear in at least some of the terms
     // so they can be solved with exact symbolic operations wrt the rest
     if (!polys || !polys.length) return polys;
-    var maxdeg, triang, free_vars, j, has_solution, solution;
+    var maxdeg, triang, solve_for, free_vars, j, has_solution, solution;
     maxdeg = polys.map(function(pi) {
         var terms = 0,
             deg = symbol.map(function(xj) {
@@ -4158,7 +4158,7 @@ function solvesemilinears(polys, symbol, x)
     triang = {};
     polys.forEach(function(pi, i) {
         symbol.forEach(function(xj, j) {
-            if (1 === maxdeg[i].deg[j])
+            if ((1 === maxdeg[i].deg[j]) && !pi.term(pi.symbol.map(function(xi) {return xj === xi ? 1 : 0;}), true).equ(0))
             {
                 if (!HAS.call(triang, xj))
                 {
@@ -4171,7 +4171,9 @@ function solvesemilinears(polys, symbol, x)
             }
         });
     });
-    if (!KEYS(triang).length) return null; // not semi-linear
+    solve_for = KEYS(triang);
+    if (!solve_for.length) return null; // not semi-linear
+
     j = 0;
     free_vars = symbol.reduce(function(free_vars, xi) {
         if (!HAS.call(triang, xi))
@@ -4185,7 +4187,9 @@ function solvesemilinears(polys, symbol, x)
     KEYS(free_vars).forEach(function(xi) {
         solution[xi] = free_vars[xi];
     });
-    KEYS(triang).forEach(function(xi) {
+    solve_for.sort(function(a, b) {
+        return maxdeg[triang[a]].terms - maxdeg[triang[b]].terms;
+    }).forEach(function(xi) {
         var pi = polys[triang[xi]],
             term = pi.term(pi.symbol.map(function(xj) {return xj === xi ? 1 : 0;}), true);
         solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
@@ -4215,10 +4219,10 @@ function solvepolys(p, x, type)
             zeros, solution, solutions;
 
         basis = buchberger_groebner(p);
-        if ((1 === basis.length) && basis[0].isConst() && !basis[0].equ(0))
+        if ((1 === basis.length) && basis[0].isConst())
         {
-            // No solution
-            return null;
+            // Infinite or Inconsistent
+            return basis[0].equ(0) ? [x.map(function(xi, i) {return Expr('', param+'_'+String(i+1))})] : null;
         }
 
         bj = -1;
