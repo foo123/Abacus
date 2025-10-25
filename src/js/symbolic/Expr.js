@@ -1602,6 +1602,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             re = rational_expr(self);
             self._rexpr = Expr('/', [re.num, re.den]);
             self._rexpr._rexpr = self._rexpr; // idempotent
+            self._rexpr.ast.arg[0]._rexpr = Expr('/', [self._rexpr.ast.arg[0], Expr.One()]); // idempotent
+            self._rexpr.ast.arg[1]._rexpr = Expr('/', [self._rexpr.ast.arg[1], Expr.One()]); // idempotent
         }
         return self._rexpr;
     }
