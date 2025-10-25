@@ -482,13 +482,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = false;
                         continue;
                     }
-                    if (match = eat(/^(\\neq|\\gte|\\lte|\\gt|\\ge|\\lt|\\le|\\ne|\\eq)[^a-z]/i, 1))
+                    if (match = eat(/^(\\neq|\\gte|\\geq|\\lte|\\leq|\\gt|\\ge|\\lt|\\le|\\ne|\\eq)[^a-z]/i, 1))
                     {
                         // relational op
                         op = match[1].toLowerCase();
                         if ('\\neq' === op || '\\ne' === op) op = '!=';
-                        else if ('\\gte' === op || '\\ge' === op) op = '>=';
-                        else if ('\\lte' === op || '\\le' === op) op = '<=';
+                        else if ('\\gte' === op || '\\geq' === op || '\\ge' === op) op = '>=';
+                        else if ('\\lte' === op || '\\leq' === op || '\\le' === op) op = '<=';
                         else if ('\\gt' === op) op = '>';
                         else if ('\\lt' === op) op = '<';
                         else if ('\\eq' === op) op = '=';
@@ -574,9 +574,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i, false)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i, false)))
                     {
                         // generalized radical sqrt/root
-                        m = match[1].toLowerCase();
                         if (HAS.call(Expr.FN, 'sqrt()'))
                         {
+                            m = match[1].toLowerCase();
                             s = s.slice(match[0].length);
                             i += match[0].length;
                             n = parseInt(match[2], 10);
@@ -664,9 +664,25 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
+                    if (match = eat(/^(\\alpha|\\beta|\\gamma|\\delta|\\epsilon|\\zeta|\\eta|\\theta|\\iota|\\kappa|\\lambda|\\mu|\\nu|\\xi|\\o|\\pi|\\rho|\\sigma|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega)(_\{?[a-z0-9]+\}?)?/i))
+                    {
+                        // greek symbol
+                        m = match[0];
+                        if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                        if ('}' === m.slice(-1)) m = m.slice(0, -1);
+                        term = Expr('', m);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
+                        terms.unshift(term);
+                        prev_term = true;
+                        continue;
+                    }
                     if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
                     {
-                        // symbol
+                        // latin symbol
                         m = match[0];
                         if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
@@ -1499,14 +1515,35 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self;
     }
-    ,substitute: function(v, x) {
-        var self = this, sub = {};
-        sub[x] = to_expr(v);
-        return self.compose(sub);
+    ,substitute: function(that, withthat, toplevel) {
+        var self = this;
+        if (is_instance(that, Expr))
+        {
+            // general subexpression substitution
+            return subexpr_substitute(self, that, to_expr(withthat), false !== toplevel);
+        }
+        else if (is_array(that) && is_array(withthat))
+        {
+            return that.reduce(function(expr, _, i) {
+                return expr.substitute(that[i], withthat[i], toplevel);
+            }, self);
+        }
+        else if (is_obj(that))
+        {
+            // symbol substitution map
+            return KEYS(that).reduce(function(expr, symbol) {
+                return symbol_substitute(expr, symbol, that[symbol]);
+            }, self);
+        }
+        else if (is_string(that))
+        {
+            // simple symbol substitution
+            return symbol_substitute(self, String(that), to_expr(withthat));
+        }
+        return self;
     }
     ,compose: function(g) {
-        var self = this;
-        return is_obj(g) ? KEYS(g).reduce(function(f, x) {return expr_replace(f, x, g[x]);}, self) : self;
+        return this.substitute(g); // alias
     }
     ,d: function(x, n) {
         // nth order formal derivative with respect to symbol x
@@ -1554,6 +1591,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (null == self._xpnd)
         {
             self._xpnd = neg_pow_to_inv(expand(self));
+            self._xpnd._xpnd = self._xpnd; // idempotent
         }
         return self._xpnd;
     }
@@ -1563,6 +1601,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             re = rational_expr(self);
             self._rexpr = Expr('/', [re.num, re.den]);
+            self._rexpr._rexpr = self._rexpr; // idempotent
         }
         return self._rexpr;
     }
@@ -1974,7 +2013,7 @@ function rational_expr(expr)
         den: I
     };
 }
-function expr_replace(f, x, g)
+function symbol_substitute(f, x, g)
 {
     if (is_instance(g, Expr) || is_string(g))
     {
@@ -1986,10 +2025,25 @@ function expr_replace(f, x, g)
         }
         else if (('expr' === f.ast.type) && (-1 !== f.symbols().indexOf(x)))
         {
-            return Expr(f.ast.op, f.ast.arg.map(function(f) {return expr_replace(f, x, g);}));
+            return Expr(f.ast.op, f.ast.arg.map(function(f) {return symbol_substitute(f, x, g);}));
         }
     }
     return f;
+}
+function subexpr_substitute(expr, subexpr1, subexpr2, toplevel)
+{
+    // substitute subexpr1 -> subexpr2 in expr
+    if (toplevel && ((expr === subexpr1) || (expr.toString() === subexpr1.toString())))
+    {
+        return subexpr2;
+    }
+    else if ('expr' === expr.ast.type)
+    {
+        return Expr(expr.ast.op, expr.ast.arg.map(function(subexpr) {
+            return subexpr_substitute(subexpr, subexpr1, subexpr2, true);
+        }));
+    }
+    return expr; // nothing to substitute
 }
 function derivative_expr(f, x)
 {

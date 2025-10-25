@@ -24,7 +24,7 @@ function check_solution_system(sol, p)
         res[j] = new Array(m);
         for (i=0; i<m; i++)
         {
-            res[j][i] = p[i].toExpr().compose(sol[j].reduce(function(o, s, xi) {
+            res[j][i] = p[i].toExpr().substitute(sol[j].reduce(function(o, s, xi) {
                 o[p[i].symbol[xi]] = s;
                 return o;
             }, {})).num.expand().toString();
@@ -113,6 +113,14 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
+p1 = ring1.fromString("xy + y^2");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
 p1 = ring1.fromString("z^2-x^2-y^2");
 echo('Solve: '+[p1].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
@@ -122,6 +130,22 @@ echo(check_solution_system(o, [p1]));
 echo('---');
 
 p1 = ring1.fromString("z^2+x^2+y^2+5");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
+p1 = ring1.fromString("0");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
+p1 = ring1.fromString("1");
 echo('Solve: '+[p1].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
 o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);

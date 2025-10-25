@@ -1234,10 +1234,9 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return Polynomial.kthroot(self, n);
     }
     ,substitute: function(v, x) {
-        var self = this, sub = {};
+        var self = this;
         x = self.symbol;
-        sub[x] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
-        return self.toExpr().compose(sub).toPoly(x, self.ring);
+        return self.toExpr().substitute(x, v).toPoly(x, self.ring);
     }
     ,compose: function(q) {
         // functionaly compose one polynomial with another. ie result = P(Q(x))
@@ -2647,19 +2646,18 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return MultiPolynomial.kthroot(self, n);
     }
     ,substitute: function(v, xi) {
-        var self = this, sub = {};
+        var self = this;
         xi = String(xi || self.symbol[0]);
         if (-1 < self.symbol.indexOf(xi))
         {
-            sub[xi] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
-            return self.toExpr().compose(sub).toPoly(self.symbol, self.ring);
+            return self.toExpr().substitute(xi, v).toPoly(self.symbol, self.ring);
         }
         return self;
     }
     ,compose: function(q) {
         var self = this;
         q = q || {};
-        return self.toExpr().compose(KEYS(q).reduce(function(e, x) {
+        return self.toExpr().substitute(KEYS(q).reduce(function(e, x) {
             e[x] = is_instance(q[x], Poly) ? q[x].toExpr() : Expr('', x);
             return e;
         }, {})).toPoly(self.symbol, self.ring);

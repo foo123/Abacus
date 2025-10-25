@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-24 17:18:29)
+*   @version: 2.0.0 (2025-10-25 10:14:11)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-24 17:18:29)
+*   @version: 2.0.0 (2025-10-25 10:14:11)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4138,38 +4138,49 @@ function solvepythag(a, with_param)
     }
     return solutions;
 }
-function solvequasilinears(polys, symbol, x)
+function solveseparable(polys, symbol, x)
 {
-    // solve general system of quasi-linear polynomial equations
-    // where polynomials must be linear in at least some of the terms
+    // solve general system of separable polynomial equations
+    // where some polynomials must have some of the terms as single monomials (ie x^k)
     // so they can be solved with exact symbolic operations wrt the rest
     if (!polys || !polys.length) return polys;
 
-    var maxdeg, triang, already_used, solve_for, free_vars, j, has_solution, solution;
+    var deg, triang, already_used,
+        solve_for, free_vars, sub, pow,
+        j, is_consistent, all_substituted, solution;
 
-    maxdeg = polys.map(function(pi) {
-        var terms = 0,
-            deg = symbol.map(function(xj) {
-                var dij = pi.maxdeg(xj);
-                terms += 0 < dij ? 1 : 0;
-                return dij;
-            });
-        return {deg:deg, terms:terms};
+    function is_symbol(xi)
+    {
+        return -1 < symbol.indexOf(xi);
+    }
+
+    deg = polys.map(function(pi) {
+        var deg = {min:[], max:[], terms:0};
+        symbol.forEach(function(xj) {
+            var dijmax = pi.maxdeg(xj),
+                dijmin = pi.mindeg(xj);
+            deg.terms += 0 < dijmax ? 1 : 0;
+            deg.min.push(dijmin);
+            deg.max.push(dijmax);
+        });
+        return deg;
     });
 
     // triangularization
     triang = {};
     already_used = array(polys.length, false);
+    // first find linear terms preferably
     polys.forEach(function(pi, i) {
         symbol.forEach(function(xj, j) {
-            if (!already_used[i] && (1 === maxdeg[i].deg[j]))
+            if (!already_used[i] && (1 === deg[i].max[j]))
             {
+                // single linear term
                 if (!HAS.call(triang, xj))
                 {
                     already_used[i] = true;
                     triang[xj] = i;
                 }
-                else if (maxdeg[i].terms < maxdeg[triang[xj]].terms)
+                else if (deg[i].terms < deg[triang[xj]].terms)
                 {
                     // has fewer terms, use this instead
                     already_used[triang[xj]] = false;
@@ -4179,22 +4190,30 @@ function solvequasilinears(polys, symbol, x)
             }
         });
     });
-
-    solve_for = KEYS(triang);
-    if (!solve_for.length) return null; // not quasi-linear
-
-    // try find eqs with fewer terms if not already_used
+    // then find any monomial terms
     polys.forEach(function(pi, i) {
         symbol.forEach(function(xj, j) {
-            if (!already_used[i] && HAS.call(triang, xj) && (1 === maxdeg[i].deg[j]) && (maxdeg[i].terms < maxdeg[triang[xj]].terms))
+            if (!already_used[i] && (0 < deg[i].min[j]) && (deg[i].min[j] === deg[i].max[j]))
             {
-                // has fewer terms, use this instead
-                already_used[triang[xj]] = false;
-                already_used[i] = true;
-                triang[xj] = i;
+                // single monomial term
+                if (!HAS.call(triang, xj))
+                {
+                    already_used[i] = true;
+                    triang[xj] = i;
+                }
+                else if (deg[i].min[j] < deg[triang[xj]].min[j])
+                {
+                    // is lower power, use this instead
+                    already_used[triang[xj]] = false;
+                    already_used[i] = true;
+                    triang[xj] = i;
+                }
             }
         });
     });
+
+    solve_for = KEYS(triang);
+    if (!solve_for.length) return null; // cannot solve
 
     j = 0;
     free_vars = symbol.reduce(function(free_vars, xi) {
@@ -4206,37 +4225,58 @@ function solvequasilinears(polys, symbol, x)
     }, {});
 
     // back-substitution
+    pow = {};
+    sub = {that:[], withthat:[]};
     solution = {};
     KEYS(free_vars).forEach(function(xi) {
         solution[xi] = free_vars[xi];
+        pow[xi] = 1;
+        sub.that.push(Expr('', xi));
+        sub.withthat.push(solution[xi]);
     });
     solve_for.sort(function(a, b) {
-        return maxdeg[triang[a]].terms - maxdeg[triang[b]].terms;
+        return deg[triang[a]].min[symbol.indexOf(a)] - deg[triang[b]].min[symbol.indexOf(b)];
     }).forEach(function(xi) {
         var pi = polys[triang[xi]],
-            term = pi.term(pi.symbol.map(function(xj) {return xj === xi ? 1 : 0;}), true);
-        if (term.equ(0))
+            d = deg[triang[xi]].min[symbol.indexOf(xi)],
+            term = pi.univariate(xi).term([d], true)
+        ;
+        pow[xi] = d;
+        solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
+        if (0 === solution[xi].symbols().filter(is_symbol).length)
         {
-            // eg xz+x, xy+1
-            term = pi.univariate(xi).term([1], true);
-            solution[xi] = pi.sub(term.multivariate(pi.symbol)).toExpr().div(term.lc().neg()).compose(free_vars);
+            // use it in subsequent substitutions
+            sub.that.push(1 === pow[xi] ? Expr('', xi) : Expr('^', [Expr('', xi), pow[xi]]));
+            sub.withthat.push(solution[xi]);
         }
-        else
-        {
-            // eg 2x, 5y
-            solution[xi] = pi.sub(term).div(term.lc().neg()).toExpr().compose(free_vars);
-        }
-        free_vars[xi] = solution[xi]; // use it in subsequent substitutions
     });
+
+    // make sure all are substituted
+    do {
+    all_substituted = true;
     KEYS(solution).forEach(function(xi) {
-        solution[xi] = solution[xi].compose(free_vars); // do any additional substitutions left
+        if (solution[xi].symbols().filter(is_symbol).length)
+        {
+            all_substituted = false;
+            solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
+            if (0 === solution[xi].symbols().filter(is_symbol).length)
+            {
+                sub.that.push(1 === pow[xi] ? Expr('', xi) : Expr('^', [Expr('', xi), pow[xi]]));
+                sub.withthat.push(solution[xi]);
+            }
+        }
     });
+    } while (!all_substituted);
 
-    has_solution = (polys.filter(function(pi) {
-        return to_expr(pi).compose(solution).num.expand().equ(0);
+    // check is solution consistent
+    is_consistent = (polys.filter(function(pi) {
+        return to_expr(pi).substitute(sub.that, sub.withthat).num.expand().equ(0);
     }).length === polys.length);
+    if (!is_consistent) return false;
 
-    return has_solution ? symbol.map(function(xi) {return solution[xi];}) : null;
+    return symbol.map(function(xi) {
+        return 1 === pow[xi] ? solution[xi] : sqrt(solution[xi], pow[xi]);
+    });
 }
 function solvepolys(p, x, type)
 {
@@ -4251,7 +4291,6 @@ function solvepolys(p, x, type)
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew,
-            linear_eqs, quasi_linear_eqs,
             i, j, bj, be, pj, xi, n, z, ab,
             zeros, solution, solutions;
 
@@ -4264,19 +4303,9 @@ function solvepolys(p, x, type)
 
         bj = -1;
         xi = -1;
-        linear_eqs = [];
-        quasi_linear_eqs = false;
         for (j=0,n=basis.length; j<n; ++j)
         {
             pj = basis[j];
-            if (!quasi_linear_eqs && pj.symbol.filter(function(xi) {return 1 === pj.maxdeg(xi);}).length)
-            {
-                quasi_linear_eqs = true;
-            }
-            if (1 === pj.maxdeg(true))
-            {
-                linear_eqs.push(pj);
-            }
             if (-1 === bj)
             {
                 for (i=x.length-1; i>=0; --i)
@@ -4291,45 +4320,18 @@ function solvepolys(p, x, type)
             }
         }
 
-        if ((!linear_eqs.length) && (!quasi_linear_eqs) && ((basis.length < x.length) || (-1 === bj)))
+        /*if ((basis.length < x.length) && (-1 === bj))
         {
             // Not zero-dimensional
             return null;
-        }
+        }*/
 
         if (-1 === bj)
         {
-            if (linear_eqs.length)
-            {
-                // solve underdetermined linear system
-                ab = linear_eqs.reduce(function(ab, eq) {
-                    ab.a.push(x.map(function(xi) {return eq.lc(xi);}));
-                    ab.b.push(eq.c().neg());
-                    return ab;
-                }, {
-                    a:[],
-                    b:[]
-                });
-                solution = solvelinears(Matrix(linear_eqs[0].ring, ab.a), ab.b, param || false);
-                if (!solution) return false; // inconsistent
-                zeros = basis.filter(function(b) {
-                    if (-1 < linear_eqs.indexOf(b)) return true;
-                    return to_expr(b).compose(solution).num.expand().equ(0);
-                });
-                // if not system inconsistent
-                return zeros.length === basis.length ? [solution.map(to_expr)] : false;
-            }
-
-            if (quasi_linear_eqs)
-            {
-                // solve underdetermined quasi-linear system
-                solution = solvequasilinears(basis, x, param || false);
-                // if not system inconsistent
-                return solution ? [solution.map(to_expr)] : false;
-            }
-
-            // Not zero-dimensional
-            return null;
+            // try to solve underdetermined separable system
+            solution = solveseparable(basis, x, param || false);
+            // if solvable
+            return solution ? [solution.map(to_expr)] : solution;
         }
 
         // find exact rational solutions for univariate poly
@@ -4357,7 +4359,7 @@ function solvepolys(p, x, type)
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    var eq = to_expr(b).substitute(z, x[xi]);
+                    var eq = to_expr(b).substitute(x[xi], z);
                     if (!eq.num.expand().equ(0))
                     {
                         pnew.push(eq.toPoly(xo, b.ring));
@@ -4368,7 +4370,7 @@ function solvepolys(p, x, type)
             if (pnew.length)
             {
                 solution = recursively_solve(pnew, xnew);
-                if (!solution || !solution.length) return solution; // no solution
+                if (!solution || !solution.length) return solution; // not zero-dimensional
                 solutions = solutions.concat(solution.map(function(s) {
                     s.splice(xi, 0, z);
                     return s;
@@ -9263,13 +9265,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = false;
                         continue;
                     }
-                    if (match = eat(/^(\\neq|\\gte|\\lte|\\gt|\\ge|\\lt|\\le|\\ne|\\eq)[^a-z]/i, 1))
+                    if (match = eat(/^(\\neq|\\gte|\\geq|\\lte|\\leq|\\gt|\\ge|\\lt|\\le|\\ne|\\eq)[^a-z]/i, 1))
                     {
                         // relational op
                         op = match[1].toLowerCase();
                         if ('\\neq' === op || '\\ne' === op) op = '!=';
-                        else if ('\\gte' === op || '\\ge' === op) op = '>=';
-                        else if ('\\lte' === op || '\\le' === op) op = '<=';
+                        else if ('\\gte' === op || '\\geq' === op || '\\ge' === op) op = '>=';
+                        else if ('\\lte' === op || '\\leq' === op || '\\le' === op) op = '<=';
                         else if ('\\gt' === op) op = '>';
                         else if ('\\lt' === op) op = '<';
                         else if ('\\eq' === op) op = '=';
@@ -9355,9 +9357,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     if ((match = eat(/^\\?(sqrt)\s*\[(\d+)\]\s*([\(\{])/i, false)) || (match = eat(/^(root)\s*\((\d+)\)\s*(\()/i, false)))
                     {
                         // generalized radical sqrt/root
-                        m = match[1].toLowerCase();
                         if (HAS.call(Expr.FN, 'sqrt()'))
                         {
+                            m = match[1].toLowerCase();
                             s = s.slice(match[0].length);
                             i += match[0].length;
                             n = parseInt(match[2], 10);
@@ -9445,9 +9447,25 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
+                    if (match = eat(/^(\\alpha|\\beta|\\gamma|\\delta|\\epsilon|\\zeta|\\eta|\\theta|\\iota|\\kappa|\\lambda|\\mu|\\nu|\\xi|\\o|\\pi|\\rho|\\sigma|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega)(_\{?[a-z0-9]+\}?)?/i))
+                    {
+                        // greek symbol
+                        m = match[0];
+                        if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                        if ('}' === m.slice(-1)) m = m.slice(0, -1);
+                        term = Expr('', m);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
+                        terms.unshift(term);
+                        prev_term = true;
+                        continue;
+                    }
                     if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
                     {
-                        // symbol
+                        // latin symbol
                         m = match[0];
                         if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
@@ -10280,14 +10298,35 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self;
     }
-    ,substitute: function(v, x) {
-        var self = this, sub = {};
-        sub[x] = to_expr(v);
-        return self.compose(sub);
+    ,substitute: function(that, withthat, toplevel) {
+        var self = this;
+        if (is_instance(that, Expr))
+        {
+            // general subexpression substitution
+            return subexpr_substitute(self, that, to_expr(withthat), false !== toplevel);
+        }
+        else if (is_array(that) && is_array(withthat))
+        {
+            return that.reduce(function(expr, _, i) {
+                return expr.substitute(that[i], withthat[i], toplevel);
+            }, self);
+        }
+        else if (is_obj(that))
+        {
+            // symbol substitution map
+            return KEYS(that).reduce(function(expr, symbol) {
+                return symbol_substitute(expr, symbol, that[symbol]);
+            }, self);
+        }
+        else if (is_string(that))
+        {
+            // simple symbol substitution
+            return symbol_substitute(self, String(that), to_expr(withthat));
+        }
+        return self;
     }
     ,compose: function(g) {
-        var self = this;
-        return is_obj(g) ? KEYS(g).reduce(function(f, x) {return expr_replace(f, x, g[x]);}, self) : self;
+        return this.substitute(g); // alias
     }
     ,d: function(x, n) {
         // nth order formal derivative with respect to symbol x
@@ -10335,6 +10374,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (null == self._xpnd)
         {
             self._xpnd = neg_pow_to_inv(expand(self));
+            self._xpnd._xpnd = self._xpnd; // idempotent
         }
         return self._xpnd;
     }
@@ -10344,6 +10384,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             re = rational_expr(self);
             self._rexpr = Expr('/', [re.num, re.den]);
+            self._rexpr._rexpr = self._rexpr; // idempotent
         }
         return self._rexpr;
     }
@@ -10755,7 +10796,7 @@ function rational_expr(expr)
         den: I
     };
 }
-function expr_replace(f, x, g)
+function symbol_substitute(f, x, g)
 {
     if (is_instance(g, Expr) || is_string(g))
     {
@@ -10767,10 +10808,25 @@ function expr_replace(f, x, g)
         }
         else if (('expr' === f.ast.type) && (-1 !== f.symbols().indexOf(x)))
         {
-            return Expr(f.ast.op, f.ast.arg.map(function(f) {return expr_replace(f, x, g);}));
+            return Expr(f.ast.op, f.ast.arg.map(function(f) {return symbol_substitute(f, x, g);}));
         }
     }
     return f;
+}
+function subexpr_substitute(expr, subexpr1, subexpr2, toplevel)
+{
+    // substitute subexpr1 -> subexpr2 in expr
+    if (toplevel && ((expr === subexpr1) || (expr.toString() === subexpr1.toString())))
+    {
+        return subexpr2;
+    }
+    else if ('expr' === expr.ast.type)
+    {
+        return Expr(expr.ast.op, expr.ast.arg.map(function(subexpr) {
+            return subexpr_substitute(subexpr, subexpr1, subexpr2, true);
+        }));
+    }
+    return expr; // nothing to substitute
 }
 function derivative_expr(f, x)
 {
@@ -12601,10 +12657,9 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return Polynomial.kthroot(self, n);
     }
     ,substitute: function(v, x) {
-        var self = this, sub = {};
+        var self = this;
         x = self.symbol;
-        sub[x] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
-        return self.toExpr().compose(sub).toPoly(x, self.ring);
+        return self.toExpr().substitute(x, v).toPoly(x, self.ring);
     }
     ,compose: function(q) {
         // functionaly compose one polynomial with another. ie result = P(Q(x))
@@ -14014,19 +14069,18 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return MultiPolynomial.kthroot(self, n);
     }
     ,substitute: function(v, xi) {
-        var self = this, sub = {};
+        var self = this;
         xi = String(xi || self.symbol[0]);
         if (-1 < self.symbol.indexOf(xi))
         {
-            sub[xi] = is_instance(v, Expr) ? v : (is_callable(v.toExpr) ? v.toExpr() : Expr('', v));
-            return self.toExpr().compose(sub).toPoly(self.symbol, self.ring);
+            return self.toExpr().substitute(xi, v).toPoly(self.symbol, self.ring);
         }
         return self;
     }
     ,compose: function(q) {
         var self = this;
         q = q || {};
-        return self.toExpr().compose(KEYS(q).reduce(function(e, x) {
+        return self.toExpr().substitute(KEYS(q).reduce(function(e, x) {
             e[x] = is_instance(q[x], Poly) ? q[x].toExpr() : Expr('', x);
             return e;
         }, {})).toPoly(self.symbol, self.ring);
