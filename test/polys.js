@@ -153,6 +153,15 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1]));
 echo('---');
 
+p1 = ring1.fromString("z^2+x^4+y^4");
+p2 = ring1.fromString("x^2+y^2");
+echo('Solve: '+[p1,p2].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1,p2].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1,p2], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1,p2]));
+echo('---');
+
 p1 = ring1.fromString("0");
 echo('Solve: '+[p1].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');

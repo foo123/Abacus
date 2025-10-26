@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-25 16:20:01)
+*   @version: 2.0.0 (2025-10-26 21:52:56)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-25 16:20:01)
+*   @version: 2.0.0 (2025-10-26 21:52:56)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -1840,7 +1840,7 @@ function powm(b, e, m)
         {
             if (e & 1) pow = mulm(pow, b, m);
             e >>= 1;
-            b = mulm(b, b, m);
+            if (0 < e) b = mulm(b, b, m);
         }
     }
     else
@@ -1850,7 +1850,7 @@ function powm(b, e, m)
         {
             if (Arithmetic.equ(I, Arithmetic.mod(e, two))) pow = mulm(pow, b, m);
             e = Arithmetic.div(e, two);
-            b = mulm(b, b, m);
+            if (Arithmetic.gt(e, O)) b = mulm(b, b, m);
         }
     }
     return pow;
@@ -1878,7 +1878,7 @@ function powsq(b, e)
         {
             if (e & 1) pow = Arithmetic.mul(pow, b);
             e >>= 1;
-            b = Arithmetic.mul(b, b);
+            if (0 < e) b = Arithmetic.mul(b, b);
         }
     }
     else
@@ -1888,7 +1888,7 @@ function powsq(b, e)
         {
             if (Arithmetic.equ(I, Arithmetic.mod(e, two))) pow = Arithmetic.mul(pow, b);
             e = Arithmetic.div(e, two);
-            b = Arithmetic.mul(b, b);
+            if (Arithmetic.gt(e, O)) b = Arithmetic.mul(b, b);
         }
     }
     return pow;
@@ -4161,7 +4161,7 @@ function solvepolys(p, x, type)
         if (!p || !p.length) return p;
 
         var deg, triang, already_used,
-            solve_for, free_vars, sub, pow, j,
+            solve_for, free_vars, sub, j,
             is_consistent, all_substituted, solution;
 
         function is_symbol(xi)
@@ -4189,7 +4189,7 @@ function solvepolys(p, x, type)
             x.forEach(function(xj, j) {
                 if (!already_used[i] && (1 === deg[i].max[j]))
                 {
-                    // single linear term
+                    // linear term
                     if (!HAS.call(triang, xj))
                     {
                         already_used[i] = true;
@@ -4210,7 +4210,7 @@ function solvepolys(p, x, type)
             x.forEach(function(xj, j) {
                 if (!already_used[i] && (0 < deg[i].min[j]) && (deg[i].min[j] === deg[i].max[j]))
                 {
-                    // single monomial term
+                    // monomial term
                     if (!HAS.call(triang, xj))
                     {
                         already_used[i] = true;
@@ -4240,48 +4240,62 @@ function solvepolys(p, x, type)
         }, {});
 
         // back-substitution
-        pow = {};
         sub = {that:[], withthat:[]};
         solution = {};
         KEYS(free_vars).forEach(function(xi) {
             solution[xi] = free_vars[xi];
-            pow[xi] = 1;
-            sub.that.push(Expr('', xi));
+            sub.that.push(xi);
             sub.withthat.push(solution[xi]);
         });
         solve_for.sort(function(a, b) {
-            return deg[triang[a]].min[x.indexOf(a)] - deg[triang[b]].min[x.indexOf(b)];
+            return (x.filter(function(xi, i) {
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a]].max[i]);
+            }).length) - (x.filter(function(xi, i) {
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b]].max[i]);
+            }).length);
         }).forEach(function(xi) {
             var pi = p[triang[xi]],
                 d = deg[triang[xi]].min[x.indexOf(xi)],
                 term = pi.univariate(xi).term([d], true)
             ;
-            pow[xi] = d;
             solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
             if (0 === solution[xi].symbols().filter(is_symbol).length)
             {
                 // use it in subsequent substitutions
-                sub.that.push(1 === pow[xi] ? Expr('', xi) : Expr('^', [Expr('', xi), pow[xi]]));
-                sub.withthat.push(solution[xi]);
+                if (1 < d)
+                {
+                    sub.that.push(Expr('^', [xi, d]));
+                    sub.withthat.push(solution[xi]);
+                    solution[xi] = sqrt(solution[xi], d);
+                    sub.that.push(xi);
+                    sub.withthat.push(solution[xi]);
+                }
+                else
+                {
+                    sub.that.push(xi);
+                    sub.withthat.push(solution[xi]);
+                }
             }
         });
 
         // make sure all are substituted
+        j = 0;
         do {
         all_substituted = true;
         KEYS(solution).forEach(function(xi) {
             if (solution[xi].symbols().filter(is_symbol).length)
             {
                 all_substituted = false;
+                ++j;
                 solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
                 if (0 === solution[xi].symbols().filter(is_symbol).length)
                 {
-                    sub.that.push(1 === pow[xi] ? Expr('', xi) : Expr('^', [Expr('', xi), pow[xi]]));
+                    sub.that.push(xi);
                     sub.withthat.push(solution[xi]);
                 }
             }
         });
-        } while (!all_substituted);
+        } while (!all_substituted && (j < x.length));
 
         // check is solution consistent
         is_consistent = (p.filter(function(pi) {
@@ -4289,9 +4303,7 @@ function solvepolys(p, x, type)
         }).length === p.length);
         if (!is_consistent) return false;
 
-        return [x.map(function(xi) {
-            return 1 === pow[xi] ? solution[xi] : sqrt(solution[xi], pow[xi]);
-        })];
+        return [x.map(function(xi) {return solution[xi];})];
     }
 
     function recursively_solve(p, x, start)
@@ -4349,7 +4361,7 @@ function solvepolys(p, x, type)
             });
             return x.reduce(function(solutions, xi, i) {
                 if (-1 < redundant.indexOf(xi)) return solutions;
-                var xnew = x.filter(function(xj) {return xj !== xi;});
+                var xnew = x.filter(function(xj) {return (xj !== xi);});
                 ([0, -1, 1]).forEach(function(v) {
                     v = to_expr(v);
                     var pnew = basis.reduce(function(pnew, b) {
@@ -6190,8 +6202,9 @@ function ndiv(/* args */)
         return result.div(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
-function npow(base, exp)
+function npow(base, exp, mul)
 {
+    mul = is_callable(mul) ? mul : function(a, b) {return a.mul(b);};
     var pow = base.symbol ? base[CLASS].One(base.symbol, base.ring) : base[CLASS].One();
 
     if (0 > exp)
@@ -6210,16 +6223,16 @@ function npow(base, exp)
     }
     else if (2 === exp)
     {
-        pow = base.mul(base);
+        pow = mul(base, base);
     }
     else
     {
         // faster explicit exponentiation by squaring
         while (0 !== exp)
         {
-            if (exp & 1) pow = pow.mul(base);
+            if (exp & 1) pow = mul(pow, base);
             exp >>= 1;
-            base = base.mul(base);
+            if (0 < exp) base = mul(base, base);
         }
     }
     return pow;
@@ -9116,7 +9129,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                     {
                                         if (args[i].equ(0)) return Rational.Zero(); // false
                                     }
-                                    return Rational.One(); // true
+                                    return args[n-1]; // last true arg
                                 }
                                 return Expr('and', args);
                             }
@@ -9133,7 +9146,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 {
                                     for (var i=0,n=args.length; i<n; ++i)
                                     {
-                                        if (!args[i].equ(0)) return Rational.One(); // true
+                                        if (!args[i].equ(0)) return args[i]; // first true arg
                                     }
                                     return Rational.Zero(); // false
                                 }
@@ -9315,6 +9328,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('\\lnot' === op || '\\neg' === op) op = 'not';
                         else if ('\\land' === op) op = 'and';
                         else if ('\\lor' === op) op = 'or';
+                        ops.unshift([op, i0]);
+                        merge();
+                        prev_term = false;
+                        continue;
+                    }
+                    if (match = eat(/^(&&|\|\||!)[^&\|]/i, 1))
+                    {
+                        // alternative logical op
+                        op = match[1];
+                        if ('&&' === op) op = 'and';
+                        else if ('||' === op) op = 'or';
+                        else op = 'not';
                         ops.unshift([op, i0]);
                         merge();
                         prev_term = false;
@@ -10394,7 +10419,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         if ('1' === x) return Expr.Zero();
 
-        for (; 0 < n; --n) df = derivative_expr(df, x);
+        for (; 0 < n; --n) df = expr_derivative(df, x);
         return df;
     }
     ,evaluate: function(symbolValue) {
@@ -10879,13 +10904,24 @@ function subexpr_substitute(expr, subexpr1, subexpr2, toplevel)
     }
     else if ('expr' === expr.ast.type)
     {
-        return Expr(expr.ast.op, expr.ast.arg.map(function(subexpr) {
-            return subexpr_substitute(subexpr, subexpr1, subexpr2, true);
-        }));
+        /*if (('^' === expr.ast.op) && ('^' === subexpr1.ast.op) && (expr.ast.arg[0].toString() === subexpr1.ast.arg[0].toString()) && expr.ast.arg[1].isInt() && subexpr1.ast.arg[1].isInt())
+        {
+            // simplify power/radical substitution
+            var Arithmetic = Abacus.Arithmetic,
+                e1 = expr.ast.arg[1].c().real().num,
+                e2 = subexpr1.ast.arg[1].c().real().num;
+            return Arithmetic.equ(Arithmetic.O, Arithmetic.mod(e1, e2)) ? subexpr2.pow(Arithmetic.div(e1, e2)) : expr;
+        }
+        else
+        {*/
+            return Expr(expr.ast.op, expr.ast.arg.map(function(subexpr) {
+                return subexpr_substitute(subexpr, subexpr1, subexpr2, true);
+            }));
+        /*}*/
     }
     return expr; // nothing to substitute
 }
-function derivative_expr(f, x)
+function expr_derivative(f, x)
 {
     var O = Expr.Zero(), I = Expr.One(), fi = f.ast.arg;
     if ('sym' === f.ast.type)
@@ -10921,7 +10957,7 @@ function derivative_expr(f, x)
             // linearity derivative rule
             case '+':
             case '-':
-                return Expr(f.ast.op, fi.map(function(fi) {return derivative_expr(fi, x);}));
+                return Expr(f.ast.op, fi.map(function(fi) {return expr_derivative(fi, x);}));
 
             // power derivative rule
             case '^':
@@ -10939,7 +10975,7 @@ function derivative_expr(f, x)
                 if (0 < fi.length)
                 {
                     return Expr('+', fi.map(function(fi, i, args) {
-                        var di, dfi = derivative_expr(fi, x);
+                        var di, dfi = expr_derivative(fi, x);
                         if (dfi.equ(O)) return O;
                         di = args.slice(); di[i] = dfi;
                         return Expr('*', di);
@@ -10951,9 +10987,9 @@ function derivative_expr(f, x)
             case '/':
                 if (2 === fi.length)
                 {
-                    return ((derivative_expr(fi[0], x).mul(fi[1])).sub(fi[0].mul(derivative_expr(fi[1], x)))).div(fi[1].mul(fi[1]));
+                    return ((expr_derivative(fi[0], x).mul(fi[1])).sub(fi[0].mul(expr_derivative(fi[1], x)))).div(fi[1].mul(fi[1]));
                 }
-                return 1 === fi.length ? derivative_expr(fi[0], x) : O;
+                return 1 === fi.length ? expr_derivative(fi[0], x) : O;
 
             // unknown / not supported
             default:
@@ -11219,7 +11255,7 @@ function expand_pow(e1, e2)
             }
             else
             {
-                ret = expand(npow(base, exp.integer(true)));
+                ret = expand(npow(base, exp.integer(true), expand_mul));
             }
             ret = inverse ? expand_inv(ret) : ret;
         }
@@ -12699,7 +12735,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             {
                 if (n & 1) pow = uni_mul(b, pow);
                 n >>= 1;
-                b = uni_mul(b, b);
+                if (0 < n) b = uni_mul(b, b);
             }
             return pow;
         }
@@ -14111,7 +14147,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             {
                 if (n & 1) pow = multi_mul(b, pow);
                 n >>= 1;
-                b = multi_mul(b, b);
+                if (0 < n) b = multi_mul(b, b);
             }
             return pow;
         }
@@ -15218,29 +15254,32 @@ function mpolyfactor(p)
 }
 function poly_linear_roots(poly)
 {
-    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
     // return Expr(s)
     // https://en.wikipedia.org/wiki/Linear_equation
     // ax + b
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+
     var a = poly.term(1, true, true).c,
         b = poly.term(0, true, true).c;
+
     if (a.equ(0)) return null;
     if (b.equ(0)) return [[Expr.Zero(), 1]];
 
-    // a!=0, x = -b/a
     return [
         [b.neg().div(a).toExpr(), 1]
     ];
 }
 function poly_quadratic_roots(poly)
 {
-    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
     // return Expr(s)
     // https://en.wikipedia.org/wiki/Quadratic_equation
     // ax^2 + bx + c
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+
     var a = poly.term(2, true, true).c,
         b = poly.term(1, true, true).c,
         c = poly.term(0, true, true).c;
+
     if (a.equ(0)) return poly_linear_roots(poly);
     if (c.equ(0)) return poly_linear_roots(poly.shift(-1)).reduce(function(roots, r) {
             if (r[0].equ(0)) ++roots[0][1];
@@ -15248,7 +15287,6 @@ function poly_quadratic_roots(poly)
             return roots;
         }, [Expr.Zero(), 1]);
 
-    // a!=0, x = -(b +/- sqrt(b^2 - 4ac)) / 2a
     var discriminant = b.pow(2).sub(a.mul(c).mul(4)), roots;
     if (discriminant.equ(0))
     {
@@ -15270,31 +15308,24 @@ function poly_quadratic_roots(poly)
 }
 function poly_cubic_roots(poly)
 {
-    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
     // return Expr(s)
     // https://en.wikipedia.org/wiki/Cubic_equation
     // ax^3 + bx^2 + cx + d
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+
     var a = poly.term(3, true, true).c,
         b = poly.term(2, true, true).c,
         c = poly.term(1, true, true).c,
         d = poly.term(0, true, true).c;
+
     if (a.equ(0)) return poly_quadratic_roots(poly);
     if (d.equ(0)) return poly_quadratic_roots(poly.shift(-1)).reduce(function(roots, r) {
             if (r[0].equ(0)) ++roots[0][1];
             else roots.push(r);
             return roots;
         }, [Expr.Zero(), 1]);
-/*
-https://www.wolframalpha.com/input?i=ax%5E3+%2B+bx%5E2+%2Bcx+%2Bd+%3D0
 
-a!=0, x = (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (3 a c - b^2))/(3 a (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)) - b/3a
-
-a!=0, x = -((1 - i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3))/(6 2^(1/3) a) + ((1 + i sqrt(3)) (3 a c - b^2))/(3 2^(2/3) a (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)) - b/3a
-
-a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3))/(6 2^(1/3) a) + ((1 - i sqrt(3)) (3 a c - b^2))/(3 2^(2/3) a (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b^2)^3) - 27 a^2 d + 9 a b c - 2 b^3)^(1/3)) - b/3a
-*/
-    var
-        ap2 = a.mul(a),
+    var ap2 = a.mul(a),
         ap3 = ap2.mul(a),
         ac = a.mul(c),
         bp2 = b.mul(b),
@@ -15370,15 +15401,17 @@ a!=0, x = -((1 + i sqrt(3)) (sqrt((-27 a^2 d + 9 a b c - 2 b^3)^2 + 4 (3 a c - b
 }
 function poly_quartic_roots(poly)
 {
-    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
     // return Expr(s)
     // https://en.wikipedia.org/wiki/Quartic_equation
     // ax^4 + bx^3 + cx^2 + dx + e
+    if (!poly.ring.isField()) poly = Polynomial(poly, poly.symbol, poly.ring.associatedField());
+
     var a = poly.term(4, true, true).c,
         b = poly.term(3, true, true).c,
         c = poly.term(2, true, true).c,
         d = poly.term(1, true, true).c,
         e = poly.term(0, true, true).c;
+
     if (a.equ(0)) return poly_cubic_roots(poly);
     if (e.equ(0)) return poly_cubic_roots(poly.shift(-1)).reduce(function(roots, r) {
             if (r[0].equ(0)) ++roots[0][1];
@@ -15397,17 +15430,7 @@ function poly_quartic_roots(poly)
             }
             return roots;
         }, []);
-/*
-https://www.wolframalpha.com/input?i=ax%5E4+%2B+bx%5E3+%2Bcx%5E2+%2Bdx%2Be+%3D0
 
-a!=0, x = -1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) - 1/2 sqrt(b^2/(2 a^2) - (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
-
-a!=0, x = -1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) + 1/2 sqrt(b^2/(2 a^2) - (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
-
-a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) - 1/2 sqrt(b^2/(2 a^2) + (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
-
-a!=0, x = 1/2 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a)) + 1/2 sqrt(b^2/(2 a^2) + (-b^3/a^3 + (4 b c)/a^2 - (8 d)/a)/(4 sqrt(b^2/(4 a^2) + (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) + (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (2 c)/(3 a))) - (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)/(3 2^(1/3) a) - (2^(1/3) (12 a e - 3 b d + c^2))/(3 a (sqrt((-72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^2 - 4 (12 a e - 3 b d + c^2)^3) - 72 a c e + 27 a d^2 + 27 b^2 e - 9 b c d + 2 c^3)^(1/3)) - (4 c)/(3 a)) - b/(4 a)
-*/
     var b_a = b.div(a),
         c_a = c.div(a),
         d_a = d.div(a),
@@ -15923,7 +15946,7 @@ Polynomial.gcd = polygcd;
 Polynomial.xgcd = polyxgcd;
 Polynomial.lcm = polylcm;
 MultiPolynomial.gcd = function(/*args*/) {
-    // very slow and consuming for more than 2 or 3 variables
+    // slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         symbol = null, order, gcd;
     gcd = polygcd([].map.call(args, function(p) {
@@ -15937,7 +15960,7 @@ MultiPolynomial.gcd = function(/*args*/) {
     return gcd.multivariate(symbol).order(order);
 };
 MultiPolynomial.xgcd = function(/*args*/) {
-    // very slow and consuming for more than 2 or 3 variables
+    // slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         symbol = null, order;
     return polyxgcd([].map.call(args, function(p) {
@@ -15952,7 +15975,7 @@ MultiPolynomial.xgcd = function(/*args*/) {
     });
 };
 MultiPolynomial.lcm = function(/*args*/) {
-    // very slow and consuming for more than 2 or 3 variables
+    // slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
         symbol = null, order, lcm;
     lcm = polylcm([].map.call(args, function(p) {
@@ -15998,7 +16021,6 @@ MultiPolynomial.Discriminant = function(p, x) {
     if ((n*(n-1) >> 1) & 1) res = res.neg();
     return res;
 };
-
 
 // Abacus.RationalFunc, represents a rational function/fraction of (multivariate) polynomials
 RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
@@ -16084,7 +16106,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     }
 
     ,__static__: {
-        __MAXGCD__: 2 // gets quite slow if more variables
+        __MAXGCD__: 3 // gets slow if many variables
         ,autoSimplify: true
 
         ,hasInverse: function() {
@@ -16617,7 +16639,178 @@ RationalFunc.cast = function(a, symbol, ring) {
     });
     return type_cast(a);
 };
-// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
+
+/*
+// Abacus.Radical, represents a radical
+Radical = Abacus.Radical = Class(Symbolic, {
+
+    constructor: function Radical(a, e, s) {
+        var self = this;
+
+        if (!is_instance(self, Radical)) return new Radical(a, e, s);
+
+        self.a = a;
+        self.e = Rational.cast(e);
+        self.s = -1 === s ? -1 : 1;
+    }
+
+    ,a: null
+    ,e: null
+    ,s: 1
+    ,_str: null
+    ,_tex: null
+    ,_expr: null
+
+    ,dispose: function() {
+        var self = this;
+        self.a = null;
+        self.e = null;
+        self._str = null;
+        self._tex = null;
+        self._expr = null;
+        return self;
+    }
+    ,isConst: function() {
+        var self = this;
+        return self.a.isConst();
+    }
+    ,isInt: function() {
+        var self = this;
+        return self.a.isInt() && self.e.isInt();
+    }
+    ,isReal: function() {
+        var self = this;
+        return self.a.isReal();
+    }
+    ,isImag: function() {
+        var self = this;
+        return self.a.isImag();
+    }
+    ,neg: function() {
+        var self = this;
+        return Radical(self.a, self.e, -self.s);
+    }
+    ,inv: function() {
+        var self = this;
+        return Radical(self.a, self.e.neg(), self.s);
+    }
+    ,equ: function(other) {
+        var self = this;
+        if (is_instance(other, Numeric) && self.isConst())
+        {
+            return self.evaluate().equ(other);
+        }
+        if (is_instance(other, Radical))
+        {
+            return /*(self.s === other.s) &&* / self.e.equ(other.e) && self.a.equ(other.a);
+        }
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().equ(other);
+        }
+        return false;
+    }
+    ,gt: function(other) {
+        var self = this;
+        if (is_instance(other, Numeric) && self.isConst())
+        {
+            return self.evaluate().gt(other);
+        }
+        return false;
+    }
+    ,gte: function(other) {
+        var self = this;
+        if (is_instance(other, Numeric) && self.isConst())
+        {
+            return self.evaluate().gte(other);
+        }
+        return false;
+    }
+    ,lt: function(other) {
+        var self = this;
+        if (is_instance(other, Numeric) && self.isConst())
+        {
+            return self.evaluate().lt(other);
+        }
+        return false;
+    }
+    ,lte: function(other) {
+        var self = this;
+        if (is_instance(other, Numeric) && self.isConst())
+        {
+            return self.evaluate().lte(other);
+        }
+        return false;
+    }
+
+    ,add: function(other) {
+        var self = this;
+        return self;
+    }
+    ,sub: function(other) {
+        var self = this;
+        return self.add(other.neg());
+    }
+    ,mul: function(other) {
+        var self = this;
+        if (is_instance(other, Radical))
+        {
+            if (self.a.equ(other.a))
+            {
+                return Radical(self.a, self.e.add(other.e), self.s*other.s);
+            }
+        }
+        return self;
+    }
+    ,div: function(other) {
+        var self = this;
+        return self.mul(other.inv());
+    }
+    ,pow: function(n) {
+        var self = this;
+        n = Rational(n);
+        if (n.equ(0))
+            return Rational.One();
+        else if (n.equ(1))
+            return self;
+        else
+            return Radical(self.a, self.e.mul(n), n.mod(2).equ(0) ? 1 : self.s);
+    }
+    ,rad: function(n) {
+        var self = this;
+        return self.pow(Rational(n).inv());
+    }
+    ,evaluate: function() {
+        var self = this;
+        return self.a.pow(self.e.num).rad(self.e.den).mul(self.s);
+    }
+    ,toExpr: function() {
+        var self = this;
+        if (null == self._expr)
+        {
+            self._expr = Expr('^', [self.a, self.e]);
+            if (-1 === self.s) self._expr = self._expr.neg();
+        }
+        return self._expr;
+    }
+    ,toString: function() {
+        var self = this;
+        if (null == self._str)
+        {
+            self._str = self.toExpr().toString();
+        }
+        return self._str;
+    }
+    ,toTex: function() {
+        var self = this;
+        if (null == self._tex)
+        {
+            self._tex = self.toExpr().toTex();
+        }
+        return self._tex;
+    }
+});
+*/// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
 Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix(ring, r, c, values) {

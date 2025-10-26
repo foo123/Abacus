@@ -101,7 +101,7 @@ function powm(b, e, m)
         {
             if (e & 1) pow = mulm(pow, b, m);
             e >>= 1;
-            b = mulm(b, b, m);
+            if (0 < e) b = mulm(b, b, m);
         }
     }
     else
@@ -111,7 +111,7 @@ function powm(b, e, m)
         {
             if (Arithmetic.equ(I, Arithmetic.mod(e, two))) pow = mulm(pow, b, m);
             e = Arithmetic.div(e, two);
-            b = mulm(b, b, m);
+            if (Arithmetic.gt(e, O)) b = mulm(b, b, m);
         }
     }
     return pow;
@@ -139,7 +139,7 @@ function powsq(b, e)
         {
             if (e & 1) pow = Arithmetic.mul(pow, b);
             e >>= 1;
-            b = Arithmetic.mul(b, b);
+            if (0 < e) b = Arithmetic.mul(b, b);
         }
     }
     else
@@ -149,7 +149,7 @@ function powsq(b, e)
         {
             if (Arithmetic.equ(I, Arithmetic.mod(e, two))) pow = Arithmetic.mul(pow, b);
             e = Arithmetic.div(e, two);
-            b = Arithmetic.mul(b, b);
+            if (Arithmetic.gt(e, O)) b = Arithmetic.mul(b, b);
         }
     }
     return pow;
@@ -2422,7 +2422,7 @@ function solvepolys(p, x, type)
         if (!p || !p.length) return p;
 
         var deg, triang, already_used,
-            solve_for, free_vars, sub, pow, j,
+            solve_for, free_vars, sub, j,
             is_consistent, all_substituted, solution;
 
         function is_symbol(xi)
@@ -2450,7 +2450,7 @@ function solvepolys(p, x, type)
             x.forEach(function(xj, j) {
                 if (!already_used[i] && (1 === deg[i].max[j]))
                 {
-                    // single linear term
+                    // linear term
                     if (!HAS.call(triang, xj))
                     {
                         already_used[i] = true;
@@ -2471,7 +2471,7 @@ function solvepolys(p, x, type)
             x.forEach(function(xj, j) {
                 if (!already_used[i] && (0 < deg[i].min[j]) && (deg[i].min[j] === deg[i].max[j]))
                 {
-                    // single monomial term
+                    // monomial term
                     if (!HAS.call(triang, xj))
                     {
                         already_used[i] = true;
@@ -2501,48 +2501,62 @@ function solvepolys(p, x, type)
         }, {});
 
         // back-substitution
-        pow = {};
         sub = {that:[], withthat:[]};
         solution = {};
         KEYS(free_vars).forEach(function(xi) {
             solution[xi] = free_vars[xi];
-            pow[xi] = 1;
-            sub.that.push(Expr('', xi));
+            sub.that.push(xi);
             sub.withthat.push(solution[xi]);
         });
         solve_for.sort(function(a, b) {
-            return deg[triang[a]].min[x.indexOf(a)] - deg[triang[b]].min[x.indexOf(b)];
+            return (x.filter(function(xi, i) {
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a]].max[i]);
+            }).length) - (x.filter(function(xi, i) {
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b]].max[i]);
+            }).length);
         }).forEach(function(xi) {
             var pi = p[triang[xi]],
                 d = deg[triang[xi]].min[x.indexOf(xi)],
                 term = pi.univariate(xi).term([d], true)
             ;
-            pow[xi] = d;
             solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
             if (0 === solution[xi].symbols().filter(is_symbol).length)
             {
                 // use it in subsequent substitutions
-                sub.that.push(1 === pow[xi] ? Expr('', xi) : Expr('^', [Expr('', xi), pow[xi]]));
-                sub.withthat.push(solution[xi]);
+                if (1 < d)
+                {
+                    sub.that.push(Expr('^', [xi, d]));
+                    sub.withthat.push(solution[xi]);
+                    solution[xi] = sqrt(solution[xi], d);
+                    sub.that.push(xi);
+                    sub.withthat.push(solution[xi]);
+                }
+                else
+                {
+                    sub.that.push(xi);
+                    sub.withthat.push(solution[xi]);
+                }
             }
         });
 
         // make sure all are substituted
+        j = 0;
         do {
         all_substituted = true;
         KEYS(solution).forEach(function(xi) {
             if (solution[xi].symbols().filter(is_symbol).length)
             {
                 all_substituted = false;
+                ++j;
                 solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
                 if (0 === solution[xi].symbols().filter(is_symbol).length)
                 {
-                    sub.that.push(1 === pow[xi] ? Expr('', xi) : Expr('^', [Expr('', xi), pow[xi]]));
+                    sub.that.push(xi);
                     sub.withthat.push(solution[xi]);
                 }
             }
         });
-        } while (!all_substituted);
+        } while (!all_substituted && (j < x.length));
 
         // check is solution consistent
         is_consistent = (p.filter(function(pi) {
@@ -2550,9 +2564,7 @@ function solvepolys(p, x, type)
         }).length === p.length);
         if (!is_consistent) return false;
 
-        return [x.map(function(xi) {
-            return 1 === pow[xi] ? solution[xi] : sqrt(solution[xi], pow[xi]);
-        })];
+        return [x.map(function(xi) {return solution[xi];})];
     }
 
     function recursively_solve(p, x, start)
@@ -2610,7 +2622,7 @@ function solvepolys(p, x, type)
             });
             return x.reduce(function(solutions, xi, i) {
                 if (-1 < redundant.indexOf(xi)) return solutions;
-                var xnew = x.filter(function(xj) {return xj !== xi;});
+                var xnew = x.filter(function(xj) {return (xj !== xi);});
                 ([0, -1, 1]).forEach(function(v) {
                     v = to_expr(v);
                     var pnew = basis.reduce(function(pnew, b) {

@@ -66,7 +66,7 @@
 * `Integer`, `Rational`, `Complex` **supporting arbitrary precision arithmetic** (`test/integers.js`, `test/rationals.js`, `test/complex.js`)
 * `Polynomial`, `MultiPolynomial` **univariate / multivariate with coefficients from a Ring/Field** (`test/polynomials.js`, `test/multivariate.js`)
 * `RationalFunc` **Rational functions as fractions of multivariate polynomials** (`test/ratfuncs.js`)
-* Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`)
+* Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/rings.js`)
 * `Matrix` **with coefficients from a Ring/Field**  (`test/matrices.js`)
 * `Expr` **general Symbolic Expressions** (`test/expressions.js`)
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)

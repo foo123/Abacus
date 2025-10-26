@@ -278,7 +278,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                     {
                                         if (args[i].equ(0)) return Rational.Zero(); // false
                                     }
-                                    return Rational.One(); // true
+                                    return args[n-1]; // last true arg
                                 }
                                 return Expr('and', args);
                             }
@@ -295,7 +295,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 {
                                     for (var i=0,n=args.length; i<n; ++i)
                                     {
-                                        if (!args[i].equ(0)) return Rational.One(); // true
+                                        if (!args[i].equ(0)) return args[i]; // first true arg
                                     }
                                     return Rational.Zero(); // false
                                 }
@@ -477,6 +477,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if ('\\lnot' === op || '\\neg' === op) op = 'not';
                         else if ('\\land' === op) op = 'and';
                         else if ('\\lor' === op) op = 'or';
+                        ops.unshift([op, i0]);
+                        merge();
+                        prev_term = false;
+                        continue;
+                    }
+                    if (match = eat(/^(&&|\|\||!)[^&\|]/i, 1))
+                    {
+                        // alternative logical op
+                        op = match[1];
+                        if ('&&' === op) op = 'and';
+                        else if ('||' === op) op = 'or';
+                        else op = 'not';
                         ops.unshift([op, i0]);
                         merge();
                         prev_term = false;
@@ -1556,7 +1568,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         if ('1' === x) return Expr.Zero();
 
-        for (; 0 < n; --n) df = derivative_expr(df, x);
+        for (; 0 < n; --n) df = expr_derivative(df, x);
         return df;
     }
     ,evaluate: function(symbolValue) {
@@ -2041,13 +2053,24 @@ function subexpr_substitute(expr, subexpr1, subexpr2, toplevel)
     }
     else if ('expr' === expr.ast.type)
     {
-        return Expr(expr.ast.op, expr.ast.arg.map(function(subexpr) {
-            return subexpr_substitute(subexpr, subexpr1, subexpr2, true);
-        }));
+        /*if (('^' === expr.ast.op) && ('^' === subexpr1.ast.op) && (expr.ast.arg[0].toString() === subexpr1.ast.arg[0].toString()) && expr.ast.arg[1].isInt() && subexpr1.ast.arg[1].isInt())
+        {
+            // simplify power/radical substitution
+            var Arithmetic = Abacus.Arithmetic,
+                e1 = expr.ast.arg[1].c().real().num,
+                e2 = subexpr1.ast.arg[1].c().real().num;
+            return Arithmetic.equ(Arithmetic.O, Arithmetic.mod(e1, e2)) ? subexpr2.pow(Arithmetic.div(e1, e2)) : expr;
+        }
+        else
+        {*/
+            return Expr(expr.ast.op, expr.ast.arg.map(function(subexpr) {
+                return subexpr_substitute(subexpr, subexpr1, subexpr2, true);
+            }));
+        /*}*/
     }
     return expr; // nothing to substitute
 }
-function derivative_expr(f, x)
+function expr_derivative(f, x)
 {
     var O = Expr.Zero(), I = Expr.One(), fi = f.ast.arg;
     if ('sym' === f.ast.type)
@@ -2083,7 +2106,7 @@ function derivative_expr(f, x)
             // linearity derivative rule
             case '+':
             case '-':
-                return Expr(f.ast.op, fi.map(function(fi) {return derivative_expr(fi, x);}));
+                return Expr(f.ast.op, fi.map(function(fi) {return expr_derivative(fi, x);}));
 
             // power derivative rule
             case '^':
@@ -2101,7 +2124,7 @@ function derivative_expr(f, x)
                 if (0 < fi.length)
                 {
                     return Expr('+', fi.map(function(fi, i, args) {
-                        var di, dfi = derivative_expr(fi, x);
+                        var di, dfi = expr_derivative(fi, x);
                         if (dfi.equ(O)) return O;
                         di = args.slice(); di[i] = dfi;
                         return Expr('*', di);
@@ -2113,9 +2136,9 @@ function derivative_expr(f, x)
             case '/':
                 if (2 === fi.length)
                 {
-                    return ((derivative_expr(fi[0], x).mul(fi[1])).sub(fi[0].mul(derivative_expr(fi[1], x)))).div(fi[1].mul(fi[1]));
+                    return ((expr_derivative(fi[0], x).mul(fi[1])).sub(fi[0].mul(expr_derivative(fi[1], x)))).div(fi[1].mul(fi[1]));
                 }
-                return 1 === fi.length ? derivative_expr(fi[0], x) : O;
+                return 1 === fi.length ? expr_derivative(fi[0], x) : O;
 
             // unknown / not supported
             default:
@@ -2381,7 +2404,7 @@ function expand_pow(e1, e2)
             }
             else
             {
-                ret = expand(npow(base, exp.integer(true)));
+                ret = expand(npow(base, exp.integer(true), expand_mul));
             }
             ret = inverse ? expand_inv(ret) : ret;
         }

@@ -270,8 +270,9 @@ function ndiv(/* args */)
         return result.div(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
-function npow(base, exp)
+function npow(base, exp, mul)
 {
+    mul = is_callable(mul) ? mul : function(a, b) {return a.mul(b);};
     var pow = base.symbol ? base[CLASS].One(base.symbol, base.ring) : base[CLASS].One();
 
     if (0 > exp)
@@ -290,16 +291,16 @@ function npow(base, exp)
     }
     else if (2 === exp)
     {
-        pow = base.mul(base);
+        pow = mul(base, base);
     }
     else
     {
         // faster explicit exponentiation by squaring
         while (0 !== exp)
         {
-            if (exp & 1) pow = pow.mul(base);
+            if (exp & 1) pow = mul(pow, base);
             exp >>= 1;
-            base = base.mul(base);
+            if (0 < exp) base = mul(base, base);
         }
     }
     return pow;
