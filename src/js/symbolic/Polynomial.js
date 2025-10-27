@@ -3467,7 +3467,7 @@ function poly_interpolate(v, x, PolynomialClass, symbol, ring)
     // https://en.wikipedia.org/wiki/Newton_polynomial
     var I = ring.One(), n, d, f, vi, hash, dupl;
     if (!v || !v.length) return PolynomialClass.Zero(symbol, ring);
-    if (is_args(v)) v = slice.call(v);
+    v = slice.call(v);
     if (!is_array(v[0])) v = [v];
     v = v.map(function(vi) {
         return [ring.cast(vi[0]), ring.cast(vi[1])];
@@ -3608,7 +3608,17 @@ function mpolyfactor(p)
             return maxdeg[a] - maxdeg[b];
         }),
         i, j, k, n, y, yi, v, d, q, pu,
-        terms, divisor, o, res;
+        terms, divisor, o, res,
+        rndInt = Abacus.Math.rndInt;
+    function interpolation_point(v)
+    {
+        var xi = pu.ring.cast(v),
+            yi = pu.evaluate(pu.symbol.reduce(function(o, x) {
+                o[x] = xi;
+                return o;
+            }, {}), false);
+        return [xi, yi];
+    }
     for (k=1; k<=2; ++k)
     {
         // can find factors if taken in different order
@@ -3616,14 +3626,7 @@ function mpolyfactor(p)
         for (d=1,n=(pu.maxdeg(pu.symbol[0])>>1); d<=n; ++d)
         {
             values = array(d+1, d>>1, -1);
-            y = values.map(function(i) {
-                var xi = pu.ring.cast(values[i]),
-                    yi = pu.evaluate(pu.symbol.reduce(function(o, x) {
-                        o[x] = xi;
-                        return o;
-                    }, {}), false);
-                return [xi, yi];
-            });
+            y = values.map(interpolation_point);
             for (i=d; i>=0; --i)
             {
                 yi = 1 < p.symbol.length ? (y[i][1].evaluate({})) : (y[i][1]);
@@ -3719,7 +3722,7 @@ function mpolyfactor(p)
                         v[j] = [y[j][0], y[j][1].next()];
                     }
                 }
-                q = poly_interpolate(v, pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring);
+                q = poly_interpolate(v, pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring) || poly_interpolate(v.concat([interpolation_point(rndInt(10, 100))]), pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring);
                 if (q)
                 {
                     if (is_instance(q, RationalFunc))
@@ -5295,3 +5298,8 @@ Radical = Abacus.Radical = Class(Symbolic, {
     }
 });
 */
+
+// convenience method to construct polys
+Abacus.Poly = function(poly_str, ring_or_symbol) {
+    return is_instance(ring_or_symbol, Ring) ? ring_or_symbol.fromString(String(poly_str)) : Expr(String(poly_str)).toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x");
+};

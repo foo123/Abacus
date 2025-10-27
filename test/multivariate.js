@@ -199,6 +199,8 @@ echo("((x+yz+2)(y^2+x)(z^2+y)).factors()");
 check_factors(ring.fromString("(x+yz+2)(y^2+x)(z^2+y)"));
 echo("((x+yz)(y^2+x)(z^2+y)(x^2+y^2)).factors()");
 check_factors(ring.fromString("(x+yz)(y^2+x)(z^2+y)(x^2+y^2)"));
+echo("((x^3+y^3)(x^2+2y+1)).factors()");
+check_factors(ring.fromString("(x^3+y^3)(x^2+2y+1)"));
 echo('---');
 
 ring = Abacus.Ring.Q("x", "y");

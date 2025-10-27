@@ -2423,70 +2423,83 @@ function solvepolys(p, x, type)
 
         var deg, triang, already_used,
             solve_for, free_vars, sub, j,
-            is_consistent, all_substituted, solution;
+            is_consistent, all_substituted, solution,
+            // factor them to simplify
+            pf = p.map(function(pi) {return pi.factors()[0].map(function(pik) {return pik[0];})});
 
         function is_symbol(xi)
         {
             return -1 < x.indexOf(xi);
         }
-
-        deg = p.map(function(pi) {
+        function compute_deg(pik)
+        {
             var deg = {min:[], max:[], terms:0};
             x.forEach(function(xj) {
-                var dijmax = pi.maxdeg(xj),
-                    dijmin = pi.mindeg(xj);
-                deg.terms += 0 < dijmax ? 1 : 0;
-                deg.min.push(dijmin);
-                deg.max.push(dijmax);
+                var dikjmax = pik.maxdeg(xj),
+                    dikjmin = pik.mindeg(xj);
+                deg.terms += 0 < dikjmax ? 1 : 0;
+                deg.min.push(dikjmin);
+                deg.max.push(dikjmax);
             });
             return deg;
+        }
+        function triangularize1(pi, i)
+        {
+            pi.forEach(function(pik, k) {
+                x.forEach(function(xj, j) {
+                    if (!already_used[i] && (1 === deg[i][k].max[j]))
+                    {
+                        // linear term
+                        if (!HAS.call(triang, xj))
+                        {
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                        else if (deg[i][k].terms < deg[triang[xj][0]][triang[xj][1]].terms)
+                        {
+                            // has fewer terms, use this instead
+                            already_used[triang[xj][0]] = false;
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                    }
+                });
+            });
+        }
+        function triangularize2(pi, i)
+        {
+            pi.forEach(function(pik, k) {
+                x.forEach(function(xj, j) {
+                    if (!already_used[i] && (0 < deg[i][k].min[j]) && (deg[i][k].min[j] === deg[i][k].max[j]))
+                    {
+                        // monomial term
+                        if (!HAS.call(triang, xj))
+                        {
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                        else if (deg[i][k].min[j] < deg[triang[xj][0]][triang[xj][1]].min[j])
+                        {
+                            // is lower power, use this instead
+                            already_used[triang[xj][0]] = false;
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                    }
+                });
+            });
+        }
+        deg = pf.map(function(pi) {
+            return pi.map(compute_deg);
         });
 
         // triangularization
         triang = {};
         already_used = array(p.length, false);
         // first find linear terms preferably
-        p.forEach(function(pi, i) {
-            x.forEach(function(xj, j) {
-                if (!already_used[i] && (1 === deg[i].max[j]))
-                {
-                    // linear term
-                    if (!HAS.call(triang, xj))
-                    {
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                    else if (deg[i].terms < deg[triang[xj]].terms)
-                    {
-                        // has fewer terms, use this instead
-                        already_used[triang[xj]] = false;
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                }
-            });
-        });
+        pf.forEach(triangularize1);
         // then find any monomial terms
-        p.forEach(function(pi, i) {
-            x.forEach(function(xj, j) {
-                if (!already_used[i] && (0 < deg[i].min[j]) && (deg[i].min[j] === deg[i].max[j]))
-                {
-                    // monomial term
-                    if (!HAS.call(triang, xj))
-                    {
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                    else if (deg[i].min[j] < deg[triang[xj]].min[j])
-                    {
-                        // is lower power, use this instead
-                        already_used[triang[xj]] = false;
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                }
-            });
-        });
+        pf.forEach(triangularize2);
 
         solve_for = KEYS(triang);
         if (!solve_for.length) return null; // cannot solve
@@ -2510,13 +2523,13 @@ function solvepolys(p, x, type)
         });
         solve_for.sort(function(a, b) {
             return (x.filter(function(xi, i) {
-                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a]].max[i]);
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a][0]][triang[a][1]].max[i]);
             }).length) - (x.filter(function(xi, i) {
-                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b]].max[i]);
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b][0]][triang[b][1]].max[i]);
             }).length);
         }).forEach(function(xi) {
-            var pi = p[triang[xi]],
-                d = deg[triang[xi]].min[x.indexOf(xi)],
+            var pi = pf[triang[xi][0]][triang[xi][1]],
+                d = deg[triang[xi][0]][triang[xi][1]].min[x.indexOf(xi)],
                 term = pi.univariate(xi).term([d], true)
             ;
             solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
@@ -2715,7 +2728,7 @@ function solvepolys(p, x, type)
         return solutions;
     }
 
-    return recursively_solve(p, x, true);
+    return recursively_solve(p.map(function(pi) {return pi.order('lex')}), x, true);
 }
 function pow2(n)
 {

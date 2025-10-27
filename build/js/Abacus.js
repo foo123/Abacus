@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-26 21:52:56)
+*   @version: 2.0.0 (2025-10-27 09:02:01)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-26 21:52:56)
+*   @version: 2.0.0 (2025-10-27 09:02:01)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4162,70 +4162,83 @@ function solvepolys(p, x, type)
 
         var deg, triang, already_used,
             solve_for, free_vars, sub, j,
-            is_consistent, all_substituted, solution;
+            is_consistent, all_substituted, solution,
+            // factor them to simplify
+            pf = p.map(function(pi) {return pi.factors()[0].map(function(pik) {return pik[0];})});
 
         function is_symbol(xi)
         {
             return -1 < x.indexOf(xi);
         }
-
-        deg = p.map(function(pi) {
+        function compute_deg(pik)
+        {
             var deg = {min:[], max:[], terms:0};
             x.forEach(function(xj) {
-                var dijmax = pi.maxdeg(xj),
-                    dijmin = pi.mindeg(xj);
-                deg.terms += 0 < dijmax ? 1 : 0;
-                deg.min.push(dijmin);
-                deg.max.push(dijmax);
+                var dikjmax = pik.maxdeg(xj),
+                    dikjmin = pik.mindeg(xj);
+                deg.terms += 0 < dikjmax ? 1 : 0;
+                deg.min.push(dikjmin);
+                deg.max.push(dikjmax);
             });
             return deg;
+        }
+        function triangularize1(pi, i)
+        {
+            pi.forEach(function(pik, k) {
+                x.forEach(function(xj, j) {
+                    if (!already_used[i] && (1 === deg[i][k].max[j]))
+                    {
+                        // linear term
+                        if (!HAS.call(triang, xj))
+                        {
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                        else if (deg[i][k].terms < deg[triang[xj][0]][triang[xj][1]].terms)
+                        {
+                            // has fewer terms, use this instead
+                            already_used[triang[xj][0]] = false;
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                    }
+                });
+            });
+        }
+        function triangularize2(pi, i)
+        {
+            pi.forEach(function(pik, k) {
+                x.forEach(function(xj, j) {
+                    if (!already_used[i] && (0 < deg[i][k].min[j]) && (deg[i][k].min[j] === deg[i][k].max[j]))
+                    {
+                        // monomial term
+                        if (!HAS.call(triang, xj))
+                        {
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                        else if (deg[i][k].min[j] < deg[triang[xj][0]][triang[xj][1]].min[j])
+                        {
+                            // is lower power, use this instead
+                            already_used[triang[xj][0]] = false;
+                            already_used[i] = true;
+                            triang[xj] = [i, k];
+                        }
+                    }
+                });
+            });
+        }
+        deg = pf.map(function(pi) {
+            return pi.map(compute_deg);
         });
 
         // triangularization
         triang = {};
         already_used = array(p.length, false);
         // first find linear terms preferably
-        p.forEach(function(pi, i) {
-            x.forEach(function(xj, j) {
-                if (!already_used[i] && (1 === deg[i].max[j]))
-                {
-                    // linear term
-                    if (!HAS.call(triang, xj))
-                    {
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                    else if (deg[i].terms < deg[triang[xj]].terms)
-                    {
-                        // has fewer terms, use this instead
-                        already_used[triang[xj]] = false;
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                }
-            });
-        });
+        pf.forEach(triangularize1);
         // then find any monomial terms
-        p.forEach(function(pi, i) {
-            x.forEach(function(xj, j) {
-                if (!already_used[i] && (0 < deg[i].min[j]) && (deg[i].min[j] === deg[i].max[j]))
-                {
-                    // monomial term
-                    if (!HAS.call(triang, xj))
-                    {
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                    else if (deg[i].min[j] < deg[triang[xj]].min[j])
-                    {
-                        // is lower power, use this instead
-                        already_used[triang[xj]] = false;
-                        already_used[i] = true;
-                        triang[xj] = i;
-                    }
-                }
-            });
-        });
+        pf.forEach(triangularize2);
 
         solve_for = KEYS(triang);
         if (!solve_for.length) return null; // cannot solve
@@ -4249,13 +4262,13 @@ function solvepolys(p, x, type)
         });
         solve_for.sort(function(a, b) {
             return (x.filter(function(xi, i) {
-                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a]].max[i]);
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a][0]][triang[a][1]].max[i]);
             }).length) - (x.filter(function(xi, i) {
-                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b]].max[i]);
+                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b][0]][triang[b][1]].max[i]);
             }).length);
         }).forEach(function(xi) {
-            var pi = p[triang[xi]],
-                d = deg[triang[xi]].min[x.indexOf(xi)],
+            var pi = pf[triang[xi][0]][triang[xi][1]],
+                d = deg[triang[xi][0]][triang[xi][1]].min[x.indexOf(xi)],
                 term = pi.univariate(xi).term([d], true)
             ;
             solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
@@ -4454,7 +4467,7 @@ function solvepolys(p, x, type)
         return solutions;
     }
 
-    return recursively_solve(p, x, true);
+    return recursively_solve(p.map(function(pi) {return pi.order('lex')}), x, true);
 }
 function pow2(n)
 {
@@ -14983,7 +14996,7 @@ function poly_interpolate(v, x, PolynomialClass, symbol, ring)
     // https://en.wikipedia.org/wiki/Newton_polynomial
     var I = ring.One(), n, d, f, vi, hash, dupl;
     if (!v || !v.length) return PolynomialClass.Zero(symbol, ring);
-    if (is_args(v)) v = slice.call(v);
+    v = slice.call(v);
     if (!is_array(v[0])) v = [v];
     v = v.map(function(vi) {
         return [ring.cast(vi[0]), ring.cast(vi[1])];
@@ -15124,7 +15137,17 @@ function mpolyfactor(p)
             return maxdeg[a] - maxdeg[b];
         }),
         i, j, k, n, y, yi, v, d, q, pu,
-        terms, divisor, o, res;
+        terms, divisor, o, res,
+        rndInt = Abacus.Math.rndInt;
+    function interpolation_point(v)
+    {
+        var xi = pu.ring.cast(v),
+            yi = pu.evaluate(pu.symbol.reduce(function(o, x) {
+                o[x] = xi;
+                return o;
+            }, {}), false);
+        return [xi, yi];
+    }
     for (k=1; k<=2; ++k)
     {
         // can find factors if taken in different order
@@ -15132,14 +15155,7 @@ function mpolyfactor(p)
         for (d=1,n=(pu.maxdeg(pu.symbol[0])>>1); d<=n; ++d)
         {
             values = array(d+1, d>>1, -1);
-            y = values.map(function(i) {
-                var xi = pu.ring.cast(values[i]),
-                    yi = pu.evaluate(pu.symbol.reduce(function(o, x) {
-                        o[x] = xi;
-                        return o;
-                    }, {}), false);
-                return [xi, yi];
-            });
+            y = values.map(interpolation_point);
             for (i=d; i>=0; --i)
             {
                 yi = 1 < p.symbol.length ? (y[i][1].evaluate({})) : (y[i][1]);
@@ -15235,7 +15251,7 @@ function mpolyfactor(p)
                         v[j] = [y[j][0], y[j][1].next()];
                     }
                 }
-                q = poly_interpolate(v, pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring);
+                q = poly_interpolate(v, pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring) || poly_interpolate(v.concat([interpolation_point(rndInt(10, 100))]), pu.symbol[0], MultiPolynomial, pu.symbol, pu.ring);
                 if (q)
                 {
                     if (is_instance(q, RationalFunc))
@@ -16810,7 +16826,12 @@ Radical = Abacus.Radical = Class(Symbolic, {
         return self._tex;
     }
 });
-*/// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
+*/
+
+// convenience method to construct polys
+Abacus.Poly = function(poly_str, ring_or_symbol) {
+    return is_instance(ring_or_symbol, Ring) ? ring_or_symbol.fromString(String(poly_str)) : Expr(String(poly_str)).toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x");
+};// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
 Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix(ring, r, c, values) {
