@@ -2501,9 +2501,7 @@ function solvepolys(p, x, type)
 
         // triangularization
         triang_all = {};
-        already_used = array(pf.length, function(pi) {
-            return array(pi.length, false);
-        });
+        already_used = pf.map(function(pi) {return array(pi.length, false);});
         // first find linear terms preferably
         pf.forEach(triangularize1);
         // then find any monomial terms

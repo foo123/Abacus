@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-30 23:21:42)
+*   @version: 2.0.0 (2025-10-30 23:43:24)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-30 23:21:42)
+*   @version: 2.0.0 (2025-10-30 23:43:24)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4240,9 +4240,7 @@ function solvepolys(p, x, type)
 
         // triangularization
         triang_all = {};
-        already_used = array(pf.length, function(pi) {
-            return array(pi.length, false);
-        });
+        already_used = pf.map(function(pi) {return array(pi.length, false);});
         // first find linear terms preferably
         pf.forEach(triangularize1);
         // then find any monomial terms
