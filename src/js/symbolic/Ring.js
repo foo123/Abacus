@@ -181,7 +181,7 @@ Ring = Abacus.Ring = Class({
         }
         if (is_instance(object, MultiPolynomial))
         {
-            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, [RationalFunc, Poly]) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, [RationalFunc, MultiPolynomial]) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || (is_class(self.PolynomialClass, Polynomial) && symbols_match(object.symbol, [self.PolynomialSymbol]) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
         }
         if (is_instance(object, Polynomial))
         {

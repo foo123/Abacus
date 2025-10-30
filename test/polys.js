@@ -162,6 +162,15 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
+p1 = ring1.fromString("(ax+by)(x-y+z)");
+p2 = ring1.fromString("(ax+by)");
+echo('Solve: '+[p1,p2].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1,p2].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1,p2], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1,p2]));
+echo('---');
+
 p1 = ring1.fromString("0");
 echo('Solve: '+[p1].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');

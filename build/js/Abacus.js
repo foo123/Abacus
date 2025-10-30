@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-30 21:28:28)
+*   @version: 2.0.0 (2025-10-30 23:21:42)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-30 21:28:28)
+*   @version: 2.0.0 (2025-10-30 23:21:42)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -18934,7 +18934,7 @@ Ring = Abacus.Ring = Class({
         }
         if (is_instance(object, MultiPolynomial))
         {
-            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, [RationalFunc, Poly]) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, [RationalFunc, MultiPolynomial]) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || (is_class(self.PolynomialClass, Polynomial) && symbols_match(object.symbol, [self.PolynomialSymbol]) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
         }
         if (is_instance(object, Polynomial))
         {

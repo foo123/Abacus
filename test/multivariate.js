@@ -201,6 +201,8 @@ echo("((x+yz)(y^2+x)(z^2+y)(x^2+y^2)).factors()");
 check_factors(ring.fromString("(x+yz)(y^2+x)(z^2+y)(x^2+y^2)"));
 echo("((x^3+y^3)(x^2+2y+1)).factors()");
 check_factors(ring.fromString("(x^3+y^3)(x^2+2y+1)"));
+echo("((ax+by)(x-y)).factors()");
+check_factors(ring.fromString("(ax+by)(x-y)"));
 echo('---');
 
 ring = Abacus.Ring.Q("x", "y");
@@ -228,6 +230,11 @@ p3 = ring.fromString("x^2 + x*y^2 + x*y + x + y^3 + y");
 echo("x^2 + x*y^2 + x*y + x + y^3 + y", ',', p3.toString());
 echo(ring.gcd(p1, p2, p3).toString(), ',', "x + y");
 check_xgcd(ring, [p3, p1, p2]);
+p1 = ring.fromString("(ax+by)(x-y)");
+echo(p1.toString());
+p2 = ring.fromString("(ax+by)^2");
+echo(p2.toString());
+echo(ring.gcd(p1, p2).toString(), ',', "ax + by");
 
 echo('---');
 
