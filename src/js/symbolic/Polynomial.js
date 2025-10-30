@@ -2848,7 +2848,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 }
                 ring = ring.CoefficientRing;
             }
-            p = p.toExpr().toPoly(x, ring);
+            p = p.toExpr().toRationalFunc(x, ring); // may include symbolic coefficients as fractions
+            p = p.den.isConst() ? p.num.div(p.den) : p.num;
         }
         return p;
     }

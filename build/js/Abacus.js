@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-27 09:02:01)
+*   @version: 2.0.0 (2025-10-30 21:28:28)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-27 09:02:01)
+*   @version: 2.0.0 (2025-10-30 21:28:28)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -4160,9 +4160,10 @@ function solvepolys(p, x, type)
         // so they can be solved with exact symbolic operations wrt the rest
         if (!p || !p.length) return p;
 
-        var deg, triang, already_used,
+        var deg, triang_all, triang, already_used,
             solve_for, free_vars, sub, j,
-            is_consistent, all_substituted, solution,
+            is_consistent, all_substituted,
+            combinations, solution,
             // factor them to simplify
             pf = p.map(function(pi) {return pi.factors()[0].map(function(pik) {return pik[0];})});
 
@@ -4186,21 +4187,26 @@ function solvepolys(p, x, type)
         {
             pi.forEach(function(pik, k) {
                 x.forEach(function(xj, j) {
-                    if (!already_used[i] && (1 === deg[i][k].max[j]))
+                    if (!already_used[i][k] && (1 === deg[i][k].max[j]))
                     {
                         // linear term
-                        if (!HAS.call(triang, xj))
+                        if (HAS.call(triang_all, xj))
                         {
-                            already_used[i] = true;
-                            triang[xj] = [i, k];
+                            already_used[i][k] = true;
+                            triang_all[xj].push([i, k]);
                         }
-                        else if (deg[i][k].terms < deg[triang[xj][0]][triang[xj][1]].terms)
+                        else
+                        {
+                            already_used[i][k] = true;
+                            triang_all[xj] = [[i, k]];
+                        }
+                        /*else if (deg[i][k].terms < deg[triang[xj][0]][triang[xj][1]].terms)
                         {
                             // has fewer terms, use this instead
                             already_used[triang[xj][0]] = false;
                             already_used[i] = true;
                             triang[xj] = [i, k];
-                        }
+                        }*/
                     }
                 });
             });
@@ -4209,20 +4215,20 @@ function solvepolys(p, x, type)
         {
             pi.forEach(function(pik, k) {
                 x.forEach(function(xj, j) {
-                    if (!already_used[i] && (0 < deg[i][k].min[j]) && (deg[i][k].min[j] === deg[i][k].max[j]))
+                    if (!already_used[i][k] && (0 < deg[i][k].min[j]) && (deg[i][k].min[j] === deg[i][k].max[j]))
                     {
                         // monomial term
-                        if (!HAS.call(triang, xj))
+                        if (!HAS.call(triang_all, xj))
                         {
-                            already_used[i] = true;
-                            triang[xj] = [i, k];
+                            already_used[i][k] = true;
+                            triang_all[xj] = [[i, k]];
                         }
-                        else if (deg[i][k].min[j] < deg[triang[xj][0]][triang[xj][1]].min[j])
+                        else if (deg[i][k].min[j] < deg[triang_all[xj][0][0]][triang_all[xj][0][1]].min[j])
                         {
                             // is lower power, use this instead
-                            already_used[triang[xj][0]] = false;
-                            already_used[i] = true;
-                            triang[xj] = [i, k];
+                            //already_used[triang_all[xj][0][0]][triang_all[xj][0][1]] = false;
+                            already_used[i][k] = true;
+                            triang_all[xj].push([i, k]);
                         }
                     }
                 });
@@ -4233,90 +4239,102 @@ function solvepolys(p, x, type)
         });
 
         // triangularization
-        triang = {};
-        already_used = array(p.length, false);
+        triang_all = {};
+        already_used = array(pf.length, function(pi) {
+            return array(pi.length, false);
+        });
         // first find linear terms preferably
         pf.forEach(triangularize1);
         // then find any monomial terms
         pf.forEach(triangularize2);
 
-        solve_for = KEYS(triang);
+        solve_for = KEYS(triang_all);
         if (!solve_for.length) return null; // cannot solve
 
-        j = 0;
-        free_vars = x.reduce(function(free_vars, xi) {
-            if (!HAS.call(triang, xi))
-            {
-                free_vars[xi] = Expr('', String(param)+'_'+String(++j));
-            }
-            return free_vars;
-        }, {});
-
-        // back-substitution
-        sub = {that:[], withthat:[]};
-        solution = {};
-        KEYS(free_vars).forEach(function(xi) {
-            solution[xi] = free_vars[xi];
-            sub.that.push(xi);
-            sub.withthat.push(solution[xi]);
-        });
-        solve_for.sort(function(a, b) {
-            return (x.filter(function(xi, i) {
-                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a][0]][triang[a][1]].max[i]);
-            }).length) - (x.filter(function(xi, i) {
-                return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b][0]][triang[b][1]].max[i]);
-            }).length);
-        }).forEach(function(xi) {
-            var pi = pf[triang[xi][0]][triang[xi][1]],
-                d = deg[triang[xi][0]][triang[xi][1]].min[x.indexOf(xi)],
-                term = pi.univariate(xi).term([d], true)
-            ;
-            solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
-            if (0 === solution[xi].symbols().filter(is_symbol).length)
-            {
-                // use it in subsequent substitutions
-                if (1 < d)
+        combinations = Tensor(solve_for.map(function(xj) {return triang_all[xj].length;}));
+        while (combinations.hasNext())
+        {
+            // triangularization
+            triang = combinations.next().reduce(function(triang, i, j) {
+                triang[solve_for[j]] = triang_all[solve_for[j]][i];
+                return triang;
+            }, {});
+            j = 0;
+            free_vars = x.reduce(function(free_vars, xi) {
+                if (!HAS.call(triang, xi))
                 {
-                    sub.that.push(Expr('^', [xi, d]));
-                    sub.withthat.push(solution[xi]);
-                    solution[xi] = sqrt(solution[xi], d);
-                    sub.that.push(xi);
-                    sub.withthat.push(solution[xi]);
+                    free_vars[xi] = Expr('', String(param)+'_'+String(++j));
                 }
-                else
-                {
-                    sub.that.push(xi);
-                    sub.withthat.push(solution[xi]);
-                }
-            }
-        });
+                return free_vars;
+            }, {});
 
-        // make sure all are substituted
-        j = 0;
-        do {
-        all_substituted = true;
-        KEYS(solution).forEach(function(xi) {
-            if (solution[xi].symbols().filter(is_symbol).length)
-            {
-                all_substituted = false;
-                ++j;
-                solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
+            // back-substitution
+            sub = {that:[], withthat:[]};
+            solution = {};
+            KEYS(free_vars).forEach(function(xi) {
+                solution[xi] = free_vars[xi];
+                sub.that.push(xi);
+                sub.withthat.push(solution[xi]);
+            });
+            solve_for.slice().sort(function(a, b) {
+                return (x.filter(function(xi, i) {
+                    return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a][0]][triang[a][1]].max[i]);
+                }).length) - (x.filter(function(xi, i) {
+                    return HAS.call(free_vars, xi) ? false : (0 < deg[triang[b][0]][triang[b][1]].max[i]);
+                }).length);
+            }).forEach(function(xi) {
+                var pi = pf[triang[xi][0]][triang[xi][1]],
+                    d = deg[triang[xi][0]][triang[xi][1]].min[x.indexOf(xi)],
+                    term = pi.univariate(xi).term([d], true)
+                ;
+                solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
                 if (0 === solution[xi].symbols().filter(is_symbol).length)
                 {
-                    sub.that.push(xi);
-                    sub.withthat.push(solution[xi]);
+                    // use it in subsequent substitutions
+                    if (1 < d)
+                    {
+                        sub.that.push(Expr('^', [xi, d]));
+                        sub.withthat.push(solution[xi]);
+                        solution[xi] = sqrt(solution[xi], d);
+                        sub.that.push(xi);
+                        sub.withthat.push(solution[xi]);
+                    }
+                    else
+                    {
+                        sub.that.push(xi);
+                        sub.withthat.push(solution[xi]);
+                    }
                 }
-            }
-        });
-        } while (!all_substituted && (j < x.length));
+            });
 
-        // check is solution consistent
-        is_consistent = (p.filter(function(pi) {
-            return to_expr(pi).substitute(sub.that, sub.withthat).num.expand().equ(0);
-        }).length === p.length);
-        if (!is_consistent) return false;
+            // make sure all are substituted
+            j = 0;
+            do {
+            all_substituted = true;
+            KEYS(solution).forEach(function(xi) {
+                if (solution[xi].symbols().filter(is_symbol).length)
+                {
+                    all_substituted = false;
+                    ++j;
+                    solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
+                    if (0 === solution[xi].symbols().filter(is_symbol).length)
+                    {
+                        sub.that.push(xi);
+                        sub.withthat.push(solution[xi]);
+                    }
+                }
+            });
+            } while (!all_substituted && (j < x.length));
 
-        return [x.map(function(xi) {return solution[xi];})];
+            // check is solution consistent
+            is_consistent = (p.filter(function(pi) {
+                return to_expr(pi).substitute(sub.that, sub.withthat).num.expand().equ(0);
+            }).length === p.length);
+            if (!is_consistent) continue;
+
+            return [x.map(function(xi) {return solution[xi];})];
+        }
+        return false;
     }
 
     function recursively_solve(p, x, start)
@@ -14377,7 +14395,8 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 }
                 ring = ring.CoefficientRing;
             }
-            p = p.toExpr().toPoly(x, ring);
+            p = p.toExpr().toRationalFunc(x, ring); // may include symbolic coefficients as fractions
+            p = p.den.isConst() ? p.num.div(p.den) : p.num;
         }
         return p;
     }
@@ -18915,11 +18934,11 @@ Ring = Abacus.Ring = Class({
         }
         if (is_instance(object, MultiPolynomial))
         {
-            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, MultiPolynomial) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, [RationalFunc, Poly]) && symbols_match(object.symbol, self.PolynomialSymbol) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
         }
         if (is_instance(object, Polynomial))
         {
-            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, Poly) && ((object.symbol === self.PolynomialSymbol) || (-1 < self.PolynomialSymbol.indexOf(object.symbol))) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
+            return !!self.PolynomialClass && ((is_class(self.PolynomialClass, [RationalFunc, Poly]) && ((object.symbol === self.PolynomialSymbol) || (-1 < self.PolynomialSymbol.indexOf(object.symbol))) && self.CoefficientRing.equ(object.ring)) || self.CoefficientRing.contains(object));
         }
         if (is_class(self.NumberClass, Complex))
         {
