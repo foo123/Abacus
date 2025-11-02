@@ -14,10 +14,13 @@
 [![Abacus Live Demo](/abacus-live.png)](https://foo123.github.io/examples/abacus)
 
 
+[![Abacus REPL](/abacus-repl.png)](https://foo123.github.io/examples/abacus-repl)
+
 
 ### Contents
 
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
+* [REPL](https://foo123.github.io/examples/abacus-repl)
 * [Features](#features)
 * [Combinatorial and Number Theory Examples](/examples/README.md)
 * [Performance](#performance)
