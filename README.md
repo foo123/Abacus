@@ -14,15 +14,15 @@
 [![Abacus Live Demo](/abacus-live.png)](https://foo123.github.io/examples/abacus)
 
 
-[![Abacus REPL](/abacus-repl.png)](https://foo123.github.io/examples/abacus-repl)
+[![Abacus REPL Online](/abacus-repl.png)](https://foo123.github.io/examples/abacus-repl)
 
 
 ### Contents
 
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
-* [REPL](https://foo123.github.io/examples/abacus-repl)
-* [Features](#features)
+* [Online REPL](https://foo123.github.io/examples/abacus-repl)
 * [Combinatorial and Number Theory Examples](/examples/README.md)
+* [Features](#features)
 * [Performance](#performance)
 * [Credits and References](#credits-and-references)
 * [Example API](#example-api)
