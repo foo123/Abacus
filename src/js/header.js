@@ -39,14 +39,15 @@ var  Abacus = {VERSION: "@@VERSION@@"}
 
     // utils
     ,Node, Heap, ListSet
-    ,DefaultArithmetic, INUMBER, INumber
+    ,DefaultArithmetic, DefaultArithmeticFloat
+    ,INUMBER, INumber
 
     // numerics
     ,Numeric, Integer, IntegerMod, Rational, Complex, nComplex
 
     // symbolics
     ,Symbolic, Expr, Poly
-    ,Polynomial, MultiPolynomial, RationalFunc, Radical
+    ,Polynomial, MultiPolynomial, RationalFunc
     ,Ring, Matrix
 
     // iterators

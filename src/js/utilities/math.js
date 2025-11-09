@@ -1231,6 +1231,47 @@ function factorize(n)
     }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
 }
+function gcd_bin(/* args */)
+{
+    // https://en.wikipedia.org/wiki/Euclidean_algorithm
+    // https://en.wikipedia.org/wiki/Greatest_common_divisor
+    // https://en.wikipedia.org/wiki/Binary_GCD_algorithm
+    // supports Exact Big Integer Arithmetic if plugged in
+    // note: returns always positive gcd (even of negative numbers)
+    // note2: any zero arguments are skipped
+    // note3: gcd(0,0,..,0) is conventionaly set to 0
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        c = args.length, a, b, az, bz, z, t, i, zeroes,
+        Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I;
+    if (0 === c) return O;
+
+    i = 0;
+    while ((i < c) && Arithmetic.equ(O, a=args[i++]));
+    a = Arithmetic.abs(a);
+    z = 0;
+    while (i < c)
+    {
+        while ((i < c) && Arithmetic.equ(O, b=args[i++]));
+        b = Arithmetic.abs(b);
+        if (Arithmetic.equ(b, a)) continue;
+        else if (Arithmetic.equ(b, O)) break;
+        az = trailing_zeroes(a);
+        bz = trailing_zeroes(b);
+        z = stdMath.min(az+z, bz);
+        a = Arithmetic.shr(a, az);
+        b = Arithmetic.shr(b, bz);
+        for (;;)
+        {
+            // swap them (b >= a)
+            if (Arithmetic.lt(b, a)) {t = b; b = a; a = t;}
+            b = Arithmetic.sub(b, a);
+            if (Arithmetic.equ(b, O)) break;
+            b = Arithmetic.shr(b, trailing_zeroes(b));
+        }
+    }
+    return Arithmetic.shl(a, z);
+}
 function gcd(/* args */)
 {
     // https://en.wikipedia.org/wiki/Euclidean_algorithm
@@ -3391,6 +3432,10 @@ function rndInt(m, M)
 {
     return stdMath.round((M-m) * Abacus.Math.rnd() + m);
 }
+function rndFloat(m, M)
+{
+    return (M-m) * Abacus.Math.rnd() + m;
+}
 function is_approximately_equal(a, b, eps)
 {
     if (null == eps) eps = Number.EPSILON;
@@ -3476,7 +3521,67 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     ,rnd: rndInt
 };
 
-// pluggable arithmetics, eg biginteger exact Arithmetic
+DefaultArithmeticFloat = Abacus.DefaultArithmeticFloat = { // keep default arithmetic as distinct
+     // whether using default arithmetic or using external implementation (eg decimal or other)
+     isDefault: function() {
+         return true;
+     }
+    ,isNumber: function(x) {
+        var Arithmetic = this;
+        if (Arithmetic.isDefault()) return is_number(x);
+        return is_number(x) || is_instance(x, Arithmetic.O[CLASS]);
+    }
+
+    ,J: -1.0
+    ,O: 0.0
+    ,I: 1.0
+    ,II: 2.0
+    ,INF: {valueOf: function() {return Infinity;}, toString: function() {return "Infinity";}, toTex: function() {return "\\infty";}} // a representation of Infinity
+    ,NINF: {valueOf: function() {return -Infinity;}, toString: function() {return "-Infinity";}, toTex: function() {return "-\\infty";}} // a representation of -Infinity
+
+    ,nums: function(a) {
+        var Arithmetic = this;
+        if (is_array(a) || is_args(a))
+        {
+            for (var i=0,l=a.length; i<l; ++i) a[i] = Arithmetic.nums(a[i]); // recursive
+            return a;
+        }
+        return Arithmetic.num(a);
+    }
+    ,num: function(a) {
+        return is_number(a) ? a : parseFloat(a || 0, 10);
+    }
+    ,val: function(a) {
+        return a.valueOf();
+    }
+
+    ,neg: function(a) {return -(+a);}
+    ,inv: function(a) {return 1.0 / a;}
+
+    ,equ: function(a, b) {return a === b;}
+    ,gte: function(a, b) {return a >= b;}
+    ,lte: function(a, b) {return a <= b;}
+    ,gt: function(a, b) {return a > b;}
+    ,lt: function(a, b) {return a < b;}
+
+    ,inside: function(a, m, M, closed) {return closed ? (a >= m) && (a <= M) : (a > m) && (a < M);}
+    ,clamp: function(a, m, M) {return a < m ? m : (a > M ? M : a);}
+    ,wrap: function(a, m, M) {return a < m ? M : (a > M ? m : a);}
+    ,wrapR: function(a, M) {return a < 0 ? a + M : a;}
+
+    ,add: addn
+    ,sub: function(a, b) {return a - b;}
+    ,mul: muln
+    ,div: function(a, b) {return a / b;}
+    ,pow: stdMath.pow
+
+    ,abs: stdMath.abs
+    ,min: stdMath.min
+    ,max: stdMath.max
+    ,rnd: rndFloat
+};
+
+// pluggable arithmetics, eg biginteger/decimal exact Arithmetic
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
     isDefault: function() {
         return (0 === this.O) && (this.add === addn);
@@ -3504,6 +3609,11 @@ Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
             if (dividedEvenly) return roundedTowardsZeroQuotient;
             wasRoundedDown = (Arithmetic.gt(a, O) === Arithmetic.gt(b, O));
             return wasRoundedDown ? Arithmetic.add(roundedTowardsZeroQuotient, I) : roundedTowardsZeroQuotient;
+    }
+});
+Abacus.ArithmeticFloat = Merge({}, DefaultArithmeticFloat, {
+    isDefault: function() {
+        return (0.0 === this.O) && (this.add === addn);
     }
 });
 
@@ -3641,6 +3751,20 @@ Abacus.Math = {
         return next_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n), -1 === dir ? -1 : 1);
     }
 
+    ,gcd2: function(/* args */) {
+        var Arithmetic = Abacus.Arithmetic,
+            args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
+            res, INT = null;
+        res = gcd_bin(args.map(function(a) {
+            if (is_instance(a, Integer))
+            {
+                if (!INT) INT = a[CLASS];
+                return a.num;
+            }
+            return Arithmetic.num(a);
+        }));
+        return INT ? new INT(res) : res;
+    }
     ,gcd: function(/* args */) {
         var Arithmetic = Abacus.Arithmetic,
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
