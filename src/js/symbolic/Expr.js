@@ -758,7 +758,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     {
                         break;
                     }
-                    throw error(expected ? ('Missing expected "' + expected.split('').join(" or ") + '"') : ('Unexpected "' + c + '"'));
+                    throw error(expected ? ('Missing expected "' + expected.split('').join('" or "') + '"') : ('Unexpected "' + c + '"'));
                 }
                 merge(true);
                 if ((1 < terms.length) || (0 < ops.length)) throw error('Mismatched terms and operators', ops.length ? ops[0][1] : i);
