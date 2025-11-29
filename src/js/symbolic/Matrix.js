@@ -1757,7 +1757,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     }
                 }
             }
-            self._svd = [u, s, v];
+            self._svd = [Matrix(Ring(nComplex, null, true), u), s, Matrix(Ring(nComplex, null, true), v)];
         }
         return self._svd.slice();
     }
