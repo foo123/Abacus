@@ -326,7 +326,7 @@ console.log(m2.inv().mul(m2).toString());
 * implement more efficient integer `GCD` algorithm (TODO)
 * implement `Rank Factorisation` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
-* implement symbolic/numeric `EVD / SVD` computation (TODO)
+* implement numeric `EVD / SVD` computation  **[DONE]**
 * support general symbolic expressions and computations in `Expr` **[DONE]**
 * support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * support general and least-squares solutions of systems of **arbitrary linear equations** **[DONE]**

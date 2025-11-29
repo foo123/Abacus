@@ -401,6 +401,10 @@ Complex = Abacus.Complex = Class(Numeric, {
         var self = this;
         return self.norm(true);
     }
+    ,sign: function() {
+        var self = this;
+        return !self.im.equ(0) ? self.div(self.abs())/*new complex(stdMath.cos(x.angle()), stdMath.sin(x.angle()))*/ : new Complex(self.re.sign(), Rational.Zero());
+    }
     ,neg: function() {
         var self = this;
         if (null == self._n)
@@ -963,6 +967,10 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,abs: function() {
         var self = this;
         return self.norm(true);
+    }
+    ,sign: function() {
+        var self = this;
+        return self.im ? self.div(self.abs())/*new complex(stdMath.cos(x.angle()), stdMath.sin(x.angle()))*/ : new nComplex(stdMath.sign(self.re), 0);
     }
     ,neg: function() {
         var self = this;

@@ -191,6 +191,31 @@ function isqrt(n)
     }
     return sqrt;
 }
+function hypot(a, b)
+{
+    a = stdMath.abs(a);
+    b = stdMath.abs(b);
+    var r = 0;
+    if (0 === a)
+    {
+        return b;
+    }
+    else if (0 === b)
+    {
+        return a;
+    }
+    else if (a > b)
+    {
+        r = b/a;
+        return a*stdMath.sqrt(1 + r*r);
+    }
+    else if (a < b)
+    {
+        r = a/b;
+        return b*stdMath.sqrt(1 + r*r);
+    }
+    return a*stdMath.SQRT2;
+}
 function jskthroot(x, k)
 {
     var kg, r, p;

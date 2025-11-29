@@ -311,6 +311,10 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         return Rational(Arithmetic.abs(self.num), self.den, self._simpl);
     }
+    ,sign: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.equ(self.num, Arithmetic.O) ? Rational.Zero() : (Arithmetic.lt(self.num, Arithmetic.O) ? Rational.MinusOne() : Rational.One());
+    }
     ,neg: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._n)

@@ -1200,9 +1200,566 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return null;
     }
     ,svd: function() {
+        var self = this, svdT;
+        if (self.ring.isSymbolic()) return false; // not supported for symbolic entries
         // singular value decomposition
         // https://en.wikipedia.org/wiki/Singular_value_decomposition
-        return null;
+        if (null == self._svd)
+        {
+            if (A.length < A[0].length)
+            {
+                // compute transpose svd and return transpose result
+                svdT = self.t().svd();
+                self._svd = [svdT[2].t(), svdT[1], svdT[0].t()];
+            }
+        }
+        if (null == self._svd)
+        {
+            var A = self.val, eta = 1e-10,
+                n = A[0].length, m = A.length;
+            /* adapted from:
+            Peter Businger, Gene Golub,
+            Algorithm 358:
+            Singular Value Decomposition of a Complex Matrix,
+            Communications of the ACM,
+            Volume 12, Number 10, October 1969, pages 564-565.
+            https://github.com/johannesgerer/jburkardt-f77/blob/master/toms358/toms358.f
+            */
+            // produces some columns with reflected signs from Octave's svd
+            var nu = m, nv = n, p = 0,
+                a = A.map(function(row) {
+                    return row.map(function(aij) {
+                        return new nComplex(aij);
+                    })
+                }),
+                u = array(m, function() {
+                    return array(nu, function() {
+                        return nComplex.Zero();
+                    });
+                }),
+                s = array(n, 0),
+                v = array(n, function() {
+                    return array(nv, function() {
+                        return nComplex.Zero();
+                    });
+                }),
+                zero = nComplex.Zero(),
+                one = nComplex.One(),
+                tol = Number.MIN_VALUE/eta,
+                x, y, z, w, q,
+                e, r, g, f, h, sn, cs,
+                i, j, k, l,
+                kk, k1, l1, ll,
+                iter, max_iter = 50,
+                b = new Array(n),
+                c = new Array(n),
+                t = new Array(n),
+                goto_240;
+
+            // complex a
+            // complex u
+            // complex v
+            // complex q
+            // complex r
+            // real sn
+            // real cs
+            // real b
+            // real c
+            // real f
+            // real g
+            // real h
+            // real s
+            // real t
+            // real w
+            // real x
+            // real y
+            // real z
+            //
+            //  Householder reduction.
+            //
+            c[1-1] = 0;
+            for (k=1; k<=n; ++k)
+            {
+                //10    continue
+                k1 = k + 1;
+                //
+                //  Elimination of A(I,K), I = K+1, ..., M.
+                //
+                z = 0;
+                for (i=k; i<=m; ++i)
+                {
+                    z += stdMath.pow(a[i-1][k-1].real(), 2) + stdMath.pow(a[i-1][k-1].imag(), 2);
+                }
+
+                b[k-1] = 0;
+
+                if (tol < z)
+                {
+                    z = stdMath.sqrt(z);
+                    b[k-1] = z;
+                    w = a[k-1][k-1].abs();
+
+                    if (0 === w)
+                    {
+                        q = one;
+                    }
+                    else
+                    {
+                        q = a[k-1][k-1].div(w);
+                    }
+
+                    a[k-1][k-1] = q.mul(z + w);
+
+                    if (k !== n+p)
+                    {
+                        for (j=k1; j<=n+p; ++j)
+                        {
+                            q = zero;
+                            for (i=k; i<=m; ++i)
+                            {
+                                q = q.add(a[i-1][k-1].conj().mul(a[i-1][j-1]));
+                            }
+                            q = q.div(z * (z + w));
+                            for (i=k; i<=m; ++i)
+                            {
+                                a[i-1][j-1] = a[i-1][j-1].sub(q.mul(a[i-1][k-1]));
+                            }
+                        }
+
+                        //
+                        //  Phase transformation.
+                        //
+                        q = a[k-1][k-1].conj().sign().neg();
+                        for (j=k1; j<=n+p; ++j)
+                        {
+                            a[k-1][j-1] = q.mul(a[k-1][j-1]);
+                        }
+                    }
+                }
+
+                //
+                //  Elimination of A(K,J), J = K+2, ..., N
+                //
+                if (k === n)
+                {
+                    //go to 140
+                    break;
+                }
+
+                z = 0;
+                for (j=k1; j<=n; ++j)
+                {
+                    z += stdMath.pow(a[k-1][j-1].real(), 2) + stdMath.pow(a[k-1][j-1].imag(), 2);
+                }
+
+                c[k1-1] = 0;
+
+                if (tol < z)
+                {
+                    z = stdMath.sqrt(z);
+                    c[k1-1] = z;
+                    w = a[k-1][k1-1].abs();
+
+                    if (0 === w)
+                    {
+                        q = one;
+                    }
+                    else
+                    {
+                        q = a[k-1][k1-1].div(w);
+                    }
+
+                    a[k-1][k1-1] = q.mul(z + w);
+
+                    for (i=k1; i<=m; ++i)
+                    {
+                        q = zero;
+                        for (j=k1; j<=n; ++j)
+                        {
+                            q = q.add(a[k-1][j-1].conj().mul(a[i-1][j-1]));
+                        }
+                        q = q.div(z * (z + w));
+                        for (j=k1; j<=n; ++j)
+                        {
+                            a[i-1][j-1] = a[i-1][j-1].sub(q.mul(a[k-1][j-1]));
+                        }
+                    }
+
+                    //
+                    //  Phase transformation.
+                    //
+                    q = a[k-1][k1-1].conj().sign().neg();
+                    for (i=k1; i<=m; ++i)
+                    {
+                        a[i-1][k1-1] = a[i-1][k1-1].mul(q);
+                    }
+                }
+
+                //k = k1;
+                //go to 10
+            }
+
+            //
+            //  Tolerance for negligible elements.
+            //
+            //140   continue
+            e = 0;
+            for (k=1; k<=n; ++k)
+            {
+                s[k-1] = b[k-1];
+                t[k-1] = c[k-1];
+                e = stdMath.max(e, (s[k-1] + t[k-1]));
+            }
+
+            e = e*eta;
+
+            //
+            //  Initialization of U and V.
+            //
+            if (0 < nu)
+            {
+                for (j=1; j<=nu; ++j)
+                {
+                    u[j-1][j-1] = one;
+                }
+            }
+
+            if (0 < nv)
+            {
+                for (j=1; j<=nv; ++j)
+                {
+                    v[j-1][j-1] = one;
+                }
+            }
+
+            //
+            //  QR diagonalization.
+            //
+            for (kk=1; kk<=n; ++kk)
+            {
+                k = n + 1 - kk;
+                //
+                //  Test for split.
+                //
+                for (iter=1; iter<=max_iter; ++iter)
+                {
+                    //220     continue
+                    goto_240 = true;
+                    for (ll=1; ll<=k; ++ll)
+                    {
+                        l = k + 1 - ll;
+                        if (stdMath.abs(t[l-1]) <= e)
+                        {
+                            //go to 290
+                            goto_240 = false;
+                            break;
+                        }
+                        if (stdMath.abs(s[l-1-1]) <= e)
+                        {
+                            //go to 240
+                            goto_240 = true;
+                            break;
+                        }
+                    }
+
+                    //
+                    //  Cancellation of E(L).
+                    //
+                    if (goto_240)
+                    {
+                        //240     continue
+                        cs = 0;
+                        sn = 1;
+                        l1 = l - 1;
+
+                        for (i=l; i<=k; ++k)
+                        {
+                            f = (sn * t[i-1]);
+                            t[i-1] = (cs * t[i-1]);
+
+                            if (stdMath.abs(f) <= e)
+                            {
+                                //go to 290
+                                break;
+                            }
+
+                            h = s[i-1];
+                            w = hypot(f, h);
+                            s[i-1] = w;
+                            cs = (h / w);
+                            sn = -(f / w);
+
+                            if (0 < nu)
+                            {
+                                for (j=1; j<=n; ++j)
+                                {
+                                    x = u[j-1][l1-1].real();
+                                    y = u[j-1][i-1].real();
+                                    u[j-1][l1-1] = new nComplex((x * cs) + (y * sn), 0);
+                                    u[j-1][i-1]  = new nComplex((y * cs) - (x * sn), 0);
+                                }
+                            }
+
+                            if (0 < p)
+                            {
+                                for (j=n+1; j<=n+p; ++j)
+                                {
+                                    q = a[l1-1][j-1];
+                                    r = a[i-1][j-1];
+                                    a[l1-1][j-1] = q.mul(cs).add(r.mul(sn));
+                                    a[i-1][j-1]  = r.mul(cs).sub(q.mul(sn));
+                                }
+                            }
+                        }
+                    }
+
+                    //
+                    //  Test for convergence.
+                    //
+                    //290     continue
+                    w = s[k-1];
+
+                    if (l === k)
+                    {
+                        //go to 360
+                        break;
+                    }
+
+                    //
+                    //  Origin shift.
+                    //
+                    x = s[l-1];
+                    y = s[k-1-1];
+                    g = t[k-1-1];
+                    h = t[k-1];
+                    f = ((y - w) * (y + w) + (g - h) * (g + h)) / (2 * h * y);
+                    g = hypot(f, 1);
+                    if (f < 0)
+                    {
+                        g = -g;
+                    }
+                    f = ((x - w) * (x + w) + (y / (f + g) - h) * h) / x;
+
+                    //
+                    //  QR step.
+                    //
+                    cs = 1;
+                    sn = 1;
+                    l1 = l + 1;
+
+                    for (i=l1; l1<=k; ++l1)
+                    {
+                        g = t[i-1];
+                        y = s[i-1];
+                        h = (sn * g);
+                        g = (cs * g);
+                        w = hypot(h, f);
+                        t[i-1-1] = w;
+                        cs = (f / w);
+                        sn = (h / w);
+                        f = ((x * cs) + (g * sn));
+                        g = ((g * cs) - (x * sn));
+                        h = (y * sn);
+                        y = (y * cs);
+
+                        if (0 < nv)
+                        {
+                            for (j=1; j<=n; ++j)
+                            {
+                                x = v[j-1][i-1-1].real();
+                                w = v[j-1][i-1].real();
+                                v[j-1][i-1-1] = new nComplex((x * cs) + (w * sn), 0);
+                                v[j-1][i-1]   = new nComplex((w * cs) - (x * sn), 0);
+                            }
+                        }
+
+                        w = hypot(h, f);
+                        s[i-1-1] = w;
+                        cs = (f / w);
+                        sn = (h / w);
+                        f = ((cs * g) + (sn * y));
+                        x = ((cs * y) - (sn * g));
+
+                        if (0 < nu)
+                        {
+                            for (j=1; j<=n; ++j)
+                            {
+                                y = u[j-1][i-1-1].real();
+                                w = u[j-1][i-1].real();
+                                u[j-1][i-1-1] = new nComplex((y * cs) + (w * sn), 0);
+                                u[j-1][i-1]   = new nComplex((w * cs) - (y * sn), 0);
+                            }
+                        }
+
+                        if (0 < p)
+                        {
+                            for (j=n+1; j<=n+p; ++j)
+                            {
+                                q = a[i-1-1][j-1];
+                                r = a[i-1][j-1];
+                                a[i-1-1][j-1] = q.mul(cs).add(r.mul(sn));
+                                a[i-1][j-1]   = r.mul(cs).sub(q.mul(sn));
+                            }
+                        }
+                    }
+
+                    t[l-1] = 0;
+                    t[k-1] = f;
+                    s[k-1] = x;
+                    //go to 220
+                }
+
+                //
+                //  Convergence.
+                //
+                //360     continue
+                if (w < 0)
+                {
+                    s[k-1] = -(w);
+                    if (0 < nv)
+                    {
+                        for (j=1; j<=n; ++j)
+                        {
+                            v[j-1][k-1] = v[j-1][k-1].neg();
+                        }
+                    }
+                }
+            }
+
+            //
+            //  Sort the singular values.
+            //
+            for (k=1; k<=n; ++k)
+            {
+                g = -1;
+                j = k;
+
+                for (i=k; i<=n; ++i)
+                {
+                    if (g < s[i-1])
+                    {
+                        g = s[i-1];
+                        j = i;
+                    }
+                }
+
+                if (j !== k)
+                {
+                    s[j-1] = s[k-1];
+                    s[k-1] = g;
+
+                    //
+                    //  Interchange V(1:N,J) and V(1:N,K).
+                    //
+                    if (0 < nv)
+                    {
+                        for (i=1; i<=n; ++i)
+                        {
+                            q           = v[i-1][j-1];
+                            v[i-1][j-1] = v[i-1][k-1];
+                            v[i-1][k-1] = q;
+                        }
+                    }
+
+                    //
+                    //  Interchange U(1:N,J) and U(1:N,K).
+                    //
+                    if (0 < nu)
+                    {
+                        for (i=1; i<=n; ++i)
+                        {
+                            q           = u[i-1][j-1];
+                            u[i-1][j-1] = u[i-1][k-1];
+                            u[i-1][k-1] = q;
+                        }
+                    }
+
+                    //
+                    //  Interchange A(J,N1:NP) and A(K,N1:NP).
+                    //
+                    if (0 < p)
+                    {
+                        for (i=n+1; i<=n+p; ++i)
+                        {
+                            q           = a[j-1][i-1];
+                            a[j-1][i-1] = a[k-1][i-1];
+                            a[k-1][i-1] = q;
+                        }
+                    }
+                }
+            }
+
+            //
+            //  Back transformation.
+            //
+            if (0 < nu)
+            {
+                for (kk=1; kk<=n; ++kk)
+                {
+                    k = n + 1 - kk;
+                    if (b[k-1] !== 0)
+                    {
+                        q = a[k-1][k-1].sign().neg();
+
+                        for (j=1; j<=nu; ++j)
+                        {
+                            u[k-1][j-1] = q.mul(u[k-1][j-1]);
+                        }
+
+                        for (j=1; j<=nu; ++j)
+                        {
+                            q = zero;
+                            for (i=k; i<=m; ++i)
+                            {
+                                q = q.add(a[i-1][k-1].conj().mul(u[i-1][j-1]));
+                            }
+                            q = q.div(a[k-1][k-1].abs() * b[k-1]);
+                            for (i=k; i<=m; ++i)
+                            {
+                                u[i-1][j-1] = u[i-1][j-1].sub(q.mul(a[i-1][k-1]));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (0 < nv)
+            {
+                if (2 <= n)
+                {
+                    for (kk=2; kk<=n; ++kk)
+                    {
+                        k = n + 1 - kk;
+                        k1 = k + 1;
+
+                        if (c[k1-1] !== 0)
+                        {
+                            q = a[k-1][k1-1].conj().sign().neg();
+                            for (j=1; j<=nv; ++j)
+                            {
+                                v[k1-1][j-1] = q.mul(v[k1-1][j-1]);
+                            }
+
+                            for (j=1; j<=nv; ++j)
+                            {
+                                q = zero;
+                                for (i=k1; i<=n; ++i)
+                                {
+                                    q = q.add(a[k-1][i-1].mul(v[i-1][j-1]));
+                                }
+                                q = q.div(a[k-1][k1-1].abs() * c[k1-1]);
+                                for (i=k1; i<=n; ++i)
+                                {
+                                    v[i-1][j-1] = v[i-1][j-1].sub(q.mul(a[k-1][i-1].conj()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            self._svd = [u, s, v];
+        }
+        return self._svd.slice();
     }
     ,lu: function() {
         var self = this, ring, O, I, J, n, m, dim, P, L, U, DD,

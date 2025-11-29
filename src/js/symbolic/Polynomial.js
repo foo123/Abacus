@@ -697,8 +697,8 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         return self._roots.map(function(r) {return r.slice();});
     }
-    ,exactroots: function() {
-        // find exact roots of poly when solvable
+    ,allroots: function() {
+        // find all roots of poly when solvable
         var self = this, memo;
         if (null == self._exact_roots)
         {
@@ -2138,7 +2138,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,roots: function() {
         return [];
     }
-    ,exactroots: function() {
+    ,allroots: function() {
         /*
         The maximum number of roots of a multivariate polynomial depends on the field; over an infinite field, it can have infinitely many roots, while over a finite field, it is limited to the number of elements in that field. There is no direct multivariate version of the fundamental theorem of algebra. The relationship between the degree of a polynomial and its number of roots is a key consideration in this context. Determining if a multivariate polynomial is identically zero is complex, particularly over finite fields, as it involves confirming that all coefficients are zero. This complexity highlights the challenges in analyzing multivariate polynomials compared to univariate cases.
         Reference: https://www.physicsforums.com/threads/roots-of-multivariate-polynomials.749772/
