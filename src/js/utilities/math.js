@@ -2761,7 +2761,7 @@ function solvepolys(p, x, type)
         }
 
         // find exact rational solutions for univariate poly
-        // TODO use exactroots()
+        // TODO use allroots()
         zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return to_expr(z[0]);});
 
         if (!zeros.length)

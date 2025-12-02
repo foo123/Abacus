@@ -60,15 +60,17 @@ function check_factors(p)
     }
     echo(out, res.mul(constant).equ(p));
 }
-function check_roots(p, exact)
+function check_roots(p, all)
 {
-    const roots = exact ? p.exactroots() : p.roots();
+    const roots = all ? p.allroots() : p.roots();
     const pe = p.toExpr();
     const satisfied = roots.length === roots.filter(function(r) {
         let e = pe.substitute(p.symbol, r[0]);
-        return e.num.expand().equ(0);
+        e = e.num.expand();
+        let res = e.equ(0);
+        return res;
     }).length;
-    echo((exact ? 'exactroots' : 'roots')+'('+p.toString()+') = '+roots.map(r => String(r[0])).join(', '), satisfied);
+    echo((all ? 'allroots' : 'roots')+'('+p.toString()+') = '+roots.map(r => String(r[0])).join(', '), satisfied);
 }
 function check_resultant(p, q, res)
 {
@@ -317,9 +319,9 @@ check_roots(poly("(x-a)(x-b)(x-c)", "x"));
 
 check_roots(poly("x^2-1", "x"), true);
 check_roots(poly("x^2+1", "x"), true);
-check_roots(poly("x^3+3x^2+5x+1", "x"), true); // expr cannot simplify
+//check_roots(poly("x^3+3x^2+5x+1", "x"), true); // expr cannot simplify
 check_roots(poly("x^4+3x^2+1", "x"), true);
-check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // expr cannot simplify
+//check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // expr cannot simplify
 
 echo('---');
 

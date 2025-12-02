@@ -548,6 +548,23 @@ print_dots(m);
 o.dispose();
 echo('---');
 
+field = Abacus.Ring.C();
+echo('field='+field.toString());
+echo('o=Abacus.Matrix(field, [["1+i", "2"], ["0", "-i"]])');
+o = Abacus.Matrix(field, [["1+i", "2"], ["0", "-i"]]);
+echo(o.toString());
+echo('o.svd()');
+let [S,U,V] = o.svd();
+echo('singular values');
+echo(S.map(s => s.toFixed(4)).join("\n"));
+echo('singular matrices');
+echo(U.toDec());
+echo(V.toDec());
+echo(V.mul(V.h()).toDec());
+echo(U.h().mul(U).toDec());
+echo(U.mul(Abacus.Matrix.D(U.ring, 2, 2, S)).mul(V.h()).toDec());
+echo('---');
+
 ring = Abacus.Ring.Q("x"); field = ring.associatedField();
 echo('ring = '+ring.toString()+' ('+ring.toTex()+') /* ring of polynomials */');
 echo('---');

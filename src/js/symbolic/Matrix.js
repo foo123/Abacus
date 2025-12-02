@@ -671,7 +671,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,h: function() {
         // hermitian transpose
         var self = this, ring, rows, columns;
-        if (self.ring.NumberClass !== Complex) return self.t();
+        if (!is_class(self.ring.NumberClass, Complex)) return self.t();
         if (null == self._h)
         {
             ring = self.ring; rows = self.nr; columns = self.nc;
@@ -1200,23 +1200,21 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return null;
     }
     ,svd: function() {
-        var self = this, svdT;
+        var self = this, A = self.val, n = A[0].length, m = A.length, svdT;
         if (self.ring.isSymbolic()) return false; // not supported for symbolic entries
         // singular value decomposition
         // https://en.wikipedia.org/wiki/Singular_value_decomposition
         if (null == self._svd)
         {
-            if (A.length < A[0].length)
+            if (m < n)
             {
                 // compute transpose svd and return transpose result
                 svdT = self.t().svd();
-                self._svd = [svdT[2].t(), svdT[1], svdT[0].t()];
+                self._svd = [svdT[0], svdT[2].t(), svdT[1].t()];
             }
         }
         if (null == self._svd)
         {
-            var A = self.val, eta = 1e-10,
-                n = A[0].length, m = A.length;
             /* adapted from:
             Peter Businger, Gene Golub,
             Algorithm 358:
@@ -1226,7 +1224,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             https://github.com/johannesgerer/jburkardt-f77/blob/master/toms358/toms358.f
             */
             // produces some columns with reflected signs from Octave's svd
-            var nu = m, nv = n, p = 0,
+            var eta = 1e-10, nu = m, nv = n, p = 0,
                 a = A.map(function(row) {
                     return row.map(function(aij) {
                         return new nComplex(aij);
@@ -1757,7 +1755,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     }
                 }
             }
-            self._svd = [Matrix(Ring(nComplex, null, true), u), s, Matrix(Ring(nComplex, null, true), v)];
+            self._svd = [s, Matrix(Ring(nComplex, null, true), u), Matrix(Ring(nComplex, null, true), v)];
         }
         return self._svd.slice();
     }

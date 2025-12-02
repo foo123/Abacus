@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-30 23:43:24)
+*   @version: 2.0.0 (2025-12-02 09:35:43)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-10-30 23:43:24)
+*   @version: 2.0.0 (2025-12-02 09:35:43)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -45,14 +45,15 @@ var  Abacus = {VERSION: "2.0.0"}
 
     // utils
     ,Node, Heap, ListSet
-    ,DefaultArithmetic, INUMBER, INumber
+    ,DefaultArithmetic, DefaultArithmeticFloat
+    ,INUMBER, INumber
 
     // numerics
     ,Numeric, Integer, IntegerMod, Rational, Complex, nComplex
 
     // symbolics
     ,Symbolic, Expr, Poly
-    ,Polynomial, MultiPolynomial, RationalFunc, Radical
+    ,Polynomial, MultiPolynomial, RationalFunc
     ,Ring, Matrix
 
     // iterators
@@ -1930,6 +1931,31 @@ function isqrt(n)
     }
     return sqrt;
 }
+function hypot(a, b)
+{
+    a = stdMath.abs(a);
+    b = stdMath.abs(b);
+    var r = 0;
+    if (0 === a)
+    {
+        return b;
+    }
+    else if (0 === b)
+    {
+        return a;
+    }
+    else if (a > b)
+    {
+        r = b/a;
+        return a*stdMath.sqrt(1 + r*r);
+    }
+    else if (a < b)
+    {
+        r = a/b;
+        return b*stdMath.sqrt(1 + r*r);
+    }
+    return a*stdMath.SQRT2;
+}
 function jskthroot(x, k)
 {
     var kg, r, p;
@@ -2969,6 +2995,47 @@ function factorize(n)
         factors = siqs_fac(n);
     }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
+}
+function gcd_bin(/* args */)
+{
+    // https://en.wikipedia.org/wiki/Euclidean_algorithm
+    // https://en.wikipedia.org/wiki/Greatest_common_divisor
+    // https://en.wikipedia.org/wiki/Binary_GCD_algorithm
+    // supports Exact Big Integer Arithmetic if plugged in
+    // note: returns always positive gcd (even of negative numbers)
+    // note2: any zero arguments are skipped
+    // note3: gcd(0,0,..,0) is conventionaly set to 0
+    var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+        c = args.length, a, b, az, bz, z, t, i, zeroes,
+        Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
+        O = Arithmetic.O, I = Arithmetic.I;
+    if (0 === c) return O;
+
+    i = 0;
+    while ((i < c) && Arithmetic.equ(O, a=args[i++]));
+    a = Arithmetic.abs(a);
+    z = 0;
+    while (i < c)
+    {
+        while ((i < c) && Arithmetic.equ(O, b=args[i++]));
+        b = Arithmetic.abs(b);
+        if (Arithmetic.equ(b, a)) continue;
+        else if (Arithmetic.equ(b, O)) break;
+        az = trailing_zeroes(a);
+        bz = trailing_zeroes(b);
+        z = stdMath.min(az+z, bz);
+        a = Arithmetic.shr(a, az);
+        b = Arithmetic.shr(b, bz);
+        for (;;)
+        {
+            // swap them (b >= a)
+            if (Arithmetic.lt(b, a)) {t = b; b = a; a = t;}
+            b = Arithmetic.sub(b, a);
+            if (Arithmetic.equ(b, O)) break;
+            b = Arithmetic.shr(b, trailing_zeroes(b));
+        }
+    }
+    return Arithmetic.shl(a, z);
 }
 function gcd(/* args */)
 {
@@ -4434,7 +4501,7 @@ function solvepolys(p, x, type)
         }
 
         // find exact rational solutions for univariate poly
-        // TODO use exactroots()
+        // TODO use allroots()
         zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return to_expr(z[0]);});
 
         if (!zeros.length)
@@ -5130,6 +5197,10 @@ function rndInt(m, M)
 {
     return stdMath.round((M-m) * Abacus.Math.rnd() + m);
 }
+function rndFloat(m, M)
+{
+    return (M-m) * Abacus.Math.rnd() + m;
+}
 function is_approximately_equal(a, b, eps)
 {
     if (null == eps) eps = Number.EPSILON;
@@ -5215,7 +5286,67 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     ,rnd: rndInt
 };
 
-// pluggable arithmetics, eg biginteger exact Arithmetic
+DefaultArithmeticFloat = Abacus.DefaultArithmeticFloat = { // keep default arithmetic as distinct
+     // whether using default arithmetic or using external implementation (eg decimal or other)
+     isDefault: function() {
+         return true;
+     }
+    ,isNumber: function(x) {
+        var Arithmetic = this;
+        if (Arithmetic.isDefault()) return is_number(x);
+        return is_number(x) || is_instance(x, Arithmetic.O[CLASS]);
+    }
+
+    ,J: -1.0
+    ,O: 0.0
+    ,I: 1.0
+    ,II: 2.0
+    ,INF: {valueOf: function() {return Infinity;}, toString: function() {return "Infinity";}, toTex: function() {return "\\infty";}} // a representation of Infinity
+    ,NINF: {valueOf: function() {return -Infinity;}, toString: function() {return "-Infinity";}, toTex: function() {return "-\\infty";}} // a representation of -Infinity
+
+    ,nums: function(a) {
+        var Arithmetic = this;
+        if (is_array(a) || is_args(a))
+        {
+            for (var i=0,l=a.length; i<l; ++i) a[i] = Arithmetic.nums(a[i]); // recursive
+            return a;
+        }
+        return Arithmetic.num(a);
+    }
+    ,num: function(a) {
+        return is_number(a) ? a : parseFloat(a || 0, 10);
+    }
+    ,val: function(a) {
+        return a.valueOf();
+    }
+
+    ,neg: function(a) {return -(+a);}
+    ,inv: function(a) {return 1.0 / a;}
+
+    ,equ: function(a, b) {return a === b;}
+    ,gte: function(a, b) {return a >= b;}
+    ,lte: function(a, b) {return a <= b;}
+    ,gt: function(a, b) {return a > b;}
+    ,lt: function(a, b) {return a < b;}
+
+    ,inside: function(a, m, M, closed) {return closed ? (a >= m) && (a <= M) : (a > m) && (a < M);}
+    ,clamp: function(a, m, M) {return a < m ? m : (a > M ? M : a);}
+    ,wrap: function(a, m, M) {return a < m ? M : (a > M ? m : a);}
+    ,wrapR: function(a, M) {return a < 0 ? a + M : a;}
+
+    ,add: addn
+    ,sub: function(a, b) {return a - b;}
+    ,mul: muln
+    ,div: function(a, b) {return a / b;}
+    ,pow: stdMath.pow
+
+    ,abs: stdMath.abs
+    ,min: stdMath.min
+    ,max: stdMath.max
+    ,rnd: rndFloat
+};
+
+// pluggable arithmetics, eg biginteger/decimal exact Arithmetic
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
     isDefault: function() {
         return (0 === this.O) && (this.add === addn);
@@ -5243,6 +5374,11 @@ Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
             if (dividedEvenly) return roundedTowardsZeroQuotient;
             wasRoundedDown = (Arithmetic.gt(a, O) === Arithmetic.gt(b, O));
             return wasRoundedDown ? Arithmetic.add(roundedTowardsZeroQuotient, I) : roundedTowardsZeroQuotient;
+    }
+});
+Abacus.ArithmeticFloat = Merge({}, DefaultArithmeticFloat, {
+    isDefault: function() {
+        return (0.0 === this.O) && (this.add === addn);
     }
 });
 
@@ -5380,6 +5516,20 @@ Abacus.Math = {
         return next_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n), -1 === dir ? -1 : 1);
     }
 
+    ,gcd2: function(/* args */) {
+        var Arithmetic = Abacus.Arithmetic,
+            args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
+            res, INT = null;
+        res = gcd_bin(args.map(function(a) {
+            if (is_instance(a, Integer))
+            {
+                if (!INT) INT = a[CLASS];
+                return a.num;
+            }
+            return Arithmetic.num(a);
+        }));
+        return INT ? new INT(res) : res;
+    }
     ,gcd: function(/* args */) {
         var Arithmetic = Abacus.Arithmetic,
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
@@ -7323,6 +7473,10 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         return Rational(Arithmetic.abs(self.num), self.den, self._simpl);
     }
+    ,sign: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.equ(self.num, Arithmetic.O) ? Rational.Zero() : (Arithmetic.lt(self.num, Arithmetic.O) ? Rational.MinusOne() : Rational.One());
+    }
     ,neg: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._n)
@@ -8044,6 +8198,10 @@ Complex = Abacus.Complex = Class(Numeric, {
         var self = this;
         return self.norm(true);
     }
+    ,sign: function() {
+        var self = this;
+        return !self.im.equ(0) ? self.div(self.abs())/*new complex(stdMath.cos(x.angle()), stdMath.sin(x.angle()))*/ : new Complex(self.re.sign(), Rational.Zero());
+    }
     ,neg: function() {
         var self = this;
         if (null == self._n)
@@ -8606,6 +8764,10 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,abs: function() {
         var self = this;
         return self.norm(true);
+    }
+    ,sign: function() {
+        var self = this;
+        return self.im ? self.div(self.abs())/*new complex(stdMath.cos(x.angle()), stdMath.sin(x.angle()))*/ : new nComplex(stdMath.sign(self.re), 0);
     }
     ,neg: function() {
         var self = this;
@@ -9638,7 +9800,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     {
                         break;
                     }
-                    throw error(expected ? ('Missing expected "' + expected.split('').join(" or ") + '"') : ('Unexpected "' + c + '"'));
+                    throw error(expected ? ('Missing expected "' + expected.split('').join('" or "') + '"') : ('Unexpected "' + c + '"'));
                 }
                 merge(true);
                 if ((1 < terms.length) || (0 < ops.length)) throw error('Mismatched terms and operators', ops.length ? ops[0][1] : i);
@@ -12242,8 +12404,8 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         }
         return self._roots.map(function(r) {return r.slice();});
     }
-    ,exactroots: function() {
-        // find exact roots of poly when solvable
+    ,allroots: function() {
+        // find all roots of poly when solvable
         var self = this, memo;
         if (null == self._exact_roots)
         {
@@ -13683,7 +13845,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,roots: function() {
         return [];
     }
-    ,exactroots: function() {
+    ,allroots: function() {
         /*
         The maximum number of roots of a multivariate polynomial depends on the field; over an infinite field, it can have infinitely many roots, while over a finite field, it is limited to the number of elements in that field. There is no direct multivariate version of the fundamental theorem of algebra. The relationship between the degree of a polynomial and its number of roots is a key consideration in this context. Determining if a multivariate polynomial is identically zero is complex, particularly over finite fields, as it involves confirming that all coefficients are zero. This complexity highlights the challenges in analyzing multivariate polynomials compared to univariate cases.
         Reference: https://www.physicsforums.com/threads/roots-of-multivariate-polynomials.749772/
@@ -16673,181 +16835,9 @@ RationalFunc.cast = function(a, symbol, ring) {
     return type_cast(a);
 };
 
-/*
-// Abacus.Radical, represents a radical
-Radical = Abacus.Radical = Class(Symbolic, {
-
-    constructor: function Radical(a, e, s) {
-        var self = this;
-
-        if (!is_instance(self, Radical)) return new Radical(a, e, s);
-
-        self.a = a;
-        self.e = Rational.cast(e);
-        self.s = -1 === s ? -1 : 1;
-    }
-
-    ,a: null
-    ,e: null
-    ,s: 1
-    ,_str: null
-    ,_tex: null
-    ,_expr: null
-
-    ,dispose: function() {
-        var self = this;
-        self.a = null;
-        self.e = null;
-        self._str = null;
-        self._tex = null;
-        self._expr = null;
-        return self;
-    }
-    ,isConst: function() {
-        var self = this;
-        return self.a.isConst();
-    }
-    ,isInt: function() {
-        var self = this;
-        return self.a.isInt() && self.e.isInt();
-    }
-    ,isReal: function() {
-        var self = this;
-        return self.a.isReal();
-    }
-    ,isImag: function() {
-        var self = this;
-        return self.a.isImag();
-    }
-    ,neg: function() {
-        var self = this;
-        return Radical(self.a, self.e, -self.s);
-    }
-    ,inv: function() {
-        var self = this;
-        return Radical(self.a, self.e.neg(), self.s);
-    }
-    ,equ: function(other) {
-        var self = this;
-        if (is_instance(other, Numeric) && self.isConst())
-        {
-            return self.evaluate().equ(other);
-        }
-        if (is_instance(other, Radical))
-        {
-            return /*(self.s === other.s) &&* / self.e.equ(other.e) && self.a.equ(other.a);
-        }
-        if (is_instance(other, Expr))
-        {
-            return self.toExpr().equ(other);
-        }
-        return false;
-    }
-    ,gt: function(other) {
-        var self = this;
-        if (is_instance(other, Numeric) && self.isConst())
-        {
-            return self.evaluate().gt(other);
-        }
-        return false;
-    }
-    ,gte: function(other) {
-        var self = this;
-        if (is_instance(other, Numeric) && self.isConst())
-        {
-            return self.evaluate().gte(other);
-        }
-        return false;
-    }
-    ,lt: function(other) {
-        var self = this;
-        if (is_instance(other, Numeric) && self.isConst())
-        {
-            return self.evaluate().lt(other);
-        }
-        return false;
-    }
-    ,lte: function(other) {
-        var self = this;
-        if (is_instance(other, Numeric) && self.isConst())
-        {
-            return self.evaluate().lte(other);
-        }
-        return false;
-    }
-
-    ,add: function(other) {
-        var self = this;
-        return self;
-    }
-    ,sub: function(other) {
-        var self = this;
-        return self.add(other.neg());
-    }
-    ,mul: function(other) {
-        var self = this;
-        if (is_instance(other, Radical))
-        {
-            if (self.a.equ(other.a))
-            {
-                return Radical(self.a, self.e.add(other.e), self.s*other.s);
-            }
-        }
-        return self;
-    }
-    ,div: function(other) {
-        var self = this;
-        return self.mul(other.inv());
-    }
-    ,pow: function(n) {
-        var self = this;
-        n = Rational(n);
-        if (n.equ(0))
-            return Rational.One();
-        else if (n.equ(1))
-            return self;
-        else
-            return Radical(self.a, self.e.mul(n), n.mod(2).equ(0) ? 1 : self.s);
-    }
-    ,rad: function(n) {
-        var self = this;
-        return self.pow(Rational(n).inv());
-    }
-    ,evaluate: function() {
-        var self = this;
-        return self.a.pow(self.e.num).rad(self.e.den).mul(self.s);
-    }
-    ,toExpr: function() {
-        var self = this;
-        if (null == self._expr)
-        {
-            self._expr = Expr('^', [self.a, self.e]);
-            if (-1 === self.s) self._expr = self._expr.neg();
-        }
-        return self._expr;
-    }
-    ,toString: function() {
-        var self = this;
-        if (null == self._str)
-        {
-            self._str = self.toExpr().toString();
-        }
-        return self._str;
-    }
-    ,toTex: function() {
-        var self = this;
-        if (null == self._tex)
-        {
-            self._tex = self.toExpr().toTex();
-        }
-        return self._tex;
-    }
-});
-*/
-
 // convenience method to construct polys
-Abacus.Poly = function(poly_str, ring_or_symbol) {
-    return is_instance(ring_or_symbol, Ring) ? ring_or_symbol.fromString(String(poly_str)) : Expr(String(poly_str)).toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x");
+Abacus.Poly = function(expr, ring_or_symbol) {
+    return is_instance(expr, Expr) ? expr.toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x") : (is_instance(ring_or_symbol, Ring) ? ring_or_symbol.fromString(String(expr)) : Expr(String(expr)).toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x"));
 };// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
 Matrix = Abacus.Matrix = Class(INumber, {
 
@@ -17521,7 +17511,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,h: function() {
         // hermitian transpose
         var self = this, ring, rows, columns;
-        if (self.ring.NumberClass !== Complex) return self.t();
+        if (!is_class(self.ring.NumberClass, Complex)) return self.t();
         if (null == self._h)
         {
             ring = self.ring; rows = self.nr; columns = self.nc;
@@ -18050,9 +18040,564 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return null;
     }
     ,svd: function() {
+        var self = this, A = self.val, n = A[0].length, m = A.length, svdT;
+        if (self.ring.isSymbolic()) return false; // not supported for symbolic entries
         // singular value decomposition
         // https://en.wikipedia.org/wiki/Singular_value_decomposition
-        return null;
+        if (null == self._svd)
+        {
+            if (m < n)
+            {
+                // compute transpose svd and return transpose result
+                svdT = self.t().svd();
+                self._svd = [svdT[0], svdT[2].t(), svdT[1].t()];
+            }
+        }
+        if (null == self._svd)
+        {
+            /* adapted from:
+            Peter Businger, Gene Golub,
+            Algorithm 358:
+            Singular Value Decomposition of a Complex Matrix,
+            Communications of the ACM,
+            Volume 12, Number 10, October 1969, pages 564-565.
+            https://github.com/johannesgerer/jburkardt-f77/blob/master/toms358/toms358.f
+            */
+            // produces some columns with reflected signs from Octave's svd
+            var eta = 1e-10, nu = m, nv = n, p = 0,
+                a = A.map(function(row) {
+                    return row.map(function(aij) {
+                        return new nComplex(aij);
+                    })
+                }),
+                u = array(m, function() {
+                    return array(nu, function() {
+                        return nComplex.Zero();
+                    });
+                }),
+                s = array(n, 0),
+                v = array(n, function() {
+                    return array(nv, function() {
+                        return nComplex.Zero();
+                    });
+                }),
+                zero = nComplex.Zero(),
+                one = nComplex.One(),
+                tol = Number.MIN_VALUE/eta,
+                x, y, z, w, q,
+                e, r, g, f, h, sn, cs,
+                i, j, k, l,
+                kk, k1, l1, ll,
+                iter, max_iter = 50,
+                b = new Array(n),
+                c = new Array(n),
+                t = new Array(n),
+                goto_240;
+
+            // complex a
+            // complex u
+            // complex v
+            // complex q
+            // complex r
+            // real sn
+            // real cs
+            // real b
+            // real c
+            // real f
+            // real g
+            // real h
+            // real s
+            // real t
+            // real w
+            // real x
+            // real y
+            // real z
+            //
+            //  Householder reduction.
+            //
+            c[1-1] = 0;
+            for (k=1; k<=n; ++k)
+            {
+                //10    continue
+                k1 = k + 1;
+                //
+                //  Elimination of A(I,K), I = K+1, ..., M.
+                //
+                z = 0;
+                for (i=k; i<=m; ++i)
+                {
+                    z += stdMath.pow(a[i-1][k-1].real(), 2) + stdMath.pow(a[i-1][k-1].imag(), 2);
+                }
+
+                b[k-1] = 0;
+
+                if (tol < z)
+                {
+                    z = stdMath.sqrt(z);
+                    b[k-1] = z;
+                    w = a[k-1][k-1].abs();
+
+                    if (0 === w)
+                    {
+                        q = one;
+                    }
+                    else
+                    {
+                        q = a[k-1][k-1].div(w);
+                    }
+
+                    a[k-1][k-1] = q.mul(z + w);
+
+                    if (k !== n+p)
+                    {
+                        for (j=k1; j<=n+p; ++j)
+                        {
+                            q = zero;
+                            for (i=k; i<=m; ++i)
+                            {
+                                q = q.add(a[i-1][k-1].conj().mul(a[i-1][j-1]));
+                            }
+                            q = q.div(z * (z + w));
+                            for (i=k; i<=m; ++i)
+                            {
+                                a[i-1][j-1] = a[i-1][j-1].sub(q.mul(a[i-1][k-1]));
+                            }
+                        }
+
+                        //
+                        //  Phase transformation.
+                        //
+                        q = a[k-1][k-1].conj().sign().neg();
+                        for (j=k1; j<=n+p; ++j)
+                        {
+                            a[k-1][j-1] = q.mul(a[k-1][j-1]);
+                        }
+                    }
+                }
+
+                //
+                //  Elimination of A(K,J), J = K+2, ..., N
+                //
+                if (k === n)
+                {
+                    //go to 140
+                    break;
+                }
+
+                z = 0;
+                for (j=k1; j<=n; ++j)
+                {
+                    z += stdMath.pow(a[k-1][j-1].real(), 2) + stdMath.pow(a[k-1][j-1].imag(), 2);
+                }
+
+                c[k1-1] = 0;
+
+                if (tol < z)
+                {
+                    z = stdMath.sqrt(z);
+                    c[k1-1] = z;
+                    w = a[k-1][k1-1].abs();
+
+                    if (0 === w)
+                    {
+                        q = one;
+                    }
+                    else
+                    {
+                        q = a[k-1][k1-1].div(w);
+                    }
+
+                    a[k-1][k1-1] = q.mul(z + w);
+
+                    for (i=k1; i<=m; ++i)
+                    {
+                        q = zero;
+                        for (j=k1; j<=n; ++j)
+                        {
+                            q = q.add(a[k-1][j-1].conj().mul(a[i-1][j-1]));
+                        }
+                        q = q.div(z * (z + w));
+                        for (j=k1; j<=n; ++j)
+                        {
+                            a[i-1][j-1] = a[i-1][j-1].sub(q.mul(a[k-1][j-1]));
+                        }
+                    }
+
+                    //
+                    //  Phase transformation.
+                    //
+                    q = a[k-1][k1-1].conj().sign().neg();
+                    for (i=k1; i<=m; ++i)
+                    {
+                        a[i-1][k1-1] = a[i-1][k1-1].mul(q);
+                    }
+                }
+
+                //k = k1;
+                //go to 10
+            }
+
+            //
+            //  Tolerance for negligible elements.
+            //
+            //140   continue
+            e = 0;
+            for (k=1; k<=n; ++k)
+            {
+                s[k-1] = b[k-1];
+                t[k-1] = c[k-1];
+                e = stdMath.max(e, (s[k-1] + t[k-1]));
+            }
+
+            e = e*eta;
+
+            //
+            //  Initialization of U and V.
+            //
+            if (0 < nu)
+            {
+                for (j=1; j<=nu; ++j)
+                {
+                    u[j-1][j-1] = one;
+                }
+            }
+
+            if (0 < nv)
+            {
+                for (j=1; j<=nv; ++j)
+                {
+                    v[j-1][j-1] = one;
+                }
+            }
+
+            //
+            //  QR diagonalization.
+            //
+            for (kk=1; kk<=n; ++kk)
+            {
+                k = n + 1 - kk;
+                //
+                //  Test for split.
+                //
+                for (iter=1; iter<=max_iter; ++iter)
+                {
+                    //220     continue
+                    goto_240 = true;
+                    for (ll=1; ll<=k; ++ll)
+                    {
+                        l = k + 1 - ll;
+                        if (stdMath.abs(t[l-1]) <= e)
+                        {
+                            //go to 290
+                            goto_240 = false;
+                            break;
+                        }
+                        if (stdMath.abs(s[l-1-1]) <= e)
+                        {
+                            //go to 240
+                            goto_240 = true;
+                            break;
+                        }
+                    }
+
+                    //
+                    //  Cancellation of E(L).
+                    //
+                    if (goto_240)
+                    {
+                        //240     continue
+                        cs = 0;
+                        sn = 1;
+                        l1 = l - 1;
+
+                        for (i=l; i<=k; ++k)
+                        {
+                            f = (sn * t[i-1]);
+                            t[i-1] = (cs * t[i-1]);
+
+                            if (stdMath.abs(f) <= e)
+                            {
+                                //go to 290
+                                break;
+                            }
+
+                            h = s[i-1];
+                            w = hypot(f, h);
+                            s[i-1] = w;
+                            cs = (h / w);
+                            sn = -(f / w);
+
+                            if (0 < nu)
+                            {
+                                for (j=1; j<=n; ++j)
+                                {
+                                    x = u[j-1][l1-1].real();
+                                    y = u[j-1][i-1].real();
+                                    u[j-1][l1-1] = new nComplex((x * cs) + (y * sn), 0);
+                                    u[j-1][i-1]  = new nComplex((y * cs) - (x * sn), 0);
+                                }
+                            }
+
+                            if (0 < p)
+                            {
+                                for (j=n+1; j<=n+p; ++j)
+                                {
+                                    q = a[l1-1][j-1];
+                                    r = a[i-1][j-1];
+                                    a[l1-1][j-1] = q.mul(cs).add(r.mul(sn));
+                                    a[i-1][j-1]  = r.mul(cs).sub(q.mul(sn));
+                                }
+                            }
+                        }
+                    }
+
+                    //
+                    //  Test for convergence.
+                    //
+                    //290     continue
+                    w = s[k-1];
+
+                    if (l === k)
+                    {
+                        //go to 360
+                        break;
+                    }
+
+                    //
+                    //  Origin shift.
+                    //
+                    x = s[l-1];
+                    y = s[k-1-1];
+                    g = t[k-1-1];
+                    h = t[k-1];
+                    f = ((y - w) * (y + w) + (g - h) * (g + h)) / (2 * h * y);
+                    g = hypot(f, 1);
+                    if (f < 0)
+                    {
+                        g = -g;
+                    }
+                    f = ((x - w) * (x + w) + (y / (f + g) - h) * h) / x;
+
+                    //
+                    //  QR step.
+                    //
+                    cs = 1;
+                    sn = 1;
+                    l1 = l + 1;
+
+                    for (i=l1; l1<=k; ++l1)
+                    {
+                        g = t[i-1];
+                        y = s[i-1];
+                        h = (sn * g);
+                        g = (cs * g);
+                        w = hypot(h, f);
+                        t[i-1-1] = w;
+                        cs = (f / w);
+                        sn = (h / w);
+                        f = ((x * cs) + (g * sn));
+                        g = ((g * cs) - (x * sn));
+                        h = (y * sn);
+                        y = (y * cs);
+
+                        if (0 < nv)
+                        {
+                            for (j=1; j<=n; ++j)
+                            {
+                                x = v[j-1][i-1-1].real();
+                                w = v[j-1][i-1].real();
+                                v[j-1][i-1-1] = new nComplex((x * cs) + (w * sn), 0);
+                                v[j-1][i-1]   = new nComplex((w * cs) - (x * sn), 0);
+                            }
+                        }
+
+                        w = hypot(h, f);
+                        s[i-1-1] = w;
+                        cs = (f / w);
+                        sn = (h / w);
+                        f = ((cs * g) + (sn * y));
+                        x = ((cs * y) - (sn * g));
+
+                        if (0 < nu)
+                        {
+                            for (j=1; j<=n; ++j)
+                            {
+                                y = u[j-1][i-1-1].real();
+                                w = u[j-1][i-1].real();
+                                u[j-1][i-1-1] = new nComplex((y * cs) + (w * sn), 0);
+                                u[j-1][i-1]   = new nComplex((w * cs) - (y * sn), 0);
+                            }
+                        }
+
+                        if (0 < p)
+                        {
+                            for (j=n+1; j<=n+p; ++j)
+                            {
+                                q = a[i-1-1][j-1];
+                                r = a[i-1][j-1];
+                                a[i-1-1][j-1] = q.mul(cs).add(r.mul(sn));
+                                a[i-1][j-1]   = r.mul(cs).sub(q.mul(sn));
+                            }
+                        }
+                    }
+
+                    t[l-1] = 0;
+                    t[k-1] = f;
+                    s[k-1] = x;
+                    //go to 220
+                }
+
+                //
+                //  Convergence.
+                //
+                //360     continue
+                if (w < 0)
+                {
+                    s[k-1] = -(w);
+                    if (0 < nv)
+                    {
+                        for (j=1; j<=n; ++j)
+                        {
+                            v[j-1][k-1] = v[j-1][k-1].neg();
+                        }
+                    }
+                }
+            }
+
+            //
+            //  Sort the singular values.
+            //
+            for (k=1; k<=n; ++k)
+            {
+                g = -1;
+                j = k;
+
+                for (i=k; i<=n; ++i)
+                {
+                    if (g < s[i-1])
+                    {
+                        g = s[i-1];
+                        j = i;
+                    }
+                }
+
+                if (j !== k)
+                {
+                    s[j-1] = s[k-1];
+                    s[k-1] = g;
+
+                    //
+                    //  Interchange V(1:N,J) and V(1:N,K).
+                    //
+                    if (0 < nv)
+                    {
+                        for (i=1; i<=n; ++i)
+                        {
+                            q           = v[i-1][j-1];
+                            v[i-1][j-1] = v[i-1][k-1];
+                            v[i-1][k-1] = q;
+                        }
+                    }
+
+                    //
+                    //  Interchange U(1:N,J) and U(1:N,K).
+                    //
+                    if (0 < nu)
+                    {
+                        for (i=1; i<=n; ++i)
+                        {
+                            q           = u[i-1][j-1];
+                            u[i-1][j-1] = u[i-1][k-1];
+                            u[i-1][k-1] = q;
+                        }
+                    }
+
+                    //
+                    //  Interchange A(J,N1:NP) and A(K,N1:NP).
+                    //
+                    if (0 < p)
+                    {
+                        for (i=n+1; i<=n+p; ++i)
+                        {
+                            q           = a[j-1][i-1];
+                            a[j-1][i-1] = a[k-1][i-1];
+                            a[k-1][i-1] = q;
+                        }
+                    }
+                }
+            }
+
+            //
+            //  Back transformation.
+            //
+            if (0 < nu)
+            {
+                for (kk=1; kk<=n; ++kk)
+                {
+                    k = n + 1 - kk;
+                    if (b[k-1] !== 0)
+                    {
+                        q = a[k-1][k-1].sign().neg();
+
+                        for (j=1; j<=nu; ++j)
+                        {
+                            u[k-1][j-1] = q.mul(u[k-1][j-1]);
+                        }
+
+                        for (j=1; j<=nu; ++j)
+                        {
+                            q = zero;
+                            for (i=k; i<=m; ++i)
+                            {
+                                q = q.add(a[i-1][k-1].conj().mul(u[i-1][j-1]));
+                            }
+                            q = q.div(a[k-1][k-1].abs() * b[k-1]);
+                            for (i=k; i<=m; ++i)
+                            {
+                                u[i-1][j-1] = u[i-1][j-1].sub(q.mul(a[i-1][k-1]));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (0 < nv)
+            {
+                if (2 <= n)
+                {
+                    for (kk=2; kk<=n; ++kk)
+                    {
+                        k = n + 1 - kk;
+                        k1 = k + 1;
+
+                        if (c[k1-1] !== 0)
+                        {
+                            q = a[k-1][k1-1].conj().sign().neg();
+                            for (j=1; j<=nv; ++j)
+                            {
+                                v[k1-1][j-1] = q.mul(v[k1-1][j-1]);
+                            }
+
+                            for (j=1; j<=nv; ++j)
+                            {
+                                q = zero;
+                                for (i=k1; i<=n; ++i)
+                                {
+                                    q = q.add(a[k-1][i-1].mul(v[i-1][j-1]));
+                                }
+                                q = q.div(a[k-1][k1-1].abs() * c[k1-1]);
+                                for (i=k1; i<=n; ++i)
+                                {
+                                    v[i-1][j-1] = v[i-1][j-1].sub(q.mul(a[k-1][i-1].conj()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            self._svd = [s, Matrix(Ring(nComplex, null, true), u), Matrix(Ring(nComplex, null, true), v)];
+        }
+        return self._svd.slice();
     }
     ,lu: function() {
         var self = this, ring, O, I, J, n, m, dim, P, L, U, DD,
