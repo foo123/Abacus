@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-12-02 09:35:43)
+*   @version: 2.0.0 (2025-12-10 19:04:23)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-12-02 09:35:43)
+*   @version: 2.0.0 (2025-12-10 19:04:23)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -12485,8 +12485,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 });
 
                 // root finding
-                iter = 0;
-                for (;;)
+                for (iter=1; iter<=10000; ++iter)
                 {
                     found = 0;
                     for (i=0; i<d; ++i)
@@ -12496,7 +12495,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                         dpx = dp(ri);
                         if (dpx.equ(0))
                         {
-                            if ((px.re <= epsilon) && (px.im <= epsilon))
+                            if ((stdMath.abs(px.re) <= epsilon) && (stdMath.abs(px.im) <= epsilon))
                             {
                                 ++found;
                                 continue;
@@ -12511,11 +12510,10 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                             if ((j !== i) && !ri.equ(rj)) s = s.add((ri.sub(rj)).inv());
                             return s;
                         }, zero))));
-                        if ((offset.re <= epsilon) && (offset.im <= epsilon)) ++found;
+                        if ((stdMath.abs(offset.re) <= epsilon) && (stdMath.abs(offset.im) <= epsilon)) ++found;
                         roots[i] = ri.sub(offset);
                     }
                     if (found === d) break;
-                    ++iter; if (iter > 10000) break;
                 }
             }
             else
