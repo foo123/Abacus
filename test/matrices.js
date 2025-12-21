@@ -212,6 +212,18 @@ echo(m[2].toString());
 o.dispose();
 echo('---');
 
+echo('o=Abacus.Matrix(ring, [[9,   -36,    30],[-36,   192,  -180],[30,  -180,   180]])');
+o=Abacus.Matrix(ring, [[9,   -36,    30],[-36,   192,  -180],[30,  -180,   180]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.hnf()');
+m=o.hnf();
+echo("H:");
+echo(m[0].toString());
+echo("U:");
+echo(m[1].toString());
+echo("Reconstructed:");
+echo(o.mul(m[1]).toString(), o.mul(m[1]).equ(m[0]));
 echo('o=Abacus.Matrix(ring, [[5, 6], [6, -11], [8, 7]])');
 o=Abacus.Matrix(ring, [[5, 6], [6, -11], [8, 7]]);
 echo('o.toString()');

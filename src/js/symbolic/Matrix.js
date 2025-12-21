@@ -263,13 +263,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
             });
 
             return m.map(function(mi, i) {
-                return bar + (is_array(mi) ? mi.map(function(mij, j) {return pad(mij, is_array(max) ? max[j] : max);}).join(' ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
+                return bar + (is_array(mi) ? mi.map(function(mij, j) {return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
             }).join("\n");
         }
         ,toTex: function(m, type) {
             if (!is_array(m)) return Tex(m);
             type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
-            return '\\begin{' + type + '}' + m.map(function(x) {return is_array(x) ? x.map(function(xi) {return Tex(xi);}).join(' & ') : Tex(x);}).join(' \\\\ ') + '\\end{' + type + '}';
+            return '\\begin{' + type + '}' + m.map(function(x) {return is_array(x) ? x.map(function(xi) {return Tex(xi);}).join(' & \\hskip 1em ') : Tex(x);}).join(' \\\\ ') + '\\end{' + type + '}';
         }
         ,toDec: function(m, precision, bar) {
             if (!is_array(m)) return is_callable(m.toDec) ? m.toDec(precision) : String(m);
@@ -312,7 +312,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 }
             });
             return m.map(function(mi, i) {
-                return bar + (is_array(mi) ? mi.map(function(mij, j){return pad(mij, is_array(max) ? max[j] : max);}).join(' ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
+                return bar + (is_array(mi) ? mi.map(function(mij, j){return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
             }).join("\n");
         }
     }
@@ -330,6 +330,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
     ,_i: null
     ,_gi: null
     ,_p: null
+    ,_hnf: null
     ,_snf: null
     ,_lu: null
     ,_qr: null
@@ -383,6 +384,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
         self._i = null;
         self._gi = null;
         self._p = null;
+        self._hnf = null;
         self._snf = null;
         self._lu = null;
         self._qr = null;
@@ -1078,13 +1080,114 @@ Matrix = Abacus.Matrix = Class(INumber, {
         }
         return x;
     }
+    ,hnf: function() {
+        var self = this, ring, H, U, rows, cols,
+            O, I, J, k, i, j, b, q, r, s, gcd;
+        // hermite normal form
+        // https://en.wikipedia.org/wiki/Hermite_normal_form
+        // adapted from sympy's Hermite Normal Form
+        function gcdex(a, b)
+        {
+            var gcd, g, x, y;
+            if (!a.equ(O) && a.divides(b))
+            {
+                g = a.abs();
+                y = O;
+                x = a.lt(O) ? J : I;
+            }
+            else if (!b.equ(O) && b.divides(a))
+            {
+                g = b.abs();
+                x = O;
+                y = b.lt(O) ? J : I;
+            }
+            else
+            {
+                gcd = ring.xgcd(a, b);
+                g = gcd[0];
+                x = gcd[1];
+                y = gcd[2];
+            }
+            return [x, y, g];
+        }
+        function add_columns(m, i, j, a, b, c, d)
+        {
+            var k, n, e, f;
+            if (i === j)
+            {
+                for (k=0,n=m.length; k<n; ++k)
+                {
+                    m[k][i] = a.mul(m[k][i]);
+                }
+            }
+            else
+            {
+                for (k=0,n=m.length; k<n; ++k)
+                {
+                    e = m[k][i]; f = m[k][j];
+                    m[k][i] = a.mul(e).add(b.mul(f));
+                    m[k][j] = c.mul(e).add(d.mul(f));
+                }
+            }
+        }
+        if (null == self._hnf)
+        {
+            ring = self.ring;
+            O = ring.Zero();
+            I = ring.One();
+            J = ring.MinusOne();
+            H = self.clone();
+            rows = H.val.length;
+            cols = H.val[0].length;
+            U = Matrix.One(ring, cols);
+            k = cols;
+            for (i=rows-1; i>=0; --i)
+            {
+                if (0 === k) break;
+                --k;
+                for (j=k-1; j>=0; --j)
+                {
+                    if (!H.val[i][j].equ(O))
+                    {
+                        gcd = gcdex(H.val[i][k], H.val[i][j]);
+                        r = H.val[i][k].div(gcd[2]);
+                        s = H.val[i][j].div(gcd[2]).neg();
+                        add_columns(H.val, k, j, gcd[0], gcd[1], s, r);
+                        add_columns(U.val, k, j, gcd[0], gcd[1], s, r);
+                    }
+                }
+                b = H.val[i][k];
+                if (b.equ(O))
+                {
+                    ++k;
+                }
+                else
+                {
+                    if (b.lt(O))
+                    {
+                        add_columns(H.val, k, k, J, O, J, O);
+                        add_columns(U.val, k, k, J, O, J, O);
+                        b = b.neg();
+                    }
+                    for (j=k+1; j<cols; ++j)
+                    {
+                        q = H.val[i][j].div(b).neg();
+                        add_columns(H.val, j, k, I, q, O, I);
+                        add_columns(U.val, j, k, I, q, O, I);
+                    }
+                }
+            }
+            self._hnf = [H, U];
+        }
+        return self._hnf ? self._hnf.slice() : self._hnf;
+    }
     ,snf: function() {
         var self = this, ring, O, I, J, rows, columns, dim, m, left, right,
             last_j, i, j, upd, ii, jj, non_zero, i1, i0, g,
             coef1, coef2, coef3, coef4, coef5, tmp, tmp2;
         // smith normal form
         // https://en.wikipedia.org/wiki/Smith_normal_form
-        // adapted from Smith Normal Form with sympy (https://gist.github.com/qnighy/ec08799484080343a2da297657ccba65)
+        // adapted from sympy's Smith Normal Form
         if (null == self._snf)
         {
             ring = self.ring;
@@ -1099,7 +1202,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 J = ring.MinusOne();
                 rows = self.nr; columns = self.nc;
                 dim = stdMath.min(rows, columns);
-                m = self.clone(); left = Matrix.I(ring, rows); right = Matrix.I(ring, columns)
+                m = self.clone(); left = Matrix.I(ring, rows); right = Matrix.I(ring, columns);
                 last_j = -1;
                 for (i=0; i<rows; ++i)
                 {
@@ -1117,7 +1220,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                     }
                     if (!non_zero) break;
 
-                    if (m.val[i][j].equ(O) )
+                    if (m.val[i][j].equ(O))
                     {
                         for (ii=0; ii<rows; ++ii)
                             if (!m.val[ii][j].equ(O))

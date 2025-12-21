@@ -77,7 +77,7 @@ const repl = require('repl').start({
         try {
             res = context.eval(code);
         } catch (e) {
-            err = e;
+            err = e.toString();
             res = null;
         }
         cb(err, res);
