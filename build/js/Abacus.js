@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-12-21 21:52:22)
+*   @version: 2.0.0 (2025-12-22 18:13:31)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2025-12-21 21:52:22)
+*   @version: 2.0.0 (2025-12-22 18:13:31)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -6758,6 +6758,18 @@ Integer = Abacus.Integer = Class(Numeric, {
 
         return false;
     }
+    ,round: function(absolute) {
+        return false !== absolute ? this.abs() : this;
+    }
+    ,fix: function() {
+        return this;
+    }
+    ,floor: function() {
+        return this;
+    }
+    ,ceil: function() {
+        return this;
+    }
     ,integer: function(raw) {
         var self = this;
         return true === raw ? self.n : self;
@@ -7102,6 +7114,18 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
             return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.n));
 
         return false;
+    }
+    ,round: function(absolute) {
+        return this;
+    }
+    ,fix: function() {
+        return this;
+    }
+    ,floor: function() {
+        return this;
+    }
+    ,ceil: function() {
+        return this;
     }
     ,integer: function(raw) {
         var self = this;
@@ -7641,6 +7665,24 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic,
             sign = absolute ? (Arithmetic.gt(Arithmetic.O, self.num) ? Arithmetic.J : Arithmetic.I) : Arithmetic.I;
         return Rational(Arithmetic.mul(sign, Arithmetic.div(Arithmetic.add(Arithmetic.mul(absolute ? Arithmetic.abs(self.num) : self.num, Arithmetic.II), self.den), Arithmetic.mul(self.den, Arithmetic.II))), Arithmetic.I, true);
+    }
+    ,fix: function() {
+        return this.integer();
+    }
+    ,floor: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return self.lt(Arithmetic.O) ? self.abs().ceil().mul(self.sign()) : (self.integer());
+    }
+    ,ceil: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (self.lt(Arithmetic.O))
+        {
+            return self.sub(self.integer()).lt(Arithmetic.O) ? self.integer().add(Rational.One()) : (self.integer());
+        }
+        else
+        {
+            return self.sub(self.integer()).gt(Arithmetic.O) ? self.integer().add(Rational.One()) : (self.integer());
+        }
     }
     ,integer: function(raw) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -8411,7 +8453,19 @@ Complex = Abacus.Complex = Class(Numeric, {
     ,round: function(absolute) {
         absolute = false !== absolute;
         var self = this;
-        return Complex(self.re.round(absolute), self.im.round(absolute)); // return integer part
+        return Complex(self.re.round(absolute), self.im.round(absolute));
+    }
+    ,fix: function() {
+        var self = this;
+        return Complex(self.re.fix(), self.im.fix());
+    }
+    ,floor: function() {
+        var self = this;
+        return Complex(self.re.floor(), self.im.floor());
+    }
+    ,ceil: function() {
+        var self = this;
+        return Complex(self.re.ceil(), self.im.ceil());
     }
     ,integer: function() {
         var self = this;
@@ -8985,7 +9039,19 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,round: function(absolute) {
         absolute = false !== absolute;
         var self = this;
-        return nComplex(absolute ? stdMath.abs(stdMath.round(self.re)) : stdMath.round(self.re), absolute ? stdMath.abs(stdMath.round(self.im)) : stdMath.round(self.im)); // return integer part
+        return nComplex(absolute ? stdMath.abs(stdMath.round(self.re)) : stdMath.round(self.re), absolute ? stdMath.abs(stdMath.round(self.im)) : stdMath.round(self.im));
+    }
+    ,fix: function() {
+        var self = this;
+        return nComplex(0 > self.re ? stdMath.ceil(self.re) : stdMath.floor(self.re), 0 > self.im ? stdMath.ceil(self.im) : stdMath.floor(self.im));
+    }
+    ,floor: function() {
+        var self = this;
+        return nComplex(stdMath.floor(self.re), stdMath.floor(self.im));
+    }
+    ,ceil: function() {
+        var self = this;
+        return nComplex(stdMath.ceil(self.re), stdMath.ceil(self.im));
     }
     ,integer: function() {
         var self = this;
@@ -17919,103 +17985,13 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return x;
     }
     ,hnf: function() {
-        var self = this, ring, H, U, rows, cols,
-            O, I, J, k, i, j, b, q, r, s, gcd;
+        var self = this, ref;
         // hermite normal form
         // https://en.wikipedia.org/wiki/Hermite_normal_form
-        // adapted from sympy's Hermite Normal Form
-        function gcdex(a, b)
-        {
-            var gcd, g, x, y;
-            if (!a.equ(O) && a.divides(b))
-            {
-                g = a.abs();
-                y = O;
-                x = a.lt(O) ? J : I;
-            }
-            else if (!b.equ(O) && b.divides(a))
-            {
-                g = b.abs();
-                x = O;
-                y = b.lt(O) ? J : I;
-            }
-            else
-            {
-                gcd = ring.xgcd(a, b);
-                g = gcd[0];
-                x = gcd[1];
-                y = gcd[2];
-            }
-            return [x, y, g];
-        }
-        function add_columns(m, i, j, a, b, c, d)
-        {
-            var k, n, e, f;
-            if (i === j)
-            {
-                for (k=0,n=m.length; k<n; ++k)
-                {
-                    m[k][i] = a.mul(m[k][i]);
-                }
-            }
-            else
-            {
-                for (k=0,n=m.length; k<n; ++k)
-                {
-                    e = m[k][i]; f = m[k][j];
-                    m[k][i] = a.mul(e).add(b.mul(f));
-                    m[k][j] = c.mul(e).add(d.mul(f));
-                }
-            }
-        }
         if (null == self._hnf)
         {
-            ring = self.ring;
-            O = ring.Zero();
-            I = ring.One();
-            J = ring.MinusOne();
-            H = self.clone();
-            rows = H.val.length;
-            cols = H.val[0].length;
-            U = Matrix.One(ring, cols);
-            k = cols;
-            for (i=rows-1; i>=0; --i)
-            {
-                if (0 === k) break;
-                --k;
-                for (j=k-1; j>=0; --j)
-                {
-                    if (!H.val[i][j].equ(O))
-                    {
-                        gcd = gcdex(H.val[i][k], H.val[i][j]);
-                        r = H.val[i][k].div(gcd[2]);
-                        s = H.val[i][j].div(gcd[2]).neg();
-                        add_columns(H.val, k, j, gcd[0], gcd[1], s, r);
-                        add_columns(U.val, k, j, gcd[0], gcd[1], s, r);
-                    }
-                }
-                b = H.val[i][k];
-                if (b.equ(O))
-                {
-                    ++k;
-                }
-                else
-                {
-                    if (b.lt(O))
-                    {
-                        add_columns(H.val, k, k, J, O, J, O);
-                        add_columns(U.val, k, k, J, O, J, O);
-                        b = b.neg();
-                    }
-                    for (j=k+1; j<cols; ++j)
-                    {
-                        q = H.val[i][j].div(b).neg();
-                        add_columns(H.val, j, k, I, q, O, I);
-                        add_columns(U.val, j, k, I, q, O, I);
-                    }
-                }
-            }
-            self._hnf = [H, U];
+            ref = gauss_jordan(self, true, false, false, true);
+            self._hnf = [ref[0], ref[3]];
         }
         return self._hnf ? self._hnf.slice() : self._hnf;
     }
@@ -18854,125 +18830,15 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return self._ldl ? self._ldl.slice() : self._ldl;
     }
     ,ref: function(with_pivots, odim) {
-        var self = this, ring, O, I, J, rows, columns, dim, pivots,
-            det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min,
-            a, z, m, aug, find_dupl;
+        var self = this, ref;
         // fraction-free/integer row echelon form (ref) (also known as Hermite normal form), using fraction-free/integer row reduction or fraction-free gaussian elimination
         // https://en.wikipedia.org/wiki/Row_echelon_form
         // https://en.wikipedia.org/wiki/Gaussian_elimination
-        // https://en.wikipedia.org/wiki/Hermite_normal_form
         // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
         if (null == self._ref)
         {
-            ring = self.ring;
-            O = ring.Zero();
-            I = ring.One();
-            J = ring.MinusOne();
-            rows = self.nr; columns = self.nc;
-            dim = columns;
-            // original dimensions, eg when having augmented matrix
-            if (is_array(odim)) dim = stdMath.min(dim, odim[1]);
-            m = self.concat(Matrix.I(ring, rows)).val;
-            pivots = new Array(dim);
-            lead = 0; leadc = 0; det = I;
-            find_dupl = function find_dupl(k0, k) {
-                k = k || 0;
-                for (var p=pl-1; p>=0; --p)
-                    if (k0 === pivots[p][k])
-                        return p;
-                return -1;
-            };
-            for (r=0; r<rows; ++r)
-            {
-                if (dim <= lead) break;
-
-                i = r;
-                /*while (0<=leadc && leadc<dim && m[i][leadc].equ(O))
-                {
-                    leadc++;
-                    if (dim <= leadc)
-                    {
-                        leadc = -1;
-                        break;
-                    }
-                }*/
-                while (m[i][lead].equ(O))
-                {
-                    ++i;
-                    if (rows <= i)
-                    {
-                        i = r; ++lead;
-                        if (dim <= lead)
-                        {
-                            lead = -1;
-                            break;
-                        }
-                    }
-                }
-                if (-1 === lead) break; // nothing to do
-
-                i0 = i;
-                imin = -1; min = null; z = 0;
-                // find row with min abs leading value non-zero for current column lead
-                for (i=i0; i<rows; ++i)
-                {
-                    a = m[i][lead].abs();
-                    if (a.equ(O)) ++z;
-                    else if ((null == min) || a.lt(min)) {min = a; imin = i;}
-                }
-                do {
-                    if (-1 === imin) break; // all zero, nothing else to do
-                    if (rows-i0 === z+1)
-                    {
-                        // only one non-zero, swap row to put it first
-                        if (r !== imin)
-                        {
-                            Matrix.SWAPR(m, r, imin);
-                            // determinant changes sign for row swaps
-                            det = det.neg();
-                        }
-                        if (m[r][lead].lt(O))
-                        {
-                            Matrix.ADDR(ring, m, r, r, O, J, lead); // make it positive
-                            // determinant is multiplied by same constant for row multiplication, here simply changes sign
-                            det = det.mul(J);
-                        }
-                        i = imin; i0 = r;
-                        while ((0 <= i) && (-1 !== (p0=find_dupl(i)))) {i0 -= pl-p0; i = i0;}
-                        pivots[pl++] = [i, lead/*, leadc*/]; // row/column/original column of pivot
-                        // update determinant
-                        det = r < dim ? det.mul(m[r][r/*lead*/]) : O;
-                        break;
-                    }
-                    else
-                    {
-                        z = 0; im = imin;
-                        for (i=i0; i<rows; ++i)
-                        {
-                            if (i === im) continue;
-                            // subtract min row from other rows
-                            Matrix.ADDR(ring, m, i, im, m[i][lead].div(m[im][lead]).neg(), I, lead);
-                            // determinant does not change for this operation
-
-                            // find again row with min abs value for this column as well for next round
-                            a = m[i][lead].abs();
-                            if (a.equ(O)) ++z;
-                            else if (a.lt(min)) {min = a; imin = i;}
-                        }
-                    }
-                } while (1);
-
-                ++lead; //++leadc;
-            }
-            if (pl < dim) det = O;
-
-            m = new Matrix(ring, m);
-            aug = m.slice(0, columns, rows-1, rows+columns-1);
-            m = m.slice(0, 0, rows-1, columns-1);
-            // truncate if needed
-            if (pivots.length > pl) pivots.length = pl;
-
-            self._ref = [m, pivots, det, aug];
+            ref = gauss_jordan(self, false, true, true, true, odim);
+            self._ref = [ref[0], ref[1], ref[2], ref[3]];
         }
         return with_pivots ? self._ref.slice() : self._ref[0];
     }
@@ -19395,6 +19261,157 @@ Matrix = Abacus.Matrix = Class(INumber, {
         return Matrix.toDec(this.val, precision);
     }
 });
+
+function gauss_jordan(A, hermite, with_pivots, with_det, with_aug, odim)
+{
+    var ring, O, I, J, rows, columns, dim, pivots,
+        det, pl = 0, r, i, i0, p0, lead, leadc, imin, im, min,
+        a, z, m, aug, find_dupl;
+    // fraction-free/integer row echelon form (ref) (also known as Hermite normal form),
+    // using fraction-free/integer row reduction or fraction-free gaussian elimination
+    // https://en.wikipedia.org/wiki/Row_echelon_form
+    // https://en.wikipedia.org/wiki/Gaussian_elimination
+    // https://en.wikipedia.org/wiki/Hermite_normal_form
+    // https://www.math.uwaterloo.ca/~wgilbert/Research/GilbertPathria.pdf
+    ring = A.ring;
+    O = ring.Zero();
+    I = ring.One();
+    J = ring.MinusOne();
+    rows = A.nr; columns = A.nc;
+    dim = columns;
+    // original dimensions, eg when having augmented matrix
+    if (is_array(odim)) dim = stdMath.min(dim, odim[1]);
+    lead = 0; leadc = 0; det = I;
+    m = with_aug ? A.concat(Matrix.I(ring, rows)).val : A.clone().val;
+    if (with_pivots)
+    {
+        pivots = new Array(dim);
+        find_dupl = function find_dupl(k0, k) {
+            k = k || 0;
+            for (var p=pl-1; p>=0; --p)
+                if (k0 === pivots[p][k])
+                    return p;
+            return -1;
+        };
+    }
+    for (r=0; r<rows; ++r)
+    {
+        if (dim <= lead) break;
+
+        i = r;
+        /*while (0<=leadc && leadc<dim && m[i][leadc].equ(O))
+        {
+            leadc++;
+            if (dim <= leadc)
+            {
+                leadc = -1;
+                break;
+            }
+        }*/
+        while (m[i][lead].equ(O))
+        {
+            ++i;
+            if (rows <= i)
+            {
+                i = r; ++lead;
+                if (dim <= lead)
+                {
+                    lead = -1;
+                    break;
+                }
+            }
+        }
+        if (-1 === lead) break; // nothing to do
+
+        i0 = i;
+        imin = -1; min = null; z = 0;
+        // find row with min abs leading value non-zero for current column lead
+        for (i=i0; i<rows; ++i)
+        {
+            a = m[i][lead].abs();
+            if (a.equ(O)) ++z;
+            else if ((null == min) || a.lt(min)) {min = a; imin = i;}
+        }
+        for (;;)
+        {
+            if (-1 === imin) break; // all zero, nothing else to do
+            if (rows-i0 === z+1)
+            {
+                // only one non-zero, swap row to put it first
+                if (r !== imin)
+                {
+                    Matrix.SWAPR(m, r, imin);
+                    // determinant changes sign for row swaps
+                    if (with_det) det = det.neg();
+                }
+                if (m[r][lead].lt(O))
+                {
+                    Matrix.ADDR(ring, m, r, r, O, J, lead); // make it positive
+                    // determinant is multiplied by same constant for row multiplication, here simply changes sign
+                    if (with_det) det = det.mul(J);
+                }
+                if (hermite)
+                {
+                    a = m[r][lead];
+                    for (i=0; i<r; ++i)
+                    {
+                        if (m[i][lead].abs().gte(a))
+                        {
+                            // make strictly smaller
+                            Matrix.ADDR(ring, m, i, r, m[i][lead].div(a).neg(), I, lead);
+                            // determinant does not change for this operation
+                        }
+                        if (m[i][lead].lt(O))
+                        {
+                            // make positive
+                            Matrix.ADDR(ring, m, i, r, I, I, lead);
+                            // determinant does not change for this operation
+                        }
+                    }
+                }
+                i = imin; i0 = r;
+                if (with_pivots)
+                {
+                    while ((0 <= i) && (-1 !== (p0=find_dupl(i)))) {i0 -= pl-p0; i = i0;}
+                    pivots[pl++] = [i, lead/*, leadc*/]; // row/column/original column of pivot
+                }
+                // update determinant
+                if (with_det) det = r < dim ? det.mul(m[r][r/*lead*/]) : O;
+                break;
+            }
+            else
+            {
+                z = 0; im = imin;
+                for (i=i0; i<rows; ++i)
+                {
+                    if (i === im) continue;
+                    // subtract min row from other rows
+                    Matrix.ADDR(ring, m, i, im, m[i][lead].div(m[im][lead]).neg(), I, lead);
+                    // determinant does not change for this operation
+
+                    // find again row with min abs value for this column as well for next round
+                    a = m[i][lead].abs();
+                    if (a.equ(O)) ++z;
+                    else if (a.lt(min)) {min = a; imin = i;}
+                }
+            }
+        }
+
+        ++lead; //++leadc;
+    }
+    if (pl < dim) det = O;
+
+    m = new Matrix(ring, m);
+    if (with_aug)
+    {
+        aug = m.slice(0, columns, rows-1, rows+columns-1);
+        m = m.slice(0, 0, rows-1, columns-1);
+    }
+    // truncate if needed
+    if (with_pivots && (pivots.length > pl)) pivots.length = pl;
+
+    return [m, pivots, det, aug];
+}
 // Abacus.Ring represents an algebraic Ring or Field (even Polynomial Ring)
 Ring = Abacus.Ring = Class({
 

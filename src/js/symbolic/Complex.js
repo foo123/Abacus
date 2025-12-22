@@ -614,7 +614,19 @@ Complex = Abacus.Complex = Class(Numeric, {
     ,round: function(absolute) {
         absolute = false !== absolute;
         var self = this;
-        return Complex(self.re.round(absolute), self.im.round(absolute)); // return integer part
+        return Complex(self.re.round(absolute), self.im.round(absolute));
+    }
+    ,fix: function() {
+        var self = this;
+        return Complex(self.re.fix(), self.im.fix());
+    }
+    ,floor: function() {
+        var self = this;
+        return Complex(self.re.floor(), self.im.floor());
+    }
+    ,ceil: function() {
+        var self = this;
+        return Complex(self.re.ceil(), self.im.ceil());
     }
     ,integer: function() {
         var self = this;
@@ -1188,7 +1200,19 @@ nComplex = Abacus.nComplex = Class(Complex, {
     ,round: function(absolute) {
         absolute = false !== absolute;
         var self = this;
-        return nComplex(absolute ? stdMath.abs(stdMath.round(self.re)) : stdMath.round(self.re), absolute ? stdMath.abs(stdMath.round(self.im)) : stdMath.round(self.im)); // return integer part
+        return nComplex(absolute ? stdMath.abs(stdMath.round(self.re)) : stdMath.round(self.re), absolute ? stdMath.abs(stdMath.round(self.im)) : stdMath.round(self.im));
+    }
+    ,fix: function() {
+        var self = this;
+        return nComplex(0 > self.re ? stdMath.ceil(self.re) : stdMath.floor(self.re), 0 > self.im ? stdMath.ceil(self.im) : stdMath.floor(self.im));
+    }
+    ,floor: function() {
+        var self = this;
+        return nComplex(stdMath.floor(self.re), stdMath.floor(self.im));
+    }
+    ,ceil: function() {
+        var self = this;
+        return nComplex(stdMath.ceil(self.re), stdMath.ceil(self.im));
     }
     ,integer: function() {
         var self = this;

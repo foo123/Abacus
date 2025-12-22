@@ -324,8 +324,10 @@ console.log(m2.inv().mul(m2).toString());
 * implement efficient integer factorization algorithms **[DONE PARTIALLY]**
 * implement more efficient integer algorithms (maybe fine-tuned if BigInteger Arithmetic is used) (eg `fibonacci`, `factorial`, ..) **[DONE PARTIALLY]**
 * implement more efficient integer `GCD` algorithm (TODO)
-* implement `Rank Factorisation` **[DONE]**
+* implement `LU`,`QR`,`LDL` factorizations **[DONE]**
+* implement `Rank` factorization` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
+* implement `Hermite Normal Form`, `Smith Normal Form` **[DONE]**
 * implement numeric `EVD / SVD` computation  **[DONE]**
 * support general symbolic expressions and computations in `Expr` **[DONE]**
 * support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**

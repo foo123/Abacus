@@ -480,6 +480,24 @@ Rational = Abacus.Rational = Class(Numeric, {
             sign = absolute ? (Arithmetic.gt(Arithmetic.O, self.num) ? Arithmetic.J : Arithmetic.I) : Arithmetic.I;
         return Rational(Arithmetic.mul(sign, Arithmetic.div(Arithmetic.add(Arithmetic.mul(absolute ? Arithmetic.abs(self.num) : self.num, Arithmetic.II), self.den), Arithmetic.mul(self.den, Arithmetic.II))), Arithmetic.I, true);
     }
+    ,fix: function() {
+        return this.integer();
+    }
+    ,floor: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return self.lt(Arithmetic.O) ? self.abs().ceil().mul(self.sign()) : (self.integer());
+    }
+    ,ceil: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (self.lt(Arithmetic.O))
+        {
+            return self.sub(self.integer()).lt(Arithmetic.O) ? self.integer().add(Rational.One()) : (self.integer());
+        }
+        else
+        {
+            return self.sub(self.integer()).gt(Arithmetic.O) ? self.integer().add(Rational.One()) : (self.integer());
+        }
+    }
     ,integer: function(raw) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._int)

@@ -255,6 +255,18 @@ Integer = Abacus.Integer = Class(Numeric, {
 
         return false;
     }
+    ,round: function(absolute) {
+        return false !== absolute ? this.abs() : this;
+    }
+    ,fix: function() {
+        return this;
+    }
+    ,floor: function() {
+        return this;
+    }
+    ,ceil: function() {
+        return this;
+    }
     ,integer: function(raw) {
         var self = this;
         return true === raw ? self.n : self;
@@ -599,6 +611,18 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
             return Arithmetic.equ(O, Arithmetic.mod(Arithmetic.num(other), self.n));
 
         return false;
+    }
+    ,round: function(absolute) {
+        return this;
+    }
+    ,fix: function() {
+        return this;
+    }
+    ,floor: function() {
+        return this;
+    }
+    ,ceil: function() {
+        return this;
     }
     ,integer: function(raw) {
         var self = this;
