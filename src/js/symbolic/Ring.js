@@ -48,7 +48,7 @@ Ring = Abacus.Ring = Class({
             }
             else
             {
-                self.CoefficientRing = is_class(self.NumberClass, IntegerMod) && self.Modulo ? (IntegerMod === self.NumberClass ? Ring.Zp(self.Modulo)() : Ring([self.NumberClass, self.Modulo])) : (is_class(self.NumberClass, Integer) ? (Integer === self.NumberClass ? Ring.Z() : Ring(self.NumberClass)) : (is_class(self.NumberClass, Rational) ? (Rational === self.NumberClass ? Ring.Q() : Ring(self.NumberClass)) : (Complex === self.NumberClass ? Ring.C() : Ring(self.NumberClass))));
+                self.CoefficientRing = is_class(self.NumberClass, IntegerMod) && self.Modulo ? (IntegerMod === self.NumberClass ? Ring.Zn(self.Modulo)() : Ring([self.NumberClass, self.Modulo])) : (is_class(self.NumberClass, Integer) ? (Integer === self.NumberClass ? Ring.Z() : Ring(self.NumberClass)) : (is_class(self.NumberClass, Rational) ? (Rational === self.NumberClass ? Ring.Q() : Ring(self.NumberClass)) : (Complex === self.NumberClass ? Ring.C() : Ring(self.NumberClass))));
             }
 
             if (true === isFraction)
@@ -320,7 +320,7 @@ Ring = Abacus.Ring = Class({
                 subring = ('("' + [].concat(R.PolynomialSymbol).join('","') + '")') + subring;
                 R = R.CoefficientRing;
             }
-            self._str = (is_class(self.NumberClass, IntegerMod) ? ('Zn(' + self.Modulo.toString() + ')' + subring + '(') : ((is_class(self.NumberClass, Integer) ? ('Z' + subring + '(') : (is_class(self.NumberClass, Rational) ? ('Q' + subring + '(') : ('C' + subring + '(')))) + (self.PolynomialSymbol ? ('"' + [].concat(self.PolynomialSymbol).join('","') + '"') : '') + ')');
+            self._str = (is_class(self.NumberClass, IntegerMod) ? ('Zn(' + self.Modulo.toString() + ')' + subring + '(') : ((is_class(self.NumberClass, Integer) ? ('Z' + subring + '(') : (is_class(self.NumberClass, Rational) ? ('Q' + subring + '(') : ('C' + subring + '('))))) + (self.PolynomialSymbol ? ('"' + [].concat(self.PolynomialSymbol).join('","') + '"') : '') + ')';
             if (is_class(self.PolynomialClass, RationalFunc)) self._str = 'FractionField(' + self._str + ')';
         }
         return self._str;
