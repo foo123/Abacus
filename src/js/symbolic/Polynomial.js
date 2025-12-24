@@ -898,7 +898,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     }
     ,equ: function(other) {
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            t = self.terms, tp, s, i;
+            t = self.terms, tp, s, i, ab;
         if (Arithmetic.isNumber(other))
         {
             return Arithmetic.equ(O, other) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === t[0].e));
@@ -910,6 +910,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
         if (is_instance(other, Polynomial))
         {
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.equ(ab.b);
+            }
             tp = other.terms;
             if (t.length !== tp.length) return false;
             for (i=t.length-1; i>=0; --i)
@@ -932,7 +937,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return false;
     }
     ,gt: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return !self.isConst() || self.cc().gt(other);
@@ -940,6 +945,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
         if (is_instance(other, Polynomial))
         {
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.gt(ab.b);
+            }
             return 0 < UniPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, [RationalFunc, MultiPolynomial]))
@@ -953,7 +963,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return false;
     }
     ,gte: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return !self.isConst() || self.cc().gte(other);
@@ -961,6 +971,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
         if (is_instance(other, Polynomial))
         {
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.gte(ab.b);
+            }
             return 0 <= UniPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, [RationalFunc, MultiPolynomial]))
@@ -974,7 +989,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return false;
     }
     ,lt: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return self.isConst() && self.cc().lt(other);
@@ -982,6 +997,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
         if (is_instance(other, Polynomial))
         {
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.lt(ab.b);
+            }
             return 0 > UniPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, [RationalFunc, MultiPolynomial]))
@@ -995,7 +1015,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return false;
     }
     ,lte: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return self.isConst() && self.cc().lte(other);
@@ -1003,6 +1023,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
         if (is_instance(other, Polynomial))
         {
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.lte(ab.b);
+            }
             return 0 >= UniPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, [RationalFunc, MultiPolynomial]))
@@ -1079,41 +1104,92 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return uni_add(other, this.clone());
     }
     ,add: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().add(other);
-        else if (is_instance(other, [RationalFunc, MultiPolynomial])) return other.add(self);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().add(other);
+        }
+        else if (is_instance(other, [RationalFunc, MultiPolynomial]))
+        {
+            return other.add(self);
+        }
+        else if (is_instance(other, Polynomial) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return ab.a.add(ab.b);
+        }
         return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? uni_add(other, self.clone()) : self;
     }
     ,_sub: function(other) {
         return uni_add(other, this.clone(), true);
     }
     ,sub: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().sub(other);
-        else if (is_instance(other, [RationalFunc, MultiPolynomial])) return other.neg().add(self);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().sub(other);
+        }
+        else if (is_instance(other, [RationalFunc, MultiPolynomial]))
+        {
+            return other.neg().add(self);
+        }
+        else if (is_instance(other, Polynomial) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return ab.a.sub(ab.b);
+        }
         return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? uni_add(other, self.clone(), true) : self;
     }
     ,_mul: function(other) {
         return uni_mul(other, this.clone());
     }
     ,mul: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().mul(other);
-        else if (is_instance(other, [RationalFunc, MultiPolynomial])) return other.mul(self);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().mul(other);
+        }
+        else if (is_instance(other, [RationalFunc, MultiPolynomial]))
+        {
+            return other.mul(self);
+        }
+        else if (is_instance(other, Polynomial) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return ab.a.mul(ab.b);
+        }
         return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Polynomial]) ? uni_mul(other, self.clone()) : self;
     }
     ,_div: function(other, q_and_r) {
         return uni_div(this, other, true === q_and_r);
     }
     ,div: function(other, q_and_r) {
-        var self = this;
+        var self = this, ab;
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().div(other);
-        else if (is_instance(other, RationalFunc)) return RationalFunc(MultiPolynomial(self, other.num.symbol, other.num.ring)).div(other);
-        else if (is_instance(other, MultiPolynomial)) return MultiPolynomial(self, other.symbol, other.ring).div(other, q_and_r);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().div(other);
+        }
+        else if (is_instance(other, RationalFunc))
+        {
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+            }
+            else
+            {
+                ab = {a:RationalFunc(MultiPolynomial(self, other.symbol, self.ring)), b:other};
+            }
+            return ab.a.div(ab.b, q_and_r);
+        }
+        else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return ab.a.div(ab.b, q_and_r);
+        }
         return is_instance(other, [Polynomial, Numeric]) || Abacus.Arithmetic.isNumber(other) ? uni_div(self, other, true === q_and_r) : self;
     }
     ,multidiv: function(others, q_and_r) {
@@ -1184,11 +1260,18 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (self.equ(Arithmetic.O)) return false;
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, [RationalFunc, Expr])) return true;
+        if (is_instance(other, [RationalFunc, Expr]))
+        {
+            return true;
+        }
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
+        {
             other = Polynomial.Const(other, self.symbol, self.ring);
+        }
         if (is_instance(other, Poly))
+        {
             return other.mod(self).equ(Arithmetic.O);
+        }
         return false;
     }
     ,_pow: function(n) {
@@ -2295,7 +2378,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     }
     ,equ: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            t = self.terms, tp, s, i;
+            t = self.terms, tp, s, i, ab;
         if (Arithmetic.isNumber(other))
         {
             return Arithmetic.equ(O, other) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === cmp_exp_i(t[0].e, [0])));
@@ -2305,10 +2388,19 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             return other.equ(O) ? 0 === t.length : ((1 === t.length) && t[0].c.equ(other) && (0 === cmp_exp_i(t[0].e, [0])));
         }
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
+        if (is_instance(other, RationalFunc))
+        {
+            return other.equ(self);
+        }
         if (is_instance(other, Poly))
         {
-            other = is_instance(other, Polynomial) ? MultiPolynomial(other, self.symbol, self.ring) : other;
-            if (!is_same_symbol(self.symbol, other.symbol)) return false;
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.equ(ab.b);
+            }
+            //other = is_instance(other, Polynomial) ? MultiPolynomial(other, self.symbol, self.ring) : other;
+            //if (!is_same_symbol(self.symbol, other.symbol)) return false;
             t = self.terms;
             tp = other.terms;
             if (t.length !== tp.length) return false;
@@ -2316,10 +2408,6 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 if (!t[i].equ(tp[i]))
                     return false;
             return true;
-        }
-        if (is_instance(other, RationalFunc))
-        {
-            return other.equ(self);
         }
         if (is_instance(other, Expr))
         {
@@ -2332,7 +2420,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return false;
     }
     ,gt: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return !self.isConst() || self.cc().gt(other);
@@ -2344,7 +2432,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.gt(ab.b);
+            }
+            //if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
             return 0 < MultiPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, Expr))
@@ -2354,7 +2447,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return false;
     }
     ,gte: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return !self.isConst() || self.cc().gte(other);
@@ -2366,7 +2459,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.gte(ab.b);
+            }
+            //if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
             return 0 <= MultiPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, Expr))
@@ -2376,7 +2474,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return false;
     }
     ,lt: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return self.isConst() && self.cc().lt(other);
@@ -2388,7 +2486,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.lt(ab.b);
+            }
+            //if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
             return 0 > MultiPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, Expr))
@@ -2398,7 +2501,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return false;
     }
     ,lte: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return self.isConst() && self.cc().lte(other);
@@ -2410,7 +2513,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
+            if (!is_same_symbol(self.symbol, other.symbol))
+            {
+                ab = convert_to_same_symbol(self, other);
+                return ab.a.lte(ab.b);
+            }
+            //if (is_instance(other, Polynomial)) other = MultiPolynomial(other, self.symbol, self.ring);
             return 0 >= MultiPolyTerm.cmp(self.ltm(), other.ltm(), true);
         }
         if (is_instance(other, Expr))
@@ -2483,42 +2591,88 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return multi_add(other, this.clone(), false);
     }
     ,add: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().add(other);
-        else if (is_instance(other, RationalFunc)) return other.add(self);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().add(other);
+        }
+        else if (is_instance(other, RationalFunc))
+        {
+            return other.add(self);
+        }
+        else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return multi_add(ab.b, ab.a.clone(), false);
+        }
         return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? multi_add(other, self.clone(), false) : self;
     }
     ,_sub: function(other) {
         return multi_add(other, this.clone(), true);
     }
     ,sub: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().sub(other);
-        else if (is_instance(other, RationalFunc)) return other.neg().add(self);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().sub(other);
+        }
+        else if (is_instance(other, RationalFunc))
+        {
+            return other.neg().add(self);
+        }
+        else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return multi_add(ab.b, ab.a.clone(), true);
+        }
         return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? multi_add(other, self.clone(), true) : self;
     }
     ,_mul: function(other) {
         return multi_mul(other, this.clone());
     }
     ,mul: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().mul(other);
-        else if (is_instance(other, RationalFunc)) return other.mul(self);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().mul(other);
+        }
+        else if (is_instance(other, RationalFunc))
+        {
+            return other.mul(self);
+        }
+        else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return multi_mul(ab.b, ab.a.clone());
+        }
         return Arithmetic.isNumber(other) || is_instance(other, [Numeric, Poly]) ? multi_mul(other, self.clone()) : self;
     }
     ,_div: function(other, q_and_r) {
         return multi_div(this, other, true === q_and_r);
     }
     ,div: function(other, q_and_r) {
-        var self = this;
+        var self = this, ab;
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, Expr)) return self.toExpr().div(other);
-        else if (is_instance(other, RationalFunc)) return RationalFunc(self).div(other);
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().div(other);
+        }
+        else if (is_instance(other, RationalFunc))
+        {
+            return RationalFunc(self).div(other);
+        }
+        else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
+        {
+            ab = convert_to_same_symbol(self, other);
+            return multi_div(ab.a, ab.b, true === q_and_r);
+        }
         else if (is_instance(other, [Numeric, Poly]) || Abacus.Arithmetic.isNumber(other))
+        {
             return multi_div(self, other, true === q_and_r);
+        }
         return self;
     }
     ,multidiv: function(others, q_and_r) {
@@ -2593,14 +2747,21 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return this.multidiv(others, true);
     }
     ,divides: function(other) {
-        var self = this, Arithmetic = Abacus.Arithmetic;
+        var self = this, ab, Arithmetic = Abacus.Arithmetic;
         if (self.equ(Arithmetic.O)) return false;
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, [RationalFunc, Expr])) return true;
-        if (is_instance(other, [Polynomial, Numeric]) || Arithmetic.isNumber(other))
+        if (is_instance(other, [RationalFunc, Expr]))
+        {
+            return true;
+        }
+        if (is_instance(other, [Numeric]) || Arithmetic.isNumber(other))
+        {
             other = MultiPolynomial(other, self.symbol, self.ring);
-        if (is_instance(other, MultiPolynomial))
+        }
+        if (is_instance(other, Poly))
+        {
             return other.mod(self).equ(Arithmetic.O);
+        }
         return false;
     }
     ,_pow: function(n) {
@@ -3009,17 +3170,43 @@ Polynomial.Piecewise = PiecewisePolynomial;
 // polynomial utilities
 function is_same_symbol(symbol1, symbol2)
 {
-    if (symbol1 === symbol2) return true;
-    if (is_string(symbol1) && is_array(symbol2)) symbol1 = [symbol1];
-    if (is_string(symbol2) && is_array(symbol1)) symbol2 = [symbol2];
+    if (symbol1 === symbol2)
+    {
+        return true;
+    }
+    if (is_string(symbol1))
+    {
+        if (is_string(symbol2)) return symbol1 === symbol2;
+        symbol1 = [symbol1];
+    }
+    if (is_string(symbol2))
+    {
+        symbol2 = [symbol2];
+    }
     if (is_array(symbol1) && is_array(symbol2))
     {
         if (symbol1.length !== symbol2.length) return false;
+        //if (1 < symbol1.length) symbol1 = symbol1.slice().sort();
+        //if (1 < symbol2.length) symbol2 = symbol2.slice().sort();
         var i = 0, n = symbol1.length;
         while ((i < n) && (symbol1[i] === symbol2[i])) ++i;
         return i >= n;
     }
     return false;
+}
+function convert_to_same_symbol(a, b)
+{
+    var symbol = [].concat(a.symbol).concat(b.symbol).reduce(function(symbol, s) {
+        if (-1 === symbol.indexOf(s)) symbol.push(s);
+        return symbol;
+    }, []);
+    return is_instance(a, RationalFunc) || is_instance(b, RationalFunc) ? {
+        a: RationalFunc(MultiPolynomial(a.num, symbol, a.ring), MultiPolynomial(a.den, symbol, a.ring), symbol, a.ring),
+        b: RationalFunc(MultiPolynomial(b.num, symbol, a.ring), MultiPolynomial(b.den, symbol, a.ring), symbol, a.ring)
+    } : {
+        a: MultiPolynomial(a, symbol, a.ring),
+        b: MultiPolynomial(b, symbol, a.ring)
+    };
 }
 function ensure_same_monomial_order(q, p)
 {
@@ -4963,7 +5150,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         }
         return RationalFunc(num, den);
     }
-    ,simpl: function() {
+    ,simpl: function(force) {
         var self = this, Arithmetic = Abacus.Arithmetic, num, den, n, d, g, qr;
         if (!self._simpl)
         {
@@ -4987,7 +5174,7 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
                 }
                 else
                 {
-                    if (self.num.symbol.length <= RationalFunc.__MAXGCD__) // dont get too slow
+                    if ((true === force) || (self.num.symbol.length <= RationalFunc.__MAXGCD__)) // dont get too slow
                     {
                         // use multipolynomial gcd, if possible
                         qr = MultiPolynomial.gcd(self.num, self.den);
