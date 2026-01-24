@@ -114,27 +114,151 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
 
         ,FN: {
-             'sqrt()': {
-                fn: NOP // -> Expr.OP['^']
+             // recognized but
+             // left to user to specify their computation
+              'exp()': {
+                fn: null
+             }
+             ,'log()': {
+                fn: null
+             }
+             ,'cos()': {
+                fn: null
+             }
+             ,'sin()': {
+                fn: null
+             }
+             ,'tan()': {
+                fn: null
+             }
+             ,'acos()': {
+                fn: null
+             }
+             ,'asin()': {
+                fn: null
+             }
+             ,'atan()': {
+                fn: null
+             }
+             ,'cosh()': {
+                fn: null
+             }
+             ,'sinh()': {
+                fn: null
+             }
+             ,'tanh()': {
+                fn: null
+             }
+             ,'acosh()': {
+                fn: null
+             }
+             ,'asinh()': {
+                fn: null
+             }
+             ,'atanh()': {
+                fn: null
+             }
+             ,'sqrt()': {
+                fn: function(args) {
+                    return Expr.FN['^'].fn([args[0], , Rational(1, args[1] || 2, true)]);
+                }
              }
              ,'abs()': {
-                 fn: function(args, mode) {
-                     return args[0].abs();
-                 }
+                fn: function(args) {
+                    return args[0].abs();
+                }
              }
              ,'mod()': {
-                 fn: function(args, mode) {
-                     return args[0].mod(args[1]);
+                fn: function(args) {
+                    return args[0].mod(args[1]);
                 }
              }
              ,'min()': {
-                 fn: function(args, mode) {
-                     return nmin(args);
-                 }
+                fn: function(args) {
+                    return nmin(args);
+                }
              }
              ,'max()': {
-                 fn: function(args, mode) {
-                     return nmax(args);
+                fn: function(args) {
+                    return nmax(args);
+                }
+             }
+             ,'^': {
+                fn: function(args) {
+                    return !args[1].isInt() && args[1].inv().isInt() ? (args[0].rad(args[1].inv())) : (args[0].pow(args[1]));
+                }
+             }
+             ,'/': {
+                fn: function(args) {
+                    return ndiv(args);
+                }
+             }
+             ,'*': {
+                fn: function(args) {
+                    return nmul(args);
+                }
+             }
+             ,'-': {
+                fn: function(args) {
+                    return nsub(args);
+                }
+             }
+             ,'+': {
+                fn: function(args) {
+                    return nadd(args);
+                }
+             }
+             ,'>=': {
+                fn: function(args) {
+                    return args[0].gte(args[1]) ? Rational.One() : Rational.Zero();
+                }
+             }
+             ,'<=': {
+                fn: function(args) {
+                    return args[0].lte(args[1]) ? Rational.One() : Rational.Zero();
+                }
+             }
+             ,'>': {
+                fn: function(args) {
+                    return args[0].gt(args[1]) ? Rational.One() : Rational.Zero();
+                }
+             }
+             ,'<': {
+                fn: function(args) {
+                    return args[0].lt(args[1]) ? Rational.One() : Rational.Zero();
+                }
+             }
+             ,'!=': {
+                fn: function(args) {
+                    return !args[0].equ(args[1]) ? Rational.One() : Rational.Zero();
+                }
+             }
+             ,'=': {
+                fn: function(args) {
+                    return args[0].equ(args[1]) ? Rational.One() : Rational.Zero();
+                }
+             }
+             ,'and': {
+                fn: function(args) {
+                    for (var i=0,n=args.length; i<n; ++i)
+                    {
+                        if (args[i].equ(0)) return Rational.Zero(); // false
+                    }
+                    return args[n-1]; // last true arg
+                }
+             }
+             ,'or': {
+                fn: function(args) {
+                    for (var i=0,n=args.length; i<n; ++i)
+                    {
+                        if (!args[i].equ(0)) return args[i]; // first true arg
+                    }
+                    return Rational.Zero(); // false
+                }
+             }
+             ,'not': {
+                fn: function(args) {
+                    return args[0].equ(0) ? Rational.One() : Rational.Zero();
                 }
              }
         }
@@ -146,11 +270,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: RIGHT
             ,commutativity: NONCOMMUTATIVE
             ,priority     : 11
-            ,fn           : function(args, mode) {
-                                if ('evaluate' === mode)
-                                {
-                                    return !args[1].isInt() && args[1].inv().isInt() ? (args[0].rad(args[1].inv())) : (args[0].pow(args[1]));
-                                }
+            ,fn           : function(args) {
                                 return args[0].pow(args[1]);
                             }
             },
@@ -161,7 +281,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: NONCOMMUTATIVE
             ,priority     : 20
-            ,fn           : function(args, mode) {
+            ,fn           : function(args) {
                                 return ndiv(args);
                             }
             },
@@ -172,7 +292,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: COMMUTATIVE
             ,priority     : 20
-            ,fn           : function(args, mode) {
+            ,fn           : function(args) {
                                 return nmul(args);
                             }
             },
@@ -183,19 +303,20 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: COMMUTATIVE
             ,priority     : 25
-            ,fn           : function(args, mode) {
+            ,fn           : function(args) {
                                 return nadd(args);
                             }
             },
             '-': {
              name         : 'sub'
             ,arity        : 2
+            ,arityalt     : 1
             ,fixity       : INFIX
             ,associativity: LEFT
             ,commutativity: ANTICOMMUTATIVE
             ,priority     : 25
-            ,fn           : function(args, mode) {
-                                return nsub(args);
+            ,fn           : function(args) {
+                                return 1 === args.length ? args[0].neg() : nsub(args);
                             }
             },
             '>=': {
@@ -205,8 +326,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: NONCOMMUTATIVE
             ,priority     : 35
-            ,fn           : function(args, mode) {
-                                return 'evaluate' === mode ? (args[0].gte(args[1]) ? Rational.One() : Rational.Zero()) : Expr('>=', args);
+            ,fn           : function(args) {
+                                return Expr('>=', args);
                             }
             },
             '<=': {
@@ -216,8 +337,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: NONCOMMUTATIVE
             ,priority     : 35
-            ,fn           : function(args, mode) {
-                                return 'evaluate' === mode ? (args[0].lte(args[1]) ? Rational.One() : Rational.Zero()) : Expr('<=', args);
+            ,fn           : function(args) {
+                                return Expr('<=', args);
                             }
             },
             '>': {
@@ -227,8 +348,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: NONCOMMUTATIVE
             ,priority     : 35
-            ,fn           : function(args, mode) {
-                                return 'evaluate' === mode ? (args[0].gt(args[1]) ? Rational.One() : Rational.Zero()) : Expr('>', args);
+            ,fn           : function(args) {
+                                return Expr('>', args);
                             }
             },
             '<': {
@@ -238,8 +359,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: NONCOMMUTATIVE
             ,priority     : 35
-            ,fn           : function(args, mode) {
-                                return 'evaluate' === mode ? (args[0].lt(args[1]) ? Rational.One() : Rational.Zero()) : Expr('<', args);
+            ,fn           : function(args) {
+                                return Expr('<', args);
                             }
             },
             '!=': {
@@ -249,8 +370,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: COMMUTATIVE
             ,priority     : 40
-            ,fn           : function(args, mode) {
-                                return 'evaluate' === mode ? (!args[0].equ(args[1]) ? Rational.One() : Rational.Zero()) : Expr('!=', args);
+            ,fn           : function(args) {
+                                return Expr('!=', args);
                             }
             },
             '=': {
@@ -260,8 +381,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: COMMUTATIVE
             ,priority     : 40
-            ,fn           : function(args, mode) {
-                                return 'evaluate' === mode ? (args[0].equ(args[1]) ? Rational.One() : Rational.Zero()) : Expr('=', args);
+            ,fn           : function(args) {
+                                return Expr('=', args);
                             }
             },
             'and': {
@@ -271,15 +392,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: COMMUTATIVE
             ,priority     : 32
-            ,fn           : function(args, mode) {
-                                if ('evaluate' === mode)
-                                {
-                                    for (var i=0,n=args.length; i<n; ++i)
-                                    {
-                                        if (args[i].equ(0)) return Rational.Zero(); // false
-                                    }
-                                    return args[n-1]; // last true arg
-                                }
+            ,fn           : function(args) {
                                 return Expr('and', args);
                             }
             },
@@ -290,15 +403,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: COMMUTATIVE
             ,priority     : 33
-            ,fn           : function(args, mode) {
-                                if ('evaluate' === mode)
-                                {
-                                    for (var i=0,n=args.length; i<n; ++i)
-                                    {
-                                        if (!args[i].equ(0)) return args[i]; // first true arg
-                                    }
-                                    return Rational.Zero(); // false
-                                }
+            ,fn           : function(args) {
                                 return Expr('or', args);
                             }
             },
@@ -309,15 +414,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
             ,associativity: LEFT
             ,commutativity: ANTICOMMUTATIVE
             ,priority     : 31
-            ,fn           : function(args, mode) {
-                                if ('evaluate' === mode)
-                                {
-                                    return args[0].equ(0) ? Rational.One() : Rational.Zero();
-                                }
+            ,fn           : function(args) {
                                 return Expr('not', [args[0]]);
                             }
             }
         }
+        ,Alias: [
+            {token:'\\left(',  alias:'('},
+            {token:'\\right)', alias:')'}
+        ]
 
         ,fromString: function(s, imagUnit) {
             imagUnit = is_string(imagUnit) ? imagUnit : null;
@@ -331,11 +436,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             function parse_until(expected)
             {
+                // adapted from https://github.com/foo123/Xpresion
                 // parse only the necessary subset of simple string, asciimath and/or tex notation
                 // https://asciimath.org/
                 // https://the0cp.cc/posts/mathjax/
                 // https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference
-                var match, m, n, c, i0,
+                var match, m, n, c, i0, j, k, flag,
                     op, term, arg, prev_term = false,
                     terms = [], ops = [];
                 function eat(pattern, group)
@@ -379,17 +485,23 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             op2 = o2[0];
                             opc2 = Expr.OP[op2];
 
-                            if (('-' === op2) && (1 === terms.length))
+                            if (opc2.arity > terms.length)
                             {
-                                terms[0] = terms[0].neg();
+                                if ((null != opc2.arityalt) && (opc2.arityalt <= terms.length))
+                                {
+                                    args = terms.splice(0, opc2.arityalt).reverse();
+                                }
+                                else
+                                {
+                                    throw error('Invalid or missing argument for "'+op2+'"', o2[1]);
+                                }
                             }
                             else
                             {
-                                if (opc2.arity > terms.length) throw error('Invalid or missing argument for "'+op2+'"', o2[1]);
                                 args = terms.splice(0, opc2.arity).reverse();
-                                result = opc2.fn(args);
-                                if (null != result) terms.unshift(result);
                             }
+                            result = opc2.fn(args);
+                            if (null != result) terms.unshift(result);
                         }
                     }
                     else
@@ -401,8 +513,21 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             // postfix assumed to be already in correct order,
                             // no re-structuring needed
-                            if (opc.arity > terms.length) throw error('Invalid or missing argument for "'+op+'"', o[1]);
-                            args = terms.splice(0, opc.arity).reverse();
+                            if (opc.arity > terms.length)
+                            {
+                                if ((null != opc.arityalt) && (opc.arityalt <= terms.length))
+                                {
+                                    args = terms.splice(0, opc.arityalt).reverse();
+                                }
+                                else
+                                {
+                                    throw error('Invalid or missing argument for "'+op+'"', o[1]);
+                                }
+                            }
+                            else
+                            {
+                                args = terms.splice(0, opc.arity).reverse();
+                            }
                             result = opc.fn(args);
                             if (null != result) terms.unshift(result);
                         }
@@ -428,17 +553,23 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                     LEFT === opc2.associativity))))
                                 )
                                 {
-                                    if (('-' === op2) && (1 === terms.length))
+                                    if (opc2.arity > terms.length)
                                     {
-                                        terms[0] = terms[0].neg();
+                                        if ((null != opc2.arityalt) && (opc2.arityalt <= terms.length))
+                                        {
+                                            args = terms.splice(0, opc2.arityalt).reverse();
+                                        }
+                                        else
+                                        {
+                                            throw error('Invalid or missing argument for "'+op2+'"', o2[1]);
+                                        }
                                     }
                                     else
                                     {
-                                        if (opc2.arity > terms.length) throw error('Invalid or missing argument for "'+op2+'"', o2[1]);
                                         args = terms.splice(0, opc2.arity).reverse();
-                                        result = opc2.fn(args);
-                                        if (null != result) terms.unshift(result);
                                     }
+                                    result = opc2.fn(args);
+                                    if (null != result) terms.unshift(result);
                                     ops.shift();
                                 }
                                 else
@@ -457,18 +588,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         // space
                         continue;
                     }
-                    if (eat('\\left(', false))
+
+                    // take care of aliases
+                    flag = false;
+                    for (j=0,k=Expr.Alias.length; j<k; ++j)
                     {
-                        // \left( -> (
-                        s = s.slice(5);
-                        i += 5;
+                        if (eat(Expr.Alias[j].token, false))
+                        {
+                            // token -> alias
+                            s = Expr.Alias[j].alias + s.slice(Expr.Alias[j].token.length);
+                            i += Expr.Alias[j].token.length - Expr.Alias[j].alias.length;
+                            flag = true;
+                            break;
+                        }
                     }
-                    if (eat('\\right)', false))
-                    {
-                        // \right) -> )
-                        s = s.slice(6);
-                        i += 6;
-                    }
+                    if (flag) continue;
+
                     i0 = i;
                     if (match = eat(/^(\\lnot|\\land|\\lor|\\neg|not|and|or)[^a-z]/i, 1))
                     {
@@ -618,11 +753,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             if ('(' === s.charAt(0))
                             {
                                 // subexpression
+                                s = s.slice(1);
+                                i += 1;
                                 arg = parse_until(')');
                             }
                             else if ('{' === s.charAt(0))
                             {
                                 // subexpression
+                                s = s.slice(1);
+                                i += 1;
                                 arg = parse_until('}');
                             }
                             else if (match = eat(/^-?\d+(\.((\[\d+\])|(\d+(\[\d+\])?)))?(e-?\d+)?/i))
@@ -638,6 +777,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 if ('}' === m.slice(-1)) m = m.slice(0, -1);
                                 arg = Expr('', m);
                             }
+                            else if (match = eat(/^@\d*/))
+                            {
+                                // special symbol
+                                m = match[0];
+                                arg = Expr('', m);
+                            }
                             if (!arg) throw error('Missing or invalid argument in "sqrt()"', i0);
                             term = Expr.OP['^'].fn([arg, Rational(1, 2, true)/*1/2*/]);
                             if (prev_term)
@@ -650,7 +795,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
-                    if (match = eat(/^\\?([a-z][a-z]*)\s*([\(\{])/i, false))
+                    if (match = eat(/^\\?([a-z][a-z0-9_]*)\s*([\(\{])/i, false))
                     {
                         // function
                         m = match[1].toLowerCase() + '()';
@@ -699,6 +844,20 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         term = Expr('', imagUnit === m ? Complex.Img() : m);
+                        if (prev_term)
+                        {
+                            ops.unshift(['*', i0]); // implicit multiplication assumed
+                            merge();
+                        }
+                        terms.unshift(term);
+                        prev_term = true;
+                        continue;
+                    }
+                    if (match = eat(/^@\d*/))
+                    {
+                        // special symbol
+                        m = match[0];
+                        term = Expr('', m);
                         if (prev_term)
                         {
                             ops.unshift(['*', i0]); // implicit multiplication assumed
@@ -774,6 +933,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_str: null
     ,_tex: null
     ,_xpnd: null
+    ,_simpl: null
+    ,_fctrd: null
     ,_rexpr: null
     ,_symb: null
     ,_op: null
@@ -789,6 +950,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
         self._str = null;
         self._tex = null;
         self._xpnd = null;
+        self._simpl = null;
+        self._fctrd = null;
         self._rexpr = null;
         self._symb = null;
         self._op = null;
@@ -1043,27 +1206,25 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if ('num' === self.ast.type)
             {
-                self._const = true;
+                self._const = [true, true];
             }
             else if (self.symbols().filter(function(s) {return '1' !== s;}).length)
             {
-                self._const = false;
+                self._const = [false, false];
             }
             else
             {
-                var non_exact = false;
-                self._const = 0 === self.operators('pow').filter(function(expr) {
-                    if (non_exact) return non_exact;
+                self._const = [self.operators('pow').reduce(function(exact, expr) {
+                    if (!exact) return exact;
                     var b = expr.ast.arg[0].c(), e = expr.ast.arg[1].c();
-                    if (e.isInt()) return false;
-                    if (!e.isReal()) return (non_exact = true);
+                    if (e.isInt()) return true;
+                    if (!e.isReal()) return false;
                     // non-exact pow should NOT be considered const
-                    return (non_exact = !b.rad(e.real().den).pow(e.real().den).equ(b));
-                }).length;
+                    return b.rad(e.real().den).pow(e.real().den).equ(b);
+                }, true), true];
             }
         }
-        if (true === loose) return (0 === self.symbols().filter(function(s) {return '1' !== s;}).length);
-        return self._const;
+        return self._const[true === loose ? 1 : 0];
     }
     ,isInt: function() {
         var self = this;
@@ -1122,32 +1283,29 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
 
     ,c: function(loose) {
-        var self = this, ast = self.ast;
+        var self = this, ast = self.ast, c;
         if (null == self._c)
         {
             // constant term
             if ('sym' === ast.type)
             {
-                self._c = Rational.Zero();
+                c = Rational.Zero();
             }
             else if ('num' === ast.type)
             {
-                self._c = ast.arg;
+                c = ast.arg;
             }
             else if (self.isConst())
             {
-                self._c = self.evaluate();
+                c = self.evaluate();
             }
             else
             {
-                self._c = Rational.Zero();
+                c = Rational.Zero();
             }
+            self._c = [c, !self.isConst() && self.isConst(true) ? self.evaluate() : c];
         }
-        if (true === loose)
-        {
-            return !self.isConst() && self.isConst(true) ? self.evaluate() : self._c;
-        }
-        return self._c;
+        return self._c[true === loose ? 1 : 0];
     }
     ,f: function() {
         var self = this, ast = self.ast, I = Rational.One();
@@ -1248,9 +1406,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             return Expr('', self.c().neg());
         }
-        if (('-' === ast.op) && ast.arg[0].equ(Expr.Zero()))
+        if (('-' === ast.op) && ast.arg[0].isConst() && ast.arg[0].c().equ(Rational/*Expr*/.Zero()))
         {
-            return Expr('+', ast.arg.slice(1));
+            return 2 < ast.arg.length ? Expr('+', ast.arg.slice(1)) : ast.arg[1];
         }
         return Expr.MinusOne().mul(self);
     }
@@ -1265,9 +1423,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (('sym' === self.ast.type) && ('sym' === other.ast.type))
+            if ('sym' === self.ast.type)
             {
-                return self.ast.arg === other.ast.arg; // symbol and symbol match
+                if ('sym' === other.ast.type) return self.ast.arg === other.ast.arg; // symbol and symbol match
+                if (other.isConst(true)) return false;
+                return self.toString() === other.expand().toString();
+            }
+            else if ('sym' === other.ast.type)
+            {
+                if (self.isConst(true)) return false;
+                return self.expand().toString() === other.toString();
             }
             else if (self.isConst() && other.isConst())
             {
@@ -1291,15 +1456,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (('sym' === self.ast.type) && ('sym' === other.ast.type))
+            if ('sym' === self.ast.type)
             {
-                return false; // symbol and symbol are not comparable
+                if ('sym' === other.ast.type) return false; // symbol and symbol are not comparable
+                if (other.isConst(true)) return false;
+                return self.sub(other).expand().gt(Expr.Zero());
+            }
+            else if ('sym' === other.ast.type)
+            {
+                if (self.isConst(true)) return false;
+                return self.sub(other).expand().gt(Expr.Zero());
             }
             else if (self.isConst() && other.isConst())
             {
                 return self.c().gt(other.c());
             }
-            else if ('expr' === other.ast.type)
+            else
             {
                 return self.sub(other).expand().gt(Expr.Zero());
             }
@@ -1312,15 +1484,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (('sym' === self.ast.type) && ('sym' === other.ast.type))
+            if ('sym' === self.ast.type)
             {
-                return false; // symbol and symbol are not comparable
+                if ('sym' === other.ast.type) return self.ast.arg === other.ast.arg; // only when symbol and symbol match
+                if (other.isConst(true)) return false;
+                return self.sub(other).expand().gte(Expr.Zero());
+            }
+            else if ('sym' === other.ast.type)
+            {
+                if (self.isConst(true)) return false;
+                return self.sub(other).expand().gte(Expr.Zero());
             }
             else if (self.isConst() && other.isConst())
             {
                 return self.c().gte(other.c());
             }
-            else if ('expr' === other.ast.type)
+            else
             {
                 return self.sub(other).expand().gte(Expr.Zero());
             }
@@ -1333,15 +1512,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (('sym' === self.ast.type) && ('sym' === other.ast.type))
+            if ('sym' === self.ast.type)
             {
-                return false; // symbol and symbol are not comparable
+                if ('sym' === other.ast.type) return false; // symbol and symbol are not comparable
+                if (other.isConst(true)) return false;
+                return self.sub(other).expand().lt(Expr.Zero());
+            }
+            else if ('sym' === other.ast.type)
+            {
+                if (self.isConst(true)) return false;
+                return self.sub(other).expand().lt(Expr.Zero());
             }
             else if (self.isConst() && other.isConst())
             {
                 return self.c().lt(other.c());
             }
-            else if ('expr' === other.ast.type)
+            else
             {
                 return self.sub(other).expand().lt(Expr.Zero());
             }
@@ -1354,15 +1540,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (('sym' === self.ast.type) && ('sym' === other.ast.type))
+            if ('sym' === self.ast.type)
             {
-                return false; // symbol and symbol are not comparable
+                if ('sym' === other.ast.type) return self.ast.arg === other.ast.arg; // only when symbol and symbol match
+                if (other.isConst(true)) return false;
+                return self.sub(other).expand().lte(Expr.Zero());
+            }
+            else if ('sym' === other.ast.type)
+            {
+                if (self.isConst(true)) return false;
+                return self.sub(other).expand().lte(Expr.Zero());
             }
             else if (self.isConst() && other.isConst())
             {
                 return self.c().lte(other.c());
             }
-            else if ('expr' === other.ast.type)
+            else
             {
                 return self.sub(other).expand().lte(Expr.Zero());
             }
@@ -1376,16 +1569,19 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            O = Expr.Zero();
-            if (self.isConst() && other.isConst())
+            O = Rational/*Expr*/.Zero();
+            if (other.isConst())
             {
-                return Expr('', self.c().add(other.c()));
+                if (other.c().equ(O))
+                {
+                    return self;
+                }
+                else if (self.isConst())
+                {
+                    return Expr('', self.c().add(other.c()));
+                }
             }
-            else if (other.equ(O))
-            {
-                return self;
-            }
-            else if (self.equ(O))
+            else if (self.isConst() && self.c().equ(O))
             {
                 return other;
             }
@@ -1399,16 +1595,19 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            O = Expr.Zero();
-            if (self.isConst() && other.isConst())
+            O = Rational/*Expr*/.Zero();
+            if (other.isConst())
             {
-                return Expr('', self.c().sub(other.c()));
+                if (other.c().equ(O))
+                {
+                    return self;
+                }
+                else if (self.isConst())
+                {
+                    return Expr('', self.c().sub(other.c()));
+                }
             }
-            else if (other.equ(O))
-            {
-                return self;
-            }
-            else if (self.equ(O))
+            else if (self.isConst() && self.c().equ(O))
             {
                 return other.neg();
             }
@@ -1422,22 +1621,32 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            O = Expr.Zero(); I = Expr.One();
-            if (self.isConst() && other.isConst())
+            O = Rational/*Expr*/.Zero(); I = Rational/*Expr*/.One();
+            if (other.isConst())
             {
-                return Expr('', self.c().mul(other.c()));
+                if (other.c().equ(O))
+                {
+                    return Expr.Zero();
+                }
+                else if (other.c().equ(I))
+                {
+                    return self;
+                }
+                else if (self.isConst())
+                {
+                    return Expr('', self.c().mul(other.c()));
+                }
             }
-            else if (other.equ(O) || self.equ(O))
+            else if (self.isConst())
             {
-                return O;
-            }
-            else if (other.equ(I))
-            {
-                return self;
-            }
-            else if (self.equ(I))
-            {
-                return other;
+                if (self.c().equ(O))
+                {
+                    return Expr.Zero();
+                }
+                else if (self.c().equ(I))
+                {
+                    return other;
+                }
             }
             return Expr('*', [self, other]);
         }
@@ -1449,13 +1658,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (self.isConst() && other.isConst())
+            if (other.isConst())
             {
-                return Expr('', self.c().div(other.c()));
-            }
-            else if (other.equ(Expr.One()))
-            {
-                return self;
+                if (other.c().equ(Rational/*Expr*/.One()))
+                {
+                    return self;
+                }
+                else if (self.isConst())
+                {
+                    return Expr('', self.c().div(other.c()));
+                }
             }
             return Expr('/', [self, other]);
         }
@@ -1491,7 +1703,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return Expr('', other.c().lt(Arithmetic.O) ? (self.c().inv().pow(other.c().neg())) : (self.c().pow(other.c())));
                 }
-                else if (other.equ(I))
+                else if (other.c().equ(Arithmetic.I))
                 {
                     return self;
                 }
@@ -1588,24 +1800,56 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 return ast.arg;
             }
         }
-        else if (('()' === op.slice(-2)) && Expr.FN[op])
+        else if (Expr.FN[op] && Expr.FN[op].fn)
         {
-            return Expr.FN[op].fn(ast.arg.map(evaluate), 'evaluate');
-        }
-        else if (Expr.OP[op])
-        {
-            return Expr.OP[op].fn(ast.arg.map(evaluate), 'evaluate');
+            return Expr.FN[op].fn(ast.arg.map(evaluate));
         }
         return Rational.Zero();
     }
     ,expand: function() {
-        var self = this;
+        var self = this, map, e;
         if (null == self._xpnd)
         {
-            self._xpnd = neg_pow_to_inv(expand(self));
+            map = {};
+            e = simplify_rf(expr_rf(f_substitute(self, map, '@', 'expand')), true);
+            self._xpnd = f_restore(Expr('/', [e.num.toExpr(), e.den.toExpr()]), map, '@');
             self._xpnd._xpnd = self._xpnd; // idempotent
+            self._xpnd._rexpr = self._xpnd; // idempotent
+            self._xpnd._rexpr._rexpr = self._xpnd; // idempotent
+            self._xpnd._rexpr.ast.arg[0]._rexpr = Expr('/', [self._xpnd._rexpr.ast.arg[0], Expr.One()]); // idempotent
+            self._xpnd._rexpr.ast.arg[1]._rexpr = Expr('/', [self._xpnd._rexpr.ast.arg[1], Expr.One()]); // idempotent
         }
         return self._xpnd;
+    }
+    ,simplify: function() {
+        var self = this, map, e;
+        if (null == self._simpl)
+        {
+            // TODO: simplify other functions
+            // based on given/user-defined equivalence relations
+            // via iterative unification recast as optimization based on expr complexity
+            map = {};
+            e = simplify(expr_rf(f_substitute(self, map, '@', 'simplify')), map, '@');
+            self._simpl = f_restore(Expr('/', [e.num.toExpr(), e.den.toExpr()]), map, '@');
+            self._simpl._simpl = self._simpl; // idempotent
+            self._simpl._xpnd = self._simpl; // idempotent
+            self._simpl._xpnd._xpnd = self._simpl; // idempotent
+            self._simpl._rexpr = self._simpl; // idempotent
+            self._simpl._rexpr._rexpr = self._simpl; // idempotent
+            self._simpl._rexpr.ast.arg[0]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[0], Expr.One()]); // idempotent
+            self._simpl._rexpr.ast.arg[1]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[1], Expr.One()]); // idempotent
+        }
+        return self._simpl;
+    }
+    ,factors: function() {
+        var self = this, map;
+        if (null == self._fctrd)
+        {
+            map = {};
+            self._fctrd = f_restore(Abacus.Factor(f_substitute(self.expand(), map, '@', 'default').toRationalFunc()), map, '@');
+            self._fctrd._fctrd = self._fctrd; // idempotent
+        }
+        return self._fctrd;
     }
     ,toRationalExpr: function() {
         var self = this, re;
@@ -1651,11 +1895,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         return expr_poly(self, symbol, other_symbols, ring, CoefficientRing, imagUnit);
     }
-    ,toRationalFunc: function(symbol, ring) {
+    ,toRationalFunc: function(symbol, ring, simplified) {
         var self = this, num, den;
         num = self.num.toPoly(symbol || self.symbols(), ring || null),
         den = num ? self.den.toPoly(num.symbol, num.ring) : null
-        return num && den ? RationalFunc(num, den) : null;
+        return num && den ? (true === simplified ? {num:num, den:den} : RationalFunc(num, den)) : null;
     }
     ,toString: function(type) {
         var self = this, ast = self.ast,
@@ -1975,46 +2219,41 @@ function to_expr(x)
 {
     return is_instance(x, Expr) ? x : ((null != x) && is_callable(x.toExpr) ? x.toExpr() : Expr('', x || 0));
 }
-function sqrt(x, n)
-{
-    if (null == n) n = 2;
-    return Expr('^', [to_expr(x), to_expr(Rational(1, n))]);
-}
 function rational_expr(expr)
 {
-    var a, b, I = Expr.One();
+    var a, b, I = Expr.One(), re;
     if ('^' === expr.ast.op)
     {
         a = rational_expr(expr.ast.arg[0]);
-        return expr.ast.arg[1].lt(0) ? {
-            num: a.den.equ(I) ? I : Expr('^', [a.den, , expr.ast.arg[1].neg()]),
+        re = expr.ast.arg[1].isConst() && expr.ast.arg[1].c().lt(0) ? {
+            num: Expr('^', [a.den, expr.ast.arg[1].neg()]),
             den: Expr('^', [a.num, expr.ast.arg[1].neg()])
         } : {
-            num: Expr('^', [a.num, , expr.ast.arg[1]]),
-            den: a.den.equ(I) ? I : Expr('^', [a.den, expr.ast.arg[1]])
+            num: Expr('^', [a.num, expr.ast.arg[1]]),
+            den: Expr('^', [a.den, expr.ast.arg[1]])
         };
     }
-    if ('/' === expr.ast.op)
+    else if ('/' === expr.ast.op)
     {
         a = rational_expr(expr.ast.arg[0]);
         b = rational_expr(expr.ast.arg[1]);
-        return {
+        re = {
             num: a.num.mul(b.den),
             den: b.num.mul(a.den)
         };
     }
-    if ('*' === expr.ast.op)
+    else if ('*' === expr.ast.op)
     {
         a = expr.ast.arg.map(rational_expr);
-        return {
+        re = {
             num: a.reduce(function(num, re) {return num.mul(re.num);}, I),
             den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
         };
     }
-    if (('+' === expr.ast.op) || ('-' === expr.ast.op))
+    else if (('+' === expr.ast.op) || ('-' === expr.ast.op))
     {
         a = expr.ast.arg.map(rational_expr);
-        return {
+        re = {
             num: Expr(expr.ast.op, a.map(function(re, i) {
                 var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I);
                 return re.num.mul(m);
@@ -2022,10 +2261,18 @@ function rational_expr(expr)
             den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
         };
     }
-    return {
-        num: expr,
-        den: I
-    };
+    else
+    {
+        re = {
+            num: expr,
+            den: I
+        };
+    }
+    return re;
+}
+function expr_rf(expr)
+{
+    return is_instance(expr, Expr) ? (expr.toRationalFunc(null, null, true)) : expr;
 }
 function symbol_substitute(f, x, g)
 {
@@ -2069,6 +2316,175 @@ function subexpr_substitute(expr, subexpr1, subexpr2, toplevel)
         /*}*/
     }
     return expr; // nothing to substitute
+}
+function f_substitute(expr, map, sym, mode)
+{
+    if (null == map.$cnt) map.$cnt = 0;
+    function _(e) {return 'expand' === mode ? e.expand() : ('simplify' === mode ? e.simplify() : e);}
+    var ret, key, e, e2, e3;
+    if (expr.symbols().filter(function(s) {return sym === s.slice(0, sym.length);}).length)
+    {
+        ret = expr; // idempotent
+    }
+    else
+    {
+        if ('()' === expr.ast.op.slice(-2))
+        {
+            // function
+            e = Expr(expr.ast.op, expr.ast.arg.map(_));
+            key = e.toString();
+            if (!HAS.call(map, key))
+            {
+                map[key] = {
+                    expr: e,
+                    sym: sym+String(++map.$cnt)
+                };
+            }
+            ret = Expr('', map[key].sym);
+        }
+        else if ('^' === expr.ast.op)
+        {
+            // pow/sqrt
+            e = _(expr.ast.arg[1]);
+            if (e.isConst() && e.c().isReal())
+            {
+                if (e.c().isInt())
+                {
+                    ret = Expr('^', [f_substitute(expr.ast.arg[0], map, sym, mode), e]);
+                }
+                else
+                {
+                    e2 = f_substitute(expr.ast.arg[0], map, sym, mode);
+                    e2 = 'simplify' === mode ? kth_pp_factor(e2, e.c().den) : [Expr.One(), e2];
+                    if (!e2[1].isConst() || !e2[1].c().equ(1))
+                    {
+                        e3 = Expr('^', [e2[1], Expr('/', [Expr.One(), e.c().den])]);
+                        key = e3.toString();
+                        if (!HAS.call(map, key))
+                        {
+                            map[key] = {
+                                sqrt: e.c().den,
+                                expr: e3,
+                                sym: sym+String(++map.$cnt)
+                            };
+                        }
+                        ret = Expr('^', [Expr('', map[key].sym), e.c().num]);
+                        if (!e2[0].isConst() || !e2[0].c().equ(1))
+                        {
+                            ret = Expr('*', [Expr('^', [e2[0], e.c().num]), ret]);
+                        }
+                    }
+                    else
+                    {
+                        ret = Expr('^', [e2[0], e.c().num]);
+                    }
+                }
+            }
+            else
+            {
+                e2 = Expr('^', [_(expr.ast.arg[0]), e]);
+                key = e2.toString();
+                if (!HAS.call(map, key))
+                {
+                    map[key] = {
+                        expr: e2,
+                        sym: sym+String(++map.$cnt)
+                    };
+                }
+                ret = Expr('', map[key].sym);
+            }
+        }
+        else if ('' === expr.ast.op)
+        {
+            // num/symbol
+            ret = expr;
+        }
+        else
+        {
+            // other
+            ret = Expr(expr.ast.op, expr.ast.arg.map(function(e) {
+                return f_substitute(e, map, sym, mode);
+            }));
+        }
+    }
+    return ret;
+}
+function f_restore(expr, map, sym)
+{
+    var done = false;
+    while (!done)
+    {
+        done = true;
+        expr = KEYS(map).reduce(function(expr, key) {
+            var sub = map[key];
+            if (sub.sym && sub.expr && (-1 < expr.symbols().indexOf(sub.sym)))
+            {
+                expr = symbol_substitute(expr, sub.sym, sub.expr);
+                if (done) done = !sub.expr.symbols().filter(function(s) {return sym === s.slice(0, sym.length)}).length;
+            }
+            return expr;
+        }, expr);
+    }
+    return expr;
+}
+function simplify(expr, map, sym)
+{
+    return simplify_rf(simplify_sqrts(expr, map, sym), true);
+}
+function simplify_sqrts(expr, map, sym)
+{
+    //e=Expr("(sqrt(2)+1)^2-2sqrt(2)")
+    return KEYS(map).reduce(function(expr, key) {
+        var Arithmetic = Abacus.Arithmetic, sub = map[key], t, q, r, d1, d2;
+        if (sub.sqrt)
+        {
+            d1 = Arithmetic.lte(sub.sqrt, expr.num.maxdeg(sub.sym));
+            d2 = Arithmetic.lte(sub.sqrt, expr.den.maxdeg(sub.sym));
+            if (d1 || d2)
+            {
+                r = simplify_sqrts(expr_rf(sub.expr.ast.arg[0]), map, sym);
+                t = {};
+                t[sub.sym+'^'+String(sub.sqrt)] = Rational.One();
+                q = MultiPolynomial(t, [sub.sym], expr.num.ring).mul(r.den).sub(r.num)
+                if (d1) expr.num = expr.num.mod(q);
+                if (d2) expr.den = expr.den.mod(q);
+            }
+        }
+        return expr;
+    }, expr);
+}
+function kth_pp_factor(expr, k)
+{
+    // extract factor which is perfect kth-power from expr
+    var a, b, p1, p2, is_expr = false;
+    if (is_instance(expr, Expr))
+    {
+        is_expr = true;
+        expr = expr_rf(expr);
+    }
+
+    p1 = poly_pp_factor(expr.num, k);
+    p2 = poly_pp_factor(expr.den, k);
+    a = {
+        num:p1 ? p1 : (MultiPolynomial.One(expr.num.symbol, expr.num.ring)),
+        den:p2 ? p2 : (MultiPolynomial.One(expr.den.symbol, expr.den.ring))
+    };
+    b = {
+        num:p1 ? (expr.num.div(p1.pow(k))) : (expr.num),
+        den:p2 ? (expr.den.div(p2.pow(k))) : (expr.den)
+    };
+
+    if (is_expr)
+    {
+        a = a.num.toExpr().div(a.den.toExpr());
+        b = b.num.toExpr().div(b.den.toExpr());
+    }
+    return [a, b];
+}
+function sqrt(x, n)
+{
+    if (null == n) n = 2;
+    return Expr('^', [to_expr(x), to_expr(Rational(1, n))]);
 }
 function expr_derivative(f, x)
 {
@@ -2145,317 +2561,6 @@ function expr_derivative(f, x)
                 return O;
         }
     }
-}
-function expand(expr)
-{
-    var ret;
-    switch (expr.ast.op)
-    {
-        case '':
-            ret = expr;
-            break;
-        case '+':
-            ret = expr.ast.arg.reduce(function(a, b) {
-                return expand_add(a, expand(b));
-            }, Expr.Zero());
-            break;
-        case '-':
-            ret = expr.ast.arg.reduce(function(a, b, i) {
-                return expand_add(a, expand(0 < i ? expand_neg(b) : b));
-            }, Expr.Zero());
-            break;
-        case '*':
-            ret = expr.ast.arg.reduce(function(a, b) {
-                return expand_mul(a, expand(b));
-            }, Expr.One());
-            break;
-        case '/':
-            ret = expr.ast.arg.reduce(function(a, b, i) {
-                return expand_mul(a, expand(0 < i ? expand_inv(b) : b));
-            }, Expr.One());
-            break;
-        case '^':
-            ret = expand_pow(expand(expr.ast.arg[0]), expand(expr.ast.arg[1]));
-            break;
-        default:
-            if (('min()' === expr.ast.op) || ('max()' === expr.ast.op))
-            {
-                // expand and remove duplicates
-                var memo = expr.ast.arg.reduce(function(memo, subexpr) {
-                    subexpr = expand(subexpr);
-                    memo[expand_key(subexpr)] = subexpr;
-                    return memo;
-                }, {});
-                ret = Expr(expr.ast.op, KEYS(memo).map(function(key) {return memo[key];}));
-            }
-            else
-            {
-                // by default expand only the arguments
-                ret = Expr(expr.ast.op, expr.ast.arg.map(expand));
-            }
-    }
-    return ret;
-}
-function expand_neg(e)
-{
-    if ('num' === e.ast.type)
-    {
-        return Expr('', e.ast.arg.neg());
-    }
-    if ('*' === e.ast.op)
-    {
-        return Expr('*', [Expr.MinusOne()].concat(e.ast.arg));
-    }
-    if ('/' === e.ast.op)
-    {
-        return Expr('/', e.ast.arg.map(function(e, i) {
-            return 0 === i ? expand_neg(e) : e;
-        }));
-    }
-    if ('-' === e.ast.op)
-    {
-        return Expr('+', e.ast.arg.map(function(e, i) {
-            return 0 === i ? expand_neg(e) : e;
-        }));
-    }
-    if ('+' === e.ast.op)
-    {
-        return Expr('+', e.ast.arg.map(expand_neg));
-    }
-    return Expr('*', [Expr.MinusOne(), e]);
-}
-function expand_inv(e)
-{
-    var J = Expr.MinusOne();
-    if ('num' === e.ast.type)
-    {
-        return Expr('', e.ast.arg.inv());
-    }
-    if ('^' === e.ast.op)
-    {
-        return e.ast.arg[1].equ(J) ? e.ast.arg[0] : Expr('^', [e.ast.arg[0], expand_neg(e.ast.arg[1])]);
-    }
-    if ('/' === e.ast.op)
-    {
-        return Expr('*', e.ast.arg.map(function(e, i) {
-            return 0 === i ? expand_inv(e) : e;
-        }));
-    }
-    if ('*' === e.ast.op)
-    {
-        return Expr('*', e.ast.arg.map(expand_inv));
-    }
-    return Expr('^', [e, J]);
-}
-function expand_add(e1, e2)
-{
-    var O = Expr.Zero(), I = Expr.One(), o = Abacus.Arithmetic.O;
-    function terms(e)
-    {
-        var f = e.f().f.filter(function(f) {return !f.equ(I);}).sort(expand_cmp);
-        return {c:e.f().c, f:f, k:f.map(expand_key).join('*')};
-    }
-
-    var a = ('+' === e1.ast.op ? e1.ast.arg : ('-' === e1.ast.op ? e1.ast.arg.map(function(e, i) {
-            return 0 === i ? e : expand_neg(e);
-        }) : [e1])).map(terms).sort(expand_cmp),
-        b = ('+' === e2.ast.op ? e2.ast.arg : ('-' === e2.ast.op ? e2.ast.arg.map(function(e, i) {
-            return 0 === i ? e : expand_neg(e);
-        }) : [e2])).map(terms).sort(expand_cmp),
-        c = merge_sequences(
-            a, b,
-            function(a, b) {
-                if (null == b)
-                {
-                    return a.c.equ(o) ? null : a;
-                }
-                else if (null == a)
-                {
-                    return b.c.equ(o) ? null : b;
-                }
-                else
-                {
-                    var c = a.c.add(b.c);
-                    if (c.equ(o)) return null;
-                    a.c = c;
-                    return a;
-                }
-            },
-            expand_cmp
-        )
-    ;
-
-    var res = c.length ? Expr('+', c.map(function(f) {return Expr('*', [f.c].concat(f.f));})) : O;
-    return res;
-}
-function expand_mul(e1, e2)
-{
-    var O = Expr.Zero(), I = Expr.One();
-    if (('+' === e1.ast.op) || ('-' === e1.ast.op))
-    {
-        return e1.ast.arg.reduce(function(res, f, i) {
-            return expand_add(res, expand_mul(('-' === e1.ast.op) && (0 < i) ? expand_neg(f) : f, e2));
-        }, O);
-    }
-    if (('+' === e2.ast.op) || ('-' === e2.ast.op))
-    {
-        return e2.ast.arg.reduce(function(res, f, i) {
-            return expand_add(res, expand_mul(e1, ('-' === e2.ast.op) && (0 < i) ? expand_neg(f) : f));
-        }, O);
-    }
-
-    function factors(e)
-    {
-        fac = null == fac ? e.f().c : fac.mul(e.f().c);
-        var f = e.f().f.filter(function(f) {return !f.equ(I);});
-        return f.map(function(f) {return '^' === f.ast.op ? {b:f.ast.arg[0], e:f.ast.arg[1]} : {b:f, e:I};});
-    }
-    function merge(res, f)
-    {
-        if (res.length && (expand_key(res[res.length-1].b) === expand_key(f.b)))
-        {
-            res[res.length-1].e = expand_add(res[res.length-1].e, f.e);
-        }
-        else
-        {
-            res.push(f);
-        }
-        return res;
-    }
-
-    var fac = null, a, b, c;
-
-    a = flatten(('*' === e1.ast.op ? e1.ast.arg : ('/' === e1.ast.op ? e1.ast.arg.map(function(e, i) {
-        return 0 === i ? e : expand_inv(e);
-    }) : [e1])).map(factors));
-    b = flatten(('*' === e2.ast.op ? e2.ast.arg : ('/' === e2.ast.op ? e2.ast.arg.map(function(e, i) {
-        return 0 === i ? e : expand_inv(e);
-    }) : [e2])).map(factors));
-
-    if (fac.equ(0)) return O;
-
-    c = merge_sequences(
-        a.sort(expand_cmp).reduce(merge, []),
-        b.sort(expand_cmp).reduce(merge, []),
-        function(a, b) {
-            if (null == b)
-            {
-                return a;
-            }
-            else if (null == a)
-            {
-                return b;
-            }
-            else
-            {
-                var e = expand_add(expand(a.e), expand(b.e));
-                if (e.equ(O)) return null;
-                a.e = e;
-                return a;
-            }
-        },
-        expand_cmp
-    );
-
-    var res = c.length ? Expr('*', [fac].concat(c.map(function(f) {return f.e.equ(I) ? f.b : expand_pow(f.b, f.e);}))) : Expr('', fac);
-    return res;
-}
-function expand_pow(e1, e2)
-{
-    if (('*' === e1.ast.op) || ('/' === e1.ast.op))
-    {
-        return e1.ast.arg.reduce(function(res, f, i) {
-            return expand_mul(res, expand_pow(f, ('/' === e1.ast.op) && (0 < i) ? expand_neg(e2) : e2));
-        }, Expr.One());
-    }
-
-    var base = e1, exp = e2, ret,
-        inverse = false, rad = null;
-
-    while ('^' === base.ast.op)
-    {
-        exp = expand_mul(expand(base.ast.arg[1]), exp);
-        base = expand(base.ast.arg[0]);
-    }
-    //if (exp !== e2) return expand_pow(expand(base), expand(exp));
-
-    if (exp.isConst() && exp.isReal())
-    {
-        /*if (Abacus.Arithmetic.gt(exp.c().real().den, 1))
-        {
-            rad = exp.c().den;
-            exp = Expr('', exp.c().real().num);
-        }*/
-        if (exp.isInt())
-        {
-            exp = exp.c().real();
-            if (exp.lt(0))
-            {
-                inverse = true;
-                exp = exp.neg();
-            }
-            if (base.isSymbol())
-            {
-                ret = Expr('^', [base, exp]);
-            }
-            else if (base.isConst())
-            {
-                ret = Expr('', base.c().pow(exp));
-            }
-            else
-            {
-                ret = expand(npow(base, exp.integer(true), expand_mul));
-            }
-            ret = inverse ? expand_inv(ret) : ret;
-        }
-        else
-        {
-            ret = Expr('^', [base, exp]);
-        }
-        /*if (rad)
-        {
-            if (ret.isConst(true) && ret.c(true).rad(rad).pow(rad).equ(ret.c(true))) ret = Expr('', ret.c(true).rad(rad));
-            else ret = ret.pow(Rational(1, rad));
-        }*/
-        return ret;
-    }
-    return Expr('^', [base, exp]);
-}
-function expand_key(expr)
-{
-    return String(expr);
-}
-function expand_cmp(t1, t2)
-{
-    var k1, k2;
-    if (is_string(t1.k) && is_string(t2.k))
-    {
-        k1 = t1.k;
-        k2 = t2.k;
-    }
-    else if (is_instance(t1.b, Expr) && is_instance(t2.b, Expr))
-    {
-        k1 = expand_key(t1.b);
-        k2 = expand_key(t2.b);
-    }
-    else
-    {
-        k1 = expand_key(t1);
-        k2 = expand_key(t2);
-    }
-    return k1 === k2 ? 0 : (k1 < k2 ? -1 : 1);
-}
-function neg_pow_to_inv(expr)
-{
-    if ('' === expr.ast.op)
-    {
-        return expr;
-    }
-    if ('^' === expr.ast.op)
-    {
-        return expr.ast.arg[1].lt(0) ? Expr('/', [Expr.One(), Expr('^', [expr.ast.arg[0], expand_neg(expr.ast.arg[1])])]) : expr;
-    }
-    return Expr(expr.ast.op, expr.ast.arg.map(neg_pow_to_inv));
 }
 function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
 {
@@ -2663,3 +2768,13 @@ function needs_parentheses(expr, is_tex)
 {
     return !(('()' === expr.ast.op.slice(-2)) || (expr.isSimple() && ((expr.c().isReal() && expr.c().real().isInt()) || (expr.c().isImag() && expr.c().imag().isInt()))) || (('^' === expr.ast.op) && expr.ast.arg[0].isSimple() && (expr.ast.arg[1].isInt() || is_tex)) || (is_tex && ('/' === expr.ast.op)));
 }
+
+// convenience methods
+Abacus.Expand = function(expr) {
+    if (is_instance(expr, Expr)) expr = expr.expand();
+    return expr;
+};
+Abacus.Simplify = function(expr) {
+    if (is_instance(expr, Expr)) expr = expr.simplify();
+    return expr;
+};

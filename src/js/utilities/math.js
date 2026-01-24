@@ -256,6 +256,13 @@ function ikthroot(n, k)
     }
     return r;
 }
+/*
+function kthpp(n, k)
+{
+    // fast check whether n is perfect kth-power
+    // TODO
+}
+*/
 /*function quadres(a, n)
 {
     // https://en.wikipedia.org/wiki/Quadratic_residue

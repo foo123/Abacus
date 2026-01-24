@@ -1,0 +1,88 @@
+html,
+body {
+    min-height: 100%;
+}
+.humane-container-notify {
+    position: fixed;
+    display: block;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    bottom: 10px;
+    right: 10px;
+    z-index: 100000;
+}
+.humane,
+.humane-notify {
+    box-sizing: border-box;
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    margin: 0;
+    z-index: 100000;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.320, 1.275);
+}
+.humane-container-notify .humane,
+.humane-container-notify .humane-notify {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    margin: 6px 0 0 0;
+}
+.humane,
+.humane-notify {
+    font-family: Ubuntu, Helvetica, sans-serif;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.4;
+    width: 170px;
+    min-height: 30px;
+    padding: 5px 10px;
+    color: #fff;
+    background: linear-gradient(180deg,rgba(72, 72, 72, 1) 0%, rgba(122, 122, 122, 1) 100%) no-repeat;
+    box-shadow: 0 4px 4px -4px #000;
+}
+.humane.humane-notify-info,
+.humane-notify.humane-notify-info {
+    background: linear-gradient(180deg,rgba(72, 72, 72, 1) 0%, rgba(122, 122, 122, 1) 100%) no-repeat;
+}
+.humane.humane-notify-success,
+.humane-notify.humane-notify-success {
+    background: linear-gradient(180deg,rgba(24, 188, 156, 1) 0%, rgba(18, 140, 116, 1) 100%) no-repeat;
+}
+.humane.humane-notify-error,
+.humane-notify.humane-notify-error {
+    background: linear-gradient(180deg,rgba(231, 76, 60, 1) 0%, rgba(171, 59, 46, 1) 100%) no-repeat;
+}
+.humane.humane-animate,
+.humane-notify.humane-notify-animate {
+    opacity: 1;
+    transform: translateX(0);
+}
+.humane.humane-animate:hover,
+.humane-notify.humane-notify-animate:hover {
+    opacity: 0.3;
+}
+.humane.humane-animate,
+.humane-notify.humane-notify-js-animate {
+    opacity: 1;
+    transform: translateX(0);
+}
+.humane.humane-animate:hover,
+.humane-notify.humane-notify-js-animate:hover {
+    opacity: 0.3;
+}
+.humane p,
+.humane-notify p,
+.humane ul,
+.humane-notify ul {
+    margin: 0;
+    padding: 0;
+}
+.humane ul,
+.humane-notify ul {
+    list-style: none;
+}

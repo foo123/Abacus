@@ -1368,7 +1368,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         // polynomial (formal) derivative of nth order
         var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O;
         if (null == n) n = 1;
-        n = +n;
+        n = Arithmetic.val(n);
         if (0 > n) return null; // not supported
         else if (0 === n) return self;
         if (0 === self.terms.length) return self;
@@ -1425,7 +1425,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                     if (term.length)
                     {
                         term = term.split('^');
-                        terms.push(c.mul(1 < term.length ? Expr('^', [term[0], +term[1]]) : Expr('', term[0])));
+                        terms.push(c.mul(1 < term.length ? Expr('^', [Expr('', term[0]), +term[1]]) : Expr('', term[0])));
                     }
                     else
                     {
@@ -2209,6 +2209,32 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,content: function() {
         var p = this.primitive(true);
         return p[1];
+    }
+    ,homogeneous: function(z) {
+        // make homogeneous with extra variable z
+        var self = this,
+            symbol = self.symbol.concat([z]),
+            ring = self.ring,
+            order = self.order,
+            degree = 0;
+        if (self.terms.length)
+        {
+            degree = self.terms.reduce(function(degree, term) {
+                return stdMath.max(degree, term.e.reduce(function(sum, ei) {return sum+ei;}, 0));
+            }, 0);
+            return new MultiPolynomial(self.terms.map(function(term) {
+                var d = degree;
+                return new MultiPolyTerm(term.c, array(symbol.length, function(i) {
+                    if (i < term.e.length)
+                    {
+                        d -= term.e[i];
+                        return term.e[i];
+                    }
+                    return d;
+                }), ring, order);
+            }), symbol, ring);
+        }
+        return MultiPolynomial.Zero(symbol, ring);
     }
     ,resultant: function(other, x) {
         return MultiPolynomial.Resultant(this, other, x);
@@ -3028,7 +3054,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                     {
                         term = term.split('*').map(function(x) {
                             x = x.split('^');
-                            return 1 < x.length ? Expr('^', [x[0], +x[1]]) : Expr('', x[0]);
+                            return 1 < x.length ? Expr('^', [Expr('', x[0]), +x[1]]) : Expr('', x[0]);
                         });
                         terms.push(c.mul(1 < term.length ? Expr('*', term) : term[0]));
                     }
@@ -4047,7 +4073,7 @@ function poly_cubic_roots(poly)
         {
             // three roots
             D = sqrt(Delta_1.pow(2).sub(Delta_0.pow(3).mul(4)));
-            if (D.add(Delta_1).expand().equ(0))
+            if (D.add(Delta_1).equ(0))
             {
                 D = D.neg();
             }
@@ -4613,7 +4639,68 @@ function polyres(p, p_deg, q, q_deg, x, normalize)
     }));
     return sylvester.detr();
 }
-
+function poly_pp_factor(f, k)
+{
+    // find factor p of f which is a perfect kth-power, ie f = (p^k) * q
+    // p = gcd(f, f^(k-1)), the gcd of f with the (k-1)th derivative of f
+    // q = f/(p^k)
+    var p, q, deg, i, n;
+    k = Abacus.Arithmetic.val(k);
+    p = null;
+    if (1 >= k)
+    {
+        // pass
+    }
+    else if (is_instance(f, Polynomial))
+    {
+        if (k <= f.maxdeg())
+        {
+            p = Polynomial.gcd(f, f.d(k-1));
+            //q = f.div(p.pow(k));
+        }
+    }
+    else if (is_instance(f, MultiPolynomial))
+    {
+        if (1 === f.symbol.length)
+        {
+            if (k <= f.maxdeg(f.symbol[0]))
+            {
+                p = MultiPolynomial.gcd(f, f.d(f.symbol[0], k-1));
+                //q = f.div(p.pow(k));
+            }
+        }
+        else
+        {
+            deg = f.symbol.map(function(x) {
+                return {deg:f.maxdeg(x), sym:x};
+            }).sort(function(a, b) {
+                return b.deg - a.deg;
+            });
+            for (i=0,n=deg.length; i<n; ++i)
+            {
+                if (k <= deg[i].deg)
+                {
+                    p = MultiPolynomial.gcd(f, f.d(deg[i].sym, k-1));
+                    if (0 < p.maxdeg(true))
+                    {
+                        //q = f.div(p.pow(k));
+                        break;
+                    }
+                    else
+                    {
+                        p = null;
+                    }
+                }
+                else
+                {
+                    p = null;
+                    break;
+                }
+            }
+        }
+    }
+    return p;
+}
 MultiPolynomial.kthroot = Polynomial.kthroot = polykthroot;
 Polynomial.gcd = polygcd;
 Polynomial.xgcd = polyxgcd;
@@ -5093,8 +5180,13 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
             return RationalFunc(self.num.mul(other.den), self.den.mul(other.num));
         return self;
     }
-    ,mod: NotImplemented
-    ,divmod: NotImplemented
+    ,mod: function(other) {
+        var self = this;
+        return RationaFunc(self.num.mod(other), self.den.mod(other));
+    }
+    ,divmod: function(other) {
+        return [RationaFunc(self.num.div(other), self.den.div(other)), RationaFunc(self.num.mod(other), self.den.mod(other))];
+    }
     ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
     }
@@ -5150,91 +5242,11 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         }
         return RationalFunc(num, den);
     }
-    ,simpl: function(force) {
-        var self = this, Arithmetic = Abacus.Arithmetic, num, den, n, d, g, qr;
+    ,simpl: function() {
+        var self = this;
         if (!self._simpl)
         {
-            if (self.num.equ(Arithmetic.O))
-            {
-                self.den = MultiPolynomial.One(self.num.symbol, self.num.ring);
-            }
-            else if (!self.den.equ(Arithmetic.I))
-            {
-                if ((qr=self.num.divmod(self.den)) && qr[1].equ(Arithmetic.O))
-                {
-                    // num divides den exactly, simplify
-                    self.num = qr[0];
-                    self.den = MultiPolynomial.One(self.num.symbol, self.num.ring);
-                }
-                else if ((qr=self.den.divmod(self.num)) && qr[1].equ(Arithmetic.O))
-                {
-                    // den divides num exactly, simplify
-                    self.den = qr[0];
-                    self.num = MultiPolynomial.One(self.num.symbol, self.num.ring);
-                }
-                else
-                {
-                    if ((true === force) || (self.num.symbol.length <= RationalFunc.__MAXGCD__)) // dont get too slow
-                    {
-                        // use multipolynomial gcd, if possible
-                        qr = MultiPolynomial.gcd(self.num, self.den);
-                        self.num = self.num.div(qr);
-                        self.den = self.den.div(qr);
-                    }
-                }
-
-                num = self.num.primitive(true);
-                den = self.den.primitive(true);
-                if (num[1].equ(den[1]))
-                {
-                    self.num = num[0];
-                    self.den = den[0];
-                }
-                else
-                {
-                    if (is_instance(num[1], [RationalFunc, Poly]))
-                    {
-                        n = den[1].den.mul(num[1].num);
-                        d = num[1].den.mul(den[1].num);
-                        g = n[CLASS].gcd(n, d);
-                        self.num = num[0].mul(n.div(g));
-                        self.den = den[0].mul(d.div(g));
-                    }
-                    else if (is_class(num[0].ring.NumberClass, Complex))
-                    {
-                        if (num[1].isImag() && den[1].isImag())
-                        {
-                            n = Arithmetic.mul(den[1].imag().den, num[1].imag().num);
-                            d = Arithmetic.mul(num[1].imag().den, den[1].imag().num);
-                            g = gcd(n, d);
-                            self.num = num[0].mul(Arithmetic.div(n, g));
-                            self.den = den[0].mul(Arithmetic.div(d, g));
-                        }
-                        else if (num[1].isReal() && den[1].isReal())
-                        {
-                            n = Arithmetic.mul(den[1].real().den, num[1].real().num);
-                            d = Arithmetic.mul(num[1].real().den, den[1].real().num);
-                            g = gcd(n, d);
-                            self.num = num[0].mul(Arithmetic.div(n, g));
-                            self.den = den[0].mul(Arithmetic.div(d, g));
-                        }
-                        else
-                        {
-                            g = Complex.gcd(num[1], den[1]);
-                            self.num = num[0].mul(num[1].div(g));
-                            self.den = den[0].mul(den[1].div(g));
-                        }
-                    }
-                    else
-                    {
-                        n = Arithmetic.mul(den[1].den, num[1].num);
-                        d = Arithmetic.mul(num[1].den, den[1].num);
-                        g = gcd(n, d);
-                        self.num = num[0].mul(Arithmetic.div(n, g));
-                        self.den = den[0].mul(Arithmetic.div(d, g));
-                    }
-                }
-            }
+            self = simplify_rf(self, self.num.symbol.length <= RationalFunc.__MAXGCD__);
             self._simpl = true;
         }
         return self;
@@ -5313,7 +5325,123 @@ RationalFunc.cast = function(a, symbol, ring) {
     return type_cast(a);
 };
 
-// convenience method to construct polys
+function simplify_rf(rf, use_gcd)
+{
+    var Arithmetic = Abacus.Arithmetic, num, den, n, d, g, qr;
+    if (rf.num.equ(Arithmetic.O))
+    {
+        rf.den = MultiPolynomial.One(rf.num.symbol, rf.num.ring);
+    }
+    else if (!rf.den.equ(Arithmetic.I))
+    {
+        if ((qr=rf.num.divmod(rf.den)) && qr[1].equ(Arithmetic.O))
+        {
+            // num divides den exactly, simplify
+            rf.num = qr[0];
+            rf.den = MultiPolynomial.One(rf.num.symbol, rf.num.ring);
+        }
+        else if ((qr=rf.den.divmod(rf.num)) && qr[1].equ(Arithmetic.O))
+        {
+            // den divides num exactly, simplify
+            rf.den = qr[0];
+            rf.num = MultiPolynomial.One(rf.num.symbol, rf.num.ring);
+        }
+        else if (true === use_gcd)
+        {
+            // use multipolynomial gcd if possible but can become slow
+            qr = MultiPolynomial.gcd(rf.num, rf.den);
+            rf.num = rf.num.div(qr);
+            rf.den = rf.den.div(qr);
+        }
+
+        num = rf.num.primitive(true);
+        den = rf.den.primitive(true);
+        if (num[1].equ(den[1]))
+        {
+            rf.num = num[0];
+            rf.den = den[0];
+        }
+        else
+        {
+            if (is_instance(num[1], [RationalFunc, Poly]))
+            {
+                n = den[1].den.mul(num[1].num);
+                d = num[1].den.mul(den[1].num);
+                g = n[CLASS].gcd(n, d);
+                rf.num = num[0].mul(n.div(g));
+                rf.den = den[0].mul(d.div(g));
+            }
+            else if (is_class(num[0].ring.NumberClass, Complex))
+            {
+                if (num[1].isImag() && den[1].isImag())
+                {
+                    n = Arithmetic.mul(den[1].imag().den, num[1].imag().num);
+                    d = Arithmetic.mul(num[1].imag().den, den[1].imag().num);
+                    g = gcd(n, d);
+                    rf.num = num[0].mul(Arithmetic.div(n, g));
+                    rf.den = den[0].mul(Arithmetic.div(d, g));
+                }
+                else if (num[1].isReal() && den[1].isReal())
+                {
+                    n = Arithmetic.mul(den[1].real().den, num[1].real().num);
+                    d = Arithmetic.mul(num[1].real().den, den[1].real().num);
+                    g = gcd(n, d);
+                    rf.num = num[0].mul(Arithmetic.div(n, g));
+                    rf.den = den[0].mul(Arithmetic.div(d, g));
+                }
+                else
+                {
+                    g = Complex.gcd(num[1], den[1]);
+                    rf.num = num[0].mul(num[1].div(g));
+                    rf.den = den[0].mul(den[1].div(g));
+                }
+            }
+            else
+            {
+                n = Arithmetic.mul(den[1].den, num[1].num);
+                d = Arithmetic.mul(num[1].den, den[1].num);
+                g = gcd(n, d);
+                rf.num = num[0].mul(Arithmetic.div(n, g));
+                rf.den = den[0].mul(Arithmetic.div(d, g));
+            }
+        }
+    }
+    return rf;
+}
+// convenience methods
 Abacus.Poly = function(expr, ring_or_symbol) {
     return is_instance(expr, Expr) ? expr.toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x") : (is_instance(ring_or_symbol, Ring) ? ring_or_symbol.fromString(String(expr)) : Expr(String(expr)).toPoly(is_string(ring_or_symbol) || is_array(ring_or_symbol) ? ring_or_symbol : "x"));
+};
+Abacus.Roots = function(expr, all) {
+    if (is_instance(expr, Polynomial))
+    {
+        return all ? p.allroots() : p.roots();
+    }
+    return [];
+};
+Abacus.Zeros = function(expr) {
+    if (is_instance(expr, Polynomial))
+    {
+        return p.zeros();
+    }
+    return [];
+};
+Abacus.Factor = function(expr) {
+    var faccon1, faccon2;
+    if (is_instance(expr, RationalFunc))
+    {
+        faccon1 = expr.num.factors();
+        faccon2 = expr.den.factors();
+        expr = faccon1[0].reduce(function(expr, fac) {return expr.mul(fac[0].toExpr().pow(fac[1]));}, faccon1[1].toExpr()).div(faccon2[0].reduce(function(expr, fac) {return expr.mul(fac[0].toExpr().pow(fac[1]));}, faccon2[1].toExpr()));
+    }
+    else if (is_instance(expr, Poly))
+    {
+        faccon1 = p.factors();
+        expr = faccon1[0].reduce(function(expr, fac) {return expr.mul(fac[0].toExpr().pow(fac[1]));}, faccon1[1].toExpr());
+    }
+    else if (is_instance(expr, Expr))
+    {
+        expr = expr.factors();
+    }
+    return expr;
 };

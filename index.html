@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en" class="no-ie">
+<head>
+<title>Abacus REPL: Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="description" content="Abacus REPL: Combinatorics, Tensors, Permutations, Combinations, Variations, Subsets, Restricted Partitions, Restricted Compositions, Set Partitions, Algebraic Number Theory, Matrices, Polynomials, Greatest Common Divisor, Gröbner Basis, Prime Factorisation, Continued Fractions, Diophantine Systems Equations" />
+<meta property="og:image" content="https://foo123.github.io/thumbs/abacus-repl-live.png">
+<meta property="og:url" content="https://foo123.github.io/examples/abacus-repl/">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#efefef">
+<link rel="stylesheet" type="text/css" href="./assets/css/notify.css" />
+<link rel="stylesheet" type="text/css" href="./assets/css/InfoPopup.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.css" />
+<style type="text/css">
+body {
+    font-size: 16px;
+    font-family: Helvetica, sans-serif;
+    color: #343434;
+    background: #efefef;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 2px 10px 30px 10px;
+}
+.humane-notify {
+    font-weight: bold;
+}
+.info-popup {
+    display: inline-block;
+    width: 166px;
+    max-width: 166px !important;
+    margin-top: -16px;
+    border-radius: 0;
+    font-size: 14px;
+    font-weight: normal;
+    padding: 4px 8px;
+    line-height: 1.2;
+    box-sizing: border-box;
+}
+.info-icon {
+    position: relative;
+    box-sizing: border-box;
+    display: inline-block;
+    vertical-align: middle;
+    width: 40px;
+    margin-right: 10px;
+}
+.info-icon .icon {
+    position: relative;
+    width: 100%;
+}
+.info-msg {
+    position: relative;
+    box-sizing: border-box;
+    display: inline-block;
+    vertical-align: middle;
+    width: calc(100% - 50px);
+    text-align: left;
+}
+.icon {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    --icon: none;
+    --aspect-ratio: calc(1 / 1);
+}
+.icon::before {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    content: "";
+    width: 100%;
+    height: auto;
+    padding: 0;
+    padding-bottom: calc(100% / var(--aspect-ratio));
+    background-color: transparent;
+    background-image: var(--icon);
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.icon.run {
+    --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24"><path fill="green" d="M20 4v9a4 4 0 0 1-4 4H6.914l2.5 2.5L8 20.914L3.086 16L8 11.086L9.414 12.5l-2.5 2.5H16a2 2 0 0 0 2-2V4h2Z"></path></svg>');
+}
+.icon.clear {
+    --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 17 17"><path fill="red" fill-rule="evenodd" d="m12.566 8l3.045-3.044c.42-.421.42-1.103 0-1.522L12.566.389a1.078 1.078 0 0 0-1.523 0L7.999 3.433L4.955.389a1.078 1.078 0 0 0-1.523 0L.388 3.434a1.074 1.074 0 0 0-.001 1.522L3.431 8L.387 11.044a1.075 1.075 0 0 0 .001 1.523l3.044 3.044c.42.421 1.102.421 1.523 0l3.044-3.044l3.044 3.044a1.076 1.076 0 0 0 1.523 0l3.045-3.044c.42-.421.42-1.103 0-1.523L12.566 8z"></path></svg>');
+}
+.icon.info {
+    --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 32 32" fill="%23f90b13"><g fill="none" stroke="%23f90b13"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 14h1v9h1m12-7a13 13 0 1 1-26 0a13 13 0 0 1 26 0Z"></path><path fill="%23f90b13" d="M17 9.5a1 1 0 1 1-2 0a1 1 0 0 1 2 0Z"></path></g></svg>')
+}
+.code {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    padding: 8px 2px;
+    width: 100%;
+    min-height: 100px;
+}
+#output .CodeMirror {
+    height: auto;
+}
+.math {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    padding: 4px;
+    padding-left: 30px;
+    width: 100%;
+    overflow: hidden;
+    overflow-x: auto;
+}
+mjx-container[jax="CHTML"][display="true"] {
+  text-align: left !important;
+}
+.err {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    padding: 8px 4px;
+    width: 100%;
+    color: #f90b13;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+}
+.label {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+    font-style: italic;
+    font-weight: bold;
+    width: 20px;
+    text-align: right;
+    margin-right: 4px;
+}
+.showcase {
+    color: inherit;
+}
+#examples {
+    text-align: center;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+#examples a {
+    color: #f90b13;
+}
+#overlay {
+    position: absolute;
+    display: block;
+    box-sizing: border-box;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #efefef;
+    opacity: 0.8;
+}
+#overlay::before {
+    position: absolute;
+    display: inline-block;
+    content: "loading..";
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: -25px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+#overlay::after {
+    position: absolute;
+    display: inline-block;
+    content: "";
+    margin-top: 25px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 64px; height: 64px;
+    background: transparent url('./assets/css/cubes2.gif') 0 0 no-repeat;
+}
+
+#screen {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    width: 1800px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+#output {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    width: calc(100% - 25px);
+    padding: 10px 4px;
+    border: 1px solid #232323;
+    background: #fff;
+    height: 460px;
+    overflow-y: auto;
+    display: inline-block;
+    vertical-align: top;
+}
+#input {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    width: calc(100% - 101px);
+    display: inline-block;
+    vertical-align: top;
+    border: 1px solid #232323;
+}
+#inputarea {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    width: 100%;
+    padding: 10px 4px;
+    border: 1px solid #232323;
+    height: 50px;
+}
+#buttons {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    font-size: 0;
+}
+.button {
+    position: relative;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    background: #fefefe;
+    color: #232323;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 6px 4px 4px 4px;
+    border-radius: 8px;
+    border: 1px solid #232323;
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 4px;
+    margin-left: 4px;
+}
+.button:active {
+    top: 1px;
+}
+.showcase {
+    margin: 5px 2px;
+    color: inherit;
+    font-style: italic;
+    font-size: .8em;
+}
+.showcase a {
+    color: #f90b13;
+    display: inline-block;
+    margin-bottom: 1px;
+    text-decoration: none;
+    border-bottom: 1px dotted #f90b13;
+}
+a.donate {
+    font-size: 14px;
+    color: #f90b13;
+    display: inline-block;
+    margin-bottom: 1px;
+    text-decoration: none;
+    border-bottom: 1px dotted #f90b13;
+}
+#footer {
+    position: relative;
+    box-sizing: border-box;
+    display: block;
+    border-top: 1px solid #fff;
+    padding-top: 20px;
+    text-align: center;
+}
+#footer::before {
+    position: absolute;
+    didplay: block;
+    box-sizing: border-box;
+    content: "";
+    top: 2px; left: 0;
+    width: 100%; height: 0;
+    border-top: 1px solid #bbb;
+}
+@media all and (max-width: 800px) {
+h1 {
+    font-size: 1.3em;
+}
+}
+@media all and (max-width: 360px) {
+}
+@media all and (max-height: 360px) {
+#output {
+    height: 300px;
+}
+}
+</style>
+
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/display/placeholder.min.js"></script>
+<script defer src="./assets/js/codemirror_grammar.min.js"></script>
+<script async src="./assets/js/define_grammar_mode.js"></script>
+<script type="text/javascript">
+window.MathJax = {
+    loader: {
+        typeset: false // Perform initial typeset?
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script async src="./assets/js/humane2.min.js"></script>
+<script async src="./assets/js/InfoPopup.min.js"></script>
+<script async src="./assets/js/Dromeo.min.js"></script>
+<script async src="./build/js/BigInteger.js"></script>
+<script async src="./build/js/Abacus.js"></script>
+</head>
+<body>
+<header id="header" style="text-align:center;line-height:1.4;padding-top:10px;">
+<h1 style="font-size:1em;font-weight:normal"><b>Abacus REPL</b>: A simple REPL for the Computer Algebra and Symbolic Computations System <b>Abacus</b>.</h1>
+</header>
+
+<br><br>
+
+<div id="screen">
+
+<div id="examples">
+<b>Demo Examples:</b>
+<br>
+<a href="#" aria-label="run matrices example" onclick="return runExample('matrices');">Matrices</a>
+• <a href="#" aria-label="run polynomials example" onclick="return runExample('polys');">Polynomials</a>
+<br>
+<a href="#" aria-label="run polynomial factorization example" onclick="return runExample('factors');">Factorization</a>
+• <a href="#" aria-label="run polynomial gcd example" onclick="return runExample('gcd');">GCD</a>
+<br>
+<a href="#" aria-label="run polynomial roots example" onclick="return runExample('roots');">Polynomial Roots</a>
+• <a href="#" aria-label="run polynomial zeros example" onclick="return runExample('zeros');">Polynomial Zeros</a>
+<br>
+<a href="#" aria-label="run permutations example" onclick="return runExample('permutations');">Permutations</a>
+• <a href="#" aria-label="run derangements example" onclick="return runExample('derangements');">Derangements</a>
+<br>
+<a href="#" aria-label="run combinations example" onclick="return runExample('combinations');">Combinations</a>
+• <a href="#" aria-label="run variations example" onclick="return runExample('variations');">Variations</a>
+• <a href="#" aria-label="run subsets example" onclick="return runExample('subsets');">Subsets</a>
+<br>
+<a href="#" aria-label="run partitions example" onclick="return runExample('partitions');">Partitions</a>
+• <a href="#" aria-label="run compositions example" onclick="return runExample('compositions');">Compositions</a>
+• <a href="#" aria-label="run set partitions example" onclick="return runExample('setpartitions');">SetPartitions</a>
+</div>
+
+<span class="label">&nbsp;</span><div id="output"></div><br>
+<span class="label" style="margin-top:8px;color:#f90b13;">&gt;&gt;</span><div id="input"><textarea id="inputarea" placeholder="code to run.."></textarea></div><div id="buttons">
+<button id="run" aria-label="run code" class="button" style="padding:8px"><i class="icon run" style="width:14px"></i></button>
+<button id="clear" aria-label="clear contents" class="button" style="padding:8px"><i class="icon clear" style="width:14px;top:2px"></i></button>
+<br><button id="share" aria-label="get link to share current session" class="button" style="font-size:16px;margin-top:11px;padding:10px 11px">Share</button>
+</div>
+
+<div id="overlay"></div>
+</div>
+
+<br><br><br>
+
+<footer id="footer">
+<div class="showcase">Computer Algebra by <a href="https://github.com/foo123/Abacus" target="_blank">Abacus</a></div>
+<div class="showcase">Arbitrary Precision Arithmetic by <a href="https://github.com/peterolson/BigInteger.js" target="_blank">BigInteger.js</a></div>
+<div class="showcase">Mathematics Rendering by <a href="https://www.mathjax.org/" target="_blank">MathJax</a></div>
+<div class="showcase">Syntax Highlight by <a href="https://codemirror.net/" target="_blank">CodeMirror</a></div>
+<div class="showcase">Syntax Highlight Grammar by <a href="https://github.com/foo123/codemirror-grammar" target="_blank">CodeMirror Grammar</a></div>
+<div class="showcase">Notifications by <a href="https://github.com/foo123/humane2.js" target="_blank">humane2.js</a></div>
+<div class="showcase">Tooltips by <a href="https://github.com/foo123/InfoPopup" target="_blank">InfoPopup</a></div>
+<div class="fluid col-1-1 text-center" style="margin-top: 10px;"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DP8WED9XW9TAE" class="donate">donate</a></div>
+</footer>
+
+<iframe id="sandbox" src="data:text/html;charset=utf-8,%3Chtml%3E%3Cbody%3E%3C/body%3E%3C/html%3E" style="display:none"></iframe>
+
+<div id="notifications-area" class="humane-container-notify"></div>
+
+<script type="text/javascript">//<![CDATA[
+!function() {
+"use strict";
+function esc_html(s)
+{
+    return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split(' ').join('&nbsp;').split("\n").join('<br>');
+}
+
+function toTex(x)
+{
+    if (null == x)
+    {
+        // pass
+        x = '';
+    }
+    else if ((true === x) || (false === x))
+    {
+        x = '\\text{' + String(x) + '}';
+    }
+    else if ("function" === typeof x.toTex)
+    {
+        x = x.toTex();
+    }
+    else if (Array.isArray(x))
+    {
+        x = '\\left(' + x.map(toTex).join(',') + '\\right)';
+    }
+    else if (("object" === typeof x) || ("function" === typeof x))
+    {
+        // pass
+        x = '';
+    }
+    else
+    {
+        x = String(x);
+    }
+    return x;
+}
+
+function Tex(x)
+{
+    if (Array.isArray(x))
+    {
+        x = "\\[" + x.map(toTex).join("\\]\n\\[") + "\\]";
+    }
+    else
+    {
+        x = "\\[" + toTex(x) + "\\]";
+    }
+    return x;
+}
+
+function obj_to_array(o)
+{
+    o.length = Object.keys(o).length;
+    return Array.prototype.slice.call(o);
+}
+
+function init()
+{
+    let sandbox = null;
+    function create_sandbox()
+    {
+        if (!sandbox)
+        {
+            //sandbox = document.getElementById('sandbox').contentWindow;
+            sandbox = window;
+        }
+    }
+    create_sandbox();
+
+    (function use_biginteger_arithmetic(Abacus, bigInt)
+    {
+        // plug-in bigInteger arithmetic routines
+        const Arithmetic = Abacus.Arithmetic;
+
+        Arithmetic.J = bigInt.minusOne;
+        Arithmetic.O = bigInt.zero;
+        Arithmetic.I = bigInt.one;
+        Arithmetic.II = bigInt(2);
+
+        Arithmetic.num = function(a) {return bigInt.isInstance(a) ? a : bigInt(a);};
+
+        Arithmetic.equ = function(a, b) {return a.eq(b);};
+        Arithmetic.gte = function(a, b) {return a.geq(b);};
+        Arithmetic.lte = function(a, b) {return a.leq(b);};
+        Arithmetic.gt  = function(a, b) {return a.gt(b);};
+        Arithmetic.lt  = function(a, b) {return a.lt(b);};
+
+        Arithmetic.inside = function(a, m, M, closed) {return closed ? (a.geq(m) && a.leq(M)) : (a.gt(m) && a.lt(M));};
+        Arithmetic.clamp  = function(a, m, M) {return a.lt(m) ? m : (a.gt(M) ? M : a);};
+        Arithmetic.wrap   = function(a, m, M) {return a.lt(m) ? M : (a.gt(M) ? m : a);};
+        Arithmetic.wrapR  = function(a, M) {return a.lt(bigInt.zero) ? a.plus(M) : a;};
+
+        Arithmetic.add = function(a, b) {return a.plus(b);};
+        Arithmetic.sub = function(a, b) {return a.minus(b);};
+        Arithmetic.mul = function(a, b) {return a.times(b);};
+        Arithmetic.div = function(a, b) {return a.over(b);};
+        Arithmetic.mod = function(a, b) {return a.mod(b);};
+        Arithmetic.pow = function(a, b) {return a.pow(b);};
+
+        Arithmetic.shl  = function(a, b) {return a.shiftLeft(b);};
+        Arithmetic.shr  = function(a, b) {return a.shiftRight(b);};
+        Arithmetic.bor  = function(a, b) {return a.or(b);};
+        Arithmetic.band = function(a, b) {return a.and(b);};
+        Arithmetic.xor  = function(a, b) {return a.xor(b);};
+
+        Arithmetic.rnd = bigInt.randBetween;
+        Arithmetic.abs = function(a) {return a.abs();};
+        Arithmetic.min = bigInt.min;
+        Arithmetic.max = bigInt.max;
+    })(window.Abacus, window.bigInt);
+
+    function export_sandbox(sandbox, Abacus)
+    {
+        // export
+        sandbox.Abacus = Abacus;
+        // symbolics
+        sandbox.Expr = Abacus.Expr;
+        sandbox.Poly = Abacus.Poly;
+        sandbox.Ring = Abacus.Ring;
+        sandbox.Matrix = Abacus.Matrix;
+        sandbox.Expand = Abacus.Expand;
+        sandbox.Simplify = Abacus.Simplify;
+        sandbox.Factor = Abacus.Factor;
+        sandbox.Roots = Abacus.Roots;
+        sandbox.Zeros = Abacus.Zeros;
+        // combinatorics
+        sandbox.Tensor = Abacus.Tensor;
+        sandbox.Permutation = Abacus.Permutation;
+        sandbox.Combination = Abacus.Combination;
+        sandbox.Subset = Abacus.Subset;
+        sandbox.Partition = Abacus.Partition;
+        sandbox.SetPartition = Abacus.SetPartition;
+    }
+
+    const Abacus = window.Abacus;
+
+    let printCompleted = Promise.resolve();
+    let currentLine = 0;
+    let cnt = 0;
+    let CM = {};
+    let session = [];
+
+    function print_code(out)
+    {
+        const lines = out.split("\n");
+        const code = document.createElement('textarea');
+        code.id = 'code-' + String(cnt);
+        code.className = 'code';
+        code.innerHTML = out;
+        output.appendChild(code);
+        const cm = CodeMirror.fromTextArea(code, {
+            mode: "expr",
+            readOnly: true,
+            lineWrapping: false,
+            viewportMargin: Infinity,
+            indentUnit: 4,
+            indentWithTabs: false,
+            foldGutter: false,
+            lineNumbers: true,
+            firstLineNumber: currentLine+1,
+            gutters: ["CodeMirror-linenumbers"]
+        });
+        //cm.setSize(null, lines.length*(lines.reduce((m, l) => Math.max(m, l.length), 0) > 80 ? 50 : 30));
+        CM[code.id] = cm;
+        currentLine += lines.length;
+    }
+
+    function print_math(out)
+    {
+        if (null == out) return;
+        if (MathJax.typesetPromise)
+        {
+            const math = document.createElement('div');
+            math.id = 'math-' + String(cnt);
+            math.className = 'math';
+            math.innerHTML = Tex(out);
+            output.appendChild(math);
+            printCompleted = printCompleted.then(function() {
+                return MathJax.typesetPromise([math]);
+            }).catch(function(err) {
+                console.error('MathJax.Typeset failed: ' + err.message)
+            });
+        }
+    }
+
+    function print_err(err)
+    {
+        let error = document.createElement('div');
+        error.id = 'err-' + String(cnt);
+        error.className = 'err';
+        error.innerHTML = esc_html(err.toString());
+        output.appendChild(error);
+    }
+
+    function clear()
+    {
+        [].forEach.call(output.children, function(el) {
+            if ('math' === el.className)
+            {
+                MathJax.typesetClear([el]);
+                //el.textContent = '';
+            }
+            else if ('code' === el.className)
+            {
+                const cm = CM[el.id || ''];
+                if (cm)
+                {
+                    delete CM[el.id];
+                    cm.toTextArea();
+                }
+            }
+        });
+        output.textContent = '';
+        currentLine = 0;
+        cnt = 0;
+        session = [];
+    }
+
+    function repl(inp)
+    {
+        if (null == inp) return;
+        inp = String(inp).trim();
+        if (inp.length)
+        {
+            export_sandbox(sandbox, Abacus);
+
+            // read
+            session.push(inp); // add to current session
+            let out = null, err = null;
+
+            // eval
+            try {
+                out = sandbox.eval(inp + ';');
+            } catch (e) {
+                err = e;
+            }
+
+            // print
+            ++cnt;
+            print_code(inp);
+            if (err)
+            {
+                print_err(err);
+            }
+            else
+            {
+                print_math(out);
+            }
+            printCompleted = printCompleted.then(() => output.scrollTop = output.scrollHeight);
+        }
+    }
+
+    function run_example(example)
+    {
+        switch (String(example).toLowerCase())
+        {
+            case 'permutations':
+                run_session([
+                '/* permutations */',
+                'permutations = Permutation(3).get()'
+                ]);
+            break;
+            case 'derangements':
+                run_session([
+                '/* derangements */',
+                'derangements = Permutation(4, {type:"derangement"}).get()'
+                ]);
+            break;
+            case 'combinations':
+                run_session([
+                '/* combinations */',
+                'combinations = Combination(5, 3).get()'
+                ]);
+            break;
+            case 'variations':
+                run_session([
+                '/* variations */',
+                'variations = Combination(3, 2, {type:"variation"}).get()'
+                ]);
+            break;
+            case 'subsets':
+                run_session([
+                '/* subsets */',
+                'subsets = Subset(3).get()'
+                ]);
+            break;
+            case 'partitions':
+                run_session([
+                '/* partitions */',
+                'partitions = Partition(5).get()'
+                ]);
+            break;
+            case 'compositions':
+                run_session([
+                '/* compositions */',
+                'compositions = Partition(4, {type:"composition"}).get()'
+                ]);
+            break;
+            case 'setpartitions':
+                run_session([
+                '/* set partitions */',
+                'setpartitions = SetPartition(4,{"parts=":3}).get()'
+                ]);
+            break;
+            case 'matrices':
+                run_session([
+                '/* matrix operations */',
+                'field = Ring.Q("x","y").associatedField()',
+                'm = Matrix(field, ['
+                +"\n"+'["x^2 + x*y", "x*y + y^2"],'
+                +"\n"+'["x*y + y^2", "x^2 + x*y"]'
+                +"\n"+'])',
+                'm.inv()',
+                'm.inv().mul(m)'
+                ]);
+            break;
+            case 'polys':
+                run_session([
+                '/* polynomial operations */',
+                'ring = Ring.Q("x","y")',
+                'p1 = Poly("x+y", ring)',
+                'p2 = Poly("(x+y)(xy+1)", ring)',
+                'p1.add(p2)',
+                'p2.sub(p1)',
+                'p1.mul(p2)',
+                'p2.divmod(p1)'
+                ]);
+            break;
+            case 'gcd':
+                run_session([
+                '/* polynomial gcd */',
+                'ring = Ring.Q("x","y")',
+                'p1 = Poly("(x+y)(xy+1)", ring)',
+                'p2 = Poly("(x+y)(x^2+y)", ring)',
+                'ring.gcd(p1, p2)'
+                ]);
+            break;
+            case 'factors':
+                run_session([
+                '/* polynomial factorization */',
+                'Q = Ring.Q("x","y")',
+                'p = Poly("3(x+y)(xy+1)(x^2+x+2)", Q)',
+                'Factor(p)',
+                'GF2 = Ring.Zn(2)("x","y")',
+                'p = Poly("x^2+x+y^2+y", GF2)',
+                'Factor(p)'
+                ]);
+            break;
+            case 'roots':
+                run_session([
+                '/* polynomial roots */',
+                'p = Poly("x^2+1", "x")',
+                '/* all complex roots, when solvable */',
+                'Roots(p, true)',
+                'p = Poly("(x-1)(x+1)", "x")',
+                '/* only rational roots, if any */',
+                'Roots(p)'
+                ]);
+            break;
+            case 'zeros':
+                run_session([
+                '/* polynomial zeros */',
+                'p = Poly("x^6+x^4+2x+1", "x")',
+                '/* all complex zeros, approximately */',
+                'Zeros(p).map(z => z.toDec())'
+                ]);
+            break;
+        }
+    }
+
+    function run_session(session)
+    {
+        if (Array.isArray(session))
+        {
+            session.forEach(repl);
+        }
+    }
+
+    function notify(msg, type)
+    {
+        if ('error' === type) notifier.error(msg);
+        else if ('success' === type) notifier.success(msg);
+        else notifier.info(msg);
+    }
+
+    function session_link(href)
+    {
+        if (arguments.length)
+        {
+            const uri = new URL(href);
+            return '' !== uri.hash ? obj_to_array((new Dromeo()).unglue(uri.hash.slice(1).split('+').join('%20')).session || []) : [];
+        }
+        else
+        {
+            const uri = new URL(location.href);
+            uri.hash = '#' + (new Dromeo()).glue({session:session});
+            return uri.href;
+        }
+    }
+
+    const notifier = humane2.create({container: document.getElementById('notifications-area'), baseCls: 'humane-notify', timeout: 4000});
+    notifier.info = notifier.spawn({addnCls: 'humane-notify-info'}, true);
+    notifier.success = notifier.spawn({addnCls: 'humane-notify-success'}, true);
+    notifier.error = notifier.spawn({addnCls: 'humane-notify-error'}, true);
+
+    InfoPopup({
+        item: '[aria-label]',
+        content: (item) => '<div class="info-icon"><i class="icon info"></i></div><div class="info-msg">'+item.getAttribute('aria-label')+'</div>',
+        atItemX: 'center',
+        atItemY: 'top',
+        hideDelay: 400,
+        showDelay: 400,
+        preventDefault: false
+    });
+
+    codemirror_define_grammar_mode("expr", {
+    // prefix ID for regular expressions used in the grammar
+    "RegExpID"                      : "RE::",
+
+    // Style model
+    "Style"                         : {
+
+         "COMMENT"                  : "comment"
+        ,"JSKEYWORD"                : "def"
+        ,"KEYWORD"                  : "keyword"
+        ,"IDENTIFIER"               : "variable"
+        ,"PROPERTY"                 : "atom"
+        ,"STRING"                   : "string"
+        ,"NUMBER"                   : "number"
+        ,"OP"                       : "builtin"
+
+    },
+
+    // Lexical model
+    "Lex"                           : {
+        "<comment>"                 : {"type":"comment","tokens":[
+                                        // line comment
+                                        // start, end delims  (null matches end-of-line)
+                                        [ "//",  null],
+                                        // block comments
+                                        // start,  end    delims
+                                        ["/*",   "*/"]
+                                    ]}
+        ,"<jskeyword>"                : [
+                                        "async","await","break",
+                                        "case","catch","class","const",
+                                        "continue","delete","do","else",
+                                        "export","extends","false","finally","for",
+                                        "function","goto","if","import","in","instanceof",
+                                        "let","new","null","of","return","static",
+                                        "switch","this","throw","true","try",
+                                        "typeof","var","void","while",
+                                        "with","yield"
+                                    ]
+        ,"<keyword>"                : [
+                                        "Abacus", "Expr", "Poly", "Ring", "Matrix",
+                                        "Expand", "Simplify", "Factor", "Roots", "Zeros",
+                                        "Tensor", "Permutation", "Combination",
+                                        "Subset", "Partition", "SetPartition"
+                                    ]
+        ,"<identifier>"             : "RE::/[_A-Za-z$][_A-Za-z0-9$]*/"
+        ,"<string>"                 : {"type":"escaped-block","escape":"\\","tokens":
+                                        ["RE::/(['\"])/",   1]
+                                    }
+        ,"<number>"                 : "RE::/\\d+(?:\\.\\d+)?/"
+        ,"<op>"                     : "RE::/[\\+\\-\\*\\/\\^=><\\(\\)\\[\\]]+/"
+    },
+
+    // Syntax model
+    "Syntax"                        : {
+        "<expr>"                    : "(<comment>.COMMENT | <jskeyword>.JSKEYWORD | <keyword>.KEYWORD | <identifier>.IDENTIFIER | '.' <comment>.COMMENT? <identifier>.PROPERTY | <string>.STRING | <number>.NUMBER | <op>.OP)*"
+    },
+
+    // what to parse and in what order
+    "Parser"                        : [["<expr>"]]
+    }, {
+    "supportGrammarAnnotations" : false,
+    "supportCodeFolding"        : false,
+    "supportCodeMatching"       : false,
+    "supportAutoCompletion"     : false
+    }, CodeMirror, CodeMirrorGrammar);
+
+    const output = document.getElementById('output');
+    const input = CodeMirror.fromTextArea(document.getElementById('inputarea'), {
+        mode: "expr",
+        lineWrapping: true,
+        lineNumbers : false,
+        indentUnit: 0,
+        indentWithTabs: false,
+        foldGutter: false,
+        gutters: []
+    });
+    input.setSize(null, 90);
+
+    document.getElementById('run').addEventListener('click', (evt) => {
+        let codetorun = input.getValue();
+        input.setValue('');
+        repl(codetorun);
+    }, false);
+    document.getElementById('clear').addEventListener('click', (evt) => {
+        clear();
+    }, false);
+    document.getElementById('share').addEventListener('click', (evt) => {
+        try {
+            navigator.clipboard.writeText(session_link()).then(() => {
+                notify('Session link copied to clipboard.', 'success');
+            }).catch((err) => {
+                notify('Cannot write to clipboard!', 'error');
+            });
+        } catch (err) {
+            notify('Clipboard access error!', 'error');
+        }
+    }, false);
+
+    window.runExample = function(example) {
+        clear();
+        run_example(example);
+        return false;
+    };
+
+    document.getElementById('overlay').style.display = 'none';
+    let loaded_session = session_link(location.href);
+    if (loaded_session.length) run_session(loaded_session); // other session loaded
+    else run_example('polys'); // default
+}
+
+(function onReady() {
+    if (!window.Abacus || !window.bigInt || !window.CodeMirror || !window.CodeMirrorGrammar || !window.codemirror_define_grammar_mode || !window.MathJax.typesetPromise || !window.humane2 || !window.InfoPopup || !window.Dromeo)
+    {
+        setTimeout(onReady, 100); // wait
+    }
+    else
+    {
+        init();
+    }
+})();
+}();
+//]]></script>
+</body>
+</html>

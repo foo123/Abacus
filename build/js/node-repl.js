@@ -55,6 +55,11 @@ function initContext(context)
     context.Poly = Abacus.Poly;
     context.Ring = Abacus.Ring;
     context.Matrix = Abacus.Matrix;
+    context.Expand = Abacus.Expand;
+    context.Simplify = Abacus.Simplify;
+    context.Factor = Abacus.Factor;
+    context.Roots = Abacus.Roots;
+    context.Zeros = Abacus.Zeros;
     // combinatorics
     context.Tensor = Abacus.Tensor;
     context.Permutation = Abacus.Permutation;
