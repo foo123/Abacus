@@ -1897,7 +1897,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,toRationalFunc: function(symbol, ring, simplified) {
         var self = this, num, den;
-        num = self.num.toPoly(symbol || self.symbols(), ring || null),
+        num = self.num.toPoly(symbol || (self.symbols().filter(function(s) {return '1' !== s;})), ring || null),
         den = num ? self.den.toPoly(num.symbol, num.ring) : null
         return num && den ? (true === simplified ? {num:num, den:den} : RationalFunc(num, den)) : null;
     }
@@ -2433,7 +2433,6 @@ function simplify(expr, map, sym)
 }
 function simplify_sqrts(expr, map, sym)
 {
-    //e=Expr("(sqrt(2)+1)^2-2sqrt(2)")
     return KEYS(map).reduce(function(expr, key) {
         var Arithmetic = Abacus.Arithmetic, sub = map[key], t, q, r, d1, d2;
         if (sub.sqrt)
@@ -2456,23 +2455,55 @@ function simplify_sqrts(expr, map, sym)
 function kth_pp_factor(expr, k)
 {
     // extract factor which is perfect kth-power from expr
-    var a, b, p1, p2, is_expr = false;
+    var a, b, p1, p2, qr, I1, I2, is_expr = false;
     if (is_instance(expr, Expr))
     {
         is_expr = true;
         expr = expr_rf(expr);
     }
 
-    p1 = poly_pp_factor(expr.num, k);
-    p2 = poly_pp_factor(expr.den, k);
+    I1 = MultiPolynomial.One(expr.num.symbol, expr.num.ring);
+    I2 = MultiPolynomial.One(expr.den.symbol, expr.den.ring);
+    p1 = poly_pp_factor(expr.num, k) || I1;
+    p2 = poly_pp_factor(expr.den, k) || I2;
+    if ((qr = p1.divmod(p2))[1].equ(0))
+    {
+        p1 = qr[0];
+        p2 = I2;
+    }
+    else if ((qr = p2.divmod(p1))[1].equ(0))
+    {
+        p2 = qr[0];
+        p1 = I1;
+    }
     a = {
-        num:p1 ? p1 : (MultiPolynomial.One(expr.num.symbol, expr.num.ring)),
-        den:p2 ? p2 : (MultiPolynomial.One(expr.den.symbol, expr.den.ring))
+        num:p1,
+        den:p2
     };
-    b = {
-        num:p1 ? (expr.num.div(p1.pow(k))) : (expr.num),
-        den:p2 ? (expr.den.div(p2.pow(k))) : (expr.den)
-    };
+    if (p2.maxdeg(true) > p1.maxdeg(true))
+    {
+        b = {
+            num:expr.num,
+            den:expr.den.mul(p1.pow(k)).div(p2.pow(k))
+        };
+    }
+    else
+    {
+        b = {
+            num:expr.num.mul(p2.pow(k)).div(p1.pow(k)),
+            den:expr.den
+        };
+    }
+    if ((qr = b.num.divmod(b.den))[1].equ(0))
+    {
+        b.num = qr[0];
+        b.den = I2;
+    }
+    else if ((qr = b.den.divmod(b.num))[1].equ(0))
+    {
+        b.den = qr[0];
+        b.num = I1;
+    }
 
     if (is_expr)
     {

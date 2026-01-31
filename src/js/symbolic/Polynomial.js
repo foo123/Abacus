@@ -4642,9 +4642,9 @@ function polyres(p, p_deg, q, q_deg, x, normalize)
 function poly_pp_factor(f, k)
 {
     // find factor p of f which is a perfect kth-power, ie f = (p^k) * q
-    // p = gcd(f, f^(k-1)), the gcd of f with the (k-1)th derivative of f
+    // p = gcd(f, f^(k-1)), the gcd of f with the (k-1)th formal derivative of f
     // q = f/(p^k)
-    var p, q, deg, i, n;
+    var p, q, d, deg, i, n;
     k = Abacus.Arithmetic.val(k);
     p = null;
     if (1 >= k)
@@ -4655,8 +4655,13 @@ function poly_pp_factor(f, k)
     {
         if (k <= f.maxdeg())
         {
-            p = Polynomial.gcd(f, f.d(k-1));
+            d = f.d(k-1);
+            p = Polynomial.gcd(f, d);
             //q = f.div(p.pow(k));
+            if (0 >= p.maxdeg())
+            {
+                p = null;
+            }
         }
     }
     else if (is_instance(f, MultiPolynomial))
@@ -4665,8 +4670,13 @@ function poly_pp_factor(f, k)
         {
             if (k <= f.maxdeg(f.symbol[0]))
             {
-                p = MultiPolynomial.gcd(f, f.d(f.symbol[0], k-1));
+                d = f.d(f.symbol[0], k-1);
+                p = MultiPolynomial.gcd(f, d);
                 //q = f.div(p.pow(k));
+                if (0 >= p.maxdeg(true))
+                {
+                    p = null;
+                }
             }
         }
         else
@@ -4680,7 +4690,8 @@ function poly_pp_factor(f, k)
             {
                 if (k <= deg[i].deg)
                 {
-                    p = MultiPolynomial.gcd(f, f.d(deg[i].sym, k-1));
+                    d = f.d(deg[i].sym, k-1);
+                    p = MultiPolynomial.gcd(f, d);
                     if (0 < p.maxdeg(true))
                     {
                         //q = f.div(p.pow(k));

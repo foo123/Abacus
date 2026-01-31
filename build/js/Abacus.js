@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-01-24 18:27:15)
+*   @version: 2.0.0 (2026-01-31 23:15:17)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-01-24 18:27:15)
+*   @version: 2.0.0 (2026-01-31 23:15:17)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -11012,7 +11012,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,toRationalFunc: function(symbol, ring, simplified) {
         var self = this, num, den;
-        num = self.num.toPoly(symbol || self.symbols(), ring || null),
+        num = self.num.toPoly(symbol || (self.symbols().filter(function(s) {return '1' !== s;})), ring || null),
         den = num ? self.den.toPoly(num.symbol, num.ring) : null
         return num && den ? (true === simplified ? {num:num, den:den} : RationalFunc(num, den)) : null;
     }
@@ -11548,7 +11548,6 @@ function simplify(expr, map, sym)
 }
 function simplify_sqrts(expr, map, sym)
 {
-    //e=Expr("(sqrt(2)+1)^2-2sqrt(2)")
     return KEYS(map).reduce(function(expr, key) {
         var Arithmetic = Abacus.Arithmetic, sub = map[key], t, q, r, d1, d2;
         if (sub.sqrt)
@@ -11571,23 +11570,55 @@ function simplify_sqrts(expr, map, sym)
 function kth_pp_factor(expr, k)
 {
     // extract factor which is perfect kth-power from expr
-    var a, b, p1, p2, is_expr = false;
+    var a, b, p1, p2, qr, I1, I2, is_expr = false;
     if (is_instance(expr, Expr))
     {
         is_expr = true;
         expr = expr_rf(expr);
     }
 
-    p1 = poly_pp_factor(expr.num, k);
-    p2 = poly_pp_factor(expr.den, k);
+    I1 = MultiPolynomial.One(expr.num.symbol, expr.num.ring);
+    I2 = MultiPolynomial.One(expr.den.symbol, expr.den.ring);
+    p1 = poly_pp_factor(expr.num, k) || I1;
+    p2 = poly_pp_factor(expr.den, k) || I2;
+    if ((qr = p1.divmod(p2))[1].equ(0))
+    {
+        p1 = qr[0];
+        p2 = I2;
+    }
+    else if ((qr = p2.divmod(p1))[1].equ(0))
+    {
+        p2 = qr[0];
+        p1 = I1;
+    }
     a = {
-        num:p1 ? p1 : (MultiPolynomial.One(expr.num.symbol, expr.num.ring)),
-        den:p2 ? p2 : (MultiPolynomial.One(expr.den.symbol, expr.den.ring))
+        num:p1,
+        den:p2
     };
-    b = {
-        num:p1 ? (expr.num.div(p1.pow(k))) : (expr.num),
-        den:p2 ? (expr.den.div(p2.pow(k))) : (expr.den)
-    };
+    if (p2.maxdeg(true) > p1.maxdeg(true))
+    {
+        b = {
+            num:expr.num,
+            den:expr.den.mul(p1.pow(k)).div(p2.pow(k))
+        };
+    }
+    else
+    {
+        b = {
+            num:expr.num.mul(p2.pow(k)).div(p1.pow(k)),
+            den:expr.den
+        };
+    }
+    if ((qr = b.num.divmod(b.den))[1].equ(0))
+    {
+        b.num = qr[0];
+        b.den = I2;
+    }
+    else if ((qr = b.den.divmod(b.num))[1].equ(0))
+    {
+        b.den = qr[0];
+        b.num = I1;
+    }
 
     if (is_expr)
     {
@@ -16537,9 +16568,9 @@ function polyres(p, p_deg, q, q_deg, x, normalize)
 function poly_pp_factor(f, k)
 {
     // find factor p of f which is a perfect kth-power, ie f = (p^k) * q
-    // p = gcd(f, f^(k-1)), the gcd of f with the (k-1)th derivative of f
+    // p = gcd(f, f^(k-1)), the gcd of f with the (k-1)th formal derivative of f
     // q = f/(p^k)
-    var p, q, deg, i, n;
+    var p, q, d, deg, i, n;
     k = Abacus.Arithmetic.val(k);
     p = null;
     if (1 >= k)
@@ -16550,8 +16581,13 @@ function poly_pp_factor(f, k)
     {
         if (k <= f.maxdeg())
         {
-            p = Polynomial.gcd(f, f.d(k-1));
+            d = f.d(k-1);
+            p = Polynomial.gcd(f, d);
             //q = f.div(p.pow(k));
+            if (0 >= p.maxdeg())
+            {
+                p = null;
+            }
         }
     }
     else if (is_instance(f, MultiPolynomial))
@@ -16560,8 +16596,13 @@ function poly_pp_factor(f, k)
         {
             if (k <= f.maxdeg(f.symbol[0]))
             {
-                p = MultiPolynomial.gcd(f, f.d(f.symbol[0], k-1));
+                d = f.d(f.symbol[0], k-1);
+                p = MultiPolynomial.gcd(f, d);
                 //q = f.div(p.pow(k));
+                if (0 >= p.maxdeg(true))
+                {
+                    p = null;
+                }
             }
         }
         else
@@ -16575,7 +16616,8 @@ function poly_pp_factor(f, k)
             {
                 if (k <= deg[i].deg)
                 {
-                    p = MultiPolynomial.gcd(f, f.d(deg[i].sym, k-1));
+                    d = f.d(deg[i].sym, k-1);
+                    p = MultiPolynomial.gcd(f, d);
                     if (0 < p.maxdeg(true))
                     {
                         //q = f.div(p.pow(k));
