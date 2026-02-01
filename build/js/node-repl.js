@@ -17,6 +17,10 @@ function stringify(x)
     {
         x = x.toString();
     }
+    else if (Abacus.Arithmetic.isNumber(x))
+    {
+        x = String(x);
+    }
     else if (Array.isArray(x))
     {
         x = '(' + x.map(stringify).join(',') + ')';

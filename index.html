@@ -417,6 +417,10 @@ function toTex(x)
     {
         x = x.toTex();
     }
+    else if (window.Abacus.Arithmetic.isNumber(x))
+    {
+        x = String(x);
+    }
     else if (Array.isArray(x))
     {
         x = '\\left(' + x.map(toTex).join(',') + '\\right)';
