@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (375 kB minified)
+**version 2.0.0** almost complete (377 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -351,6 +351,7 @@ console.log(m2.inv().mul(m2).toString());
 * implement `LLL` algorithm (TODO)
 * support generic algebraic Rings and Fields (including rings of polynomials and fraction fields of polynomials) **[DONE]**
 * support algebraic sub-Rings and sub-Fields (eg **Q(y,z)(x)** with coefficients from the subring **Q(y,z)**) **[DONE]**
+* implement adequate and efficient simplification methods for symbolic expressions **[DONE PARTIALLY]**
 * support *graph* combinatorial objects like `Graph`, `Grammar`,.. (TODO?) (for regular grammars and expressions see [RegexAnalyzer](https://github.com/foo123/RegexAnalyzer) for an example)
 
 

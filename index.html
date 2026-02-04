@@ -355,6 +355,8 @@ window.MathJax = {
 <a href="#" aria-label="run polynomial roots example" onclick="return runExample('roots');">Polynomial Roots</a>
 • <a href="#" aria-label="run polynomial zeros example" onclick="return runExample('zeros');">Polynomial Zeros</a>
 <br>
+<a href="#" aria-label="run simplifications example" onclick="return runExample('simplify');">Simplifications</a>
+<br>
 <a href="#" aria-label="run permutations example" onclick="return runExample('permutations');">Permutations</a>
 • <a href="#" aria-label="run derangements example" onclick="return runExample('derangements');">Derangements</a>
 <br>
@@ -381,7 +383,7 @@ window.MathJax = {
 
 <footer id="footer">
 <div class="showcase">Computer Algebra by <a href="https://github.com/foo123/Abacus" target="_blank">Abacus</a></div>
-<div class="showcase">Arbitrary Precision Arithmetic by <a href="https://github.com/peterolson/BigInteger.js" target="_blank">BigInteger.js</a></div>
+<div class="showcase">Arbitrary Precision Arithmetic by <a href="https://github.com/peterolson/BigInteger.js" target="_blank">BigInteger</a></div>
 <div class="showcase">Mathematics Rendering by <a href="https://www.mathjax.org/" target="_blank">MathJax</a></div>
 <div class="showcase">Syntax Highlight by <a href="https://codemirror.net/" target="_blank">CodeMirror</a></div>
 <div class="showcase">Syntax Highlight Grammar by <a href="https://github.com/foo123/codemirror-grammar" target="_blank">CodeMirror Grammar</a></div>
@@ -765,6 +767,22 @@ function init()
                 'p = Poly("x^6+x^4+2x+1", "x")',
                 '/* all complex zeros, approximately */',
                 'Zeros(p).map(z => z.toDec())'
+                ]);
+            break;
+            case 'simplify':
+                run_session([
+                '/* various simplifications, in progress */',
+                'e = Expr("x^2+2xy+y^2")',
+                'e2=Factor(e)',
+                'e3=Expand(e2)',
+                'e = Expr("sqrt(x^2+2xy+y^2)")',
+                'e2=Expand(e)',
+                'e3=Simplify(e)',
+                'e = Expr("sqrt(sqrt(x^2+2xy+y^2))")',
+                'e2=Simplify(e)',
+                'e = Expr("(sqrt(x)+1)^2-2sqrt(x)")',
+                'e2=Expand(e)',
+                'e3=Simplify(e)'
                 ]);
             break;
         }

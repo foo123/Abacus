@@ -943,6 +943,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_c: null
     ,_f: null
     ,_terms: null
+    ,$map: null
 
     ,dispose: function() {
         var self = this;
@@ -960,6 +961,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         self._c = null;
         self._f = null;
         self._terms = null;
+        self.$map = null;
         return self;
     }
 
@@ -1739,36 +1741,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self;
     }
-    ,substitute: function(that, withthat, toplevel) {
-        var self = this;
-        if (is_instance(that, Expr))
-        {
-            // general subexpression substitution
-            return subexpr_substitute(self, that, to_expr(withthat), false !== toplevel);
-        }
-        else if (is_array(that) && is_array(withthat))
-        {
-            return that.reduce(function(expr, _, i) {
-                return expr.substitute(that[i], withthat[i], toplevel);
-            }, self);
-        }
-        else if (is_obj(that))
-        {
-            // symbol substitution map
-            return KEYS(that).reduce(function(expr, symbol) {
-                return symbol_substitute(expr, symbol, that[symbol]);
-            }, self);
-        }
-        else if (is_string(that))
-        {
-            // simple symbol substitution
-            return symbol_substitute(self, String(that), to_expr(withthat));
-        }
-        return self;
-    }
-    ,compose: function(g) {
-        return this.substitute(g); // alias
-    }
     ,d: function(x, n) {
         // nth order formal derivative with respect to symbol x
         var df = this;
@@ -1806,13 +1778,61 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return Rational.Zero();
     }
+    ,substitute: function(that, withthat, toplevel) {
+        var self = this;
+        if (is_instance(that, Expr))
+        {
+            // general subexpression substitution
+            return subexpr_substitute(self, that, to_expr(withthat), false !== toplevel);
+        }
+        else if (is_array(that) && is_array(withthat))
+        {
+            return that.reduce(function(expr, _, i) {
+                return expr.substitute(that[i], withthat[i], toplevel);
+            }, self);
+        }
+        else if (is_obj(that))
+        {
+            // symbol substitution map
+            return KEYS(that).reduce(function(expr, symbol) {
+                return symbol_substitute(expr, symbol, that[symbol]);
+            }, self);
+        }
+        else if (is_string(that))
+        {
+            // simple symbol substitution
+            return symbol_substitute(self, String(that), to_expr(withthat));
+        }
+        return self;
+    }
+    ,compose: function(g) {
+        return this.substitute(g); // alias
+    }
+    ,algebrify: function(sym, map) {
+        var self = this, expr, mode;
+        if (!map || is_string(map))
+        {
+            // algebrify
+            mode = map || 'default';
+            map = {};
+            expr = f_substitute(self, map, sym || '@', mode);
+            expr.$map = map;
+            return expr;
+        }
+        else
+        {
+            // restore
+            return f_restore(self, map, sym || '@');
+        }
+    }
     ,expand: function() {
-        var self = this, map, e;
+        var self = this, expr, map;
         if (null == self._xpnd)
         {
-            map = {};
-            e = simplify_rf(expr_rf(f_substitute(self, map, '@', 'expand')), true);
-            self._xpnd = f_restore(Expr('/', [e.num.toExpr(), e.den.toExpr()]), map, '@');
+            expr = self.algebrify('@', 'expand');
+            map = expr.$map;
+            expr = simplify_rf(expr_rf(expr), true);
+            self._xpnd = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
             self._xpnd._xpnd = self._xpnd; // idempotent
             self._xpnd._rexpr = self._xpnd; // idempotent
             self._xpnd._rexpr._rexpr = self._xpnd; // idempotent
@@ -1822,15 +1842,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._xpnd;
     }
     ,simplify: function() {
-        var self = this, map, e;
+        var self = this, expr, map;
         if (null == self._simpl)
         {
             // TODO: simplify other functions
             // based on given/user-defined equivalence relations
             // via iterative unification recast as optimization based on expr complexity
-            map = {};
-            e = simplify(expr_rf(f_substitute(self, map, '@', 'simplify')), map, '@');
-            self._simpl = f_restore(Expr('/', [e.num.toExpr(), e.den.toExpr()]), map, '@');
+            // eg. "Understanding Expression Simplification", Jacques Carette, 2004
+            // https://www.scispace.com/pdf/understanding-expression-simplification-52x0czuft8.pdf
+            expr = self.algebrify('@', 'simplify');
+            map = expr.$map;
+            expr = simplify(expr_rf(expr), map, '@');
+            self._simpl = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
             self._simpl._simpl = self._simpl; // idempotent
             self._simpl._xpnd = self._simpl; // idempotent
             self._simpl._xpnd._xpnd = self._simpl; // idempotent
@@ -1842,11 +1865,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._simpl;
     }
     ,factors: function() {
-        var self = this, map;
+        var self = this, expr, map;
         if (null == self._fctrd)
         {
-            map = {};
-            self._fctrd = f_restore(Abacus.Factor(f_substitute(self.expand(), map, '@', 'default').toRationalFunc()), map, '@');
+            expr = self.expand().algebrify('@', 'default');
+            map = expr.$map;
+            self._fctrd = Abacus.Factor(expr.toRationalFunc()).algebrify('@', map);
             self._fctrd._fctrd = self._fctrd; // idempotent
         }
         return self._fctrd;
@@ -2321,7 +2345,8 @@ function f_substitute(expr, map, sym, mode)
 {
     if (null == map.$cnt) map.$cnt = 0;
     function _(e) {return 'expand' === mode ? e.expand() : ('simplify' === mode ? e.simplify() : e);}
-    var ret, key, e, e2, e3;
+    var ret, key, e, e2, e3, e4, k, k2, dk,
+        Arithmetic = Abacus.Arithmetic;
     if (expr.symbols().filter(function(s) {return sym === s.slice(0, sym.length);}).length)
     {
         ret = expr; // idempotent
@@ -2355,15 +2380,42 @@ function f_substitute(expr, map, sym, mode)
                 else
                 {
                     e2 = f_substitute(expr.ast.arg[0], map, sym, mode);
-                    e2 = 'simplify' === mode ? kth_pp_factor(e2, e.c().den) : [Expr.One(), e2];
+                    k = Arithmetic.val(e.c().den);
+                    if (-1 < (['simplify']).indexOf(mode))
+                    {
+                        k2 = stdMath.floor(stdMath.sqrt(k));
+                        e3 = expr_rf(e2);
+                        e4 = null;
+                        for (dk=k; dk>=k2; --dk)
+                        {
+                            // for all divisors of k, try extract factors
+                            if (0 === (k % dk))
+                            {
+                                e4 = kth_pp_factor(e3, dk, true);
+                                if (e4) break;
+                            }
+                        }
+                        if (e4)
+                        {
+                            e2 = [e4[0], e4[1], dk];
+                        }
+                        else
+                        {
+                            e2 = [Expr.One(), e2, k];
+                        }
+                    }
+                    else
+                    {
+                        e2 = [Expr.One(), e2, k];
+                    }
                     if (!e2[1].isConst() || !e2[1].c().equ(1))
                     {
-                        e3 = Expr('^', [e2[1], Expr('/', [Expr.One(), e.c().den])]);
+                        e3 = Expr('^', [e2[1], Expr('/', [Expr.One(), k])]);
                         key = e3.toString();
                         if (!HAS.call(map, key))
                         {
                             map[key] = {
-                                sqrt: e.c().den,
+                                sqrt: Arithmetic.num(e2[2]),
                                 expr: e3,
                                 sym: sym+String(++map.$cnt)
                             };
@@ -2371,12 +2423,46 @@ function f_substitute(expr, map, sym, mode)
                         ret = Expr('^', [Expr('', map[key].sym), e.c().num]);
                         if (!e2[0].isConst() || !e2[0].c().equ(1))
                         {
-                            ret = Expr('*', [Expr('^', [e2[0], e.c().num]), ret]);
+                            if (e2[2] < k)
+                            {
+                                e3 = Expr('^', [e2[0], Expr('/', [Expr.One(), stdMath.floor(k/e2[2])])]);
+                                key = e3.toString();
+                                if (!HAS.call(map, key))
+                                {
+                                    map[key] = {
+                                        sqrt: Arithmetic.num(stdMath.floor(k/e2[2])),
+                                        expr: e3,
+                                        sym: sym+String(++map.$cnt)
+                                    };
+                                }
+                                ret = Expr('*', [Expr('^', [Expr('', map[key].sym), e.c().num]), ret]);
+                            }
+                            else
+                            {
+                                ret = Expr('*', [Expr('^', [e2[0], e.c().num]), ret]);
+                            }
                         }
                     }
                     else
                     {
-                        ret = Expr('^', [e2[0], e.c().num]);
+                        if (e2[2] < k)
+                        {
+                            e3 = Expr('^', [e2[0], Expr('/', [Expr.One(), stdMath.floor(k/e2[2])])]);
+                            key = e3.toString();
+                            if (!HAS.call(map, key))
+                            {
+                                map[key] = {
+                                    sqrt: Arithmetic.num(stdMath.floor(k/e2[2])),
+                                    expr: e3,
+                                    sym: sym+String(++map.$cnt)
+                                };
+                            }
+                            ret = Expr('^', [Expr('', map[key].sym), e.c().num]);
+                        }
+                        else
+                        {
+                            ret = Expr('^', [e2[0], e.c().num]);
+                        }
                     }
                 }
             }
@@ -2429,9 +2515,9 @@ function f_restore(expr, map, sym)
 }
 function simplify(expr, map, sym)
 {
-    return simplify_rf(simplify_sqrts(expr, map, sym), true);
+    return simplify_rf(simplify_radicals(expr, map, sym), true);
 }
-function simplify_sqrts(expr, map, sym)
+function simplify_radicals(expr, map, sym)
 {
     return KEYS(map).reduce(function(expr, key) {
         var Arithmetic = Abacus.Arithmetic, sub = map[key], t, q, r, d1, d2;
@@ -2441,7 +2527,7 @@ function simplify_sqrts(expr, map, sym)
             d2 = Arithmetic.lte(sub.sqrt, expr.den.maxdeg(sub.sym));
             if (d1 || d2)
             {
-                r = simplify_sqrts(expr_rf(sub.expr.ast.arg[0]), map, sym);
+                r = simplify_radicals(expr_rf(sub.expr.ast.arg[0]), map, sym);
                 t = {};
                 t[sub.sym+'^'+String(sub.sqrt)] = Rational.One();
                 q = MultiPolynomial(t, [sub.sym], expr.num.ring).mul(r.den).sub(r.num)
@@ -2452,7 +2538,7 @@ function simplify_sqrts(expr, map, sym)
         return expr;
     }, expr);
 }
-function kth_pp_factor(expr, k)
+function kth_pp_factor(expr, k, as_expr)
 {
     // extract factor which is perfect kth-power from expr
     var a, b, p1, p2, qr, I1, I2, is_expr = false;
@@ -2462,10 +2548,16 @@ function kth_pp_factor(expr, k)
         expr = expr_rf(expr);
     }
 
+    p1 = poly_pp_factor(expr.num, k);
+    p2 = poly_pp_factor(expr.den, k);
+
+    if (!p1 && !p2) return null;
+
     I1 = MultiPolynomial.One(expr.num.symbol, expr.num.ring);
     I2 = MultiPolynomial.One(expr.den.symbol, expr.den.ring);
-    p1 = poly_pp_factor(expr.num, k) || I1;
-    p2 = poly_pp_factor(expr.den, k) || I2;
+    p1 = p1 || I1;
+    p2 = p2 || I2;
+
     if ((qr = p1.divmod(p2))[1].equ(0))
     {
         p1 = qr[0];
@@ -2476,10 +2568,12 @@ function kth_pp_factor(expr, k)
         p2 = qr[0];
         p1 = I1;
     }
+
     a = {
         num:p1,
         den:p2
     };
+
     if (p2.maxdeg(true) > p1.maxdeg(true))
     {
         b = {
@@ -2494,6 +2588,7 @@ function kth_pp_factor(expr, k)
             den:expr.den
         };
     }
+
     if ((qr = b.num.divmod(b.den))[1].equ(0))
     {
         b.num = qr[0];
@@ -2505,7 +2600,7 @@ function kth_pp_factor(expr, k)
         b.num = I1;
     }
 
-    if (is_expr)
+    if (is_expr || as_expr)
     {
         a = a.num.toExpr().div(a.den.toExpr());
         b = b.num.toExpr().div(b.den.toExpr());
@@ -2802,10 +2897,12 @@ function needs_parentheses(expr, is_tex)
 
 // convenience methods
 Abacus.Expand = function(expr) {
+    if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, Expr)) expr = expr.expand();
     return expr;
 };
 Abacus.Simplify = function(expr) {
+    if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, Expr)) expr = expr.simplify();
     return expr;
 };

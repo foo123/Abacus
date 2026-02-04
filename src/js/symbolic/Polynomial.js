@@ -5439,6 +5439,7 @@ Abacus.Zeros = function(expr) {
 };
 Abacus.Factor = function(expr) {
     var faccon1, faccon2;
+    if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, RationalFunc))
     {
         faccon1 = expr.num.factors();
