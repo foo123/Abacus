@@ -2369,13 +2369,13 @@ function f_substitute(expr, map, sym, mode)
         }
         else if ('^' === expr.ast.op)
         {
-            // pow/sqrt
+            // pow/radical
             e = _(expr.ast.arg[1]);
             if (e.isConst() && e.c().isReal())
             {
                 if (e.c().isInt())
                 {
-                    ret = Expr('^', [f_substitute(expr.ast.arg[0], map, sym, mode), e]);
+                    ret = f_substitute(expr.ast.arg[0], map, sym, mode).pow(e);
                 }
                 else
                 {
@@ -2415,7 +2415,7 @@ function f_substitute(expr, map, sym, mode)
                         if (!HAS.call(map, key))
                         {
                             map[key] = {
-                                sqrt: Arithmetic.num(e2[2]),
+                                radical: Arithmetic.num(k),
                                 expr: e3,
                                 sym: sym+String(++map.$cnt)
                             };
@@ -2430,7 +2430,7 @@ function f_substitute(expr, map, sym, mode)
                                 if (!HAS.call(map, key))
                                 {
                                     map[key] = {
-                                        sqrt: Arithmetic.num(stdMath.floor(k/e2[2])),
+                                        radical: Arithmetic.num(stdMath.floor(k/e2[2])),
                                         expr: e3,
                                         sym: sym+String(++map.$cnt)
                                     };
@@ -2439,7 +2439,7 @@ function f_substitute(expr, map, sym, mode)
                             }
                             else
                             {
-                                ret = Expr('*', [Expr('^', [e2[0], e.c().num]), ret]);
+                                ret = Expr('*', [e2[0].pow(e.c().num), ret]);
                             }
                         }
                     }
@@ -2452,7 +2452,7 @@ function f_substitute(expr, map, sym, mode)
                             if (!HAS.call(map, key))
                             {
                                 map[key] = {
-                                    sqrt: Arithmetic.num(stdMath.floor(k/e2[2])),
+                                    radical: Arithmetic.num(stdMath.floor(k/e2[2])),
                                     expr: e3,
                                     sym: sym+String(++map.$cnt)
                                 };
@@ -2461,14 +2461,14 @@ function f_substitute(expr, map, sym, mode)
                         }
                         else
                         {
-                            ret = Expr('^', [e2[0], e.c().num]);
+                            ret = e2[0].pow(e.c().num);
                         }
                     }
                 }
             }
             else
             {
-                e2 = Expr('^', [_(expr.ast.arg[0]), e]);
+                e2 = _(expr.ast.arg[0]).pow(e);
                 key = e2.toString();
                 if (!HAS.call(map, key))
                 {
@@ -2521,16 +2521,16 @@ function simplify_radicals(expr, map, sym)
 {
     return KEYS(map).reduce(function(expr, key) {
         var Arithmetic = Abacus.Arithmetic, sub = map[key], t, q, r, d1, d2;
-        if (sub.sqrt)
+        if (sub.radical)
         {
-            d1 = Arithmetic.lte(sub.sqrt, expr.num.maxdeg(sub.sym));
-            d2 = Arithmetic.lte(sub.sqrt, expr.den.maxdeg(sub.sym));
+            d1 = Arithmetic.lte(sub.radical, expr.num.maxdeg(sub.sym));
+            d2 = Arithmetic.lte(sub.radical, expr.den.maxdeg(sub.sym));
             if (d1 || d2)
             {
                 r = simplify_radicals(expr_rf(sub.expr.ast.arg[0]), map, sym);
                 t = {};
-                t[sub.sym+'^'+String(sub.sqrt)] = Rational.One();
-                q = MultiPolynomial(t, [sub.sym], expr.num.ring).mul(r.den).sub(r.num)
+                t[sub.sym+'^'+String(sub.radical)] = Rational.One();
+                q = MultiPolynomial(t, [sub.sym], expr.num.ring).mul(r.den).sub(r.num);
                 if (d1) expr.num = expr.num.mod(q);
                 if (d2) expr.den = expr.den.mod(q);
             }

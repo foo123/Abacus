@@ -772,17 +772,17 @@ function init()
             case 'simplify':
                 run_session([
                 '/* various simplifications, in progress */',
-                'e = Expr("x^2+2xy+y^2")',
-                'e2=Factor(e)',
-                'e3=Expand(e2)',
+                'e = Expr("(x+y)^2")',
+                'e2 = Expand(e)',
+                'e3 = Factor(e2)',
                 'e = Expr("sqrt(x^2+2xy+y^2)")',
-                'e2=Expand(e)',
-                'e3=Simplify(e)',
+                'e2 = Expand(e)',
+                'e3 = Simplify(e)',
                 'e = Expr("sqrt(sqrt(x^2+2xy+y^2))")',
-                'e2=Simplify(e)',
+                'e2 = Simplify(e)',
                 'e = Expr("(sqrt(x)+1)^2-2sqrt(x)")',
-                'e2=Expand(e)',
-                'e3=Simplify(e)'
+                'e2 = Expand(e)',
+                'e3 = Simplify(e)'
                 ]);
             break;
         }
