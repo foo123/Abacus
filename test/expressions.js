@@ -107,3 +107,29 @@ echo(Expr(o.expand().toString()).toString())
 
 //echo(String(Expr('x^3 - x')), String(Expr('x^3 - x').expand()));
 //echo(String(Expr("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2")));
+echo('---');
+
+/* various simplifications, in progress */
+let e, e2, e3;
+e = Expr("(x+y)^2");
+echo('e:'+e.toString()+', complexity:'+e.complexity());
+e2 = e.expand();
+echo('e.expand():'+e2.toString()+', complexity:'+e2.complexity());
+e3 = e2.factors();
+echo('e2.factors():'+e3.toString()+', complexity:'+e3.complexity());
+e = Expr("sqrt(x^2+2xy+y^2)");
+echo('e:'+e.toString()+', complexity:'+e.complexity());
+e2 = e.expand();
+echo('e.expand():'+e2.toString()+', complexity:'+e2.complexity());
+e3 = e.simplify();
+echo('e.simplify():'+e3.toString()+', complexity:'+e3.complexity());
+e = Expr("sqrt(sqrt(x^2+2xy+y^2))");
+echo('e:'+e.toString()+', complexity:'+e.complexity());
+e2 = e.simplify();
+echo('e.simplify():'+e2.toString()+', complexity:'+e2.complexity());
+e = Expr("(sqrt(x)+1)^2-2sqrt(x)");
+echo('e:'+e.toString()+', complexity:'+e.complexity());
+e2 = e.expand();
+echo('e.expand():'+e2.toString()+', complexity:'+e2.complexity());
+e3 = e.simplify();
+echo('e.simplify():'+e3.toString()+', complexity:'+e3.complexity());

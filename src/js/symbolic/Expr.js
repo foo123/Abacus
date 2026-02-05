@@ -939,6 +939,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_symb: null
     ,_op: null
     ,_const: null
+    ,_cmplx: null
     ,_smpl: null
     ,_c: null
     ,_f: null
@@ -1845,14 +1846,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         var self = this, expr, map;
         if (null == self._simpl)
         {
-            // TODO: simplify other functions
-            // based on given/user-defined equivalence relations
-            // via iterative unification recast as optimization based on expr complexity
-            // eg. "Understanding Expression Simplification", Jacques Carette, 2004
-            // https://www.scispace.com/pdf/understanding-expression-simplification-52x0czuft8.pdf
             expr = self.algebrify('@', 'simplify');
             map = expr.$map;
-            expr = simplify(expr_rf(expr), map, '@');
+            expr = simplify_rf(simplify_radicals(expr_rf(expr), map, '@'), true);
             self._simpl = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
             self._simpl._simpl = self._simpl; // idempotent
             self._simpl._xpnd = self._simpl; // idempotent
@@ -1863,6 +1859,54 @@ Expr = Abacus.Expr = Class(Symbolic, {
             self._simpl._rexpr.ast.arg[1]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[1], Expr.One()]); // idempotent
         }
         return self._simpl;
+    }
+    ,simplifyBy: function(rules) {
+        // TODO: simplify other functions
+        // based on given/user-defined rules/equivalence relations
+        // via iterative unification recast as optimization based on expr complexity
+        return this;
+    }
+    ,complexity: function() {
+        var self = this, ast, cmplx;
+        if (null == self._cmplx)
+        {
+            // eg. "Understanding Expression Simplification", Jacques Carette, 2004
+            // https://www.scispace.com/pdf/understanding-expression-simplification-52x0czuft8.pdf
+            ast = self.ast;
+            if ('num' === ast.type)
+            {
+                cmplx = 0;
+            }
+            else if ('sym' === ast.type)
+            {
+                cmplx = 1;
+            }
+            else if ('()' === ast.op.slice(-2))
+            {
+                cmplx = 2 * (ast.arg.reduce(function(cmplx, subexpr) {
+                    return cmplx + subexpr.complexity();
+                }, 0) || 1);
+            }
+            else if ('^' === ast.op)
+            {
+                if (ast.arg[1].isInt())
+                {
+                    cmplx = ast.arg[0].complexity();
+                }
+                else
+                {
+                    cmplx = 2 * (ast.arg[0].complexity() + (ast.arg[1].complexity() || 1));
+                }
+            }
+            else
+            {
+                cmplx = 1 * ast.arg.reduce(function(cmplx, subexpr) {
+                    return cmplx + subexpr.complexity();
+                }, 0);
+            }
+            self._cmplx = cmplx;
+        }
+        return self._cmplx;
     }
     ,factors: function() {
         var self = this, expr, map;
@@ -2512,10 +2556,6 @@ function f_restore(expr, map, sym)
         }, expr);
     }
     return expr;
-}
-function simplify(expr, map, sym)
-{
-    return simplify_rf(simplify_radicals(expr, map, sym), true);
 }
 function simplify_radicals(expr, map, sym)
 {
