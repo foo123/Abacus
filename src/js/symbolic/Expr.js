@@ -726,8 +726,23 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else
                         {
-                            if (!(match = eat(/^-?\d+/))) throw error('Missing or invalid exponent in "^"', i0);
-                            term = Expr('', Rational.fromDec(match[0]));
+                            if (match = eat(/^-?\d+/))
+                            {
+                                // number
+                                term = Expr('', Rational.fromDec(match[0]));
+                            }
+                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            {
+                                // symbol
+                                m = match[0];
+                                if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                                if ('}' === m.slice(-1)) m = m.slice(0, -1);
+                                term = Expr('', m);
+                            }
+                            else
+                            {
+                                throw error('Missing or invalid exponent in "^"', i0);
+                            }
                         }
                         ops.unshift([op, i0]);
                         merge();
@@ -1492,9 +1507,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 if (self.isConst(true)) return false;
                 return self.sub(other).expand().gt(Expr.Zero());
             }
-            else if (self.isConst() && other.isConst())
+            else if (other.isConst())
             {
-                return self.c().gt(other.c());
+                if (self.isConst()) return self.c().gt(other.c());
+                if (self.expand().isConst()) return self.expand().c().gt(other.c());
+                return false;
+            }
+            else if (self.isConst())
+            {
+                if (other.expand().isConst()) return self.c().gt(other.expand().c());
+                return false;
             }
             else
             {
@@ -1520,9 +1542,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 if (self.isConst(true)) return false;
                 return self.sub(other).expand().gte(Expr.Zero());
             }
-            else if (self.isConst() && other.isConst())
+            else if (other.isConst())
             {
-                return self.c().gte(other.c());
+                if (self.isConst()) return self.c().gte(other.c());
+                if (self.expand().isConst()) return self.expand().c().gte(other.c());
+                return false;
+            }
+            else if (self.isConst())
+            {
+                if (other.expand().isConst()) return self.c().gte(other.expand().c());
+                return false;
             }
             else
             {
@@ -1548,9 +1577,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 if (self.isConst(true)) return false;
                 return self.sub(other).expand().lt(Expr.Zero());
             }
-            else if (self.isConst() && other.isConst())
+            else if (other.isConst())
             {
-                return self.c().lt(other.c());
+                if (self.isConst()) return self.c().lt(other.c());
+                if (self.expand().isConst()) return self.expand().c().lt(other.c());
+                return false;
+            }
+            else if (self.isConst())
+            {
+                if (other.expand().isConst()) return self.c().lt(other.expand().c());
+                return false;
             }
             else
             {
@@ -1576,9 +1612,16 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 if (self.isConst(true)) return false;
                 return self.sub(other).expand().lte(Expr.Zero());
             }
-            else if (self.isConst() && other.isConst())
+            else if (other.isConst())
             {
-                return self.c().lte(other.c());
+                if (self.isConst()) return self.c().lte(other.c());
+                if (self.expand().isConst()) return self.expand().c().lte(other.c());
+                return false;
+            }
+            else if (self.isConst())
+            {
+                if (other.expand().isConst()) return self.c().lte(other.expand().c());
+                return false;
             }
             else
             {
@@ -2340,34 +2383,44 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                if ('*' === op)
-                                {
-                                    if (subexpr.isConst(true) && (!/^(\\sqrt)|((\\left)?\()/.test(tex) || /^\\frac\{/.test(tex)))
-                                    {
-                                        if (is_instance(out[out.length-1], Expr))
-                                        {
-                                            prevtex = trim(out[out.length-1].toTex());
-                                        }
-                                        else
-                                        {
-                                            prevtex = out[out.length-1];
-                                        }
-                                        out.push(arg[i-1].isConst(true) && !/(\\right)?\)$/.test(prevtex) ? ' \\cdot ' : '');
-                                    }
-                                    else
-                                    {
-                                        out.push('');
-                                    }
-                                }
-                                else if ('+' === op)
+                                if ('+' === op)
                                 {
                                     out.push(isNeg ? ' - ' : ' + ');
+                                    out.push(texp);
                                 }
                                 else if ('-' === op)
                                 {
                                     out.push(isNeg ? ' + ' : ' - ');
+                                    out.push(texp);
                                 }
-                                out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr, true)) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);
+                                else if ('*' === op)
+                                {
+                                    if ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr, true)) && !isNeg)
+                                    {
+                                        if (/^\d/.test(tex))
+                                        {
+                                            if (is_instance(out[out.length-1], Expr))
+                                            {
+                                                prevtex = trim(out[out.length-1].toTex());
+                                            }
+                                            else
+                                            {
+                                                prevtex = out[out.length-1];
+                                            }
+                                            out.push(/\d$/.test(prevtex) || /\d\^\{.+?\}$/.test(prevtex) ? ' \\cdot ' : '');
+                                        }
+                                        else
+                                        {
+                                            out.push('');
+                                        }
+                                        out.push(tex);
+                                    }
+                                    else
+                                    {
+                                        out.push('');
+                                        out.push('\\left(' + tex + '\\right)');
+                                    }
+                                }
                             }
                             else
                             {
@@ -2816,36 +2869,47 @@ function expr_derivative(f, x)
     {
         switch (f.ast.op)
         {
-            // differentiate only the arguments rule (applicable?)
-            case 'abs()':
-            case 'min()':
-            case 'max()':
+            // exp derivative rule
+            case 'exp()':
+                return expr_derivative(fi[0], x).mul(f);
 
-            case 'not':
-            case 'and':
-            case 'or':
+            // log derivative rule
+            case 'log()':
+                return expr_derivative(fi[0], x).div(f);
 
-            case '>=':
-            case '<=':
-            case '!=':
-            case '>':
-            case '<':
-            case '=':
+            // sin derivative rule
+            case 'sin()':
+                return expr_derivative(fi[0], x).mul(Expr('cos()', fi));
 
-            // linearity derivative rule
-            case '+':
-            case '-':
-                return Expr(f.ast.op, fi.map(function(fi) {return expr_derivative(fi, x);}));
+            // cos derivative rule
+            case 'cos()':
+                return expr_derivative(fi[0], x).mul(Expr('sin()', fi).neg());
+
+            // tan derivative rule
+            case 'tan()':
+                return expr_derivative(Expr('sin()', fi).div(Expr('cos()', fi)), x);
+
+            // sinh derivative rule
+            case 'sinh()':
+                return expr_derivative(fi[0], x).mul(Expr('cosh()', fi));
+
+            // cosh derivative rule
+            case 'cosh()':
+                return expr_derivative(fi[0], x).mul(Expr('sinh()', fi));
+
+            // tanh derivative rule
+            case 'tanh()':
+                return expr_derivative(Expr('sinh()', fi).div(Expr('cosh()', fi)), x);
 
             // power derivative rule
             case '^':
                 if (-1 === fi[1].symbols().indexOf(x))
                 {
-                    return fi[1].mul(f[0].pow(f[1].sub(I)));
+                    return fi[1].mul(fi[0].pow(fi[1].sub(I)));
                 }
                 else
                 {
-                    return O; // f(x)^g(x) rule not supported
+                    return expr_derivative(Expr('exp()', [Expr('log()', [fi[0]]).mul(fi[1])]), x); // f(x)^g(x) rule ==> exp(log(f(x))*g(x))
                 }
 
             // product derivative rule
@@ -2869,7 +2933,28 @@ function expr_derivative(f, x)
                 }
                 return 1 === fi.length ? expr_derivative(fi[0], x) : O;
 
-            // unknown / not supported
+            // differentiate only the arguments rule (applicable?)
+            case 'abs()':
+            case 'min()':
+            case 'max()':
+
+            case 'not':
+            case 'and':
+            case 'or':
+
+            case '>=':
+            case '<=':
+            case '!=':
+            case '>':
+            case '<':
+            case '=':
+
+            // linearity derivative rule
+            case '+':
+            case '-':
+                return Expr(f.ast.op, fi.map(function(fi) {return expr_derivative(fi, x);}));
+
+            // unknown / not supported currently
             default:
                 return O;
         }
