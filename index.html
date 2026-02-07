@@ -782,7 +782,14 @@ function init()
                 'e2 = Simplify(e)',
                 'e = Expr("(sqrt(x)+1)^2-2sqrt(x)")',
                 'e2 = Expand(e)',
-                'e3 = Simplify(e)'
+                'e3 = Simplify(e)',
+                'e = Expr("12345678")',
+                'e2 = Factor(e)',
+                'e3 = Expand(e2)',
+                'e = Expr("(sqrt(2)+1)^2")',
+                'e2 = Simplify(e)',
+                'e = Expr("(sqrt(4*3)+1)^2")',
+                'e2 = Simplify(e)'
                 ]);
             break;
         }

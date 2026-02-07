@@ -1240,28 +1240,73 @@ function factorize(n)
         INT = n[CLASS];
         n = n.num;
     }
-    ndigits = Arithmetic.digits(n).length;
-    // try to use fastest algorithm based on size of number (number of digits)
-    if (ndigits <= 20)
+    if (Arithmetic.lte(n, Arithmetic.II))
     {
-        // trial division for small numbers
-        factors = trial_div_fac(n);
+        factors = [[n, Arithmetic.I]];
     }
-    else //if (ndigits <= 1000)
+    else
     {
-        // recursive (heuristic) factorization for medium-to-large numbers
-        f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
-        // try another heuristic as well
-        if (null == f) f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
-        if (null == f) factors = [[n, Arithmetic.I]];
-        else factors = merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
+        ndigits = Arithmetic.digits(n).length;
+        // try to use fastest algorithm based on size of number (number of digits)
+        if (ndigits <= 20)
+        {
+            // trial division for small numbers
+            factors = trial_div_fac(n);
+        }
+        else //if (ndigits <= 1000)
+        {
+            // recursive (heuristic) factorization for medium-to-large numbers
+            f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
+            // try another heuristic as well
+            if (null == f) f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
+            if (null == f) factors = [[n, Arithmetic.I]];
+            else factors = merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
+        }
+        /*else
+        {
+            // self-initialising quadratic sieve for (very) large numbers TODO
+            factors = siqs_fac(n);
+        }*/
     }
-    /*else
-    {
-        // self-initialising quadratic sieve for (very) large numbers TODO
-        factors = siqs_fac(n);
-    }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
+}
+function num_pp_factor(n, k)
+{
+    // find factor p of n which is a perfect kth-power, ie n = (p^k) * m
+    // no faster algorithm to find perfect kth-power factors
+    // is known for integers than complete factorization
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        p, q, m;
+
+    if (is_instance(n, Complex))
+    {
+        return null;
+    }
+    else if (is_instance(n, Rational))
+    {
+        p = num_pp_factor(n.num, k);
+        q = num_pp_factor(n.den, k);
+        return p || q ? new n[CLASS](p || I, q || I) : null;
+    }
+    else if (is_instance(n, [Integer, IntegerMod]))
+    {
+        p = num_pp_factor(n.num, k);
+        return p ? new n[CLASS](p, n.m) : null;
+    }
+
+    // else number
+    k = Arithmetic.num(k);
+    p = factorize(Arithmetic.abs(Arithmetic.num(n))).reduce(function(p, f) {
+        if (Arithmetic.equ(Arithmetic.mod(f[1], k), O))
+        {
+            p = Arithmetic.mul(Arithmetic.pow(f[0], Arithmetic.div(f[1], k)), p || I);
+        }
+        return p;
+    }, null);
+    //m = Arithmetic.div(n, p);
+    return p;
 }
 function gcd_bin(/* args */)
 {
@@ -2476,8 +2521,7 @@ function solvepolys(p, x, type)
 {
     if (!p || !p.length) return p;
 
-    //type = String(type || 'exact').toLowerCase();
-    type = 'exact';
+    type = String(type || 'rational').toLowerCase();
     var param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x.indexOf(s);}).pop(),
         xo = x
     ;
@@ -2619,7 +2663,7 @@ function solvepolys(p, x, type)
                     d = deg[triang[xi][0]][triang[xi][1]].min[x.indexOf(xi)],
                     term = pi.univariate(xi).term([d], true)
                 ;
-                solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
+                solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat).simplify();
                 if (0 === solution[xi].symbols().filter(is_symbol).length)
                 {
                     // use it in subsequent substitutions
@@ -2648,7 +2692,7 @@ function solvepolys(p, x, type)
                 {
                     all_substituted = false;
                     ++j;
-                    solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
+                    solution[xi] = solution[xi].substitute(sub.that, sub.withthat).simplify();
                     if (0 === solution[xi].symbols().filter(is_symbol).length)
                     {
                         sub.that.push(xi);
@@ -2659,9 +2703,13 @@ function solvepolys(p, x, type)
             } while (!all_substituted && (j < x.length));
 
             // check is solution consistent
-            is_consistent = (p.filter(function(pi) {
-                return to_expr(pi).substitute(sub.that, sub.withthat).num.expand().equ(0);
-            }).length === p.length);
+            is_consistent = p.reduce(function(is_consistent, pi) {
+                if (is_consistent)
+                {
+                    is_consistent = to_expr(pi).substitute(sub.that, sub.withthat).num.simplify().equ(0);
+                }
+                return is_consistent;
+            }, true);
             if (!is_consistent) continue;
 
             return [x.map(function(xi) {return solution[xi];})];
@@ -2672,7 +2720,7 @@ function solvepolys(p, x, type)
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew,
-            i, j, bj, pj, xi, n, z,
+            i, j, bj, pj, xi, n, z, uni,
             redundant, zeros, solutions;
 
         basis = buchberger_groebner(p);
@@ -2725,11 +2773,11 @@ function solvepolys(p, x, type)
             return x.reduce(function(solutions, xi, i) {
                 if (-1 < redundant.indexOf(xi)) return solutions;
                 var xnew = x.filter(function(xj) {return (xj !== xi);});
-                ([0, -1, 1]).forEach(function(v) {
+                ([0, -1, 1, 2, -2]).forEach(function(v) {
                     v = to_expr(v);
                     var pnew = basis.reduce(function(pnew, b) {
-                        b = b.substitute(v, xi);
-                        if (!b.equ(0)) pnew.push(b);
+                        var bnew = b.substitute(v, xi);
+                        if (!bnew.equ(0)) pnew.push(bnew);
                         return pnew;
                     }, []);
                     if (pnew.length)
@@ -2767,13 +2815,13 @@ function solvepolys(p, x, type)
             });
         }
 
-        // find exact rational solutions for univariate poly
-        // TODO use allroots()
-        zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return to_expr(z[0]);});
+        // find exact solutions for univariate poly
+        uni = Polynomial(basis[bj], x[xi]);
+        zeros = (('all' === type) && (uni.deg() < 3) ? uni.allroots() : uni.roots()).map(function(z) {return to_expr(z[0]);});
 
         if (!zeros.length)
         {
-            // No rational solutions
+            // No solutions
             return [];
         }
 
@@ -2792,8 +2840,8 @@ function solvepolys(p, x, type)
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    b = b.substitute(z, x[xi]);
-                    if (!b.equ(0)) pnew.push(b);
+                    var bnew = b.toExpr().substitute(x[xi], z).num.simplify();
+                    if (!bnew.equ(0)) pnew.push(bnew.toPoly(xnew));
                 }
                 return pnew;
             }, []);

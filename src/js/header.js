@@ -43,11 +43,17 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,INUMBER, INumber
 
     // numerics
-    ,Numeric, Integer, IntegerMod, Rational, Complex, nComplex
+    ,Numeric
+    ,Integer, IntegerMod
+    ,Rational
+    ,Complex, nComplex
+    ,Algebraic
 
     // symbolics
-    ,Symbolic, Expr, Poly
-    ,Polynomial, MultiPolynomial, RationalFunc
+    ,Symbolic
+    ,Expr, Poly
+    ,Polynomial, MultiPolynomial
+    ,RationalFunc
     ,Ring, Matrix
 
     // iterators

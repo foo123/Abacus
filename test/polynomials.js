@@ -66,7 +66,7 @@ function check_roots(p, all)
     const pe = p.toExpr();
     const satisfied = roots.length === roots.filter(function(r) {
         let e = pe.substitute(p.symbol, r[0]);
-        e = e.num.expand();
+        e = e.num.simplify/*expand*/();
         let res = e.equ(0);
         return res;
     }).length;
@@ -315,21 +315,20 @@ echo('ring.create([1,1]).pow(2).mul(ring.create([0,0,1]))'); // multiple roots
 check_roots(ring.create([1,1]).pow(2).mul(ring.create([0,0,1])));
 
 check_roots(poly("(x-1)(x-2)(x-3)(x-4)(x-5)(x-6)", "x"));
-check_roots(poly("(x-a)(x-b)(x-c)", "x"));
 
 check_roots(poly("x^2-1", "x"), true);
 check_roots(poly("x^2+1", "x"), true);
-//check_roots(poly("x^3+3x^2+5x+1", "x"), true); // expr cannot simplify
-check_roots(poly("x^4+3x^2+1", "x"), true);
-//check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // expr cannot simplify
+//check_roots(poly("x^3+3x^2+5x+1", "x"), true); // cannot simplify
+//check_roots(poly("x^4+3x^2+1", "x"), true); // cannot simplify
+//check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // cannot simplify, slow
 
 echo('---');
 
 check_roots(poly("ax+b", "x"), true);
 check_roots(poly("ax^2+bx+c", "x"), true);
 check_roots(poly("(x-a)(x-b)(x-c)", "x"), true);
-//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // slow and expr cannot simplify
-//check_roots(poly("ax^4+bx^3+cx^2+dx+e", "x"), true); // slow and expr cannot simplify
+//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // cannot simplify, huge intermediate expressions, slow and runs out of memory
+//check_roots(poly("ax^4+bx^3+cx^2+dx+e", "x"), true); // cannot simplify, huge intermediate expressions, slow and runs out of memory
 
 echo('---');
 

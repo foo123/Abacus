@@ -5426,7 +5426,7 @@ Abacus.Poly = function(expr, ring_or_symbol) {
 Abacus.Roots = function(expr, all) {
     if (is_instance(expr, Polynomial))
     {
-        return all ? p.allroots() : p.roots();
+        return true === all ? p.allroots() : p.roots();
     }
     return [];
 };
@@ -5451,9 +5451,9 @@ Abacus.Factor = function(expr) {
         faccon1 = p.factors();
         expr = faccon1[0].reduce(function(expr, fac) {return expr.mul(fac[0].toExpr().pow(fac[1]));}, faccon1[1].toExpr());
     }
-    else if (is_instance(expr, Expr))
+    else if (is_instance(expr, Expr) || (expr && is_callable(expr.toExpr())))
     {
-        expr = expr.factors();
+        expr = expr.toExpr().factors();
     }
     return expr;
 };

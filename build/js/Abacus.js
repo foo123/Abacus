@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-05 11:16:00)
+*   @version: 2.0.0 (2026-02-07 13:27:59)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-05 11:16:00)
+*   @version: 2.0.0 (2026-02-07 13:27:59)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -49,11 +49,17 @@ var  Abacus = {VERSION: "2.0.0"}
     ,INUMBER, INumber
 
     // numerics
-    ,Numeric, Integer, IntegerMod, Rational, Complex, nComplex
+    ,Numeric
+    ,Integer, IntegerMod
+    ,Rational
+    ,Complex, nComplex
+    ,Algebraic
 
     // symbolics
-    ,Symbolic, Expr, Poly
-    ,Polynomial, MultiPolynomial, RationalFunc
+    ,Symbolic
+    ,Expr, Poly
+    ,Polynomial, MultiPolynomial
+    ,RationalFunc
     ,Ring, Matrix
 
     // iterators
@@ -2980,28 +2986,73 @@ function factorize(n)
         INT = n[CLASS];
         n = n.num;
     }
-    ndigits = Arithmetic.digits(n).length;
-    // try to use fastest algorithm based on size of number (number of digits)
-    if (ndigits <= 20)
+    if (Arithmetic.lte(n, Arithmetic.II))
     {
-        // trial division for small numbers
-        factors = trial_div_fac(n);
+        factors = [[n, Arithmetic.I]];
     }
-    else //if (ndigits <= 1000)
+    else
     {
-        // recursive (heuristic) factorization for medium-to-large numbers
-        f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
-        // try another heuristic as well
-        if (null == f) f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
-        if (null == f) factors = [[n, Arithmetic.I]];
-        else factors = merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
+        ndigits = Arithmetic.digits(n).length;
+        // try to use fastest algorithm based on size of number (number of digits)
+        if (ndigits <= 20)
+        {
+            // trial division for small numbers
+            factors = trial_div_fac(n);
+        }
+        else //if (ndigits <= 1000)
+        {
+            // recursive (heuristic) factorization for medium-to-large numbers
+            f = pollard_rho(n, Arithmetic.II, Arithmetic.I, 5, 100, null);
+            // try another heuristic as well
+            if (null == f) f = pollard_pm1(n, Arithmetic.num(10), Arithmetic.II, 5);
+            if (null == f) factors = [[n, Arithmetic.I]];
+            else factors = merge_factors(factorize(f), factorize(Arithmetic.div(n, f)));
+        }
+        /*else
+        {
+            // self-initialising quadratic sieve for (very) large numbers TODO
+            factors = siqs_fac(n);
+        }*/
     }
-    /*else
-    {
-        // self-initialising quadratic sieve for (very) large numbers TODO
-        factors = siqs_fac(n);
-    }*/
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
+}
+function num_pp_factor(n, k)
+{
+    // find factor p of n which is a perfect kth-power, ie n = (p^k) * m
+    // no faster algorithm to find perfect kth-power factors
+    // is known for integers than complete factorization
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        p, q, m;
+
+    if (is_instance(n, Complex))
+    {
+        return null;
+    }
+    else if (is_instance(n, Rational))
+    {
+        p = num_pp_factor(n.num, k);
+        q = num_pp_factor(n.den, k);
+        return p || q ? new n[CLASS](p || I, q || I) : null;
+    }
+    else if (is_instance(n, [Integer, IntegerMod]))
+    {
+        p = num_pp_factor(n.num, k);
+        return p ? new n[CLASS](p, n.m) : null;
+    }
+
+    // else number
+    k = Arithmetic.num(k);
+    p = factorize(Arithmetic.abs(Arithmetic.num(n))).reduce(function(p, f) {
+        if (Arithmetic.equ(Arithmetic.mod(f[1], k), O))
+        {
+            p = Arithmetic.mul(Arithmetic.pow(f[0], Arithmetic.div(f[1], k)), p || I);
+        }
+        return p;
+    }, null);
+    //m = Arithmetic.div(n, p);
+    return p;
 }
 function gcd_bin(/* args */)
 {
@@ -4216,8 +4267,7 @@ function solvepolys(p, x, type)
 {
     if (!p || !p.length) return p;
 
-    //type = String(type || 'exact').toLowerCase();
-    type = 'exact';
+    type = String(type || 'rational').toLowerCase();
     var param = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function(s) {return -1 === x.indexOf(s);}).pop(),
         xo = x
     ;
@@ -4359,7 +4409,7 @@ function solvepolys(p, x, type)
                     d = deg[triang[xi][0]][triang[xi][1]].min[x.indexOf(xi)],
                     term = pi.univariate(xi).term([d], true)
                 ;
-                solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat);
+                solution[xi] = RationalFunc(pi.sub(term.multivariate(pi.symbol))).div(term.lc().multivariate(pi.symbol).neg()).toExpr().substitute(sub.that, sub.withthat).simplify();
                 if (0 === solution[xi].symbols().filter(is_symbol).length)
                 {
                     // use it in subsequent substitutions
@@ -4388,7 +4438,7 @@ function solvepolys(p, x, type)
                 {
                     all_substituted = false;
                     ++j;
-                    solution[xi] = solution[xi].substitute(sub.that, sub.withthat);
+                    solution[xi] = solution[xi].substitute(sub.that, sub.withthat).simplify();
                     if (0 === solution[xi].symbols().filter(is_symbol).length)
                     {
                         sub.that.push(xi);
@@ -4399,9 +4449,13 @@ function solvepolys(p, x, type)
             } while (!all_substituted && (j < x.length));
 
             // check is solution consistent
-            is_consistent = (p.filter(function(pi) {
-                return to_expr(pi).substitute(sub.that, sub.withthat).num.expand().equ(0);
-            }).length === p.length);
+            is_consistent = p.reduce(function(is_consistent, pi) {
+                if (is_consistent)
+                {
+                    is_consistent = to_expr(pi).substitute(sub.that, sub.withthat).num.simplify().equ(0);
+                }
+                return is_consistent;
+            }, true);
             if (!is_consistent) continue;
 
             return [x.map(function(xi) {return solution[xi];})];
@@ -4412,7 +4466,7 @@ function solvepolys(p, x, type)
     function recursively_solve(p, x, start)
     {
         var basis, pnew, xnew,
-            i, j, bj, pj, xi, n, z,
+            i, j, bj, pj, xi, n, z, uni,
             redundant, zeros, solutions;
 
         basis = buchberger_groebner(p);
@@ -4465,11 +4519,11 @@ function solvepolys(p, x, type)
             return x.reduce(function(solutions, xi, i) {
                 if (-1 < redundant.indexOf(xi)) return solutions;
                 var xnew = x.filter(function(xj) {return (xj !== xi);});
-                ([0, -1, 1]).forEach(function(v) {
+                ([0, -1, 1, 2, -2]).forEach(function(v) {
                     v = to_expr(v);
                     var pnew = basis.reduce(function(pnew, b) {
-                        b = b.substitute(v, xi);
-                        if (!b.equ(0)) pnew.push(b);
+                        var bnew = b.substitute(v, xi);
+                        if (!bnew.equ(0)) pnew.push(bnew);
                         return pnew;
                     }, []);
                     if (pnew.length)
@@ -4507,13 +4561,13 @@ function solvepolys(p, x, type)
             });
         }
 
-        // find exact rational solutions for univariate poly
-        // TODO use allroots()
-        zeros = Polynomial(basis[bj], x[xi]).roots().map(function(z) {return to_expr(z[0]);});
+        // find exact solutions for univariate poly
+        uni = Polynomial(basis[bj], x[xi]);
+        zeros = (('all' === type) && (uni.deg() < 3) ? uni.allroots() : uni.roots()).map(function(z) {return to_expr(z[0]);});
 
         if (!zeros.length)
         {
-            // No rational solutions
+            // No solutions
             return [];
         }
 
@@ -4532,8 +4586,8 @@ function solvepolys(p, x, type)
             pnew = basis.reduce(function(pnew, b, j) {
                 if (j !== bj)
                 {
-                    b = b.substitute(z, x[xi]);
-                    if (!b.equ(0)) pnew.push(b);
+                    var bnew = b.toExpr().substitute(x[xi], z).num.simplify();
+                    if (!bnew.equ(0)) pnew.push(bnew.toPoly(xnew));
                 }
                 return pnew;
             }, []);
@@ -10054,6 +10108,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
     ,_symb: null
     ,_op: null
     ,_const: null
+    ,_cmplx: null
+    ,_len: null
     ,_smpl: null
     ,_c: null
     ,_f: null
@@ -10693,10 +10749,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return self;
                 }
-                else if (self.isConst())
+                /*else if (self.isConst())
                 {
                     return Expr('', self.c().add(other.c()));
-                }
+                }*/
             }
             else if (self.isConst() && self.c().equ(O))
             {
@@ -10719,10 +10775,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return self;
                 }
-                else if (self.isConst())
+                /*else if (self.isConst())
                 {
                     return Expr('', self.c().sub(other.c()));
-                }
+                }*/
             }
             else if (self.isConst() && self.c().equ(O))
             {
@@ -10749,10 +10805,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return self;
                 }
-                else if (self.isConst())
+                /*else if (self.isConst())
                 {
                     return Expr('', self.c().mul(other.c()));
-                }
+                }*/
             }
             else if (self.isConst())
             {
@@ -10781,10 +10837,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return self;
                 }
-                else if (self.isConst())
+                /*else if (self.isConst())
                 {
                     return Expr('', self.c().div(other.c()));
-                }
+                }*/
             }
             return Expr('/', [self, other]);
         }
@@ -10795,7 +10851,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (!is_instance(other, Expr)) return self;
-        return self.isConst() && other.isConst() ? Expr('', self.c().mod(other.c())) : Expr('mod()', [self, other]);
+        return /*self.isConst() && other.isConst() ? Expr('', self.c().mod(other.c())) :*/ Expr('mod()', [self, other]);
     }
     ,divmod: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -10816,11 +10872,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
             if (other.isInt())
             {
                 O = Expr.Zero(); I = Expr.One();
-                if (self.isConst())
+                /*if (self.isConst())
                 {
                     return Expr('', other.c().lt(Arithmetic.O) ? (self.c().inv().pow(other.c().neg())) : (self.c().pow(other.c())));
                 }
-                else if (other.c().equ(Arithmetic.I))
+                else*/ if (other.c().equ(Arithmetic.I))
                 {
                     return self;
                 }
@@ -10944,15 +11000,25 @@ Expr = Abacus.Expr = Class(Symbolic, {
         var self = this, expr, map;
         if (null == self._xpnd)
         {
-            expr = self.algebrify('@', 'expand');
-            map = expr.$map;
-            expr = simplify_rf(expr_rf(expr), true);
-            self._xpnd = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
-            self._xpnd._xpnd = self._xpnd; // idempotent
-            self._xpnd._rexpr = self._xpnd; // idempotent
-            self._xpnd._rexpr._rexpr = self._xpnd; // idempotent
-            self._xpnd._rexpr.ast.arg[0]._rexpr = Expr('/', [self._xpnd._rexpr.ast.arg[0], Expr.One()]); // idempotent
-            self._xpnd._rexpr.ast.arg[1]._rexpr = Expr('/', [self._xpnd._rexpr.ast.arg[1], Expr.One()]); // idempotent
+            if (self.isConst())
+            {
+                self._xpnd = Expr('', self.c());
+                self._xpnd._xpnd = self._xpnd; // idempotent
+                self._xpnd._rexpr = self._xpnd; // idempotent
+                self._xpnd._rexpr._rexpr = self._xpnd; // idempotent
+            }
+            else
+            {
+                expr = self.algebrify('@', 'expand');
+                map = expr.$map;
+                expr = simplify_rf(expr_rf(expr), true);
+                self._xpnd = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
+                self._xpnd._xpnd = self._xpnd; // idempotent
+                self._xpnd._rexpr = self._xpnd; // idempotent
+                self._xpnd._rexpr._rexpr = self._xpnd; // idempotent
+                self._xpnd._rexpr.ast.arg[0]._rexpr = Expr('/', [self._xpnd._rexpr.ast.arg[0], Expr.One()]); // idempotent
+                self._xpnd._rexpr.ast.arg[1]._rexpr = Expr('/', [self._xpnd._rexpr.ast.arg[1], Expr.One()]); // idempotent
+            }
         }
         return self._xpnd;
     }
@@ -10960,32 +11026,141 @@ Expr = Abacus.Expr = Class(Symbolic, {
         var self = this, expr, map;
         if (null == self._simpl)
         {
-            // TODO: simplify other functions
-            // based on given/user-defined equivalence relations
-            // via iterative unification recast as optimization based on expr complexity
-            // eg. "Understanding Expression Simplification", Jacques Carette, 2004
-            // https://www.scispace.com/pdf/understanding-expression-simplification-52x0czuft8.pdf
-            expr = self.algebrify('@', 'simplify');
-            map = expr.$map;
-            expr = simplify(expr_rf(expr), map, '@');
-            self._simpl = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
-            self._simpl._simpl = self._simpl; // idempotent
-            self._simpl._xpnd = self._simpl; // idempotent
-            self._simpl._xpnd._xpnd = self._simpl; // idempotent
-            self._simpl._rexpr = self._simpl; // idempotent
-            self._simpl._rexpr._rexpr = self._simpl; // idempotent
-            self._simpl._rexpr.ast.arg[0]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[0], Expr.One()]); // idempotent
-            self._simpl._rexpr.ast.arg[1]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[1], Expr.One()]); // idempotent
+            if (self.isConst())
+            {
+                self._simpl = Expr('', self.c());
+                self._simpl._simpl = self._simpl; // idempotent
+                self._simpl._xpnd = self._simpl; // idempotent
+                self._simpl._xpnd._xpnd = self._simpl; // idempotent
+                self._simpl._rexpr = self._simpl; // idempotent
+                self._simpl._rexpr._rexpr = self._simpl; // idempotent
+            }
+            else
+            {
+                expr = self.algebrify('@', 'simplify');
+                map = expr.$map;
+                expr = simplify_rf(simplify_radicals(expr_rf(expr), map, '@'), true);
+                self._simpl = Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map);
+                self._simpl._simpl = self._simpl; // idempotent
+                self._simpl._xpnd = self._simpl; // idempotent
+                self._simpl._xpnd._xpnd = self._simpl; // idempotent
+                self._simpl._rexpr = self._simpl; // idempotent
+                self._simpl._rexpr._rexpr = self._simpl; // idempotent
+                self._simpl._rexpr.ast.arg[0]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[0], Expr.One()]); // idempotent
+                self._simpl._rexpr.ast.arg[1]._rexpr = Expr('/', [self._simpl._rexpr.ast.arg[1], Expr.One()]); // idempotent
+            }
         }
         return self._simpl;
+    }
+    ,simplifyBy: function(rules) {
+        // TODO: simplify other functions
+        // based on given/user-defined rules/equivalence relations
+        // via iterative unification recast as optimization based on expr complexity
+        return this;
+    }
+    ,complexity: function() {
+        var self = this, ast, cmplx = 0;
+        if (null == self._cmplx)
+        {
+            // eg. "Understanding Expression Simplification", Jacques Carette, 2004
+            // https://www.scispace.com/pdf/understanding-expression-simplification-52x0czuft8.pdf
+            ast = self.ast;
+            if ('num' === ast.type)
+            {
+                cmplx = 0;
+            }
+            else if ('sym' === ast.type)
+            {
+                cmplx = 1;
+            }
+            else if ('()' === ast.op.slice(-2))
+            {
+                cmplx = 2 * (ast.arg.reduce(function(cmplx, subexpr) {
+                    return cmplx + subexpr.complexity();
+                }, 0) || 1);
+            }
+            else if ('^' === ast.op)
+            {
+                if (ast.arg[1].isInt())
+                {
+                    cmplx = stdMath.min(10, Abacus.Arithmetic.val(ast.arg[1].c().real().num)) * ast.arg[0].complexity();
+                }
+                else
+                {
+                    cmplx = 2 * (ast.arg[0].complexity() + (ast.arg[1].complexity() || 1));
+                }
+            }
+            else
+            {
+                cmplx = 1 * ast.arg.reduce(function(cmplx, subexpr) {
+                    return cmplx + subexpr.complexity();
+                }, 0);
+            }
+            self._cmplx = cmplx;
+        }
+        return self._cmplx;
+    }
+    ,length: function() {
+        var self = this, ast, len = 0;
+        if (null == self._len)
+        {
+            ast = self.ast;
+            if ('num' === ast.type)
+            {
+                len = ast.arg.real().equ(0) || ast.arg.imag().equ(0) ? 1 : 2;
+            }
+            else if ('sym' === ast.type)
+            {
+                len = 1;
+            }
+            else
+            {
+                len = ast.arg.reduce(function(len, subexpr, i) {
+                    var l = 0;
+                    if (-1 < (['+','-']).indexOf(ast.op))
+                    {
+                        l = ('num' === subexpr.ast.type) && subexpr.ast.arg.equ(0) ? 0 : subexpr.length();
+                    }
+                    else if (-1 < (['*']).indexOf(ast.op))
+                    {
+                        l = ('num' === subexpr.ast.type) && subexpr.ast.arg.abs().equ(1) ? 0 : subexpr.length();
+                    }
+                    else if (-1 < (['/']).indexOf(ast.op) && (0 < i))
+                    {
+                        l = ('num' === subexpr.ast.type) && subexpr.ast.arg.abs().equ(1) ? 0 : subexpr.length();
+                    }
+                    else if (-1 < (['^']).indexOf(ast.op) && (1 === i))
+                    {
+                        l = ('num' === subexpr.ast.type) && subexpr.ast.arg.equ(1) ? 0 : subexpr.length();
+                    }
+                    else
+                    {
+                        l = subexpr.length();
+                    }
+                    return len + l;
+                }, '()' === ast.op.slice(-2) ? 1 : 0);
+            }
+            self._len = len;
+        }
+        return self._len;
     }
     ,factors: function() {
         var self = this, expr, map;
         if (null == self._fctrd)
         {
-            expr = self.expand().algebrify('@', 'default');
-            map = expr.$map;
-            self._fctrd = Abacus.Factor(expr.toRationalFunc()).algebrify('@', map);
+            if (self.isConst())
+            {
+                self._fctrd = self.c().isReal() ? (self.c().real().isInt() ? Expr('*', factorize(self.c().real().num).map(function(f) {return Expr('^', [f[0], f[1]]);})) : Expr('/', [
+                    Expr('*', factorize(self.c().real().num).map(function(f) {return Expr('^', [f[0], f[1]]);})),
+                    Expr('*', factorize(self.c().real().den).map(function(f) {return Expr('^', [f[0], f[1]]);}))
+                ])) : self;
+            }
+            else
+            {
+                expr = self.expand().algebrify('@', 'default');
+                map = expr.$map;
+                self._fctrd = Abacus.Factor(expr.toRationalFunc()).algebrify('@', map);
+            }
             self._fctrd._fctrd = self._fctrd; // idempotent
         }
         return self._fctrd;
@@ -11040,6 +11215,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         den = num ? self.den.toPoly(num.symbol, num.ring) : null
         return num && den ? (true === simplified ? {num:num, den:den} : RationalFunc(num, den)) : null;
     }
+    ,toExpr: function() {
+        // trivial
+        return this;
+    }
     ,toString: function(type) {
         var self = this, ast = self.ast,
             op = ast.op, arg = ast.arg,
@@ -11060,11 +11239,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 // symbol or number
                 self._str = String(arg);
             }
-            else if (self.isConst())
+            /*else if (self.isConst())
             {
                 // constant
                 self._str = self.c().toString();
-            }
+            }*/
             else if ('()' === op.slice(-2))
             {
                 // function
@@ -11216,11 +11395,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     self._tex = Tex(arg);
                 }
             }
-            else if (self.isConst())
+            /*else if (self.isConst())
             {
                 // constant
                 self._tex = self.c().toTex();
-            }
+            }*/
             else if ('()' === op.slice(-2))
             {
                 // function
@@ -11295,7 +11474,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
                         sign = '';
-                        self._tex = arg.reduce(function(out, subexpr) {
+                        self._tex = arg.reduce(function(out, subexpr, i) {
                             var tex = trim(subexpr.toTex()), isNeg, texp;
                             if (('*' === op) && (('0' === tex) || ('0' === out[0]))) return ['0'];
                             if (('*' === op) && ('1' === tex)) return out;
@@ -11309,7 +11488,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                if ('*' === op) out.push(/*' \\cdot '*/'');
+                                if ('*' === op) out.push(subexpr.isConst(true) && arg[i-1].isConst(true) ? ' \\cdot ' : '');
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
                                 out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr, true)) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);
@@ -11496,7 +11675,7 @@ function f_substitute(expr, map, sym, mode)
                 {
                     e2 = f_substitute(expr.ast.arg[0], map, sym, mode);
                     k = Arithmetic.val(e.c().den);
-                    if (-1 < (['simplify']).indexOf(mode))
+                    if (-1 < (['simplify'/*,'expand'*/]).indexOf(mode))
                     {
                         k2 = stdMath.floor(stdMath.sqrt(k));
                         e3 = expr_rf(e2);
@@ -11628,10 +11807,6 @@ function f_restore(expr, map, sym)
     }
     return expr;
 }
-function simplify(expr, map, sym)
-{
-    return simplify_rf(simplify_radicals(expr, map, sym), true);
-}
 function simplify_radicals(expr, map, sym)
 {
     return KEYS(map).reduce(function(expr, key) {
@@ -11663,8 +11838,24 @@ function kth_pp_factor(expr, k, as_expr)
         expr = expr_rf(expr);
     }
 
-    p1 = poly_pp_factor(expr.num, k);
-    p2 = poly_pp_factor(expr.den, k);
+    if (expr.num.isConst())
+    {
+        p1 = expr.num.isReal() ? num_pp_factor(expr.num.c().real(), k) : null;
+        if (p1) p1 = MultiPolynomial.Const(p1, expr.num.symbol, expr.num.ring);
+    }
+    else
+    {
+        p1 = poly_pp_factor(expr.num, k);
+    }
+    if (expr.den.isConst())
+    {
+        p2 = expr.den.isReal() ? num_pp_factor(expr.den.c().real(), k) : null;
+        if (p2) p2 = MultiPolynomial.Const(p2, expr.den.symbol, expr.den.ring);
+    }
+    else
+    {
+        p2 = poly_pp_factor(expr.den, k);
+    }
 
     if (!p1 && !p2) return null;
 
@@ -11726,6 +11917,11 @@ function sqrt(x, n)
 {
     if (null == n) n = 2;
     return Expr('^', [to_expr(x), to_expr(Rational(1, n))]);
+}
+function expr_unify(expr1, expr2)
+{
+    // TODO
+    return expr1;
 }
 function expr_derivative(f, x)
 {
@@ -17449,7 +17645,7 @@ Abacus.Poly = function(expr, ring_or_symbol) {
 Abacus.Roots = function(expr, all) {
     if (is_instance(expr, Polynomial))
     {
-        return all ? p.allroots() : p.roots();
+        return true === all ? p.allroots() : p.roots();
     }
     return [];
 };
@@ -17474,9 +17670,9 @@ Abacus.Factor = function(expr) {
         faccon1 = p.factors();
         expr = faccon1[0].reduce(function(expr, fac) {return expr.mul(fac[0].toExpr().pow(fac[1]));}, faccon1[1].toExpr());
     }
-    else if (is_instance(expr, Expr))
+    else if (is_instance(expr, Expr) || (expr && is_callable(expr.toExpr())))
     {
-        expr = expr.factors();
+        expr = expr.toExpr().factors();
     }
     return expr;
 };
