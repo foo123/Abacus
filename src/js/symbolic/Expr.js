@@ -164,21 +164,25 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
              }
              ,'abs()': {
+                exact: true,
                 fn: function(args) {
                     return args[0].abs();
                 }
              }
              ,'mod()': {
+                exact: true,
                 fn: function(args) {
                     return args[0].mod(args[1]);
                 }
              }
              ,'min()': {
+                exact: true,
                 fn: function(args) {
                     return nmin(args);
                 }
              }
              ,'max()': {
+                exact: true,
                 fn: function(args) {
                     return nmax(args);
                 }
@@ -189,56 +193,67 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
              }
              ,'/': {
+                exact: true,
                 fn: function(args) {
                     return ndiv(args);
                 }
              }
              ,'*': {
+                exact: true,
                 fn: function(args) {
                     return nmul(args);
                 }
              }
              ,'-': {
+                exact: true,
                 fn: function(args) {
                     return nsub(args);
                 }
              }
              ,'+': {
+                exact: true,
                 fn: function(args) {
                     return nadd(args);
                 }
              }
              ,'>=': {
+                exact: true,
                 fn: function(args) {
                     return args[0].gte(args[1]) ? Rational.One() : Rational.Zero();
                 }
              }
              ,'<=': {
+                exact: true,
                 fn: function(args) {
                     return args[0].lte(args[1]) ? Rational.One() : Rational.Zero();
                 }
              }
              ,'>': {
+                exact: true,
                 fn: function(args) {
                     return args[0].gt(args[1]) ? Rational.One() : Rational.Zero();
                 }
              }
              ,'<': {
+                exact: true,
                 fn: function(args) {
                     return args[0].lt(args[1]) ? Rational.One() : Rational.Zero();
                 }
              }
              ,'!=': {
+                exact: true,
                 fn: function(args) {
                     return !args[0].equ(args[1]) ? Rational.One() : Rational.Zero();
                 }
              }
              ,'=': {
+                exact: true,
                 fn: function(args) {
                     return args[0].equ(args[1]) ? Rational.One() : Rational.Zero();
                 }
              }
              ,'and': {
+                exact: true,
                 fn: function(args) {
                     for (var i=0,n=args.length; i<n; ++i)
                     {
@@ -248,6 +263,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
              }
              ,'or': {
+                exact: true,
                 fn: function(args) {
                     for (var i=0,n=args.length; i<n; ++i)
                     {
@@ -257,6 +273,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 }
              }
              ,'not': {
+                exact: true,
                 fn: function(args) {
                     return args[0].equ(0) ? Rational.One() : Rational.Zero();
                 }
@@ -1013,7 +1030,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 return ast.arg.reduce(function(ops, subexpr) {
                     ops.push.apply(ops, subexpr.operators(op));
                     return ops;
-                }, (op === ast.op) || (op === Expr.OP[ast.op].name) ? [self] : []);
+                }, (op === ast.op) || (Expr.OP[ast.op] && (op === Expr.OP[ast.op].name)) ? [self] : []);
             }
             else
             {
@@ -1027,7 +1044,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 self._op = ast.arg.reduce(function(operators, subexpr) {
                     // they are in sorted order
                     return merge_sequences(operators, subexpr.operators());
-                }, ['()' === ast.op.slice(-2) ? ast.op : Expr.OP[ast.op].name]);
+                }, ['()' === ast.op.slice(-2) ? ast.op : (Expr.OP[ast.op] ? Expr.OP[ast.op].name : ast.op)]);
             }
             else
             {
@@ -1215,6 +1232,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if (self.symbols().filter(function(s) {return '1' !== s;}).length)
             {
                 self._const = [false, false];
+            }
+            else if (self.operators().filter(function(op) {return ('()' === op.slice(-2)) && HAS.call(Expr.FN, op) && !Expr.FN[op].exact;}).length)
+            {
+                self._const = [false, true];
             }
             else
             {
@@ -2331,7 +2352,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                         {
                                             prevtex = out[out.length-1];
                                         }
-                                        out.push(arg[i-1].isConst(true) && !/^(\\right)?\)/.test(prevtex) ? ' \\cdot ' : '');
+                                        out.push(arg[i-1].isConst(true) && !/(\\right)?\)$/.test(prevtex) ? ' \\cdot ' : '');
                                     }
                                     else
                                     {
@@ -2369,7 +2390,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else
                     {
-                        self._tex = arg.map(expr_tex).join(' \\' + Expr.OP[op].name + ' ');
+                        self._tex = arg.map(expr_tex).join(' \\' + (Expr.OP[op] ? Expr.OP[op].name : op) + ' ');
                     }
                 }
             }
