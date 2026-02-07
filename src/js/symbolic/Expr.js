@@ -2306,7 +2306,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     {
                         sign = '';
                         self._tex = arg.reduce(function(out, subexpr, i) {
-                            var tex = trim(subexpr.toTex()), isNeg, texp;
+                            var tex = trim(subexpr.toTex()), prevtex, isNeg, texp;
                             if (('*' === op) && (('0' === tex) || ('0' === out[0]))) return ['0'];
                             if (('*' === op) && ('1' === tex)) return out;
                             if (('*' === op) && ('-1' === tex))
@@ -2319,9 +2319,33 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                if ('*' === op) out.push(subexpr.isConst(true) && arg[i-1].isConst(true) ? ' \\cdot ' : '');
-                                else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
-                                else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
+                                if ('*' === op)
+                                {
+                                    if (subexpr.isConst(true) && (!/^(\\sqrt)|((\\left)?\()/.test(tex) || /^\\frac\{/.test(tex)))
+                                    {
+                                        if (is_instance(out[out.length-1], Expr))
+                                        {
+                                            prevtex = trim(out[out.length-1].toTex());
+                                        }
+                                        else
+                                        {
+                                            prevtex = out[out.length-1];
+                                        }
+                                        out.push(arg[i-1].isConst(true) && !/^(\\right)?\)/.test(prevtex) ? ' \\cdot ' : '');
+                                    }
+                                    else
+                                    {
+                                        out.push('');
+                                    }
+                                }
+                                else if ('+' === op)
+                                {
+                                    out.push(isNeg ? ' - ' : ' + ');
+                                }
+                                else if ('-' === op)
+                                {
+                                    out.push(isNeg ? ' + ' : ' - ');
+                                }
                                 out.push('*' === op ? ((('*' === subexpr.ast.op) || !needs_parentheses(subexpr, true)) && !isNeg ? tex : ('\\left(' + tex + '\\right)')) : texp);
                             }
                             else
