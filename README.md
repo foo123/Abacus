@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (380 kB minified)
+**version 2.0.0** almost complete (383 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 

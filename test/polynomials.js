@@ -372,6 +372,15 @@ check_factors(ring.fromString("x^2+x+1"));
 //echo(poly('x^5+x^4+x^2+x+2', 'x').mod(poly('2*x^2 + 2*x + 2', 'x')).toString());
 echo('poly("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2").factors()');
 check_factors(poly(/*'x^5+x^4+x^2+x+2'*/'(x+1)(x^2 + x + 1)(x^3 - x + 2)^2', "x"));
+
+echo('Ring.Q("x").fromString("x^2+1").factors()');
+check_factors(Abacus.Ring.Q("x").fromString('x^2+1'));
+
+echo('Ring.C("x").fromString("x^2+1").factors()');
+check_factors(Abacus.Ring.C("x").fromString('x^2+1'));
+
+echo('Ring.C("x").fromString("(x+i+1)(x - 2*i)^2").factors()');
+check_factors(Abacus.Ring.C("x").fromString('(x+i+1)(x - 2*i)^2'));
 echo('---');
 
 echo('Polynomial GCD, generalisation of GCD of numbers');

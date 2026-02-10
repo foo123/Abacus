@@ -638,11 +638,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         // https://en.wikipedia.org/wiki/Rational_root_theorem
         // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            roots, primitive, c, p, d0, dn, iter, comb, root, nroot, rm, nrm, found;
+            roots, primitive, c, p, d0, dn, iter, comb, root, nroot, rm, nrm, k, r, found;
 
         if (null == self._roots)
         {
-            roots = [];
+            roots = {};//[];
             // no rational roots or infinite roots for constant polynomials,
             if (!self.isConst())
             {
@@ -650,14 +650,14 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 c = primitive.terms;
                 if (0 < c[c.length-1].e)
                 {
-                    roots.push([ring.Zero(), c[c.length-1].e]); // zero root with multiplicity
+                    roots['0'] = [ring.Zero(), c[c.length-1].e]; // zero root with multiplicity
                 }
                 if (1 < c.length)
                 {
                     // try all possible divisors of c_0(excluding trivial zero terms) and c_n
-                    iter = symbolic_divisors(c[c.length-1].c);
+                    iter = symbolic_divisors(c[c.length-1].c, true);
                     d0 = iter.get(); iter.dispose();
-                    iter = symbolic_divisors(c[0].c);
+                    iter = symbolic_divisors(c[0].c, true);
                     dn = iter.get(); iter.dispose();
 
                     iter = Tensor([d0.length, dn.length]);
@@ -687,13 +687,37 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                             }
                             if (found) p = p.d(); // get derivative to check if roots are multiple
                         }
-                        if (0 < rm) roots.push([root, rm]);
-                        if (0 < nrm) roots.push([nroot, nrm]);
+                        if (0 < rm)
+                        {
+                            k = String(root);
+                            r = roots[k];
+                            if (!r)
+                            {
+                                roots[k] = [root, rm];
+                            }
+                            /*else
+                            {
+                                //r[1] += rm;
+                            }*/
+                        }
+                        if (0 < nrm)
+                        {
+                            k = String(nroot);
+                            r = roots[k];
+                            if (!r)
+                            {
+                                roots[k] = [nroot, nrm];
+                            }
+                            /*else
+                            {
+                                //r[1] += nrm;
+                            }*/
+                        }
                     }
                     iter.dispose();
                 }
             }
-            self._roots = roots;
+            self._roots = KEYS(roots).map(function(r) {return roots[r];});
         }
         return self._roots.map(function(r) {return r.slice();});
     }
@@ -740,7 +764,11 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 });
                 return memo;
             }, {});
-            self._exact_roots = KEYS(memo).map(function(key) {return memo[key];});
+            self._exact_roots = KEYS(memo).map(function(key) {
+                var root = memo[key];
+                if (root[0].isConst()) root[0] = Expr('', root[0].c());
+                return root;
+            });
         }
         return self._exact_roots.map(function(r) {return r.slice();});
     }

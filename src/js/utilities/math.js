@@ -1839,7 +1839,7 @@ function divisors(n, as_generator)
         });
     }
 }
-function symbolic_divisors(c)
+function symbolic_divisors(c, complex)
 {
     var Arithmetic = Abacus.Arithmetic;
     if (Arithmetic.isNumber(c)) c = Integer(c);
@@ -1850,7 +1850,7 @@ function symbolic_divisors(c)
     }
     else if (is_instance(c, Numeric))
     {
-        return (is_instance(c, Complex) && !c.isReal() && !c.isImag()
+        return (is_instance(c, Complex) && (true === complex) || (!c.isReal() && !c.isImag())
             ? Iterator((function(c) {
                 /*var iter_gcd = symbolic_divisors(Rational.gcd(c.real(), c.imag())),
                     iter_i = [Complex.One(), Complex.Img()], i, g;
@@ -1942,8 +1942,8 @@ function symbolic_divisors(c)
     else if (is_instance(c, RationalFunc))
     {
         return Iterator((function(c) {
-            var iter_num = symbolic_divisors(c.num),
-                iter_den = symbolic_divisors(c.den),
+            var iter_num = symbolic_divisors(c.num, complex),
+                iter_den = symbolic_divisors(c.den, complex),
                 num, den;
             return function(curr, dir, state, init) {
                 if (init)
@@ -1967,7 +1967,7 @@ function symbolic_divisors(c)
     else if (is_instance(c, MultiPolynomial))
     {
         return Iterator((function(p, f) {
-            var iter_c = symbolic_divisors(f[1]),
+            var iter_c = symbolic_divisors(f[1], complex),
                 iter_q = Tensor(f[0].map(function(fi) {return fi[1]+1;})),
                 c, q;
             return function(curr, dir, state, init) {
