@@ -103,7 +103,15 @@ echo(o.mul(o2).expand().toString());
 echo('o=Expr("(x*y^2 + z)^3")');
 o=Expr("(x*y^2 + z)^3");
 echo(o.expand().toString());
-echo(Expr(o.expand().toString()).toString())
+echo(Expr(o.expand().toString()).toString());
+o=Expr("x^y");
+echo(o.toString());
+echo('o.d("y")');
+echo(o.d("y").toString());
+o=Expr("x^x");
+echo(o.toString());
+echo('o.d("x")');
+echo(o.d("x").toString()+', '+o.d("x").expand().toString());
 
 //echo(String(Expr('x^3 - x')), String(Expr('x^3 - x').expand()));
 //echo(String(Expr("(x+1)(x^2 + x + 1)(x^3 - x + 2)^2")));

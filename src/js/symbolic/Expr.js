@@ -1442,19 +1442,23 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,neg: function() {
         var self = this, ast = self.ast;
-        if (self.isConst())
+        if (/*self.isConst()*/'num' === ast.type)
         {
             return Expr('', self.c().neg());
         }
-        if (('-' === ast.op) && ast.arg[0].isConst() && ast.arg[0].c().equ(Rational/*Expr*/.Zero()))
+        /*if (('-' === ast.op) && ast.arg[0].isConst() && ast.arg[0].c().equ(Rational/*Expr* /.Zero()))
         {
             return 2 < ast.arg.length ? Expr('+', ast.arg.slice(1)) : ast.arg[1];
-        }
+        }*/
         return Expr.MinusOne().mul(self);
     }
     ,inv: function() {
         var self = this;
-        return self.isConst() ? Expr('', self.c().inv()) : self.den.div(self.num);
+        if (/*self.isConst()*/'num' === self.ast.type)
+        {
+            return Expr('', self.c().inv());
+        }
+        return self.den.div(self.num);
     }
 
     ,equ: function(other) {
@@ -1637,21 +1641,54 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
+            // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero();
-            if (other.isConst())
+            if (other.isConst() && other.c().equ(O))
             {
-                if (other.c().equ(O))
-                {
+                /*if (other.c().equ(O))
+                {*/
                     return self;
-                }
+                /*}*/
                 /*else if (self.isConst())
                 {
                     return Expr('', self.c().add(other.c()));
                 }*/
             }
-            else if (self.isConst() && self.c().equ(O))
+            if (self.isConst() && self.c().equ(O))
             {
                 return other;
+            }
+            if (('+' === self.ast.op) && ('+' === other.ast.op))
+            {
+                return Expr('+', self.ast.arg.concat(other.ast.arg));
+            }
+            if (('+' === self.ast.op) && ('-' === other.ast.op))
+            {
+                return Expr('+', self.ast.arg.concat([other.ast.arg[0]]).concat(other.ast.arg.slice(1).map(expr_neg)));
+            }
+            if (('-' === self.ast.op) && ('+' === other.ast.op))
+            {
+                return Expr('+', [self.ast.arg[0]].concat(self.ast.arg.slice(1).map(expr_neg)).concat(other.ast.arg));
+            }
+            if (('-' === self.ast.op) && ('-' === other.ast.op))
+            {
+                return Expr('+', [self.ast.arg[0]].concat(self.ast.arg.slice(1).map(expr_neg)).concat([other.ast.arg[0]]).concat(other.ast.arg.slice(1).map(expr_neg)));
+            }
+            if ('+' === self.ast.op)
+            {
+                return Expr('+', self.ast.arg.concat([other]));
+            }
+            if ('+' === other.ast.op)
+            {
+                return Expr('+', [self].concat(other.ast.arg));
+            }
+            if ('-' === self.ast.op)
+            {
+                return Expr('+', [self.ast.arg[0]].concat(self.ast.arg.slice(1).map(expr_neg)).concat([other]));
+            }
+            if ('-' === other.ast.op)
+            {
+                return Expr('+', [self].concat([other.ast.arg[0]]).concat(other.ast.arg.slice(1).map(expr_neg)));
             }
             return Expr('+', [self, other]);
         }
@@ -1663,21 +1700,54 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
+            // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero();
-            if (other.isConst())
+            if (other.isConst() && other.c().equ(O))
             {
-                if (other.c().equ(O))
-                {
+                /*if (other.c().equ(O))
+                {*/
                     return self;
-                }
+                /*}*/
                 /*else if (self.isConst())
                 {
                     return Expr('', self.c().sub(other.c()));
                 }*/
             }
-            else if (self.isConst() && self.c().equ(O))
+            if (self.isConst() && self.c().equ(O))
             {
                 return other.neg();
+            }
+            if (('-' === self.ast.op) && ('+' === other.ast.op))
+            {
+                return Expr('-', self.ast.arg.concat(other.ast.arg));
+            }
+            if (('+' === self.ast.op) && ('+' === other.ast.op))
+            {
+                return Expr('+', self.ast.arg.concat(other.ast.arg.map(expr_neg)));
+            }
+            if (('-' === self.ast.op) && ('-' === other.ast.op))
+            {
+                return Expr('-', self.ast.arg.concat(other.ast.arg.map(expr_neg)));
+            }
+            if (('+' === self.ast.op) && ('-' === other.ast.op))
+            {
+                return Expr('+', self.ast.arg.concat(other.ast.arg.map(expr_neg)));
+            }
+            if ('+' === self.ast.op)
+            {
+                return Expr('+', self.ast.arg.concat([other.neg()]));
+            }
+            if ('-' === self.ast.op)
+            {
+                return Expr('-', self.ast.arg.concat([other]));
+            }
+            if ('+' === other.ast.op)
+            {
+                return Expr('+', [self].concat(other.ast.arg.map(expr_neg)));
+            }
+            if ('-' === other.ast.op)
+            {
+                return Expr('-', [self].concat(other.ast.arg.map(expr_neg)));
             }
             return Expr('-', [self, other]);
         }
@@ -1689,6 +1759,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
+            // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero(); I = Rational/*Expr*/.One();
             if (other.isConst())
             {
@@ -1705,7 +1776,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return Expr('', self.c().mul(other.c()));
                 }*/
             }
-            else if (self.isConst())
+            if (self.isConst())
             {
                 if (self.c().equ(O))
                 {
@@ -1715,6 +1786,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return other;
                 }
+            }
+            if (('*' === self.ast.op) && ('*' === other.ast.op))
+            {
+                return Expr('*', self.ast.arg.concat(other.ast.arg));
+            }
+            if ('*' === self.ast.op)
+            {
+                return Expr('*', self.ast.arg.concat([other]));
+            }
+            if ('*' === other.ast.op)
+            {
+                return Expr('*', [self].concat(other.ast.arg));
             }
             return Expr('*', [self, other]);
         }
@@ -2875,7 +2958,7 @@ function expr_derivative(f, x)
 
             // log derivative rule
             case 'log()':
-                return expr_derivative(fi[0], x).div(f);
+                return expr_derivative(fi[0], x).div(fi[0]);
 
             // sin derivative rule
             case 'sin()':
@@ -2909,7 +2992,7 @@ function expr_derivative(f, x)
                 }
                 else
                 {
-                    return expr_derivative(Expr('exp()', [Expr('log()', [fi[0]]).mul(fi[1])]), x); // f(x)^g(x) rule ==> exp(log(f(x))*g(x))
+                    return expr_derivative(Expr('log()', [fi[0]]).mul(fi[1]), x).mul(f)/*expr_derivative(Expr('exp()', [Expr('log()', [fi[0]]).mul(fi[1])]), x)*/; // f(x)^g(x) rule ==> exp(log(f(x))*g(x)) = (log(f(x))*g(x))' * f(x)^g(x)
                 }
 
             // product derivative rule
@@ -3153,6 +3236,10 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
             return null;
         }
     }
+}
+function expr_neg(expr)
+{
+    return expr.neg();
 }
 function expr_tex(expr)
 {

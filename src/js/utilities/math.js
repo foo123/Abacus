@@ -1447,7 +1447,12 @@ function factorize_gi(a, b)
     z = new Complex(a, b);
     factors = factorize(Arithmetic.add(Arithmetic.mul(a, a), Arithmetic.mul(b, b))).reduce(function(factors, pe) {
         var p = pe[0], e = Arithmetic.val(pe[1]), factor, exponent;
-        if (Arithmetic.equ(Arithmetic.mod(p, 4), 3))
+        if (Arithmetic.equ(p, I))
+        {
+            factor = new Complex(I, O);
+            exponent = 1;
+        }
+        else if (Arithmetic.equ(Arithmetic.mod(p, 4), 3))
         {
             factor = new Complex(p, O);
             exponent = stdMath.floor(e/2);

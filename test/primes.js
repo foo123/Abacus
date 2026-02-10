@@ -11,7 +11,7 @@ let o;
 
 function factor(f)
 {
-    return '(' + String(f[0]) + (1<f[1] ? ('^' + String(f[1])) : '') + ')';
+    return '(' + String(f[0]) + (1<Abacus.Arithmetic.val(f[1]) ? ('^' + String(f[1])) : '') + ')';
 }
 
 echo('Abacus.Primes (VERSION = '+Abacus.VERSION+')');
