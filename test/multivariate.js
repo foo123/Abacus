@@ -203,6 +203,10 @@ echo("((x^3+y^3)(x^2+2y+1)).factors()");
 check_factors(ring.fromString("(x^3+y^3)(x^2+2y+1)"));
 echo("((ax+by)(x-y)).factors()");
 check_factors(ring.fromString("(ax+by)(x-y)"));
+echo("((x+1)(y-1)).factors()");
+check_factors(ring.fromString("(x+1)(y-1)"));
+echo("(y-1+xy).factors()");
+check_factors(ring.fromString("y-1+xy"));
 echo('---');
 
 ring = Abacus.Ring.Q("x", "y");
@@ -213,14 +217,20 @@ echo(Abacus.Math.groebner([ring.fromString("x^2-y"),ring.fromString("x^3-x"),rin
 echo('Polynomial Extended GCD, generalisation of xGCD of numbers');
 echo('---');
 
-/*
+
 echo('ring.xgcd(ring.fromString("1+x"),ring.fromString("1+x"))');
 check_xgcd(ring, [ring.fromString("1+x"),ring.fromString("1+x")]);
 
 echo('ring.xgcd(ring.fromString("1-xy+x^2"),ring.fromString("1+xy"))');
 check_xgcd(ring, [ring.fromString("1-xy+x^2"),ring.fromString("1+xy")]);
+
+echo('ring.xgcd(ring.fromString("(x+1)(y-1)"),ring.fromString("x+1"))');
+check_xgcd(ring, [ring.fromString("(x+1)(y-1)"),ring.fromString("x+1")]);
+
+echo('ring.xgcd(ring.fromString("(x+1)(y-1)"),ring.fromString("y-1"))');
+check_xgcd(ring, [ring.fromString("(x+1)(y-1)"),ring.fromString("y-1")]);
 echo('---');
-*/
+
 
 p1 = ring.fromString("x^2*y + x^3");
 echo("x^2*y + x^3", ',', p1.toString());

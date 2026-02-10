@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-10 20:29:06)
+*   @version: 2.0.0 (2026-02-10 23:58:39)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-10 20:29:06)
+*   @version: 2.0.0 (2026-02-10 23:58:39)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -13055,7 +13055,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,_expr: null
     ,_prim: null
     ,_roots: null
-    ,_exact_roots: null
+    ,_all_roots: null
     ,_zeros: null
     ,_factors: null
 
@@ -13078,7 +13078,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         self._c = null;
         self._expr = null;
         self._prim = null;
-        self._exact_roots = null;
+        self._all_roots = null;
         self._roots = null;
         self._factors = null;
         return self;
@@ -13421,7 +13421,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,allroots: function() {
         // find all roots of poly when solvable
         var self = this, memo;
-        if (null == self._exact_roots)
+        if (null == self._all_roots)
         {
             memo = self.factors()[0].reduce(function(memo, factor) {
                 var roots = [];
@@ -13461,13 +13461,13 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 });
                 return memo;
             }, {});
-            self._exact_roots = KEYS(memo).map(function(key) {
+            self._all_roots = KEYS(memo).map(function(key) {
                 var root = memo[key];
                 if (root[0].isConst()) root[0] = Expr('', root[0].c());
                 return root;
             });
         }
-        return self._exact_roots.map(function(r) {return r.slice();});
+        return self._all_roots.map(function(r) {return r.slice();});
     }
     ,zeros: function() {
         // find approximate real/complex zeros of poly numerically
@@ -15021,6 +15021,19 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                 }
                 if (1 === p.maxdeg(true))
                 {
+                    t = p.terms.filter(function(t) {return 1 < t.e.filter(function(ei) {return 0 < ei;}).length;}).length;
+                    if (0 < t)
+                    {
+                        // possibly can be factored, try to factor
+                        q = mpolyfactor(p, true);
+                        if (q && (q.terms.filter(function(t) {return 1 < t.e.filter(function(ei) {return 0 < ei;}).length;}).length < t))
+                        {
+                            // found a factor, split p into q and p/q
+                            queue.push(q);
+                            queue.push(p.div(q));
+                            continue;
+                        }
+                    }
                     // linear factor, irreducible
                     if (p.lc().lt(0))
                     {
@@ -16532,7 +16545,7 @@ function polyfactor(p)
         }
     }
 }
-function mpolyfactor(p)
+function mpolyfactor(p, factorlinear)
 {
     // Recursive Kronecker method to factorize p over the integers/rationals
     var Arithmetic = Abacus.Arithmetic,
@@ -16541,11 +16554,12 @@ function mpolyfactor(p)
             maxdeg[x] = p.maxdeg(x);
             return maxdeg;
         }, {}),
-        x = p.symbol.slice().sort(function(a, b) {
-            return maxdeg[a] - maxdeg[b];
-        }),
+        x = p.symbol.map(function(xi, i) {return {x:xi, i:i};}).sort(function(a, b) {
+            return (maxdeg[a.x] - maxdeg[b.x]) || (a.i - b.i);
+        }).map(function(xi) {return xi.x;}),
         i, j, k, n, y, yi, v, d, q, pu,
         terms, divisor, o, res,
+        dmin = true === factorlinear ? 1 : 0,
         rndInt = Abacus.Math.rndInt;
     function interpolation_point(v)
     {
@@ -16560,7 +16574,7 @@ function mpolyfactor(p)
     {
         // can find factors if taken in different order
         pu = 1 === p.symbol.length ? p : (p.univariate(1 === k ? x[0] : x[x.length-1], true));
-        for (d=1,n=(pu.maxdeg(pu.symbol[0])>>1); d<=n; ++d)
+        for (d=1,n=(pu.maxdeg(pu.symbol[0])>>1)||dmin; d<=n; ++d)
         {
             values = array(d+1, d>>1, -1);
             y = values.map(interpolation_point);
@@ -17444,28 +17458,50 @@ Polynomial.lcm = polylcm;
 MultiPolynomial.gcd = function(/*args*/) {
     // slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        symbol = null, order, gcd;
+        symbol = null, order, gcd, symbolord;
+    // make sure the symbols present in all are put first,
+    // else the gcd computation may produce 1 as gcd
+    symbolord = args[0].symbol.map(function(xi, i) {
+        return {x:xi, d:[].reduce.call(args, function(d, pi) {
+            return d + pi.maxdeg(xi);
+        }, 0), i:i};
+    }).sort(function(xi, xj) {
+        return (xj.d-xi.d) || (xi.i-xj.i);
+    }).map(function(xi) {
+        return xi.x;
+    });
     gcd = polygcd([].map.call(args, function(p) {
         if (null == symbol)
         {
             symbol = p.symbol;
             order = p.order();
         }
-        return p.univariate(null, true);
+        return p.univariate(symbolord, true);
     }));
     return gcd.multivariate(symbol).order(order);
 };
 MultiPolynomial.xgcd = function(/*args*/) {
     // slow and consuming for more than 2 or 3 variables
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
-        symbol = null, order;
+        symbol = null, order, symbolord;
+    // make sure the symbols present in all are put first,
+    // else the gcd computation may produce 1 as gcd
+    symbolord = args[0].symbol.map(function(xi, i) {
+        return {x:xi, d:[].reduce.call(args, function(d, pi) {
+            return d + pi.maxdeg(xi);
+        }, 0), i:i};
+    }).sort(function(xi, xj) {
+        return (xj.d-xi.d) || (xi.i-xj.i);
+    }).map(function(xi) {
+        return xi.x;
+    });
     return polyxgcd([].map.call(args, function(p) {
         if (null == symbol)
         {
             symbol = p.symbol;
             order = p.order();
         }
-        return p.univariate(null, true);
+        return p.univariate(symbolord, true);
     })).map(function(g, i) {
         return (0 === i ? g : RationalFunc(g)).multivariate(symbol).order(order);
     });
