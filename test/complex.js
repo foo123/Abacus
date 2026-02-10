@@ -20,6 +20,16 @@ function check_xgcd(args)
     echo(out, res.toString(), res.equ(gcd[0]));
 }
 
+function check_factors(z)
+{
+    let factors = Abacus.Math.factorize(z);
+    echo('factor('+z.toString()+')='+factors.reduce(function(str, f) {
+        return str+(str.length ? '*' : '')+'('+f[0].toString()+')'+(1 < Abacus.Arithmetic.val(f[1]) ? ('^'+String(f[1])) : '');
+    }, ''), z.equ(factors.reduce(function(res, f) {
+        return res.mul(f[0].pow(f[1]));
+    }, Abacus.Complex.One())));
+}
+
 let o, i;
 
 echo('Abacus.Complex (VERSION = '+Abacus.VERSION+')');
@@ -184,7 +194,14 @@ echo(o.pow(2).toString());
 echo('o.pow(2).toTex()');
 echo(o.pow(2).toTex());
 
-echo();
+echo('---');
+
+// Gaussian Integer factorization
+check_factors(Abacus.Complex(2));
+check_factors(Abacus.Complex(5));
+check_factors(Abacus.Complex(13));
+check_factors(Abacus.Complex(4, 5));
+echo('---');
 
 // (X)GCD, LCM of complex
 echo('(X)GCD, LCM of Complex');

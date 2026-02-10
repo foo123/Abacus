@@ -499,12 +499,32 @@ function euler_test(n, k)
     }
     return true;
 }*/
+function try_composite(a, n, s, d, n_1)
+{
+    // test the base a to see whether it is a witness for the compositeness of n
+    var Arithmetic = Abacus.Arithmetic,
+        I = Arithmetic.I, x, y, i;
+    if (null == n_1) n_1 = Arithmetic.sub(n, I);
+    x = powm(a, d, n);
+    for (i=1; i<=s; ++i)
+    {
+        y = Arithmetic.mod(Arithmetic.mul(x, x), n);
+        if (Arithmetic.equ(y, I) && !Arithmetic.equ(x, I) && !Arithmetic.equ(x, n_1)) return true; // definitely composite
+        x = y;
+    }
+    return !Arithmetic.equ(y, I); // composite if =/= 1
+}
 function miller_rabin_test(n, k, kextra)
 {
     // https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test
     //  O(num_trials*log^3(n))
-    var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II, n_1, n_2, s, d, q, r, i, kl;
+    var Arithmetic = Abacus.Arithmetic,
+        N = Arithmetic.num,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        two = Arithmetic.II,
+        n_1, n_2, s, d,
+        q, r, i, kl, cutoff;
 
     // write n-1 as 2^s * d
     // repeatedly try to divide n-1 by 2
@@ -514,52 +534,85 @@ function miller_rabin_test(n, k, kextra)
     s = 0;//O;
     for (;;)
     {
-        q = Arithmetic.div(d, two);
         r = Arithmetic.mod(d, two);
         if (Arithmetic.equ(r, I)) break;
         s = s+1;//Arithmetic.add(s, I);
-        d = q;
+        d = Arithmetic.div(d, two);
     }
-
-    // test the base a to see whether it is a witness for the compositeness of n
-    function try_composite(a)
-    {
-        var x, r;
-        x = powm(a, d, n);
-        if (Arithmetic.equ(x, I) || Arithmetic.equ(x, n_1)) return false;
-        for (r=1; r<s; ++r)
-        {
-            x = Arithmetic.mod(Arithmetic.mul(x, x), n);
-            if (Arithmetic.equ(x, I)) return true;
-            else if (Arithmetic.equ(x, n_1)) return false;
-        }
-        return true; // n is definitely composite
-    };
 
     if (null == k) k = 5;
 
     if (is_array(k))
     {
         for (i=0,kl=k.length; i<kl; ++i)
-            if (try_composite(k[i]))
+        {
+            if (try_composite(k[i], n, s, d, n_1))
+            {
                 return false;
+            }
+        }
         // extra tests
         if (null != kextra)
         {
             kextra = +kextra;
             for (i=0; i<kextra; ++i)
-                if (try_composite(Arithmetic.rnd(two, n_2)))
+            {
+                if (try_composite(Arithmetic.rnd(two, n_2), n, s, d, n_1))
+                {
                     return false;
+                }
+            }
         }
     }
     else
     {
         k = +k;
         for (i=0; i<k; ++i)
-            if (try_composite(Arithmetic.rnd(two, n_2)))
+        {
+            if (try_composite(Arithmetic.rnd(two, n_2), n, s, d, n_1))
+            {
                 return false;
+            }
+        }
     }
     return true; // no base tested showed n as composite
+}
+function v2adic(n)
+{
+    //2-adic valuation of n (n > 0)
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        two = Arithmetic.II,
+        d = Arithmetic.num(n),
+        s = 0, q, r;
+    for (;;)
+    {
+        r = Arithmetic.mod(d, two);
+        if (!Arithmetic.equ(r, O)) break;
+        s = s+1;
+        d = Arithmetic.div(d, two);
+    }
+    return [s, d];
+}
+function vpadic(n, p)
+{
+    //p-adic valuation of n (n > 0)
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        two = Arithmetic.II,
+        d = Arithmetic.num(n),
+        s = 0, q, r;
+    p = Arithmetic.num(p);
+    for (;;)
+    {
+        r = Arithmetic.mod(d, p);
+        if (!Arithmetic.equ(r, O)) break;
+        s = s+1;
+        d = Arithmetic.div(d, p);
+    }
+    return [s, d];
 }
 function lucas_sequence(n, P, Q, k, bits)
 {
@@ -785,7 +838,7 @@ function extra_strong_lucas_test(n)
     }
     return false;
 }
-function baillie_psw_test(n, extra_mr)
+function baillie_psw_test(n, extra_mr, ptests)
 {
     // https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, two = Arithmetic.II,
@@ -793,7 +846,7 @@ function baillie_psw_test(n, extra_mr)
 
     // Check divisibility by a short list of small primes
     if (Arithmetic.lt(n, primes[0])) return false;
-    for (i=0,l=stdMath.min(primes.length,100); i<l; ++i)
+    for (i=0,l=stdMath.min(primes.length,ptests||100); i<l; ++i)
     {
         p = primes[i];
         if (Arithmetic.equ(n, p)) return true;
@@ -915,6 +968,11 @@ function is_prime(n)
     // https://en.wikipedia.org/wiki/Primality_test
     // https://primes.utm.edu/prove/prove2_3.html#quick
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num, two = Arithmetic.II, ndigits, r;
+    if (Arithmetic.equ(Arithmetic.O, Arithmetic.mod(n, two)))
+    {
+        return Arithmetic.equ(two, n);
+    }
+    // n is odd
     //n = Arithmetic.abs(/*N(*/n/*)*/);
     ndigits = Arithmetic.digits(n).length;
     // try to use fastest algorithm based on size of number (number of digits)
@@ -923,22 +981,27 @@ function is_prime(n)
         // deterministic test
         return wheel_trial_div_test(n);
     }
-    else if (ndigits <= 20)
+    else if (ndigits <= 30)
     {
-        // deterministic test
+        // deterministic tests
         /*
+        If n < 2047 is a 2-SPRP, then n is prime.
         If n < 1373653 is a both 2 and 3-SPRP, then n is prime [PSW80].
         If n < 25326001 is a 2, 3 and 5-SPRP, then n is prime [PSW80].
         If n < 25000000000 is a 2, 3, 5 and 7-SPRP, then either n = 3215031751 or n is prime [PSW80]. (This is actually true for n < 118670087467 [Jaeschke93].)
         If n < 2152302898747 is a 2, 3, 5, 7 and 11-SPRP, then n is prime [Jaeschke93].
         If n < 3474749660383 is a 2, 3, 5, 7, 11 and 13-SPRP, then n is prime [Jaeschke93].
         If n < 341550071728321 is a 2, 3, 5, 7, 11, 13 and 17-SPRP, then n is prime [Jaeschke93].
+        ..
+        if n < 3317044064679887385961981 is a 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41-SPRP, then n is prime.
         */
+        /*if (Arithmetic.lt(n, N(2047)))
+            return miller_rabin_test(n, [two]);*/
         if (Arithmetic.lt(n, N(1373653)))
             return miller_rabin_test(n, [two, N(3)]);
         else if (Arithmetic.lt(n, N("25326001")))
             return miller_rabin_test(n, [two, N(3), N(5)]);
-        else if (Arithmetic.lt(n, N("25000000000")))
+        else if (Arithmetic.lt(n, N("118670087467")))
             return Arithmetic.equ(n, N("3215031751")) ? false : miller_rabin_test(n, [two, N(3), N(5), N(7)]);
         else if (Arithmetic.lt(n, N("2152302898747")))
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11)]);
@@ -946,16 +1009,22 @@ function is_prime(n)
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13)]);
         else if (Arithmetic.lt(n, N("341550071728321")))
             return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13), N(17)]);
+        else if (Arithmetic.lt(n, N("3825123056546413051")))
+            return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13), N(17), N(19), N(23)]);
+        else if (Arithmetic.lt(n, N("318665857834031151167461")))
+            return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13), N(17), N(19), N(23), N(29), N(31), N(37)]);
+        else if (Arithmetic.lt(n, N("3317044064679887385961981")))
+            return miller_rabin_test(n, [two, N(3), N(5), N(7), N(11), N(13), N(17), N(19), N(23), N(29), N(31), N(37), N(41)]);
 
         //return apr_cl_test(n);
-        return baillie_psw_test(n, 7);
+        return baillie_psw_test(n, 7, 100);
     }
     else
     {
         // fast deterministic test, TODO
         //return apr_cl_test(n);
         // strong probabilistic test for very large numbers ie > 1000 digits
-        return baillie_psw_test(n, 7);
+        return baillie_psw_test(n, 20, 10000);
     }
 }
 function next_prime(n, dir)
@@ -1270,6 +1339,152 @@ function factorize(n)
     }
     return INT ? factors.map(function(f){return [new INT(f[0]), new INT(f[1])];}) : factors;
 }
+function imodp(p)
+{
+    // find i so that i^2 = -1 (mod p) and p prime so that p =/= 3 (mod 4)
+    // i exists for 2 and all odd primes number congruent to 1 mod 4.
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        two = Arithmetic.II,
+        i = I, j, p_1, N;
+    if (Arithmetic.equ(two, p))
+    {
+        i = I;
+    }
+    else
+    {
+        p_1 = Arithmetic.sub(p, I);
+        N = Arithmetic.div(p_1, two) // p=1 (mod 4) implies N is even.
+        for (j=I; Arithmetic.lte(j, p_1); j=Arithmetic.add(j, I))
+        {
+            if (Arithmetic.equ(powm(j, N, p), p_1)) //i=sqrt(j^N) satisfies i^2 = -1 (mod p).
+            {
+                i = powm(j, Arithmetic.div(N, two), p);
+                break;
+            }
+        }
+    }
+    return i;
+}
+function decomp_sum_of_squares(p)
+{
+    //find unique (a, b) so that a^2 + b^2 = p and p prime so that p =/= 3 (mod 4)
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        two = Arithmetic.II,
+        a, b, t, l, key, val;
+
+    key = String(p);
+    val = decomp_sum_of_squares.memo[key];
+
+    if (null == val)
+    {
+        if (Arithmetic.equ(two, p))
+        {
+            a = I;
+            b = I;
+        }
+        else if (Arithmetic.equ(Arithmetic.mod(p, 4), 3))
+        {
+            a = p;
+            b = O;
+        }
+        else
+        {
+            l = Arithmetic.add(isqrt(p), I);
+            a = imodp(p);
+            b = p;
+            while (!Arithmetic.equ(b, O) && (Arithmetic.gt(a, l) || Arithmetic.gt(b, l)))
+            {
+                t = Arithmetic.mod(a, b);
+                a = b;
+                b = t;
+            }
+        }
+
+        val = [a, b];
+        // store in cache
+        if (Arithmetic.lt(p, 2000)) decomp_sum_of_squares.memo[key] = val;
+    }
+
+    return val;
+}
+decomp_sum_of_squares.memo = {};
+function cgcd2(w, z)
+{
+    //return Complex.gcd(w, z);
+    var r;
+    if (w.norm().gt(z.norm()))
+    {
+        // swap
+        r = w;
+        w = z;
+        z = r;
+    }
+    while (w.norm().gt(0))
+    {
+        r = z.mod(w);
+        z = w;
+        w = r;
+    }
+    return z;
+}
+function factorize_gi(a, b)
+{
+    // factorize gaussian integer
+    var Arithmetic = Abacus.Arithmetic,
+        O = Arithmetic.O,
+        I = Arithmetic.I,
+        two = Arithmetic.II, z,
+        factors, unit;
+    if (is_instance(a, Complex))
+    {
+        b = a.imag().num;
+        a = a.real().num;
+    }
+    z = new Complex(a, b);
+    factors = factorize(Arithmetic.add(Arithmetic.mul(a, a), Arithmetic.mul(b, b))).reduce(function(factors, pe) {
+        var p = pe[0], e = Arithmetic.val(pe[1]), factor, exponent;
+        if (Arithmetic.equ(Arithmetic.mod(p, 4), 3))
+        {
+            factor = new Complex(p, O);
+            exponent = stdMath.floor(e/2);
+        }
+        else
+        {
+            if (Arithmetic.equ(p, two))
+            {
+                factor = new Complex(I, I);
+            }
+            else
+            {
+                factor = decomp_sum_of_squares(p);
+                factor = new Complex(factor[0], factor[1]);
+            }
+            exponent = 0;
+            while ((exponent < e) && cgcd2(z, factor).equ(factor))
+            {
+                exponent += 1;
+                z = z.div(factor).floor();
+            }
+        }
+        if (0 < exponent)
+        {
+            factors.push([factor, Arithmetic.num(exponent)]);
+        }
+        if ((e > exponent) && !factor.imag().equ(0))
+        {
+            factors.push([factor.conj(), Arithmetic.num(e-exponent)]);
+        }
+        return factors;
+    }, []);
+    unit = (new Complex(a, b)).div(factors.reduce(function(prod, factor) {
+        return prod.mul(factor[0].pow(factor[1]));
+    }, Complex.One()));
+    return [[unit, I]].concat(factors);
+}
 function num_pp_factor(n, k)
 {
     // find factor p of n which is a perfect kth-power, ie n = (p^k) * m
@@ -1496,7 +1711,21 @@ function moebius(n)
 function divisors(n, as_generator)
 {
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
-        list = null, D2 = null, D1 = null, L1 = 0, L2 = 0, node, sqrn, i, n_i, next, factors, INT = null;
+        list = null, D2 = null, D1 = null, L1 = 0, L2 = 0,
+        node, sqrn, i, n_i, next, factors, divisors, INT = null;
+
+    if (is_instance(n, Complex))
+    {
+        factors = factorize_gi(n);
+        divisors = Tensor(factors.map(function(factor) {
+            return Arithmetic.val(factor[1]) + 1;
+        })).mapTo(function(selection) {
+            return selection.reduce(function(divisor, e, i) {
+                return 0 === e ? divisor : (divisor.mul(factors[i][0].pow(e)));
+            }, Complex.One());
+        });
+        return true === as_generator ? divisors : (divisors.get());
+    }
 
     if (is_instance(n, Integer)) {INT = n[CLASS]; n = n.num;}
 
@@ -1618,7 +1847,7 @@ function symbolic_divisors(c)
     {
         return (is_instance(c, Complex) && !c.isReal() && !c.isImag()
             ? Iterator((function(c) {
-                var iter_gcd = symbolic_divisors(Rational.gcd(c.real(), c.imag())),
+                /*var iter_gcd = symbolic_divisors(Rational.gcd(c.real(), c.imag())),
                     iter_i = [Complex.One(), Complex.Img()], i, g;
                 return function(curr, dir, state, init) {
                     if (init)
@@ -1634,7 +1863,33 @@ function symbolic_divisors(c)
                     }
                     if (null == g) return null;
                     ++i;
-                    return iter_i[i-1].mul(g);
+                    return iter_i[i-1].mul(g);*/
+                var iter_c = divisors(new Complex(c.real().mul(c.imag().den), c.imag().mul(c.real().den)), true),
+                    iter_r = divisors(Arithmetic.mul(c.real().den, c.imag().den), true),
+                    iter_i = [Complex.One(), Complex.Img()], i, gr, gc;
+                return function(curr, dir, state, init) {
+                    if (init)
+                    {
+                        i = 0;
+                        iter_c.rewind();
+                        iter_r.rewind();
+                        gc = iter_c.next();
+                        gr = iter_r.next();
+                    }
+                    if (i >= iter_i.length)
+                    {
+                        i = 0;
+                        gc = iter_c.next();
+                    }
+                    if (null == gc)
+                    {
+                        iter_c.rewind();
+                        gc = iter_c.next();
+                        gr = iter_r.next();
+                    }
+                    if (null == gr) return null;
+                    ++i;
+                    return iter_i[i-1].mul(gc).div(gr);
                 };
             })(c))
             : Iterator((function(c, is_imag) {
@@ -3816,7 +4071,8 @@ Abacus.Math = {
     }
     ,factorize: function(n) {
         var Arithmetic = Abacus.Arithmetic;
-        return factorize(is_instance(n, Integer) ? n : Arithmetic.num(n));
+        // support gaussian integers as well
+        return is_instance(n, Complex) ? factorize_gi(n) : factorize(is_instance(n, Integer) ? n : Arithmetic.num(n));
     }
     ,isProbablePrime: function(n) {
         var Arithmetic = Abacus.Arithmetic;

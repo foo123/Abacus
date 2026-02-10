@@ -634,7 +634,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return Polynomial.Discriminant(this);
     }
     ,roots: function() {
-        // find all integer/rational roots of poly, if any
+        // find all integer/rational/gaussian integer roots of poly, if any
         // https://en.wikipedia.org/wiki/Rational_root_theorem
         // https://en.wikipedia.org/wiki/Gauss%27s_lemma_(polynomial)
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
