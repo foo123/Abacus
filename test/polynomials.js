@@ -379,6 +379,12 @@ check_factors(Abacus.Ring.Q("x").fromString('x^2+1'));
 echo('Ring.C("x").fromString("x^2+1").factors()');
 check_factors(Abacus.Ring.C("x").fromString('x^2+1'));
 
+echo('Ring.Q("x").fromString("x^2-4").factors()');
+check_factors(Abacus.Ring.Q("x").fromString('x^2-4'));
+
+echo('Ring.C("x").fromString("x^2-4").factors()');
+check_factors(Abacus.Ring.C("x").fromString('x^2-4'));
+
 echo('Ring.C("x").fromString("(x+i+1)(x - 2*i)^2").factors()');
 check_factors(Abacus.Ring.C("x").fromString('(x+i+1)(x - 2*i)^2'));
 echo('---');

@@ -827,10 +827,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
-                    if (match = eat(/^\\?([a-z][a-z0-9_]*)\s*([\(\{])/i, false))
+                    if (match = eat(/^\\?(([a-z][a-z0-9]*)((_[a-z0-9])|(_\{[a-z0-9]+\}))?)\s*([\(\{])/i, false))
                     {
                         // function
                         m = match[1].toLowerCase() + '()';
+                        if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
+                        if ('}' === m.slice(-1)) m = m.slice(0, -1);
                         if (HAS.call(Expr.FN, m))
                         {
                             s = s.slice(match[0].length);
@@ -853,7 +855,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
-                    if (match = eat(/^(\\alpha|\\beta|\\gamma|\\delta|\\epsilon|\\zeta|\\eta|\\theta|\\iota|\\kappa|\\lambda|\\mu|\\nu|\\xi|\\o|\\pi|\\rho|\\sigma|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega)(_\{?[a-z0-9]+\}?)?/i))
+                    if (match = eat(/^(\\alpha|\\beta|\\gamma|\\delta|\\epsilon|\\zeta|\\eta|\\theta|\\iota|\\kappa|\\lambda|\\mu|\\nu|\\xi|\\o|\\pi|\\rho|\\sigma|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega)((_[a-z0-9])|(_\{[a-z0-9]+\}))?/i))
                     {
                         // greek symbol
                         m = match[0];
@@ -869,7 +871,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = true;
                         continue;
                     }
-                    if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                    if (match = eat(/^[a-z]((_[a-z0-9])|(_\{[a-z0-9]+\}))?/i))
                     {
                         // latin symbol
                         m = match[0];
@@ -2123,15 +2125,31 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._len;
     }
     ,factors: function() {
-        var self = this, expr, map;
+        var self = this, expr, map, c, f;
         if (null == self._fctrd)
         {
             if (self.isConst())
             {
-                self._fctrd = self.c().isReal() ? (self.c().real().isInt() ? Expr('*', factorize(self.c().real().num).map(function(f) {return Expr('^', [f[0], f[1]]);})) : Expr('/', [
-                    Expr('*', factorize(self.c().real().num).map(function(f) {return Expr('^', [f[0], f[1]]);})),
-                    Expr('*', factorize(self.c().real().den).map(function(f) {return Expr('^', [f[0], f[1]]);}))
-                ])) : self;
+                c = self.c();
+                if (is_instance(c, Complex))
+                {
+                    f = lcm2(c.real().abs().den, c.imag().abs().den);
+                    self._fctrd = Abacus.Arithmetic.equ(f, 1) ? Expr('*', factorize_gi(c).map(function(f) {return Expr('^', [f[0], f[1]]);})) : Expr('/', [
+                        Expr('*', factorize_gi(c.mul(f)).map(function(f) {return Expr('^', [f[0], f[1]]);})),
+                        Expr('*', factorize(f).map(function(f) {return Expr('^', [f[0], f[1]]);}))
+                    ]);
+                }
+                else if (c.real().isInt())
+                {
+                    self._fctrd = Expr('*', [Expr('', c.real().lt(0) ? -1 : 1)].concat(factorize(c.real().abs().num).map(function(f) {return Expr('^', [f[0], f[1]]);})));
+                }
+                else
+                {
+                    self._fctrd = Expr('/', [
+                        Expr('*', [Expr('', c.real().lt(0) ? -1 : 1)].concat(factorize(c.real().abs().num).map(function(f) {return Expr('^', [f[0], f[1]]);}))),
+                        Expr('*', factorize(c.real().abs().den).map(function(f) {return Expr('^', [f[0], f[1]]);}))
+                    ]);
+                }
             }
             else
             {
@@ -2381,7 +2399,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if ('()' === op.slice(-2))
             {
                 // function
-                self._tex = '\\' + op.slice(0, -2) + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                self._tex = '\\' + to_tex(op.slice(0, -2)) + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
             }
             else if (Expr.OP[op])
             {
@@ -3251,7 +3269,7 @@ function expr_str(expr)
 }
 function needs_parentheses(expr, is_tex)
 {
-    return !(('()' === expr.ast.op.slice(-2)) || (expr.isSimple() && ((expr.c().isReal() && expr.c().real().isInt()) || (expr.c().isImag() && expr.c().imag().isInt()))) || (('^' === expr.ast.op) && expr.ast.arg[0].isSimple() && (expr.ast.arg[1].isInt() || is_tex)) || (is_tex && ('/' === expr.ast.op)));
+    return (expr.isSimple() && expr.isConst() && !expr.c().isReal() && !expr.c().isImag()) || !(('()' === expr.ast.op.slice(-2)) || (expr.isSimple() && ((expr.c().isReal() && expr.c().real().isInt()) || (expr.c().isImag() && expr.c().imag().isInt()))) || (('^' === expr.ast.op) && expr.ast.arg[0].isSimple() && (expr.ast.arg[1].isInt() || is_tex)) || (is_tex && ('/' === expr.ast.op)));
 }
 
 // convenience methods

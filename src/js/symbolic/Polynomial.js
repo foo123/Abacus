@@ -904,7 +904,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                     else
                     {
                         // other irreducible factor
-                        p = p.monic(true); // same factor can appear with different constants
+                        p = p.primitive(true); // same factor can appear with different constants
                         c = c.mul(p[1]);
                         p = p[0];
                         k = p.toString();
@@ -2425,7 +2425,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                     continue;
                 }
                 // other irreducible factor
-                p = p.monic(true); // same factor can appear with different constants
+                p = p.primitive(true); // same factor can appear with different constants
                 c = c.mul(p[1]);
                 q = p[0];
                 k = q.toString();

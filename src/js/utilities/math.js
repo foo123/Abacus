@@ -1488,7 +1488,8 @@ function factorize_gi(a, b)
     unit = (new Complex(a, b)).div(factors.reduce(function(prod, factor) {
         return prod.mul(factor[0].pow(factor[1]));
     }, Complex.One()));
-    return [[unit, I]].concat(factors);
+    if (!unit.equ(Complex.One())) factors = [[unit, I]].concat(factors);
+    return factors;
 }
 function num_pp_factor(n, k)
 {
@@ -1869,8 +1870,9 @@ function symbolic_divisors(c, complex)
                     if (null == g) return null;
                     ++i;
                     return iter_i[i-1].mul(g);*/
-                var iter_c = divisors(new Complex(c.real().mul(c.imag().den), c.imag().mul(c.real().den)), true),
-                    iter_r = divisors(Arithmetic.mul(c.real().den, c.imag().den), true),
+                var f = lcm2(c.real().den, c.imag().den),
+                    iter_c = divisors(c.mul(f), true),
+                    iter_r = divisors(f, true),
                     iter_i = [Complex.One(), Complex.Img()], i, gr, gc;
                 return function(curr, dir, state, init) {
                     if (init)
