@@ -1645,6 +1645,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero();
+            /*if ('num' === self.ast.type && 'num' === other.ast.type)
+            {
+                return Expr('', self.c().add(other.c()));
+            }*/
             if (other.isConst() && other.c().equ(O))
             {
                 /*if (other.c().equ(O))
@@ -1704,6 +1708,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero();
+            /*if ('num' === self.ast.type && 'num' === other.ast.type)
+            {
+                return Expr('', self.c().sub(other.c()));
+            }*/
             if (other.isConst() && other.c().equ(O))
             {
                 /*if (other.c().equ(O))
@@ -1763,6 +1771,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero(); I = Rational/*Expr*/.One();
+            /*if ('num' === self.ast.type && 'num' === other.ast.type)
+            {
+                return Expr('', self.c().mul(other.c()));
+            }*/
             if (other.isConst())
             {
                 if (other.c().equ(O))
@@ -1811,6 +1823,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
+            if ('num' === self.ast.type && 'num' === other.ast.type)
+            {
+                return Expr('', self.c().div(other.c()));
+            }
             if (other.isConst())
             {
                 if (other.c().equ(Rational/*Expr*/.One()))
@@ -1865,7 +1881,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return I;
                 }*/
             }
-            return '^' === self.ast.op ? Expr('^', [self.ast.arg[0], self.ast.arg[1].mul(other)]) : Expr('^', [self, other]);
+            /*if (('^' === self.ast.op) && ('num' === self.ast.arg[1].ast.type) && self.ast.arg[1].isInt() && ('num' === other.ast.type) && other.isInt())
+            {
+                return Expr('^', [self.ast.arg[0], self.ast.arg[1].c().mul(other.c())]);
+            }*/
+            return Expr('^', [self, other]);
         }
         return self;
     }
@@ -2032,7 +2052,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self._simpl;
     }
-    ,simplifyBy: function(rules) {
+    ,simplifyByRules: function(rules) {
         // TODO: simplify other functions
         // based on given/user-defined rules/equivalence relations
         // via iterative unification recast as optimization based on expr complexity
@@ -2288,7 +2308,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         {
                             sign = str.charAt(0);
                             sign2 = str2.charAt(0);
-                            self._str = (!needs_parentheses(arg[0]) && ('-' !== sign) ? str : ('(' + str + ')')) + '^' + ((!needs_parentheses(arg[1]) && ('-' !== sign2) ? str2 : ('(' + str2 + ')')));
+                            self._str = (needs_parentheses(arg[0], false, true) || ('-' === sign) ? ('(' + str + ')') : str) + '^' + ((needs_parentheses(arg[1]) || ('-' === sign2) ? ('(' + str2 + ')') : str2));
                         }
                     }
                     else if ('/' === op)
@@ -2442,7 +2462,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         else
                         {
                             sign = tex.charAt(0);
-                            self._tex = (!needs_parentheses(arg[0], true) && ('-' !== sign) ? tex : ('\\left(' + tex + '\\right)')) + '^{' + tex2 + '}';
+                            self._tex = (needs_parentheses(arg[0], true, true) || ('-' === sign) ? ('\\left(' + tex + '\\right)') : tex) + '^{' + tex2 + '}';
                         }
                     }
                     else if ('/' === op)
@@ -2669,7 +2689,7 @@ function f_substitute(expr, map, sym, mode)
 {
     if (null == map.$cnt) map.$cnt = 0;
     function _(e) {return 'expand' === mode ? e.expand() : ('simplify' === mode ? e.simplify() : e);}
-    var ret, key, e, e2, e3, e4, k, k2, dk,
+    var ret, key, e, e2, e3, e4, k, k2, dk, m,
         Arithmetic = Abacus.Arithmetic;
     if (expr.symbols().filter(function(s) {return sym === s.slice(0, sym.length);}).length)
     {
@@ -2703,10 +2723,17 @@ function f_substitute(expr, map, sym, mode)
                 }
                 else
                 {
-                    e2 = f_substitute(expr.ast.arg[0], map, sym, mode);
                     k = Arithmetic.val(e.c().den);
-                    if (-1 < (['simplify'/*,'expand'*/]).indexOf(mode))
+                    m = e.c().num;
+                    if ('expand' === mode)
                     {
+                        m = 1;
+                        e2 = _(f_substitute(expr.ast.arg[0], map, sym, mode).pow(e.c().num));
+                        e2 = [Expr.One(), e2, Arithmetic.val(e.c().den)];
+                    }
+                    else if ('simplify' === mode)
+                    {
+                        e2 = f_substitute(expr.ast.arg[0], map, sym, mode);
                         k2 = stdMath.floor(stdMath.sqrt(k));
                         e3 = expr_rf(e2);
                         e4 = null;
@@ -2730,6 +2757,7 @@ function f_substitute(expr, map, sym, mode)
                     }
                     else
                     {
+                        e2 = f_substitute(expr.ast.arg[0], map, sym, mode);
                         e2 = [Expr.One(), e2, k];
                     }
                     if (!e2[1].isConst() || !e2[1].c().equ(1))
@@ -2744,7 +2772,7 @@ function f_substitute(expr, map, sym, mode)
                                 sym: sym+String(++map.$cnt)
                             };
                         }
-                        ret = Expr('^', [Expr('', map[key].sym), e.c().num]);
+                        ret = Expr('^', [Expr('', map[key].sym), m]);
                         if (!e2[0].isConst() || !e2[0].c().equ(1))
                         {
                             if (e2[2] < k)
@@ -2759,11 +2787,11 @@ function f_substitute(expr, map, sym, mode)
                                         sym: sym+String(++map.$cnt)
                                     };
                                 }
-                                ret = Expr('*', [Expr('^', [Expr('', map[key].sym), e.c().num]), ret]);
+                                ret = Expr('*', [Expr('^', [Expr('', map[key].sym), m]), ret]);
                             }
                             else
                             {
-                                ret = Expr('*', [e2[0].pow(e.c().num), ret]);
+                                ret = Expr('*', [e2[0].pow(m), ret]);
                             }
                         }
                     }
@@ -2781,11 +2809,11 @@ function f_substitute(expr, map, sym, mode)
                                     sym: sym+String(++map.$cnt)
                                 };
                             }
-                            ret = Expr('^', [Expr('', map[key].sym), e.c().num]);
+                            ret = Expr('^', [Expr('', map[key].sym), m]);
                         }
                         else
                         {
-                            ret = e2[0].pow(e.c().num);
+                            ret = e2[0].pow(m);
                         }
                     }
                 }
@@ -3267,9 +3295,9 @@ function expr_str(expr)
 {
     return is_callable(expr.toString) ? expr.toString() : String(expr);
 }
-function needs_parentheses(expr, is_tex)
+function needs_parentheses(expr, is_tex, in_pow)
 {
-    return (expr.isSimple() && expr.isConst() && !expr.c().isReal() && !expr.c().isImag()) || !(('()' === expr.ast.op.slice(-2)) || (expr.isSimple() && ((expr.c().isReal() && expr.c().real().isInt()) || (expr.c().isImag() && expr.c().imag().isInt()))) || (('^' === expr.ast.op) && expr.ast.arg[0].isSimple() && (expr.ast.arg[1].isInt() || is_tex)) || (is_tex && ('/' === expr.ast.op)));
+    return (in_pow && ('^' === expr.ast.op)) || (expr.isSimple() && expr.isConst() && !expr.c().isReal() && !expr.c().isImag()) || !(('()' === expr.ast.op.slice(-2)) || (expr.isSimple() && ((expr.c().isReal() && expr.c().real().isInt()) || (expr.c().isImag() && expr.c().imag().isInt()))) || (('^' === expr.ast.op) && expr.ast.arg[0].isSimple() && (('' === expr.ast.arg[1].ast.op) && expr.ast.arg[1].isInt() || is_tex)) || (!in_pow && is_tex && ('/' === expr.ast.op)));
 }
 
 // convenience methods

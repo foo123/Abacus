@@ -2048,8 +2048,7 @@ function gramschmidt(v)
                 for (k=0; k<kl; ++k) ui[k] = pjj[j].mul(ui[k]).sub(pij.mul(uj[k]));
             }
             g = igcd(ui);
-            if (g.gt(Arithmetic.I))
-                for (k=0; k<kl; ++k) ui[k] = ui[k].div(g);
+            if (g.gt(Arithmetic.I)) for (k=0; k<kl; ++k) ui[k] = ui[k].div(g);
             pjj[i] = dotp(ui, ui, Arithmetic);
         }
     }
@@ -2066,8 +2065,7 @@ function gramschmidt(v)
                 for (k=0; k<kl; ++k) ui[k] = Arithmetic.sub(Arithmetic.mul(pjj[j], ui[k]), Arithmetic.mul(pij, uj[k]));
             }
             g = igcd(ui);
-            if (Arithmetic.gt(g, Arithmetic.I))
-                for (k=0; k<kl; ++k) ui[k] = Arithmetic.div(ui[k], g);
+            if (Arithmetic.gt(g, Arithmetic.I)) for (k=0; k<kl; ++k) ui[k] = Arithmetic.div(ui[k], g);
             pjj[i] = dotp(ui, ui, Arithmetic);
         }
     }
@@ -3048,8 +3046,8 @@ function solvepolys(p, x, type)
                         if (solution && solution.length)
                         {
                             solutions = solutions.concat(solution.map(function(s) {
-                                s.splice(i, 0, v);
-                                return s;
+                                var i = 0;
+                                return x.map(function(xj) {return xj === xi ? v : (s[i++] || dummy(xj));});
                             }));
                         }
                     }
@@ -3112,8 +3110,8 @@ function solvepolys(p, x, type)
                 var solution = recursively_solve(pnew, xnew);
                 if (!solution || !solution.length) return solution; // not zero-dimensional
                 solutions = solutions.concat(solution.map(function(s) {
-                    s.splice(xi, 0, z);
-                    return s;
+                    var i = 0;
+                    return x.map(function(xj) {return xj === x[xi] ? z : (s[i++] || dummy(xj));});
                 }));
             }
             else
