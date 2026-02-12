@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-12 20:29:56)
+*   @version: 2.0.0 (2026-02-12 23:23:19)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-12 20:29:56)
+*   @version: 2.0.0 (2026-02-12 23:23:19)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -13962,7 +13962,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
     ,div: function(other, q_and_r) {
         var self = this, ab;
         if (self.ring.contains(other)) other = Polynomial.Const(other, self.symbol, self.ring);
-        if (is_instance(other, MultiPolynomialMod)) other = other.p;
+        other = other.p || other;
         if (is_instance(other, Expr))
         {
             return self.toExpr().div(other);
@@ -14035,6 +14035,10 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return qr[1];
     }
     ,mod: function(other) {
+        if (is_instance(other, Expr))
+        {
+            return Expr('mod()', [this.toExpr(), other]);
+        }
         var qr = this.div(other, true);
         return qr[1];
     }
@@ -15228,10 +15232,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
+            other = other.p || other;
             if (!is_same_symbol(self.symbol, other.symbol))
             {
                 ab = convert_to_same_symbol(self, other);
@@ -15270,10 +15271,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
+            other = other.p || other;
             if (!is_same_symbol(self.symbol, other.symbol))
             {
                 ab = convert_to_same_symbol(self, other);
@@ -15301,10 +15299,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
+            other = other.p || other;
             if (!is_same_symbol(self.symbol, other.symbol))
             {
                 ab = convert_to_same_symbol(self, other);
@@ -15332,10 +15327,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
+            other = other.p || other;
             if (!is_same_symbol(self.symbol, other.symbol))
             {
                 ab = convert_to_same_symbol(self, other);
@@ -15363,10 +15355,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         if (is_instance(other, Poly))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
+            other = other.p || other;
             if (!is_same_symbol(self.symbol, other.symbol))
             {
                 ab = convert_to_same_symbol(self, other);
@@ -15520,20 +15509,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
-            ab = convert_to_same_symbol(self, other);
+            ab = convert_to_same_symbol(self, other.p || other);
             return multi_div(ab.a, ab.b, true === q_and_r);
         }
         else if (is_instance(other, [Numeric, Poly]) || Abacus.Arithmetic.isNumber(other))
         {
-            if (is_instance(other, MultiPolynomialMod))
-            {
-                other = other.p;
-            }
-            return multi_div(self, other, true === q_and_r);
+            return multi_div(self, other.p || other, true === q_and_r);
         }
         return self;
     }
@@ -15592,6 +15573,10 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return qr[1];
     }
     ,mod: function(other) {
+        if (is_instance(other, Expr))
+        {
+            return Expr('mod()', [this.toExpr(), other]);
+        }
         var qr = this.div(other, true);
         return qr[1];
     }
@@ -16060,11 +16045,29 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
     ,ring: null
     ,p: null
     ,m: null
+    ,_n: null
+    ,_i: null
+    ,_c: null
 
     ,dispose: function() {
         var self = this;
+        if (self._n && (self === self._n._n))
+        {
+            self._n._n = null;
+        }
+        if (self._i && (self === self._i._i))
+        {
+            self._i._i = null;
+        }
+        if (self._c && (self === self._c._c))
+        {
+            self._c._c = null;
+        }
         self.p = null;
         self.m = null;
+        self._n = null;
+        self._i = null;
+        self._c = null;
         return self;
     }
     ,isInt: function() {
@@ -16165,19 +16168,19 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         }), self.p.factors()[1]];
     }
     ,equ: function(other) {
-        return this.p.equ(is_instance(other, MultiPolynomialMod) ? other.p : other);
+        return this.p.equ(other.p || other);
     }
     ,gt: function(other) {
-        return this.p.gt(is_instance(other, MultiPolynomialMod) ? other.p : other);
+        return this.p.gt(other.p || other);
     }
     ,gte: function(other) {
-        return this.p.gte(is_instance(other, MultiPolynomialMod) ? other.p : other);
+        return this.p.gte(other.p || other);
     }
     ,lt: function(other) {
-        return this.p.lt(is_instance(other, MultiPolynomialMod) ? other.p : other);
+        return this.p.lt(other.p || other);
     }
     ,lte: function(other) {
-        return this.p.lte(is_instance(other, MultiPolynomialMod) ? other.p : other);
+        return this.p.lte(other.p || other);
     }
 
     ,real: function() {
@@ -16190,103 +16193,176 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         return new MultiPolynomialMod(this.p.abs(), this.m);
     }
     ,conj: function() {
-        return new MultiPolynomialMod(this.p.conj(), this.m);
+        var self = this;
+        if (null == self._c)
+        {
+            self._c = new MultiPolynomialMod(self.p.conj(), self.m);
+            self._c._c = self;
+        }
+        return self._c;
     }
     ,neg: function() {
-        return new MultiPolynomialMod(this.p.neg(), this.m);
+        var self = this;
+        if (null == self._n)
+        {
+            self._n = new MultiPolynomialMod(self.p.neg(), self.m);
+            self._n._n = self;
+        }
+        return self._n;
     }
     ,inv: function() {
         var self = this,
-            poly = self.p,
-            modulo = self.m,
-            inv = MultiPolynomial.One(poly.symbol, poly.ring),
-            d, i, n = modulo.length;
-        for (i=0; i<n; ++i)
+            poly, modulo,
+            inv, d, i, n;
+        if (null == self._i)
         {
-            d = MultiPolynomial.xgcd(poly, modulo[i]);
-            inv = poly_mod(d[1].num.mul(inv), modulo);
-            poly = poly_mod(d[1].den.mul(d[0]), modulo);
+            poly = self.p;
+            modulo = self.m;
+            inv = MultiPolynomial.One(poly.symbol, poly.ring);
+            n = modulo.length;
+            for (i=0; i<n; ++i)
+            {
+                d = MultiPolynomial.xgcd(poly, modulo[i]);
+                inv = poly_mod(d[1].num.mul(inv), modulo);
+                poly = poly_mod(d[1].den.mul(d[0]), modulo);
+            }
+            d = poly_mod(inv.mul(self.p), modulo).c();
+            self._i = new MultiPolynomialMod(inv.div(d), modulo);
+            self._i._i = self;
         }
-        d = poly_mod(inv.mul(self.p), modulo).c();
-        return new MultiPolynomialMod(inv.div(d), modulo);
+        return self._i;
     }
 
     ,_add: function(other) {
-        return new MultiPolynomialMod(poly_mod(this.p._add(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m), this.m);
+        return new MultiPolynomialMod(poly_mod(this.p._add(other.p || other), this.m), this.m);
     }
     ,add: function(other) {
-        return new MultiPolynomialMod(poly_mod(this.p.add(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m), this.m);
+        if (is_instance(other, Expr))
+        {
+            return this.toExpr().add(other);
+        }
+        return new MultiPolynomialMod(poly_mod(this.p.add(other.p || other), this.m), this.m);
     }
     ,_sub: function(other) {
-        return new MultiPolynomialMod(poly_mod(this.p._sub(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m), this.m);
+        return new MultiPolynomialMod(poly_mod(this.p._sub(other.p || other), this.m), this.m);
     }
     ,sub: function(other) {
-        return new MultiPolynomialMod(poly_mod(this.p.sub(is_instance(other, MultiPolynomialMod) ? other.p : otherr), this.m), this.m);
+        if (is_instance(other, Expr))
+        {
+            return this.toExpr().sub(other);
+        }
+        return new MultiPolynomialMod(poly_mod(this.p.sub(other.p || otherr), this.m), this.m);
     }
     ,_mul: function(other) {
-        return new MultiPolynomialMod(poly_mod(this.p._mul(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m), this.m);
+        return new MultiPolynomialMod(poly_mod(this.p._mul(other.p || other), this.m), this.m);
     }
     ,mul: function(other) {
-        return new MultiPolynomialMod(poly_mod(this.p.mul(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m), this.m);
+        if (is_instance(other, Expr))
+        {
+            return this.toExpr().mul(other);
+        }
+        return new MultiPolynomialMod(poly_mod(this.p.mul(other.p || other), this.m), this.m);
     }
-    ,_div: function(other, q_and_r) {
-        var self = this, inv = (is_instance(other, MultiPolynomialMod) ? other : new MultiPolynomialMod(MultiPolynomial(other, self.symbol, self.ring), self.m)).inv();
-        return q_and_r ? [self._mul(inv), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : self._mul(inv);
-        //var qr = this.p._div(is_instance(other, MultiPolynomialMod) ? other.p : other, q_and_r);
-        //return q_and_r ? [new MultiPolynomialMod(qr[0], this.m), new MultiPolynomialMod(qr[1], this.m)] : new MultiPolynomialMod(qr, this.m);
+    ,_div: function(other, q_and_r, poly_div) {
+        var self = this, qr, inv;
+        if (true === poly_div)
+        {
+            qr = self.p._div(other.p || other, q_and_r);
+            return q_and_r ? [new MultiPolynomialMod(poly_mod(qr[0], self.m), self.m), new MultiPolynomialMod(poly_mod(qr[1], self.m), self.m)] : new MultiPolynomialMod(qr, self.m);
+        }
+        else if (is_instance(other, Numeric) || Abacus.Arithmetic.isNumber(other))
+        {
+            return q_and_r ? [new MultiPolynomialMod(poly_mod(self.p.div(other), self.m), self.m), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : new MultiPolynomialMod(poly_mod(self.p.div(other), self.m), self.m);
+        }
+        else
+        {
+            inv = (other.p && modulo_match(self.m, other.m) ? other : new MultiPolynomialMod(new MultiPolynomial(other.p || other, self.symbol, self.ring), self.m)).inv();
+            return q_and_r ? [self._mul(inv), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : self._mul(inv);
+        }
     }
-    ,div: function(other, q_and_r) {
-        var self = this, inv = (is_instance(other, MultiPolynomialMod) ? other : new MultiPolynomialMod(MultiPolynomial(other, self.symbol, self.ring), self.m)).inv();
-        return q_and_r ? [self.mul(inv), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : self.mul(inv);
-        //var qr = this.p.div(is_instance(other, MultiPolynomialMod) ? other.p : other, q_and_r);
-        //return q_and_r ? [new MultiPolynomialMod(qr[0], this.m), new MultiPolynomialMod(qr[1], this.m)] : new MultiPolynomialMod(qr, this.m);
+    ,div: function(other, q_and_r, poly_div) {
+        var self = this, qr, inv;
+        if (is_instance(other, Expr))
+        {
+            return self.toExpr().div(other);
+        }
+        if (true === poly_div)
+        {
+            qr = self.p.div(other.p || other, q_and_r);
+            return q_and_r ? [new MultiPolynomialMod(poly_mod(qr[0], self.m), self.m), new MultiPolynomialMod(poly_mod(qr[1], self.m), self.m)] : new MultiPolynomialMod(qr, self.m);
+        }
+        else if (is_instance(other, Numeric) || Abacus.Arithmetic.isNumber(other))
+        {
+            return q_and_r ? [new MultiPolynomialMod(poly_mod(self.p.div(other), self.m), self.m), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : new MultiPolynomialMod(poly_mod(self.p.div(other), self.m), self.m);
+        }
+        else
+        {
+            inv = (other.p && modulo_match(self.m, other.m) ? other : new MultiPolynomialMod(new MultiPolynomial(other.p || other, self.symbol, self.ring), self.m)).inv();
+            return q_and_r ? [self.mul(inv), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : self.mul(inv);
+        }
     }
     ,multidiv: function(others, q_and_r) {
-        return this.p.multidiv(others, q_and_r);
+        var self = this, qr = self.p.multidiv([].concat(others).map(function(p) {return p.p || p;}), q_and_r);
+        return q_and_r ? [new MultiPolynomialMod(poly_mod(qr[0], self.m), self.m), new MultiPolynomialMod(poly_mod(qr[1], self.m), self.m)] : new MultiPolynomialMod(poly_mod(qr, self.m), self.m);
     }
     ,_mod: function(other) {
-        return new MultiPolynomialMod(this.p._mod(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m);
+        var self = this;
+        return new MultiPolynomialMod(self.p._mod(other.p || other), self.m);
     }
     ,mod: function(other) {
-        return new MultiPolynomialMod(this.p.mod(is_instance(other, MultiPolynomialMod) ? other.p : other), this.m);
+        var self = this;
+        if (is_instance(other, Expr))
+        {
+            return Expr('mod()', [self.toExpr(), other]);
+        }
+        return new MultiPolynomialMod(self.p.mod(other.p || other), self.m);
     }
     ,multimod: function(others) {
-        return this.p.multimod(others);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.multimod([].concat(others).map(function(p) {return p.p || p;})), self.m), self.m);
     }
     ,_divmod: function(other) {
-        var qr = this.p._divmod(is_instance(other, MultiPolynomialMod) ? other.p : other);
-        return [new MultiPolynomialMod(qr[0], this.m), new MultiPolynomialMod(qr[1], this.m)];
+        var self = this, qr = self.p._divmod(other.p || other);
+        return [new MultiPolynomialMod(poly_mod(qr[0], self.m), self.m), new MultiPolynomialMod(poly_mod(qr[1], self.m), self.m)];
     }
     ,divmod: function(other) {
-        var qr = this.p.divmod(is_instance(other, MultiPolynomialMod) ? other.p : other);
-        return [new MultiPolynomialMod(qr[0], this.m), new MultiPolynomialMod(qr[1], this.m)];
+        var self = this, qr = self.p.divmod(other.p || other);
+        return [new MultiPolynomialMod(poly_mod(qr[0], self.m), self.m), new MultiPolynomialMod(poly_mod(qr[1], self.m), self.m)];
     }
     ,multidivmod: function(others) {
-        return this.p.multidivmod(others);
+        var self = this, qr = self.p.multidivmod([].concat(others).map(function(p) {return p.p || p;}), q_and_r);
+        return [new MultiPolynomialMod(poly_mod(qr[0], self.m), self.m), new MultiPolynomialMod(poly_mod(qr[1], self.m), self.m)];
     }
     ,divides: function(other) {
         return !this.p.equ(Abacus.Arithmetic.O);
     }
     ,_pow: function(n) {
-        return new MultiPolynomialMod(poly_mod(this.p._pow(n), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p._pow(n), self.m), self.m);
     }
     ,pow: function(n) {
-        return new MultiPolynomialMod(poly_mod(this.p.pow(n), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.pow(n), self.m), self.m);
     }
     ,rad: function(n) {
-        return new MultiPolynomialMod(poly_mod(this.p.rad(n), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.rad(n), self.m), self.m);
     }
     ,substitute: function(v, xi) {
-        return new MultiPolynomialMod(poly_mod(this.p.substitute(v, xi), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.substitute(v, xi), self.m), self.m);
     }
     ,compose: function(q) {
-        return new MultiPolynomialMod(poly_mod(this.p.compose(q), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.compose(q), self.m), self.m);
     }
     ,shift: function(x, s) {
-        return new MultiPolynomialMod(poly_mod(this.p.shift(x, s), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.shift(x, s), self.m), self.m);
     }
     ,d: function(x, n) {
-        return new MultiPolynomialMod(poly_mod(this.p.d(x, n), this.m), this.m);
+        var self = this;
+        return new MultiPolynomialMod(poly_mod(self.p.d(x, n), self.m), self.m);
     }
     ,evaluate: function(x, all) {
         return this.p.evaluate(x, all);
@@ -18453,10 +18529,17 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
     }
     ,mod: function(other) {
         var self = this;
+        if (is_instance(other, Expr))
+        {
+            return Expr('mod()', [self.toExpr(), other]);
+        }
         return RationaFunc(self.num.mod(other), self.den.mod(other));
     }
     ,divmod: function(other) {
-        return [RationaFunc(self.num.div(other), self.den.div(other)), RationaFunc(self.num.mod(other), self.den.mod(other))];
+        var self = this,
+            qr1 = self.num.divmod(other),
+            qr2 = self.den.divmod(other);
+        return [RationaFunc(qr1[0], qr2[0]), RationaFunc(qr1[1], qr2[1])];
     }
     ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
@@ -18621,8 +18704,8 @@ function simplify_rf(rf, use_gcd)
         {
             // use multipolynomial gcd if possible but can become slow
             qr = MultiPolynomial.gcd(rf.num.p || rf.num, rf.den.p || rf.den);
-            rf.num = rf.num.div(qr);
-            rf.den = rf.den.div(qr);
+            rf.num = rf.num.div(qr, false, true);
+            rf.den = rf.den.div(qr, false, true);
         }
 
         num = rf.num.primitive(true);
@@ -18639,8 +18722,8 @@ function simplify_rf(rf, use_gcd)
                 n = den[1].den.mul(num[1].num);
                 d = num[1].den.mul(den[1].num);
                 g = n[CLASS].gcd(n, d);
-                rf.num = num[0].mul(n.div(g));
-                rf.den = den[0].mul(d.div(g));
+                rf.num = num[0].mul(n.div(g, false, true));
+                rf.den = den[0].mul(d.div(g, false, true));
             }
             else if (is_class(num[0].ring.NumberClass, Complex))
             {
