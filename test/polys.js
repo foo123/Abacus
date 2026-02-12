@@ -78,6 +78,14 @@ echo(print_solution(o, ["x", "y", "z"]));
 echo(check_solution_system(o, [p1,p2]));
 echo('---');
 
+p1 = ring1.fromString("(x+1)(y-1)(z+2)");
+echo('Solve: '+[p1].map(String).join(','));
+echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');
+o=Abacus.Math.polynomials([p1], ["x", "y", "z"]);
+echo(print_solution(o, ["x", "y", "z"]));
+echo(check_solution_system(o, [p1]));
+echo('---');
+
 p1 = ring1.fromString("x^2 + y^2 + z - 1");
 echo('Solve: '+[p1].map(String).join(','));
 echo('o=Abacus.Math.polynomials(['+[p1].map(String).join(',')+'], ["x", "y", "z"])');

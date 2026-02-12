@@ -403,6 +403,10 @@ function esc_html(s)
 {
     return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split(' ').join('&nbsp;').split("\n").join('<br>');
 }
+function esc(s)
+{
+    return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;');
+}
 
 function toTex(x)
 {
@@ -577,7 +581,7 @@ function init()
             const math = document.createElement('div');
             math.id = 'math-' + String(cnt);
             math.className = 'math';
-            math.innerHTML = Tex(out);
+            math.innerHTML = esc(Tex(out));
             output.appendChild(math);
             printCompleted = printCompleted.then(function() {
                 return MathJax.typesetPromise([math]);

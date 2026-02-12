@@ -2801,7 +2801,7 @@ function solvepolys(p, x, type)
         var deg, triang_all, triang, already_used,
             solve_for, free_vars, sub, j,
             is_consistent, all_substituted,
-            combinations, solution,
+            combinations, solution, solutions = [],
             // factor them to simplify
             pf = p.map(function(pi) {return pi.factors()[0].map(function(pik) {return pik[0];})});
 
@@ -2887,12 +2887,17 @@ function solvepolys(p, x, type)
         solve_for = KEYS(triang_all);
         if (!solve_for.length) return null; // cannot solve
 
-        combinations = Tensor(solve_for.map(function(xj) {return triang_all[xj].length;}));
+        combinations = Tensor(solve_for.map(function(xj) {return triang_all[xj].length+1;}));
+        combinations.next(); // skip non solution
         while (combinations.hasNext())
         {
             // triangularization
             triang = combinations.next().reduce(function(triang, i, j) {
-                triang[solve_for[j]] = triang_all[solve_for[j]][i];
+                if (0 < i)
+                {
+                    // if this var is used
+                    triang[solve_for[j]] = triang_all[solve_for[j]][i-1];
+                }
                 return triang;
             }, {});
             j = 0;
@@ -2912,7 +2917,7 @@ function solvepolys(p, x, type)
                 sub.that.push(xi);
                 sub.withthat.push(solution[xi]);
             });
-            solve_for.slice().sort(function(a, b) {
+            solve_for.filter(function(xi) {return HAS.call(triang, xi);}).sort(function(a, b) {
                 return (x.filter(function(xi, i) {
                     return HAS.call(free_vars, xi) ? false : (0 < deg[triang[a][0]][triang[a][1]].max[i]);
                 }).length) - (x.filter(function(xi, i) {
@@ -2972,9 +2977,24 @@ function solvepolys(p, x, type)
             }, true);
             if (!is_consistent) continue;
 
-            return [x.map(function(xi) {return solution[xi];})];
+            // add solution
+            solutions.push(x.map(function(xi) {return solution[xi];}));
         }
-        return false;
+        return solutions.length ? solutions : null;
+    }
+
+    function unique(solutions)
+    {
+        var hash = {};
+        return solutions.reduce(function(solutions, sol) {
+            var key = sol.map(String).join(',');
+            if (!HAS.call(hash, key))
+            {
+                hash[key] = 1;
+                solutions.push(sol);
+            }
+            return solutions;
+        }, []);
     }
 
     function recursively_solve(p, x, start)
@@ -3022,7 +3042,7 @@ function solvepolys(p, x, type)
             // if inconsistent
             if (false === solutions) return false;
             // if separable
-            if (solutions) return solutions;
+            if (solutions) return unique(solutions);
 
             // is not separable
             // substitute some simplifying values for some symbols
@@ -3030,10 +3050,10 @@ function solvepolys(p, x, type)
             redundant = x.filter(function(xi) {
                 return 0 === basis.reduce(function(deg, pi) {return stdMath.max(deg, pi.maxdeg(xi));}, 0);
             });
-            return x.reduce(function(solutions, xi, i) {
+            return unique(x.reduce(function(solutions, xi, i) {
                 if (-1 < redundant.indexOf(xi)) return solutions;
                 var xnew = x.filter(function(xj) {return (xj !== xi);});
-                ([0, -1, 1, 2, -2]).forEach(function(v) {
+                ([0, -1, 1]).forEach(function(v) {
                     v = to_expr(v);
                     var pnew = basis.reduce(function(pnew, b) {
                         var bnew = b.substitute(v, xi);
@@ -3072,7 +3092,7 @@ function solvepolys(p, x, type)
                         return solution[i++];
                     }
                 });
-            });
+            }));
         }
 
         // find exact solutions for univariate poly
@@ -3122,7 +3142,7 @@ function solvepolys(p, x, type)
             }
         }
 
-        return solutions;
+        return unique(solutions);
     }
 
     return recursively_solve(p.map(function(pi) {return pi.order('lex')}), x, true);

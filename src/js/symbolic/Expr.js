@@ -1645,7 +1645,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero();
-            /*if ('num' === self.ast.type && 'num' === other.ast.type)
+            /*if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
                 return Expr('', self.c().add(other.c()));
             }*/
@@ -1708,7 +1708,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero();
-            /*if ('num' === self.ast.type && 'num' === other.ast.type)
+            /*if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
                 return Expr('', self.c().sub(other.c()));
             }*/
@@ -1771,7 +1771,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             // do some simplifications/normalizations
             O = Rational/*Expr*/.Zero(); I = Rational/*Expr*/.One();
-            /*if ('num' === self.ast.type && 'num' === other.ast.type)
+            /*if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
                 return Expr('', self.c().mul(other.c()));
             }*/
@@ -1823,10 +1823,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if ('num' === self.ast.type && 'num' === other.ast.type)
+            /*if (('num' === self.ast.type) && ('num' === other.ast.type))
             {
                 return Expr('', self.c().div(other.c()));
-            }
+            }*/
             if (other.isConst())
             {
                 if (other.c().equ(Rational/*Expr*/.One()))
@@ -1867,7 +1867,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             if (other.isInt())
             {
-                O = Expr.Zero(); I = Expr.One();
+                //O = Expr.Zero(); I = Expr.One();
                 /*if (self.isConst())
                 {
                     return Expr('', other.c().lt(Arithmetic.O) ? (self.c().inv().pow(other.c().neg())) : (self.c().pow(other.c())));
@@ -2053,8 +2053,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._simpl;
     }
     ,simplifyByRules: function(rules) {
-        // TODO: simplify other functions
-        // based on given/user-defined rules/equivalence relations
+        // TODO: general simplify
+        // using given/user-defined rules/equivalence relations
         // via iterative unification recast as optimization based on expr complexity
         return this;
     }
