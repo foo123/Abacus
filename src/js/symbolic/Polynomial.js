@@ -1223,47 +1223,14 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return is_instance(other, [Polynomial, Numeric]) || Abacus.Arithmetic.isNumber(other) ? uni_div(self, other, true === q_and_r) : self;
     }
     ,multidiv: function(others, q_and_r) {
-        var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
+        var self = this;
 
         q_and_r = (true === q_and_r);
         if (is_instance(others, Polynomial)) others = [others];
         if (!others || !others.length) return q_and_r ? [[], self] : [];
 
         others = others.map(function(q) {return self.ring.contains(q) ? Polynomial.Const(q, self.symbol, self.ring) : q;});
-        n = others.length;
-        qs = array(n, function() {return [];});
-        r = [];
-        p = self.clone();
-        while (p.terms.length/*!p.equ(Arithmetic.O)*/)
-        {
-            // Try to divide by a polynomial.
-            plt = p.ltm(); divides = false;
-            for (i=0; i<n; ++i)
-            {
-                xlt = others[i].ltm();
-                if (xlt.divides(plt))
-                {
-                    divides = true;
-                    break;
-                }
-                // If the terms were not divisible, try the next polynomial.
-            }
-            if (divides)
-            {
-                // Perform the division.
-                t = plt.div(xlt);
-                qs[i] = addition_sparse(qs[i], [t], UniPolyTerm, false, p.ring);
-                p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), UniPolyTerm, true, p.ring);
-            }
-            else
-            {
-                // None of them divided. Cancel and Move the leading term to r.
-                p.terms.shift();
-                if (q_and_r) r = addition_sparse(r, [plt], UniPolyTerm, false, p.ring);
-            }
-        }
-        qs = qs.map(function(qi) {return Polynomial(qi, p.symbol, p.ring);});
-        return q_and_r ? [qs, Polynomial(r, p.symbol, p.ring)] : qs;
+        return poly_multi_divmod(self, others, true, q_and_r);
     }
     ,_mod: function(other) {
         var qr = this._div(other, true);
@@ -1278,8 +1245,13 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return qr[1];
     }
     ,multimod: function(others) {
-        var qr = this.multidiv(others, true);
-        return qr[1];
+        var self = this;
+
+        if (is_instance(others, Polynomial)) others = [others];
+        if (!others || !others.length) return self;
+
+        others = others.map(function(q) {return self.ring.contains(q) ? Polynomial.Const(q, self.symbol, self.ring) : q;});
+        return poly_multi_divmod(self, others, false, true);
     }
     ,_divmod: function(other) {
         return this._div(other, true);
@@ -2755,54 +2727,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return self;
     }
     ,multidiv: function(others, q_and_r) {
-        var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
+        var self = this;
 
         q_and_r = (true === q_and_r);
         if (is_instance(others, MultiPolynomial)) others = [others];
         if (!others || !others.length) return q_and_r ? [[], self] : [];
 
         others = others.map(function(q) {return self.ring.contains(q) ? MultiPolynomial.Const(q, self.symbol, self.ring) : q;});
-        n = others.length;
-        qs = array(n, function() {return [];});
-        r = [];
-        p = self.clone();
-        while (p.terms.length/*!p.equ(Arithmetic.O)*/)
-        {
-            // Try to divide by a polynomial.
-            plt = p.ltm(); divides = false;
-            for (i=0; i<n; ++i)
-            {
-                xlt = others[i].ltm();
-                if (xlt.divides(plt))
-                {
-                    divides = true;
-                    break;
-                }
-                // If the terms were not divisible, try the next polynomial.
-            }
-            if (divides)
-            {
-                // Perform the division.
-                t = plt.div(xlt);
-                qs[i] = addition_sparse(qs[i], [t], MultiPolyTerm, false, p.ring);
-                p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), MultiPolyTerm, true, p.ring);
-            }
-            else
-            {
-                // None of them divided. Cancel and Move the leading term to r.
-                p.terms.shift();
-                if (q_and_r) r = addition_sparse(r, [plt], MultiPolyTerm, false, p.ring);
-            }
-        }
-        qs = qs.map(function(qi) {
-            qi = MultiPolynomial(qi, p.symbol, p.ring);
-            return qi;
-        });
-        if (q_and_r)
-        {
-            r = MultiPolynomial(r, p.symbol, p.ring);
-        }
-        return q_and_r ? [qs, r] : qs;
+        return poly_multi_divmod(self, others, true, q_and_r);
     }
     ,_mod: function(other) {
         var qr = this._div(other, true);
@@ -2817,8 +2749,13 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return qr[1];
     }
     ,multimod: function(others) {
-        var qr = this.multidiv(others, true);
-        return qr[1];
+        var self = this;
+
+        if (is_instance(others, MultiPolynomial)) others = [others];
+        if (!others || !others.length) return self;
+
+        others = others.map(function(q) {return self.ring.contains(q) ? MultiPolynomial.Const(q, self.symbol, self.ring) : q;});
+        return poly_multi_divmod(self, others, false, true);
     }
     ,_divmod: function(other) {
         return this._div(other, true);
@@ -3195,8 +3132,16 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         var self = this;
         if (!is_instance(self, MultiPolynomialMod)) return new MultiPolynomialMod(poly, mod);
 
-        self.p = poly;
-        self.m = mod || [];
+        if (is_instance(poly, MultiPolynomialMod))
+        {
+            self.p = poly.p.clone();
+            self.m = mod || (poly.m.slice());
+        }
+        else
+        {
+            self.p = poly;
+            self.m = mod || [];
+        }
 
         def(self, 'terms', {
             get: function() {
@@ -3462,8 +3407,8 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
                 inv = poly_mod(d[1].num.mul(inv), modulo);
                 poly = poly_mod(d[1].den.mul(d[0]), modulo);
             }
-            d = poly_mod(inv.mul(self.p), modulo).c();
-            self._i = new MultiPolynomialMod(inv.div(d), modulo);
+            d = poly_mod(inv.mul(self.p), self.m).c();
+            self._i = new MultiPolynomialMod(inv.div(d), self.m);
             self._i._i = self;
         }
         return self._i;
@@ -3807,14 +3752,6 @@ function cmp_exp_i(e1, e2, i)
     else if (e1[i] === e2[i])
         return cmp_exp_i(e1, e2, i+1);
     return e1[i] - e2[i];
-}
-function poly_mod(poly, modulo)
-{
-    if (poly && modulo && modulo.length)
-    {
-        for (var i=0,n=modulo.length; i<n; ++i) poly = poly.mod(modulo[i]);
-    }
-    return poly;
 }
 function addition_sparse(a, b, TermClass, do_subtraction, ring)
 {
@@ -4187,6 +4124,65 @@ function multi_div(P, x, q_and_r)
         return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
     }
     return P;
+}
+function poly_multi_divmod(self, others, want_q, want_r)
+{
+    var i, n = others.length,
+        Poly = self[CLASS],
+        qs = want_q ? array(n, function() {return [];}) : null,
+        r = want_r ? [] : null,
+        p = self.clone(),
+        xlt, plt, divides, t,
+        Arithmetic = Abacus.Arithmetic;
+    while (p.terms.length/*!p.equ(Arithmetic.O)*/)
+    {
+        // Try to divide by a polynomial.
+        plt = p.ltm(); divides = false;
+        for (i=0; i<n; ++i)
+        {
+            xlt = others[i].ltm();
+            if (xlt.divides(plt))
+            {
+                divides = true;
+                break;
+            }
+            // If the terms were not divisible, try the next polynomial.
+        }
+        if (divides)
+        {
+            // Perform the division.
+            t = plt.div(xlt);
+            if (want_q) qs[i] = addition_sparse(qs[i], [t], Poly.Term, false, p.ring);
+            p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), Poly.Term, true, p.ring);
+        }
+        else
+        {
+            // None of them divided. Cancel and Move the leading term to r.
+            p.terms.shift();
+            if (want_r) r = addition_sparse(r, [plt], Poly.Term, false, p.ring);
+        }
+    }
+    if (want_q)
+    {
+        qs = qs.map(function(qi) {
+            qi = new Poly(qi, p.symbol, p.ring);
+            return qi;
+        });
+    }
+    if (want_r)
+    {
+        r = new Poly(r, p.symbol, p.ring);
+    }
+    return want_q && want_r ? [qs, r] : (want_q ? qs : (want_r ? r : null));
+}
+function poly_mod(poly, modulo)
+{
+    if (poly && modulo && modulo.length)
+    {
+        //for (var i=0,n=modulo.length; i<n; ++i) poly = poly.mod(modulo[i]);
+        poly = poly_multi_divmod(poly, modulo, false, true);
+    }
+    return poly;
 }
 function poly_interpolate(v, x, PolynomialClass, symbol, ring)
 {

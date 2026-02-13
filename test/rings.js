@@ -61,6 +61,8 @@ echo('---');
 
 ring = Ring.Q("x", "y");
 rring = Ring.K(Ring.K(Ring.K(Ring.Q()), "y", true).associatedField(), "x", true);
+echo(ring.toString());
+echo(rring.toString());
 p1 = ring.fromString("x^2 + x*y");
 p2 = ring.fromString("x*y + y^2");
 p3 = ring.gcd(p1, p2);
@@ -77,3 +79,19 @@ p1 = rring.fromString("x*(x+y)");
 p2 = rring.fromString("(x+y)^2");
 p3 = rring.gcd(p1, p2);
 echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mod(p3).toString()+','+p2.mod(p3).toString()+', x + y');
+
+echo('---');
+
+ring = Ring.Q("x","y").quotientRing("x^3-2","y^3-3");
+p1 = ring.fromString("x^2+2y+1");
+p2 = p1.inv();
+p3 = p2.inv();
+echo(ring.toString());
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mul(p2).toString());
+
+ring = Ring.Q("x","y").quotientRing("x^2-4").associatedField();
+p1 = ring.fromString("y+2x+5");
+p2 = p1.inv();
+p3 = p2.inv();
+echo(ring.toString());
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mul(p2).toString());

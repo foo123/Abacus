@@ -698,13 +698,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = false;
                         continue;
                     }
-                    if (eat(/^\\frac\{/))
+                    if (eat(/^\\frac/))
                     {
                         // fraction
                         arg = [null, null];
-                        if (!(arg[0] = parse_until('}'))) throw error('Missing or invalid numerator in "\\frac"', i0);
-                        if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
-                        if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
+                        if (match = eat(/^\s+(\d)(\d)/))
+                        {
+                            arg[0] = Expr('', +match[1]);
+                            arg[1] = Expr('', +match[2]);
+                        }
+                        else
+                        {
+                            if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
+                            if (!(arg[0] = parse_until('}'))) throw error('Missing or invalid numerator in "\\frac"', i0);
+                            if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
+                            if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
+                        }
                         term = Expr.OP['/'].fn(arg);
                         if (prev_term)
                         {
@@ -731,7 +740,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 // number
                                 term = Expr('', Rational.fromDec(match[0]));
                             }
-                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            else if (match = eat(/^[a-z]((_[a-z0-9])|(_\{[a-z0-9]+\}))?/i))
                             {
                                 // symbol
                                 m = match[0];
@@ -801,7 +810,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 // number
                                 arg = Expr('', Rational.fromDec(match[0]));
                             }
-                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            else if (match = eat(/^[a-z]((_[a-z0-9])|(_\{[a-z0-9]+\}))?/i))
                             {
                                 // symbol
                                 m = match[0];

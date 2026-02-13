@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-13 08:30:21)
+*   @version: 2.0.0 (2026-02-14 00:10:30)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-02-13 08:30:21)
+*   @version: 2.0.0 (2026-02-14 00:10:30)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -10150,13 +10150,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         prev_term = false;
                         continue;
                     }
-                    if (eat(/^\\frac\{/))
+                    if (eat(/^\\frac/))
                     {
                         // fraction
                         arg = [null, null];
-                        if (!(arg[0] = parse_until('}'))) throw error('Missing or invalid numerator in "\\frac"', i0);
-                        if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
-                        if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
+                        if (match = eat(/^\s+(\d)(\d)/))
+                        {
+                            arg[0] = Expr('', +match[1]);
+                            arg[1] = Expr('', +match[2]);
+                        }
+                        else
+                        {
+                            if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
+                            if (!(arg[0] = parse_until('}'))) throw error('Missing or invalid numerator in "\\frac"', i0);
+                            if (!eat('{')) throw error('Missing "{" in "\\frac"', i0);
+                            if (!(arg[1] = parse_until('}'))) throw error('Missing or invalid denumerator in "\\frac"', i0);
+                        }
                         term = Expr.OP['/'].fn(arg);
                         if (prev_term)
                         {
@@ -10183,7 +10192,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 // number
                                 term = Expr('', Rational.fromDec(match[0]));
                             }
-                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            else if (match = eat(/^[a-z]((_[a-z0-9])|(_\{[a-z0-9]+\}))?/i))
                             {
                                 // symbol
                                 m = match[0];
@@ -10253,7 +10262,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                 // number
                                 arg = Expr('', Rational.fromDec(match[0]));
                             }
-                            else if (match = eat(/^[a-z](_\{?[a-z0-9]+\}?)?/i))
+                            else if (match = eat(/^[a-z]((_[a-z0-9])|(_\{[a-z0-9]+\}))?/i))
                             {
                                 // symbol
                                 m = match[0];
@@ -13988,47 +13997,14 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return is_instance(other, [Polynomial, Numeric]) || Abacus.Arithmetic.isNumber(other) ? uni_div(self, other, true === q_and_r) : self;
     }
     ,multidiv: function(others, q_and_r) {
-        var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
+        var self = this;
 
         q_and_r = (true === q_and_r);
         if (is_instance(others, Polynomial)) others = [others];
         if (!others || !others.length) return q_and_r ? [[], self] : [];
 
         others = others.map(function(q) {return self.ring.contains(q) ? Polynomial.Const(q, self.symbol, self.ring) : q;});
-        n = others.length;
-        qs = array(n, function() {return [];});
-        r = [];
-        p = self.clone();
-        while (p.terms.length/*!p.equ(Arithmetic.O)*/)
-        {
-            // Try to divide by a polynomial.
-            plt = p.ltm(); divides = false;
-            for (i=0; i<n; ++i)
-            {
-                xlt = others[i].ltm();
-                if (xlt.divides(plt))
-                {
-                    divides = true;
-                    break;
-                }
-                // If the terms were not divisible, try the next polynomial.
-            }
-            if (divides)
-            {
-                // Perform the division.
-                t = plt.div(xlt);
-                qs[i] = addition_sparse(qs[i], [t], UniPolyTerm, false, p.ring);
-                p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), UniPolyTerm, true, p.ring);
-            }
-            else
-            {
-                // None of them divided. Cancel and Move the leading term to r.
-                p.terms.shift();
-                if (q_and_r) r = addition_sparse(r, [plt], UniPolyTerm, false, p.ring);
-            }
-        }
-        qs = qs.map(function(qi) {return Polynomial(qi, p.symbol, p.ring);});
-        return q_and_r ? [qs, Polynomial(r, p.symbol, p.ring)] : qs;
+        return poly_multi_divmod(self, others, true, q_and_r);
     }
     ,_mod: function(other) {
         var qr = this._div(other, true);
@@ -14043,8 +14019,13 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         return qr[1];
     }
     ,multimod: function(others) {
-        var qr = this.multidiv(others, true);
-        return qr[1];
+        var self = this;
+
+        if (is_instance(others, Polynomial)) others = [others];
+        if (!others || !others.length) return self;
+
+        others = others.map(function(q) {return self.ring.contains(q) ? Polynomial.Const(q, self.symbol, self.ring) : q;});
+        return poly_multi_divmod(self, others, false, true);
     }
     ,_divmod: function(other) {
         return this._div(other, true);
@@ -15520,54 +15501,14 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return self;
     }
     ,multidiv: function(others, q_and_r) {
-        var self = this, p, qs, r, n, i, plt, xlt, t, divides, Arithmetic = Abacus.Arithmetic;
+        var self = this;
 
         q_and_r = (true === q_and_r);
         if (is_instance(others, MultiPolynomial)) others = [others];
         if (!others || !others.length) return q_and_r ? [[], self] : [];
 
         others = others.map(function(q) {return self.ring.contains(q) ? MultiPolynomial.Const(q, self.symbol, self.ring) : q;});
-        n = others.length;
-        qs = array(n, function() {return [];});
-        r = [];
-        p = self.clone();
-        while (p.terms.length/*!p.equ(Arithmetic.O)*/)
-        {
-            // Try to divide by a polynomial.
-            plt = p.ltm(); divides = false;
-            for (i=0; i<n; ++i)
-            {
-                xlt = others[i].ltm();
-                if (xlt.divides(plt))
-                {
-                    divides = true;
-                    break;
-                }
-                // If the terms were not divisible, try the next polynomial.
-            }
-            if (divides)
-            {
-                // Perform the division.
-                t = plt.div(xlt);
-                qs[i] = addition_sparse(qs[i], [t], MultiPolyTerm, false, p.ring);
-                p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), MultiPolyTerm, true, p.ring);
-            }
-            else
-            {
-                // None of them divided. Cancel and Move the leading term to r.
-                p.terms.shift();
-                if (q_and_r) r = addition_sparse(r, [plt], MultiPolyTerm, false, p.ring);
-            }
-        }
-        qs = qs.map(function(qi) {
-            qi = MultiPolynomial(qi, p.symbol, p.ring);
-            return qi;
-        });
-        if (q_and_r)
-        {
-            r = MultiPolynomial(r, p.symbol, p.ring);
-        }
-        return q_and_r ? [qs, r] : qs;
+        return poly_multi_divmod(self, others, true, q_and_r);
     }
     ,_mod: function(other) {
         var qr = this._div(other, true);
@@ -15582,8 +15523,13 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         return qr[1];
     }
     ,multimod: function(others) {
-        var qr = this.multidiv(others, true);
-        return qr[1];
+        var self = this;
+
+        if (is_instance(others, MultiPolynomial)) others = [others];
+        if (!others || !others.length) return self;
+
+        others = others.map(function(q) {return self.ring.contains(q) ? MultiPolynomial.Const(q, self.symbol, self.ring) : q;});
+        return poly_multi_divmod(self, others, false, true);
     }
     ,_divmod: function(other) {
         return this._div(other, true);
@@ -15960,8 +15906,16 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         var self = this;
         if (!is_instance(self, MultiPolynomialMod)) return new MultiPolynomialMod(poly, mod);
 
-        self.p = poly;
-        self.m = mod || [];
+        if (is_instance(poly, MultiPolynomialMod))
+        {
+            self.p = poly.p.clone();
+            self.m = mod || (poly.m.slice());
+        }
+        else
+        {
+            self.p = poly;
+            self.m = mod || [];
+        }
 
         def(self, 'terms', {
             get: function() {
@@ -16227,8 +16181,8 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
                 inv = poly_mod(d[1].num.mul(inv), modulo);
                 poly = poly_mod(d[1].den.mul(d[0]), modulo);
             }
-            d = poly_mod(inv.mul(self.p), modulo).c();
-            self._i = new MultiPolynomialMod(inv.div(d), modulo);
+            d = poly_mod(inv.mul(self.p), self.m).c();
+            self._i = new MultiPolynomialMod(inv.div(d), self.m);
             self._i._i = self;
         }
         return self._i;
@@ -16572,14 +16526,6 @@ function cmp_exp_i(e1, e2, i)
     else if (e1[i] === e2[i])
         return cmp_exp_i(e1, e2, i+1);
     return e1[i] - e2[i];
-}
-function poly_mod(poly, modulo)
-{
-    if (poly && modulo && modulo.length)
-    {
-        for (var i=0,n=modulo.length; i<n; ++i) poly = poly.mod(modulo[i]);
-    }
-    return poly;
 }
 function addition_sparse(a, b, TermClass, do_subtraction, ring)
 {
@@ -16952,6 +16898,65 @@ function multi_div(P, x, q_and_r)
         return q_and_r ? [q, MultiPolynomial.Zero(P.symbol, P.ring)] : q;
     }
     return P;
+}
+function poly_multi_divmod(self, others, want_q, want_r)
+{
+    var i, n = others.length,
+        Poly = self[CLASS],
+        qs = want_q ? array(n, function() {return [];}) : null,
+        r = want_r ? [] : null,
+        p = self.clone(),
+        xlt, plt, divides, t,
+        Arithmetic = Abacus.Arithmetic;
+    while (p.terms.length/*!p.equ(Arithmetic.O)*/)
+    {
+        // Try to divide by a polynomial.
+        plt = p.ltm(); divides = false;
+        for (i=0; i<n; ++i)
+        {
+            xlt = others[i].ltm();
+            if (xlt.divides(plt))
+            {
+                divides = true;
+                break;
+            }
+            // If the terms were not divisible, try the next polynomial.
+        }
+        if (divides)
+        {
+            // Perform the division.
+            t = plt.div(xlt);
+            if (want_q) qs[i] = addition_sparse(qs[i], [t], Poly.Term, false, p.ring);
+            p.terms = addition_sparse(p.terms, others[i].terms.map(function(xt) {return xt.mul(t);}), Poly.Term, true, p.ring);
+        }
+        else
+        {
+            // None of them divided. Cancel and Move the leading term to r.
+            p.terms.shift();
+            if (want_r) r = addition_sparse(r, [plt], Poly.Term, false, p.ring);
+        }
+    }
+    if (want_q)
+    {
+        qs = qs.map(function(qi) {
+            qi = new Poly(qi, p.symbol, p.ring);
+            return qi;
+        });
+    }
+    if (want_r)
+    {
+        r = new Poly(r, p.symbol, p.ring);
+    }
+    return want_q && want_r ? [qs, r] : (want_q ? qs : (want_r ? r : null));
+}
+function poly_mod(poly, modulo)
+{
+    if (poly && modulo && modulo.length)
+    {
+        //for (var i=0,n=modulo.length; i<n; ++i) poly = poly.mod(modulo[i]);
+        poly = poly_multi_divmod(poly, modulo, false, true);
+    }
+    return poly;
 }
 function poly_interpolate(v, x, PolynomialClass, symbol, ring)
 {
@@ -21469,6 +21474,8 @@ Ring = Abacus.Ring = Class({
     ,CoefficientRing: null
     ,PolynomialSymbol: null
     ,ModuloP: null
+    ,_isintdom: null
+    ,_isgcd: null
     ,_isfield: null
     ,_field: null
     ,_str: null
@@ -21548,23 +21555,6 @@ Ring = Abacus.Ring = Class({
         return arguments.length ? (k === p) : p;
     }
 
-    ,Zero: function() {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.Zero(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.Zero(self.Modulo);
-    }
-    ,One: function() {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.One(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.One(self.Modulo);
-    }
-    ,MinusOne: function() {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.MinusOne(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.MinusOne(self.Modulo);
-    }
-    ,Const: function(c) {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.Const(c, self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : (self.Modulo ? self.NumberClass.cast(c, self.Modulo) : self.NumberClass.cast(c));
-    }
-
     ,isSymbolic: function() {
         var self = this;
         return (null != self.PolynomialClass) && is_class(self.PolynomialClass, [Polynomial, MultiPolynomial, MultiPolynomialMod, RationalFunc]);
@@ -21572,6 +21562,54 @@ Ring = Abacus.Ring = Class({
     ,isReal: function() {
         var self = this;
         return !is_class(self.NumberClass, Complex);
+    }
+    ,isCommutative: function() {
+        return true; // default
+    }
+    ,isAssociative: function() {
+        return true; // default
+    }
+    ,hasMaximalIdeal: function() {
+        var self = this;
+        if (self.ModuloP)
+        {
+            return self.ModuloP.reduce(function(ismaximal, q) {
+                if (ismaximal)
+                {
+                    q = q.p || q;
+                    ismaximal = self.ModuloP.reduce(function(ismaximal, p) {
+                        p = p.p || p;
+                        if (ismaximal && !p.equ(q))
+                        {
+                            ismaximal = MultiPolynomial.gcd(p, q).isConst();
+                        }
+                        return ismaximal;
+                    }, q.factors()[0][0][0].primitive().equ(q.primitive()));
+                }
+                return ismaximal;
+            }, (0 < self.ModuloP.length));
+        }
+        return true;
+    }
+    ,isIntegralDomain: function() {
+        var self = this;
+        if (null == self._isintdom)
+        {
+            self._isintdom = ((!self.Modulo) || self.Modulo.isPrime()) && ((!self.PolynomialClass) || self.hasMaximalIdeal());
+        }
+        return self._isintdom;
+    }
+    ,hasGCD: function() {
+        var self = this;
+        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+    }
+    ,isGCDDomain: function() {
+        var self = this;
+        if (null == self._isgcd)
+        {
+            self._isgcd = self.hasGCD() && self.isIntegralDomain();
+        }
+        return self._isgcd;
     }
     ,isField: function() {
         var self = this;
@@ -21583,19 +21621,7 @@ Ring = Abacus.Ring = Class({
             }
             else if (self.ModuloP)
             {
-                self._isfield = self.ModuloP.reduce(function(isfield, q) {
-                    if (isfield)
-                    {
-                        isfield = self.ModuloP.reduce(function(isfield, p) {
-                            if (isfield && (p !== q))
-                            {
-                                isfield = MultiPolynomial.gcd(p, q).isConst();
-                            }
-                            return isfield;
-                        }, q.factors()[0][0][0].primitive().equ(q.primitive()));
-                    }
-                    return isfield;
-                }, (0 < self.ModuloP.length) && self.PolynomialClass.hasInverse());
+                self._isfield = self.PolynomialClass.hasInverse() && self.isIntegralDomain();
             }
             else
             {
@@ -21660,23 +21686,36 @@ Ring = Abacus.Ring = Class({
         throw new Error('Abacus.Ring instance does not support Quotient Ring!');
     }
 
-    ,hasGCD: function() {
+    ,Zero: function() {
         var self = this;
-        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? self.PolynomialClass.Zero(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.Zero(self.Modulo);
     }
+    ,One: function() {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.One(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.One(self.Modulo);
+    }
+    ,MinusOne: function() {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.MinusOne(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.MinusOne(self.Modulo);
+    }
+    ,Const: function(c) {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.Const(c, self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : (self.Modulo ? self.NumberClass.cast(c, self.Modulo) : self.NumberClass.cast(c));
+    }
+
     ,gcd: function(/*args*/) {
         var self = this, args;
-        if (!self.hasGCD()) throw new Error('Abacus.Ring instance does not support GCD!');
+        if (!self.isGCDDomain()) throw new Error('Abacus.Ring instance does not support GCD!');
         return self.PolynomialClass ? self.PolynomialClass.gcd.apply(null, arguments) : self.NumberClass.gcd.apply(null, arguments);
     }
     ,xgcd: function(/*args*/) {
         var self = this;
-        if (!self.hasGCD()) throw new Error('Abacus.Ring instance does not support xGCD!');
+        if (!self.isGCDDomain()) throw new Error('Abacus.Ring instance does not support xGCD!');
         return self.PolynomialClass ? self.PolynomialClass.xgcd.apply(null, arguments) : self.NumberClass.xgcd.apply(null, arguments);
     }
     ,lcm: function(/*args*/) {
         var self = this;
-        if (!self.hasGCD()) throw new Error('Abacus.Ring instance does not support LCM!');
+        if (!self.isGCDDomain()) throw new Error('Abacus.Ring instance does not support LCM!');
         return self.PolynomialClass ? self.PolynomialClass.lcm.apply(null, arguments) : self.NumberClass.lcm.apply(null, arguments);
     }
 

@@ -156,6 +156,8 @@ Ring = Abacus.Ring = Class({
     ,CoefficientRing: null
     ,PolynomialSymbol: null
     ,ModuloP: null
+    ,_isintdom: null
+    ,_isgcd: null
     ,_isfield: null
     ,_field: null
     ,_str: null
@@ -235,23 +237,6 @@ Ring = Abacus.Ring = Class({
         return arguments.length ? (k === p) : p;
     }
 
-    ,Zero: function() {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.Zero(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.Zero(self.Modulo);
-    }
-    ,One: function() {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.One(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.One(self.Modulo);
-    }
-    ,MinusOne: function() {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.MinusOne(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.MinusOne(self.Modulo);
-    }
-    ,Const: function(c) {
-        var self = this;
-        return self.PolynomialClass ? self.PolynomialClass.Const(c, self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : (self.Modulo ? self.NumberClass.cast(c, self.Modulo) : self.NumberClass.cast(c));
-    }
-
     ,isSymbolic: function() {
         var self = this;
         return (null != self.PolynomialClass) && is_class(self.PolynomialClass, [Polynomial, MultiPolynomial, MultiPolynomialMod, RationalFunc]);
@@ -259,6 +244,54 @@ Ring = Abacus.Ring = Class({
     ,isReal: function() {
         var self = this;
         return !is_class(self.NumberClass, Complex);
+    }
+    ,isCommutative: function() {
+        return true; // default
+    }
+    ,isAssociative: function() {
+        return true; // default
+    }
+    ,hasMaximalIdeal: function() {
+        var self = this;
+        if (self.ModuloP)
+        {
+            return self.ModuloP.reduce(function(ismaximal, q) {
+                if (ismaximal)
+                {
+                    q = q.p || q;
+                    ismaximal = self.ModuloP.reduce(function(ismaximal, p) {
+                        p = p.p || p;
+                        if (ismaximal && !p.equ(q))
+                        {
+                            ismaximal = MultiPolynomial.gcd(p, q).isConst();
+                        }
+                        return ismaximal;
+                    }, q.factors()[0][0][0].primitive().equ(q.primitive()));
+                }
+                return ismaximal;
+            }, (0 < self.ModuloP.length));
+        }
+        return true;
+    }
+    ,isIntegralDomain: function() {
+        var self = this;
+        if (null == self._isintdom)
+        {
+            self._isintdom = ((!self.Modulo) || self.Modulo.isPrime()) && ((!self.PolynomialClass) || self.hasMaximalIdeal());
+        }
+        return self._isintdom;
+    }
+    ,hasGCD: function() {
+        var self = this;
+        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+    }
+    ,isGCDDomain: function() {
+        var self = this;
+        if (null == self._isgcd)
+        {
+            self._isgcd = self.hasGCD() && self.isIntegralDomain();
+        }
+        return self._isgcd;
     }
     ,isField: function() {
         var self = this;
@@ -270,19 +303,7 @@ Ring = Abacus.Ring = Class({
             }
             else if (self.ModuloP)
             {
-                self._isfield = self.ModuloP.reduce(function(isfield, q) {
-                    if (isfield)
-                    {
-                        isfield = self.ModuloP.reduce(function(isfield, p) {
-                            if (isfield && (p !== q))
-                            {
-                                isfield = MultiPolynomial.gcd(p, q).isConst();
-                            }
-                            return isfield;
-                        }, q.factors()[0][0][0].primitive().equ(q.primitive()));
-                    }
-                    return isfield;
-                }, (0 < self.ModuloP.length) && self.PolynomialClass.hasInverse());
+                self._isfield = self.PolynomialClass.hasInverse() && self.isIntegralDomain();
             }
             else
             {
@@ -347,23 +368,36 @@ Ring = Abacus.Ring = Class({
         throw new Error('Abacus.Ring instance does not support Quotient Ring!');
     }
 
-    ,hasGCD: function() {
+    ,Zero: function() {
         var self = this;
-        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        return self.PolynomialClass ? self.PolynomialClass.Zero(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.Zero(self.Modulo);
     }
+    ,One: function() {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.One(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.One(self.Modulo);
+    }
+    ,MinusOne: function() {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.MinusOne(self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : self.NumberClass.MinusOne(self.Modulo);
+    }
+    ,Const: function(c) {
+        var self = this;
+        return self.PolynomialClass ? self.PolynomialClass.Const(c, self.PolynomialSymbol, self.CoefficientRing, self.ModuloP) : (self.Modulo ? self.NumberClass.cast(c, self.Modulo) : self.NumberClass.cast(c));
+    }
+
     ,gcd: function(/*args*/) {
         var self = this, args;
-        if (!self.hasGCD()) throw new Error('Abacus.Ring instance does not support GCD!');
+        if (!self.isGCDDomain()) throw new Error('Abacus.Ring instance does not support GCD!');
         return self.PolynomialClass ? self.PolynomialClass.gcd.apply(null, arguments) : self.NumberClass.gcd.apply(null, arguments);
     }
     ,xgcd: function(/*args*/) {
         var self = this;
-        if (!self.hasGCD()) throw new Error('Abacus.Ring instance does not support xGCD!');
+        if (!self.isGCDDomain()) throw new Error('Abacus.Ring instance does not support xGCD!');
         return self.PolynomialClass ? self.PolynomialClass.xgcd.apply(null, arguments) : self.NumberClass.xgcd.apply(null, arguments);
     }
     ,lcm: function(/*args*/) {
         var self = this;
-        if (!self.hasGCD()) throw new Error('Abacus.Ring instance does not support LCM!');
+        if (!self.isGCDDomain()) throw new Error('Abacus.Ring instance does not support LCM!');
         return self.PolynomialClass ? self.PolynomialClass.lcm.apply(null, arguments) : self.NumberClass.lcm.apply(null, arguments);
     }
 
