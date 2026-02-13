@@ -2734,6 +2734,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     ,div: function(other, q_and_r) {
         var self = this, ab;
         if (self.ring.contains(other)) other = MultiPolynomial.Const(other, self.symbol, self.ring);
+        other = other.p || other;
         if (is_instance(other, Expr))
         {
             return self.toExpr().div(other);
@@ -2744,12 +2745,12 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         else if (is_instance(other, Poly) && !is_same_symbol(self.symbol, other.symbol))
         {
-            ab = convert_to_same_symbol(self, other.p || other);
+            ab = convert_to_same_symbol(self, other);
             return multi_div(ab.a, ab.b, true === q_and_r);
         }
         else if (is_instance(other, [Numeric, Poly]) || Abacus.Arithmetic.isNumber(other))
         {
-            return multi_div(self, other.p || other, true === q_and_r);
+            return multi_div(self, other, true === q_and_r);
         }
         return self;
     }
@@ -3507,7 +3508,7 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         }
         else if (is_instance(other, Numeric) || Abacus.Arithmetic.isNumber(other))
         {
-            return q_and_r ? [new MultiPolynomialMod(poly_mod(self.p.div(other), self.m), self.m), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : new MultiPolynomialMod(poly_mod(self.p.div(other), self.m), self.m);
+            return q_and_r ? [new MultiPolynomialMod(poly_mod(self.p._div(other), self.m), self.m), MultiPolynomialMod.Zero(self.symbol, self.ring, self.m)] : new MultiPolynomialMod(poly_mod(self.p._div(other), self.m), self.m);
         }
         else
         {
@@ -5409,14 +5410,14 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         {
             if (!is_instance(den, MultiPolynomialMod))
             {
-                den = MultiPolynomialMod(den, num.m);
+                den = MultiPolynomialMod(poly_mod(den, num.m), num.m);
             }
         }
         if (is_instance(den, MultiPolynomialMod))
         {
             if (!is_instance(num, MultiPolynomialMod))
             {
-                num = MultiPolynomialMod(num, den.m);
+                num = MultiPolynomialMod(poly_mod(num, den.m), den.m);
             }
         }
         if (den.equ(Arithmetic.O)) throw new Error('Zero denominator in Abacus.RationalFunc!');
