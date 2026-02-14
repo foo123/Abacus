@@ -1,4 +1,5 @@
 // Abacus.Ring represents an algebraic Ring or Field (even Polynomial Ring)
+// https://en.wikipedia.org/wiki/Ring_(mathematics)
 Ring = Abacus.Ring = Class({
 
     constructor: function Ring(NumberClass, PolynomialSymbol, isFraction, ForceMultiVariate) {
@@ -46,7 +47,7 @@ Ring = Abacus.Ring = Class({
                 if (is_class(ring.PolynomialClass, Polynomial))
                 {
                     // make multivariate by default
-                    self.CoefficientRing = new Ring(ring.NumberClass, [ring.PolynomialSymbol]);
+                    self.CoefficientRing = Ring(ring.NumberClass, [ring.PolynomialSymbol]);
                     self.CoefficientRing.PolynomialClass = MultiPolynomial;
                     self.CoefficientRing.PolynomialSymbol = [ring.PolynomialSymbol];
                 }
@@ -144,7 +145,7 @@ Ring = Abacus.Ring = Class({
                 if (is_instance(args[0], Ring)) {R = args[0]; args = args.slice(1);}
                 else if (is_class(args[0], Numeric)) {N = args[0]; args = args.slice(1);}
                 args = Ring.getSymbols(args);
-                return args.length ? (R || N ? new Ring(R || N, args, false, forceMultivariate) : Ring.Q(args)) : (R ? R : (N ? Ring(N) : Ring.Q()));
+                return args.length ? (R || N ? new Ring(R || N, args, false, forceMultivariate) : Ring.Q(args)) : (R ? R : (N ? new Ring(N) : Ring.Q()));
             }
             return Ring.Q();
         }
@@ -156,8 +157,13 @@ Ring = Abacus.Ring = Class({
     ,CoefficientRing: null
     ,PolynomialSymbol: null
     ,ModuloP: null
+    ,_maxideal: null
     ,_isintdom: null
+    ,_gcd: null
     ,_isgcd: null
+    ,_isufd: null
+    ,_ispid: null
+    ,_iseuclid: null
     ,_isfield: null
     ,_field: null
     ,_str: null
@@ -172,8 +178,6 @@ Ring = Abacus.Ring = Class({
         self.PolynomialSymbol = null;
         self.ModuloP = null;
         self._field = null;
-        self._str = null;
-        self._tex = null;
         return self;
     }
 
@@ -245,22 +249,21 @@ Ring = Abacus.Ring = Class({
         var self = this;
         return !is_class(self.NumberClass, Complex);
     }
-    ,isCommutative: function() {
+    ,isAssociative: function() {
         return true; // default
     }
-    ,isAssociative: function() {
+    ,isCommutative: function() {
+        // https://en.wikipedia.org/wiki/Commutative_ring
         return true; // default
     }
     ,hasMaximalIdeal: function() {
         var self = this;
-        if (self.ModuloP)
+        if (null == self._maxideal)
         {
-            return self.ModuloP.reduce(function(ismaximal, q) {
+            self._maxideal = (!self.ModuloP) || (self.ModuloP.reduce(function(ismaximal, q) {
                 if (ismaximal)
                 {
-                    q = q.p || q;
                     ismaximal = self.ModuloP.reduce(function(ismaximal, p) {
-                        p = p.p || p;
                         if (ismaximal && !p.equ(q))
                         {
                             ismaximal = MultiPolynomial.gcd(p, q).isConst();
@@ -269,23 +272,29 @@ Ring = Abacus.Ring = Class({
                     }, q.factors()[0][0][0].primitive().equ(q.primitive()));
                 }
                 return ismaximal;
-            }, (0 < self.ModuloP.length));
+            }, 0 < self.ModuloP.length));
         }
-        return true;
+        return self._maxideal;
     }
     ,isIntegralDomain: function() {
+        // https://en.wikipedia.org/wiki/Integral_domain
         var self = this;
         if (null == self._isintdom)
         {
-            self._isintdom = ((!self.Modulo) || self.Modulo.isPrime()) && ((!self.PolynomialClass) || self.hasMaximalIdeal());
+            self._isintdom = self.isCommutative() && ((!self.Modulo) || self.Modulo.isPrime()) && ((!self.PolynomialClass) || self.hasMaximalIdeal());
         }
         return self._isintdom;
     }
     ,hasGCD: function() {
         var self = this;
-        return self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        if (null == self._gcd)
+        {
+            self._gcd = self.PolynomialClass ? (is_callable(self.PolynomialClass.gcd) && is_callable(self.PolynomialClass.xgcd)) : (is_callable(self.NumberClass.gcd) && is_callable(self.NumberClass.xgcd) && (!self.Modulo || self.Modulo.isPrime()));
+        }
+        return self._gcd;
     }
     ,isGCDDomain: function() {
+        // https://en.wikipedia.org/wiki/GCD_domain
         var self = this;
         if (null == self._isgcd)
         {
@@ -293,7 +302,35 @@ Ring = Abacus.Ring = Class({
         }
         return self._isgcd;
     }
+    ,isUniqueFactorizationDomain: function() {
+        // https://en.wikipedia.org/wiki/Unique_factorization_domain
+        var self = this;
+        if (null == self._isufd)
+        {
+            self._isufd = (self.PolynomialClass ? (is_class(self.PolynomialClass, [Polynomial, MultiPolynomial]) && self.CoefficientRing.isUniqueFactorizationDomain()) : (is_class(self.NumberClass, [Integer, Rational, Complex]))) || self.isPrincipalIdealDomain();
+        }
+        return self._isufd;
+    }
+    ,isPrincipalIdealDomain: function() {
+        // https://en.wikipedia.org/wiki/Principal_ideal_domain
+        var self = this;
+        if (null == self._ispid)
+        {
+            self._ispid = ((!self.PolynomialClass) && is_class(self.NumberClass, Integer)) || (!!self.PolynomialClass && (is_string(self.PolynomialSymbol) || (1 === self.PolynomialSymbol.length)) && self.CoefficientRing.isField()) || self.isField();
+        }
+        return self._ispid;
+    }
+    ,isEuclideanDomain: function() {
+        // https://en.wikipedia.org/wiki/Euclidean_domain
+        var self = this;
+        if (null == self._iseuclid)
+        {
+            self._iseuclid = self.hasGCD() && self.isPrincipalIdealDomain();
+        }
+        return self._iseuclid;
+    }
     ,isField: function() {
+        // https://en.wikipedia.org/wiki/Field_(mathematics)
         var self = this;
         if (null == self._isfield)
         {
@@ -313,6 +350,7 @@ Ring = Abacus.Ring = Class({
         return self._isfield;
     }
     ,associatedField: function() {
+        // https://en.wikipedia.org/wiki/Field_of_fractions
         var self = this;
         if (null == self._field)
         {
@@ -328,15 +366,15 @@ Ring = Abacus.Ring = Class({
                 }
                 else if (is_class(self.PolynomialClass, MultiPolynomialMod))
                 {
-                    self._field = new Ring(self.CoefficientRing, [[].concat(self.PolynomialSymbol), self.ModuloP], true);
+                    self._field = Ring(self.CoefficientRing, [[].concat(self.PolynomialSymbol), self.ModuloP], true);
                 }
                 else if (self.CoefficientRing.PolynomialClass)
                 {
-                    self._field = new Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true, is_array(self.PolynomialSymbol));
+                    self._field = Ring(self.CoefficientRing, [].concat(self.PolynomialSymbol), true, is_array(self.PolynomialSymbol));
                 }
                 else
                 {
-                    self._field = new Ring(self.Modulo ? [self.NumberClass, self.Modulo] : self.NumberClass, [].concat(self.PolynomialSymbol), true, is_array(self.PolynomialSymbol));
+                    self._field = Ring(self.Modulo ? [self.NumberClass, self.Modulo] : self.NumberClass, [].concat(self.PolynomialSymbol), true, is_array(self.PolynomialSymbol));
                 }
             }
             else
@@ -348,6 +386,7 @@ Ring = Abacus.Ring = Class({
         throw new Error('Abacus.Ring instance does not have Associated Field!');
     }
     ,quotientRing: function(/*args*/) {
+        // https://en.wikipedia.org/wiki/Quotient_ring
         var self = this,
             modulo = slice.call(arguments.length ? (is_array(arguments[0]) || is_args(arguments[0]) ? arguments[0] : arguments) : arguments);
         if (!modulo.length)
@@ -356,7 +395,7 @@ Ring = Abacus.Ring = Class({
         }
         else if (self.PolynomialSymbol)
         {
-            return new Ring(self.CoefficientRing, [self.PolynomialSymbol, (self.ModuloP ? self.ModuloP : []).concat(modulo.map(function(q) {
+            return Ring(self.CoefficientRing, [self.PolynomialSymbol, (self.ModuloP ? self.ModuloP : []).concat(modulo.map(function(q) {
                 q = is_string(q) ? self.fromString(q) : q;
                 return is_instance(q, [MultiPolynomial, MultiPolynomialMod]) ? (q.p || q) : (new MultiPolynomial(q, is_array(self.PolynomialSymbol) ? self.PolynomialSymbol : [self.PolynomialSymbol], self.CoefficientRing));
             }))]);

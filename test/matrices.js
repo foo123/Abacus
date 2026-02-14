@@ -638,6 +638,7 @@ echo(o.charpoly("y").toString());
 echo('---');
 
 ring = Abacus.Ring.Q("x","y"); field = ring.associatedField();
+echo(field.toString());
 echo('o=Abacus.Matrix(field, [["x^2 + x*y","x*y + y^2"],["x*y + y^2","x^2 + x*y"]])');
 o=Abacus.Matrix(field, [["x^2 + x*y","x*y + y^2"],["x*y + y^2","x^2 + x*y"]]);
 echo('o.toString()');
@@ -645,8 +646,18 @@ echo(o.toString());
 echo('o.inv().toString()');
 echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(field, 2)));
 
+echo(field.toString());
 echo('o=Abacus.Matrix(field, [["x*(x+y)","(x+y)^2"],["(x+y)^2","x*(x+y)"]])');
 o=Abacus.Matrix(field, [["x*(x+y)","(x+y)^2"],["(x+y)^2","x*(x+y)"]]);
+echo('o.toString()');
+echo(o.toString());
+echo('o.inv().toString()');
+echo(o.inv().toString(), o.inv().mul(o).equ(Abacus.Matrix.I(field, 2)));
+
+ring = Abacus.Ring.Q("x","y").quotientRing("x^2-2","y^2-3"); field = ring.associatedField();
+echo(field.toString());
+echo('o=Abacus.Matrix(field, [["x^2 + x*y","x*y + y^2"],["x*y + y^2","x^2 + x*y"]])');
+o=Abacus.Matrix(field, [["x^2 + x*y","x*y + y^2"],["x*y + y^2","x^2 + x*y"]]);
 echo('o.toString()');
 echo(o.toString());
 echo('o.inv().toString()');

@@ -213,7 +213,7 @@ function array(n, x0, xs)
         xs = xs||0;
         var xk = x0;
         operate(is_callable(x0) ? function(x ,xi, i) {
-            x[i] = x0(i); return x;
+            x[i] = x0(i, x); return x;
         } : (x0 === +x0 ? function(x, xi, i) {
             x[i] = xk; xk += xs; return x;
         } : function(x, xi, i) {
