@@ -50,8 +50,15 @@ echo(p2.toString()+' + (x + y) = '+p2.add(ring.fromString('x+y')).toString())
 echo(p1.toString()+' + (x + y) = '+p1.add(rring.fromString('x+y')).toString())
 echo(p2.toString()+' + (x + y) = '+p2.add(rring.fromString('x+y')).toString())
 
+ring = Ring.Q("x", "y");
+echo(String(ring.gcd(ring.fromString("x"), ring.fromString("y+1"))));
+echo(ring.xgcd(ring.fromString("x"), ring.fromString("y+1")).map(String).join(','));
+echo(String(ring.gcd(ring.fromString("x(y+1)"), ring.fromString("y+1"))));
+echo(ring.xgcd(ring.fromString("x(y+1)"), ring.fromString("y+1")).map(String).join(','));
+
 echo('---');
 */
+
 echo('ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y"), "x")');
 echo((ring=Ring.K(Ring.K(Ring.K(Ring.Q()), "y", true), "x", true)).toString());
 echo('ring.fromString("x*y+x+y-2").toString()');
@@ -83,15 +90,41 @@ echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mod(p3).toString
 echo('---');
 
 ring = Ring.Q("x","y").quotientRing("x^3-2","y^3-3");
+echo(ring.toString());
 p1 = ring.fromString("x^2+2y+1");
 p2 = p1.inv();
-p3 = p2.inv();
-echo(ring.toString());
-echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mul(p2).toString());
+p3 = p1.mul(p2);
+echo(p1.toString()+', '+p2.toString()+','+p3.toString(), p3.equ(1));
+p2 = p2.clone();
+p1 = p2.inv();
+p3 = p1.mul(p2);
+echo(p2.toString()+', '+p1.toString()+','+p3.toString(), p3.equ(1));
+p1 = ring.fromString("1/(x^2+2y+1)");
+p2 = p1.inv();
+p3 = p1.mul(p2);
+echo(p1.toString()+', '+p2.toString()+','+p3.toString(), p3.equ(1));
+p2 = ring.fromString("(x^2+2y+1)^(-1)");
+p1 = p2.inv();
+p3 = p1.mul(p2);
+echo(p2.toString()+', '+p1.toString()+','+p3.toString(), p3.equ(1));
+
+echo('---');
 
 ring = Ring.Q("x","y").quotientRing("x^2-4").associatedField();
+echo(ring.toString());
 p1 = ring.fromString("y+2x+5");
 p2 = p1.inv();
 p3 = p2.inv();
+echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mul(p2).toString());
+
+echo('---');
+
+ring = Ring.Q("x").quotientRing("x^3-2");
+rring = Ring.K(ring, "y", true).quotientRing("y^3-3");
 echo(ring.toString());
+echo(rring.toString());
+p1 = rring.fromString("x^2+2y+1");
+echo(p1.toString());
+p2 = p1.inv();
+p3 = p2.inv();
 echo(p1.toString()+', '+p2.toString()+', '+p3.toString()+','+p1.mul(p2).toString());

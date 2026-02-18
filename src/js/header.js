@@ -46,7 +46,7 @@ var  Abacus = {VERSION: "@@VERSION@@"}
     ,Numeric
     ,Integer
     ,IntegerMod
-    ,Rational
+    ,Rational, Fractional
     ,Complex, nComplex
 
     // symbolics

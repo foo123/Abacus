@@ -1,4 +1,5 @@
 // Abacus.Complex represents a complex number with Rational parts
+// effectively an element of Q(i)
 Complex = Abacus.Complex = Class(Numeric, {
 
     constructor: function Complex(/*real, imag*/) {
@@ -18,6 +19,10 @@ Complex = Abacus.Complex = Class(Numeric, {
         {
             real = Rational.Zero(); imag = Rational.Zero();
         }
+        if (null == imag)
+        {
+            imag = Rational.Zero();
+        }
 
         if (is_instance(real, Symbolic)) real = real.c();
         if (is_instance(imag, Symbolic)) imag = imag.c();
@@ -27,11 +32,27 @@ Complex = Abacus.Complex = Class(Numeric, {
             imag = real.imag();
             real = real.real();
         }
+        if (is_instance(real, Fractional))
+        {
+            real = real.toRational();
+        }
+        if (is_instance(imag, Fractional))
+        {
+            imag = imag.toRational();
+        }
+        if (!is_instance(real, Rational))
+        {
+            real = Rational(real);
+        }
+        if (!is_instance(imag, Rational))
+        {
+            imag = Rational(imag);
+        }
 
         if (!is_instance(self, Complex)) return new Complex(real, imag);
 
-        self.re = is_instance(real, Rational) ? real : Rational.cast(real);
-        self.im = is_instance(imag, Rational) ? imag : Rational.cast(imag);
+        self.re = real;
+        self.im = imag;
 
         def(self, 'num', {
             get: function() {
@@ -443,6 +464,8 @@ Complex = Abacus.Complex = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Complex))
             return Complex(self.re.add(other.re), self.im.add(other.im));
+        else if (is_instance(other, Fractional))
+            return Complex(self.re.add(other.toRational()), self.im);
         else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
             return Complex(self.re.add(other), self.im);
         else if (is_instance(other, INumber))
@@ -454,6 +477,8 @@ Complex = Abacus.Complex = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Complex))
             return Complex(self.re.sub(other.re), self.im.sub(other.im));
+        else if (is_instance(other, Fractional))
+            return Complex(self.re.sub(other.toRational()), self.im);
         else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
             return Complex(self.re.sub(other), self.im);
         else if (is_instance(other, INumber))
@@ -489,6 +514,11 @@ Complex = Abacus.Complex = Class(Numeric, {
                 return Complex(k1.sub(k2), k1.add(k3));
             }
         }
+        else if (is_instance(other, Fractional))
+        {
+            other = other.toRational();
+            return Complex(self.re.mul(other), self.im.mul(other));
+        }
         else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
             return Complex(self.re.mul(other), self.im.mul(other));
@@ -522,6 +552,14 @@ Complex = Abacus.Complex = Class(Numeric, {
                 k1 = x1.mul(x2.add(y2)); k2 = y2.mul(x1.add(y1)); k3 = x2.mul(y1.sub(x1));
                 return Complex(k1.sub(k2), k1.add(k3));
             }
+        }
+        else if (is_instance(other, Fractional))
+        {
+            other = other.toRational();
+            if (other.equ(O))
+                throw new Error('Division by zero in Abacus.Complex!');
+
+            return Complex(self.re.div(other), self.im.div(other));
         }
         else if (is_instance(other, Numeric) || Arithmetic.isNumber(other))
         {
@@ -709,6 +747,10 @@ nComplex = Abacus.nComplex = Class(Complex, {
         else
         {
             real = 0; imag = 0;
+        }
+        if (null == imag)
+        {
+            imag = 0;
         }
 
         if (is_instance(real, Symbolic)) real = real.c();

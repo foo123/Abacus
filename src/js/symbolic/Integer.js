@@ -1,4 +1,5 @@
 // Abacus.Integer, represents an integer
+// effectively an element of Z
 Integer = Abacus.Integer = Class(Numeric, {
 
     constructor: function Integer(num) {
@@ -6,7 +7,7 @@ Integer = Abacus.Integer = Class(Numeric, {
         if (!is_instance(self, Integer)) return new Integer(num);
         if (is_instance(num, Symbolic)) num = num.c();
         if (is_instance(num, Complex)) num = num.real();
-        if (is_instance(num, Rational)) num = num.integer(true);
+        if (is_instance(num, [Rational, Fractional])) num = num.integer(true);
         if (is_instance(num, Integer)) self._isp = num._isp;
         if (is_instance(num, [Integer, IntegerMod])) num = num.num;
         self.n = Arithmetic.num(num || 0);
@@ -221,6 +222,8 @@ Integer = Abacus.Integer = Class(Numeric, {
             return Complex(self).div(other);
         else if (is_instance(other, Rational))
             return Rational(self).div(other);
+        else if (is_instance(other, Fractional))
+            return Fractional.cast(self, other.num.m).div(other);
         else if (Arithmetic.isNumber(other))
             return Integer(Arithmetic.div(self.n, other));
 
@@ -234,6 +237,8 @@ Integer = Abacus.Integer = Class(Numeric, {
             return Complex(self).mod(other);
         else if (is_instance(other, Rational))
             return Rational(self).mod(other);
+        else if (is_instance(other, Fractional))
+            return Fractional.cast(self, other.num.m).mod(other);
         else if (Arithmetic.isNumber(other))
             return Integer(Arithmetic.mod(self.n, other));
 
@@ -313,7 +318,7 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         if (!is_instance(self, IntegerMod)) return new IntegerMod(num, m, simplified);
         if (is_instance(num, Symbolic)) num = num.c();
         if (is_instance(num, Complex)) num = num.real();
-        if (is_instance(num, Rational)) num = num.integer(true);
+        if (is_instance(num, [Rational, Fractional])) num = num.integer(true);
         if (is_instance(num, Integer)) num = num.num;
         if (is_instance(num, IntegerMod))
         {
@@ -578,6 +583,8 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
             return Complex(self).div(other);
         else if (is_instance(other, Rational))
             return Rational(self).div(other);
+        else if (is_instance(other, Fractional))
+            return Fractional(self).div(other);
 
         return self;
     }
@@ -589,6 +596,8 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
             return Complex(self).mod(other);
         else if (is_instance(other, Rational))
             return Rational(self).mod(other);
+        else if (is_instance(other, Fractional))
+            return Fractional(self).mod(other);
         else if (Arithmetic.isNumber(other))
             return IntegerMod(Arithmetic.mod(self.n, other), self.m);
 

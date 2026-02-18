@@ -2190,6 +2190,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self._fctrd;
     }
+    ,toExpr: function() {
+        return this; // trivial
+    }
     ,toRationalExpr: function() {
         var self = this, re;
         if (null == self._rexpr)
@@ -2236,13 +2239,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,toRationalFunc: function(symbol, ring, simplified) {
         var self = this, num, den;
-        num = self.num.toPoly(symbol || (self.symbols().filter(function(s) {return '1' !== s;})), ring || null),
-        den = num ? self.den.toPoly(num.symbol, num.ring) : null
+        symbol = symbol || (self.symbols().filter(function(s) {return '1' !== s;}));
+        ring = ring || null;
+        num = self.num.toPoly(symbol, ring);
+        den = num ? self.den.toPoly(num.symbol, num.ring) : null;
         return num && den ? (true === simplified ? {num:num, den:den} : RationalFunc(num, den)) : null;
-    }
-    ,toExpr: function() {
-        // trivial
-        return this;
     }
     ,toString: function(type) {
         var self = this, ast = self.ast,
@@ -3116,7 +3117,7 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
                 if (-1 === ring.PolynomialSymbol.indexOf(arg))
                 {
                     // other symbolic term of recursive coeff ring, delegate further
-                    coeff_term['1'] = ring.CoefficientRing.fromString(arg);
+                    coeff_term['1'] = ring.CoefficientRing.fromExpr(Expr('', arg))/*.fromString(arg)*/;
                 }
                 else
                 {
@@ -3206,7 +3207,7 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
                         {
                             coeff = subexpr.num.c(true).inv();
                         }
-                        else if (!is_class(ring.PolynomialClass, RationalFunc))
+                        else if (!ring.isField()/*!is_class(ring.PolynomialClass, RationalFunc)*/)
                         {
                             return null; // not supported
                         }
@@ -3214,7 +3215,7 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
                         {
                             coeff = expr_poly(subexpr.num, ring.PolynomialSymbol, other_symbols, ring.CoefficientRing, CoefficientRing.CoefficientRing, imagUnit);
                             if (null == coeff) return null;
-                            coeff = RationalFunc(MultiPolynomial.One(ring.PolynomialSymbol, ring.CoefficientRing), coeff, null, null, true);
+                            coeff = /*RationalFunc(MultiPolynomial.One(ring.PolynomialSymbol, ring.CoefficientRing), coeff, null, null, true)*/ring.cast(coeff).inv();
                         }
                     }
                     else
@@ -3254,14 +3255,14 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
                         {
                             coeff = MultiPolynomial({'1':ast.arg[0].num.c(true).inv()}, ring.PolynomialSymbol, ring.CoefficientRing);
                         }
-                        else if (!is_class(ring.PolynomialClass, RationalFunc))
+                        else if (!ring.isField()/*!is_class(ring.PolynomialClass, RationalFunc)*/)
                         {
                             return null; // not supported
                         }
                         else
                         {
                             term = expr_poly(ast.arg[0].num, ring.PolynomialSymbol, other_symbols, ring.CoefficientRing, CoefficientRing.CoefficientRing, imagUnit);
-                            if (null != term) coeff = RationalFunc(MultiPolynomial.One(ring.PolynomialSymbol, ring.CoefficientRing), term, null, null, true);
+                            if (null != term) coeff = /*RationalFunc(MultiPolynomial.One(ring.PolynomialSymbol, ring.CoefficientRing), term, null, null, true)*/ring.cast(term).inv();
                         }
                     }
                     else

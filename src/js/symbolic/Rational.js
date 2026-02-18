@@ -1,4 +1,5 @@
 // Abacus.Rational, represents a rational number (can support bigInt numerator/denumerator if plugged in, else default numbers)
+// effectively an element of Q
 Rational = Abacus.Rational = Class(Numeric, {
 
     constructor: function Rational(/*num, den, simplified*/) {
@@ -26,6 +27,11 @@ Rational = Abacus.Rational = Class(Numeric, {
 
         if (is_instance(num, Symbolic)) num = num.c();
         if (is_instance(den, Symbolic)) den = den.c();
+        if (is_instance(num, Fractional))
+        {
+            den = num.den;
+            num = num.num;
+        }
         if (is_instance(num, [Integer, IntegerMod])) num = num.num;
         if (is_instance(den, [Integer, IntegerMod])) den = den.num;
         if (is_instance(num, Complex)) num = num.real();
@@ -197,7 +203,7 @@ Rational = Abacus.Rational = Class(Numeric, {
                 den = 1 < num_denom.length ? Arithmetic.num(trim(num_denom[1])) : Arithmetic.I;
             }
             if ('-' === sign) num = Arithmetic.neg(num);
-            return Rational(num, den);
+            return new Rational(num, den);
         }
     }
 
@@ -398,7 +404,7 @@ Rational = Abacus.Rational = Class(Numeric, {
             if (!other.isReal()) return Complex(self).div(other);
             other = other.real();
         }
-        if (is_instance(other, [RationalFunc, Expr]))
+        if (is_instance(other, [RationalFunc, Fractional, Expr]))
             return other.inv().mul(self);
         else if (is_instance(other, Rational))
             return Rational(Arithmetic.mul(self.num, other.den), Arithmetic.mul(self.den, other.num));
@@ -413,10 +419,10 @@ Rational = Abacus.Rational = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, Complex)) other = other.real();
 
-        if (is_instance(other, [Rational, Integer, IntegerMod]))
-            return self.sub(other.mul(is_instance(q, Rational) ? q : self.div(other).round()));
+        if (is_instance(other, [Rational, Fractional, Integer, IntegerMod]))
+            return self.sub((is_instance(q, [Rational, Fractional]) ? q : self.div(other).round()).mul(other));
         else if (Arithmetic.isNumber(other)) // assume integer
-            return self.sub(Arithmetic.mul(other, is_instance(q, Rational) ? q.num : self.div(other).round().num));
+            return self.sub((is_instance(q, Rational) ? q.num : self.div(other).round()).mul(other));
 
         return self;
     }
@@ -584,7 +590,9 @@ Rational = Abacus.Rational = Class(Numeric, {
     ,toDec: function(precision) {
         var self = this, dec, point, repeating, ndigits, digit, d, i, i0, carry;
         if (null == self._dec)
+        {
             self._dec = frac2dec(self.num, self.den); // return **exact** decimal expansion (with optional repeating digits)
+        }
         if (is_number(precision) && 0 <= precision)
         {
             precision = stdMath.ceil(precision);
@@ -629,8 +637,8 @@ Rational = Abacus.Rational = Class(Numeric, {
         }
     }
     ,valueOf: function() {
-        var Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.val(this.num) / Arithmetic.val(this.den);
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.val(self.num) / Arithmetic.val(self.den);
     }
     ,toString: function(parenthesized) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -644,10 +652,472 @@ Rational = Abacus.Rational = Class(Numeric, {
     ,toTex: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (null == self._tex)
+        {
             self._tex = Arithmetic.equ(Arithmetic.I, self.den) ? Tex(self.num) : ((Arithmetic.gt(Arithmetic.O, self.num) ? '-' : '') + '\\frac{' + Tex(Arithmetic.abs(self.num)) + '}{' + Tex(self.den) + '}');
+        }
         return self._tex;
     }
 });
 Rational.cast = typecast([Rational], function(a) {
     return is_string(a) ? Rational.fromString(a) : new Rational(a);
 });
+
+// Abacus.Fractional, represents a fraction of integers (mod m)
+Fractional = Abacus.Fractional = Class(Numeric, {
+
+    constructor: function Fractional(num, den) {
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            O = Arithmetic.O, I = Arithmetic.I, m;
+
+        if (!is_instance(self, Fractional)) return new Fractional(num, den);
+
+        if (is_instance(num, Symbolic)) num = num.c();
+        if (is_instance(den, Symbolic)) den = den.c();
+        if (is_instance(num, Complex)) num = num.real();
+        if (is_instance(num, [Rational, Fractional]))
+        {
+            m = (num && num.m) || (den && den.m);
+            den = num.den;
+            num = num.num;
+        }
+        if (is_instance(num, IntegerMod))
+        {
+            m = num.m;
+        }
+        if (null == den)
+        {
+            den = IntegerMod.One(m);
+        }
+        if (!is_instance(den, IntegerMod))
+        {
+            den = IntegerMod(den, num.m || m);
+        }
+        if (!is_instance(num, IntegerMod))
+        {
+            num = IntegerMod(num, den.m || m);
+        }
+
+        if (den.equ(O)) throw new Error('Zero denominator in Abacus.Fractional!');
+        if (num.equ(O)) den = IntegerMod.One(den.m); // normalise zero representation
+
+        self.num = num;
+        self.den = den;
+    }
+
+    ,__static__: {
+        hasInverse: function() {
+            return true;
+        }
+
+        ,Zero: function(modulo) {
+            return new Fractional(IntegerMod.Zero(modulo), IntegerMod.One(modulo));
+        }
+        ,One: function(modulo) {
+            return new Fractional(IntegerMod.One(modulo), IntegerMod.One(modulo));
+        }
+        ,MinusOne: function(modulo) {
+            return new Fractional(IntegerMod.MinusOne(modulo), IntegerMod.One(modulo));
+        }
+
+        ,cast: null // added below
+
+        ,gcd: function rgcd(/* args */) {
+            // gcd of Rational numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                Arithmetic = Abacus.Arithmetic, denom;
+            denom = operate(function(p, r) {return r.den.mul(p);}, Arithmetic.I, args);
+            return Fractional(IntegerMod.gcd(array(args.length, function(i) {return denom.div(args[i].den).mul(args[i].num);})), denom);
+        }
+        ,xgcd: function rxgcd(/* args */) {
+            // xgcd of Rational numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                Arithmetic = Abacus.Arithmetic, I = Arithmetic.I, denom;
+            if (!args.length) return;
+            denom = operate(function(p, r) {return r.den.mul(p);}, I, args);
+            return IntegerMod.xgcd(array(args.length, function(i) {return denom.div(args[i].den).mul(args[i].num);})).map(function(g, i) {return 0 === i ? Fractional(g, denom) : Fractional(g, I);});
+        }
+        ,lcm: function rlcm(/* args */) {
+            // lcm of Rational numbers
+            var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments,
+                Arithmetic = Abacus.Arithmetic, denom;
+            denom = operate(function(p, r) {return r.den.mul(p);}, Arithmetic.I, args);
+            return Fractional(IntegerMod.lcm(array(args.length, function(i) {return denom.div(args[i].den).mul(args[i].num);})), denom);
+        }
+        ,max: nmax
+        ,min: nmin
+        ,fromString: function(s, modulo) {
+            var r = Rational.fromString(s);
+            return new Fractional(IntegerMod(r.num, modulo), IntegerMod(r.den, modulo));
+        }
+    }
+
+    ,num: null
+    ,den: null
+    ,_n: null
+    ,_i: null
+    ,_str: null
+    ,_strp: null
+    ,_tex: null
+    ,_dec: null
+    ,_int: null
+    ,_rem: null
+    ,_simpl: false
+
+    ,dispose: function() {
+        var self = this;
+        if (self._n && (self === self._n._n))
+        {
+            self._n._n = null;
+        }
+        if (self._i && (self === self._i._i))
+        {
+            self._i._i = null;
+        }
+        self.num = null;
+        self.den = null;
+        self._n = null;
+        self._i = null;
+        self._str = null;
+        self._strp = null;
+        self._tex = null;
+        self._dec = null;
+        self._int = null;
+        self._rem = null;
+        self._simpl = null;
+        return self;
+    }
+
+    ,isInt: function() {
+        return this.den.equ(Abacus.Arithmetic.I);
+    }
+
+    ,imag: function() {
+        return Fractional.Zero(this.num.m);
+    }
+    ,d: function() {
+        return Fractional.Zero(this.num.m);
+    }
+
+    ,equ: function(other, strict) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, [Rational, Fractional]))
+            return true === strict ? (self.num.equ(other.num) && self.den.equ(other.den)) : (self.num.mul(other.den).equ(self.den.mul(other.num)));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return true === strict ? (self.num.equ(other.num) && self.den.equ(Arithmetic.I)) : self.num.equ(self.den.mul(other.num));
+        else if (is_instance(other, INumber))
+            return other.equ(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return true === strict ? (self.num.equ(other) && self.den.equ(Arithmetic.I)) : self.num.equ(self.den.mul(other));
+        else if (is_string(other))
+            return (other === self.toString()) || (other === self.toTex()) || (other === self.toDec());
+
+        return false;
+    }
+    ,gt: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, [Rational, Fractional]))
+            return self.num.mul(other.den).gt(self.den.mul(other.num));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return self.num.gt(self.den.mul(other.num));
+        else if (is_instance(other, INumber))
+            return other.lt(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.num.gt(self.den.mul(other));
+        return false;
+    }
+    ,gte: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, [Rational, Fractional]))
+            return self.num.mul(other.den).gte(self.den.mul(other.num));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return self.num.gte(self.den.mul(other.num));
+        else if (is_instance(other, INumber))
+            return other.lte(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.num.gte(self.den.mul(other));
+        return false;
+    }
+    ,lt: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, [Rational, Fractional]))
+            return self.num.mul(other.den).lt(self.den.mul(other.num));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return self.num.lt(self.den.mul(other.num));
+        else if (is_instance(other, INumber))
+            return other.gt(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.num.lt(self.den.mul(other));
+        return false;
+    }
+    ,lte: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, [Rational, Fractional]))
+            return self.num.mul(other.den).lte(self.den.mul(other.num));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return self.num.lte(self.den.mul(other.num));
+        else if (is_instance(other, INumber))
+            return other.gte(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.num.lte(self.den.mul(other));
+        return false;
+    }
+    ,abs: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Fractional(self.num.abs(), self.den);
+    }
+    ,sign: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return self.num.equ(Arithmetic.O) ? Rational.Zero() : Rational.One();
+    }
+    ,neg: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (null == self._n)
+        {
+            self._n = Fractional(self.num.neg(), self.den);
+            self._n._n = self;
+        }
+        return self._n;
+    }
+    ,inv: function() {
+        var self = this;
+        if (null == self._i)
+        {
+            self._i = Fractional(self.den, self.num);
+            self._i._i = self;
+        }
+        return self._i;
+    }
+    ,rev: function() {
+        return this.inv();
+    }
+
+    ,add: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex))
+        {
+            if (!other.isReal()) return other.add(self);
+            other = other.real();
+        }
+        if (is_instance(other, [Rational, Fractional]))
+            return self.den.equ(other.den) ? Fractional(self.num.add(other.num), self.den) : Fractional(self.num.mul(other.den).add(self.den.mul(other.num)), self.den.mul(other.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return self.den.equ(Arithmetic.I) ? Fractional(self.num.add(other.num), self.den) : Fractional(self.num.add(self.den.mul(other.num)), self.den);
+        else if (is_instance(other, INumber))
+            return other.add(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.den.equ(Arithmetic.I) ? Fractional(self.num.add(other), self.den) : Fractional(self.num.add(self.den.mul(other)), self.den);
+
+        return self;
+    }
+    ,sub: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex))
+        {
+            if (!other.isReal()) return Complex(self).sub(other);
+            other = other.real();
+        }
+        if (is_instance(other, [Rational, Fractional]))
+            return self.den.equ(other.den) ? Fractional(self.num.sub(other.num), self.den) : Fractional(self.num.mul(other.den).sub(self.den.mul(other.num)), self.den.mul(other.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return self.den.equ(Arithmetic.I) ? Fractional(self.num.sub(other.num), self.den) : Fractional(self.num.sub(self.den.mul(other.num)), self.den);
+        else if (is_instance(other, INumber))
+            return other.neg().add(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.den.equ(Arithmetic.I) ? Fractional(self.num.sub(other), self.den) : Fractional(self.num.sub(self.den.mul(other)), self.den);
+
+        return self;
+    }
+    ,mul: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex))
+        {
+            if (!other.isReal()) return other.mul(self);
+            other = other.real();
+        }
+        if (is_instance(other, [Rational, Fractional]))
+            return Fractional(self.num.mul(other.num), self.den.mul(other.den));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Fractional(self.num.mul(other.num), self.den);
+        else if (is_instance(other, INumber))
+            return other.mul(self);
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Fractional(self.num.mul(other), self.den);
+
+        return self;
+    }
+    ,div: function(other) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex))
+        {
+            if (!other.isReal()) return Complex(self).div(other);
+            other = other.real();
+        }
+        if (is_instance(other, [RationalFunc, Expr]))
+            return other.inv().mul(self);
+        else if (is_instance(other, [Rational, Fractional]))
+            return Fractional(self.num.mul(other.den), self.den.mul(other.num));
+        else if (is_instance(other, [Integer, IntegerMod]))
+            return Fractional(self.num, self.den.mul(other.num));
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return Fractional(self.num, self.den.mul(other));
+
+        return self;
+    }
+    ,mod: function(other, q) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (is_instance(other, Complex)) other = other.real();
+
+        if (is_instance(other, [Rational, Fractional, Integer, IntegerMod]))
+            return self.sub((is_instance(q, Fractional) ? q : self.div(other).round()).mul(other));
+        else if (Arithmetic.isNumber(other)) // assume integer
+            return self.sub((is_instance(q, Fractional) ? q : self.div(other).round()).mul(other));
+
+        return self;
+    }
+    ,divmod: function(other) {
+        var self = this, q = self.div(other).round();
+        return [q, self.mod(other, q)];
+    }
+    ,divides: function(other) {
+        return !this.equ(Abacus.Arithmetic.O);
+    }
+
+    ,pow: function(n) {
+        var self = this, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, num, denom;
+        n = Integer.cast(n);
+        num = self.num; denom = self.den;
+        if (n.lt(O))
+        {
+            if (num.equ(O)) throw new Error('Zero denominator from negative power in Abacus.Fractional!');
+            num = self.den; denom = self.num;
+            n = n.neg();
+        }
+        return Fractional(num.pow(n), denom.pow(n));
+    }
+    ,rad: function(n) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        n = Integer.cast(n);
+        if (n.equ(Arithmetic.I)) return self;
+        return Fractional(self.num.rad(n), self.den.rad(n));
+    }
+    ,simpl: function() {
+        return this;
+    }
+    ,round: function(absolute) {
+        absolute = false !== absolute;
+        var self = this, Arithmetic = Abacus.Arithmetic,
+            sign = absolute ? (Arithmetic.gt(Arithmetic.O, self.num.n) ? Arithmetic.J : Arithmetic.I) : Arithmetic.I;
+        return Fractional(IntegerMod(Arithmetic.mul(sign, Arithmetic.div(Arithmetic.add(Arithmetic.mul(absolute ? Arithmetic.abs(self.num.n) : self.num.n, Arithmetic.II), self.den.n), Arithmetic.mul(self.den.n, Arithmetic.II))), self.num.m));
+    }
+    ,fix: function() {
+        return this.integer();
+    }
+    ,floor: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return self.lt(Arithmetic.O) ? self.abs().ceil().mul(self.sign()) : (self.integer());
+    }
+    ,ceil: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (self.lt(Arithmetic.O))
+        {
+            return self.sub(self.integer()).lt(Arithmetic.O) ? self.integer().add(Arithmetic.I) : (self.integer());
+        }
+        else
+        {
+            return self.sub(self.integer()).gt(Arithmetic.O) ? self.integer().add(Arithmetic.I) : (self.integer());
+        }
+    }
+    ,integer: function(raw) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (null == self._int)
+            self._int = Fractional(IntegerMod(Arithmetic.div(self.num.n, self.den.n), self.num.m)); // return integer part
+        return true === raw ? self._int.num.n : self._int;
+    }
+    ,remainder: function(raw) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (null == self._rem)
+            self._rem = Fractional(IntegerMod(Arithmetic.mod(self.num.n, self.den.n), self.num.m)); // return remainder part
+        return true === raw ? self._rem.num.n : self._rem;
+    }
+    ,tuple: function() {
+        return [this.num, this.den];
+    }
+    ,toDec: function(precision) {
+        var self = this, dec, point, repeating, ndigits, digit, d, i, i0, carry;
+        if (null == self._dec)
+        {
+            self._dec = frac2dec(self.num.n, self.den.n); // return **exact** decimal expansion (with optional repeating digits)
+        }
+        if (is_number(precision) && 0 <= precision)
+        {
+            precision = stdMath.ceil(precision);
+            dec = self._dec;
+            point = dec.indexOf('.');
+            if (-1 === point) return 0 < precision ? (dec + '.'+(new Array(precision+1).join('0'))) : dec;
+            i = dec.indexOf('[', point+1);
+            if (-1 !== i)
+            {
+                repeating = dec.slice(i+1, -1);
+                dec = dec.slice(0, i) + repeating;
+                if (repeating.length && (dec.length-point-1 <= precision))
+                    dec += new Array(stdMath.floor((precision-(dec.length-point-1)) / repeating.length)+2).join(repeating);
+            }
+            ndigits = dec.length-point-1;
+            if (ndigits < precision)
+            {
+                dec += new Array(precision-ndigits+1).join('0');
+            }
+            else if (ndigits > precision)
+            {
+                digit = dec.charAt(point+1+precision); d = parseInt(digit, 10);
+                dec = dec.slice(0, point+1+precision).split('');
+                i = dec.length-1; i0 = '-' === dec[0] ? 1 : 0; carry = (d >= 5);
+                if (point === i) --i;
+                while (carry && (i >= i0))
+                {
+                    d = parseInt(dec[i], 10);
+                    carry = (9 === d);
+                    dec[i] = String(carry ? 0 : d+1);
+                    --i; if (point === i) --i;
+                }
+                if (carry) dec.splice(i0, 0, '1');
+                if ('.' === dec[dec.length-1]) dec.pop();
+                dec = dec.join('');
+            }
+            return dec;
+        }
+        else
+        {
+            return self._dec;
+        }
+    }
+    ,valueOf: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        return Arithmetic.val(self.num.n) / Arithmetic.val(self.den.n);
+    }
+    ,toString: function(parenthesized) {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (null == self._str)
+        {
+            self._str = String(self.num.n) + (Arithmetic.equ(Arithmetic.I, self.den.n) ? '' : ('/' + String(self.den.n)));
+            self._strp = Arithmetic.equ(Arithmetic.I, self.den.n) ? String(self.num.n) : ((Arithmetic.gt(Arithmetic.O, self.num.n) ? '-' : '') + '(' + String(Arithmetic.abs(self.num.n)) + '/' + String(self.den.n) + ')');
+        }
+        return parenthesized ? self._strp : self._str;
+    }
+    ,toTex: function() {
+        var self = this, Arithmetic = Abacus.Arithmetic;
+        if (null == self._tex)
+        {
+            self._tex = Arithmetic.equ(Arithmetic.I, self.den.n) ? Tex(self.num.n) : ((Arithmetic.gt(Arithmetic.O, self.num.n) ? '-' : '') + '\\frac{' + Tex(self.num.n) + '}{' + Tex(self.den.n) + '}');
+        }
+        return self._tex;
+    }
+});
+Fractional.cast = function(a, modulo) {
+    var type_cast = typecast(function(a) {
+        return is_instance(a, Fractional) && (a.num.m.equ(modulo));
+    }, function(a) {
+        return is_string(a) ? Fractional.fromString(a, modulo) : (is_instance(a, [Rational, Fractional, RationalFunc]) ? new Fractional(IntegerMod.cast(a.num, modulo), IntegerMod.cast(a.den, modulo)) : new Fractional(IntegerMod.cast(a, modulo)));
+    });
+    return type_cast(a);
+};

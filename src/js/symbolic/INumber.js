@@ -165,6 +165,14 @@ Numeric = Class(INumber, {
     ,d: function() {
         return this[CLASS].Zero();
     }
+    ,toRational: function() {
+        var self = this;
+        return is_instance(self, Rational) ? self : (new Rational(self));
+    }
+    ,toComplex: function() {
+        var self = this;
+        return is_instance(self, Complex) ? self : (new Complex(self));
+    }
 });
 
 // Symbolic is INumber that represents generally non-constant symbolic objects, eg Expr, Polynomial, MultiPolynomial, RationalFunc
