@@ -3020,25 +3020,49 @@ function expr_derivative(f, x)
             case 'sin()':
                 return expr_derivative(fi[0], x).mul(Expr('cos()', fi));
 
+            // asin derivative rule
+            case 'asin()':
+                return expr_derivative(fi[0], x).mul(Expr.One().sub(fi[0].pow(2)).pow(-1/2));
+
             // cos derivative rule
             case 'cos()':
                 return expr_derivative(fi[0], x).mul(Expr('sin()', fi).neg());
+
+            // acos derivative rule
+            case 'acos()':
+                return expr_derivative(fi[0], x).mul(Expr.One().sub(fi[0].pow(2)).pow(-1/2).neg());
 
             // tan derivative rule
             case 'tan()':
                 return expr_derivative(Expr('sin()', fi).div(Expr('cos()', fi)), x);
 
+            // atan derivative rule
+            case 'atan()':
+                return expr_derivative(fi[0], x).mul(fi[0].pow(2).add(1).inv());
+
             // sinh derivative rule
             case 'sinh()':
                 return expr_derivative(fi[0], x).mul(Expr('cosh()', fi));
+
+            // asinh derivative rule
+            case 'asinh()':
+                return expr_derivative(fi[0], x).mul(fi[0].pow(2).add(1).pow(-1/2));
 
             // cosh derivative rule
             case 'cosh()':
                 return expr_derivative(fi[0], x).mul(Expr('sinh()', fi));
 
+            // acosh derivative rule
+            case 'acosh()':
+                return expr_derivative(fi[0], x).mul(fi[0].pow(2).sub(1).pow(-1/2));
+
             // tanh derivative rule
             case 'tanh()':
                 return expr_derivative(Expr('sinh()', fi).div(Expr('cosh()', fi)), x);
+
+            // atanh derivative rule
+            case 'atanh()':
+                return expr_derivative(fi[0], x).mul(Expr.One().sub(fi[0].pow(2)).inv());
 
             // power derivative rule
             case '^':
