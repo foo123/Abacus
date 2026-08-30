@@ -1438,8 +1438,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
     ,next: function(dir) {
         var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, dI,
-            traversed, r, n = self.n, $ = self.$,
-            order = $.order, tot = $.count, tot_1, rs,
+            traversed, r, rr, rl, n = self.n, $ = self.$,
+            order = $.order, tot = $.count, tot_1,
             current, has_curr, has_next, has_subnext;
 
         dir = -1 === dir ? -1 : 1;
@@ -1480,8 +1480,23 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                             // random unranking
                             // get next un-traversed index, reject if needed
                             r = self.random('index', true);
-                            rs = Abacus.Math.rnd() > 0.5 ? J : I;
-                            while (traversed.isset(+r)) r = Arithmetic.wrap(Arithmetic.add(r, rs), O, tot_1);
+                            //rs = Abacus.Math.rnd() > 0.5 ? J : I;
+                            rr = rl = r;
+                            for (;;)
+                            {
+                                if (!traversed.isset(+rr))
+                                {
+                                    r = rr;
+                                    break;
+                                }
+                                if (!traversed.isset(+rl))
+                                {
+                                    r = rl;
+                                    break;
+                                }
+                                rr = Arithmetic.wrap(Arithmetic.add(rr, I), O, tot_1);
+                                rl = Arithmetic.wrap(Arithmetic.add(rl, J), O, tot_1);
+                            }
                             traversed.set(+r);
                             self.__item = klass.unrank(r, n, $);
                             if (null != self.__item) self.__index = r;

@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-03-26 15:55:01)
+*   @version: 2.0.0 (2026-08-30 15:35:35)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-03-26 15:55:01)
+*   @version: 2.0.0 (2026-08-30 15:35:35)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -10483,7 +10483,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             op2 = o2[0];
                             opc2 = Expr.OP[op2];
 
-                            if (opc2.arity > terms.length)
+                            if ((0 < ops.length) && ((Expr.OP[ops[0][0]].arityalt || Expr.OP[ops[0][0]].arity) > 1) && (opc2.arity > terms.length-1))
+                            {
+                                if ((null != opc2.arityalt) && (opc2.arityalt <= terms.length-1))
+                                {
+                                    args = terms.splice(0, opc2.arityalt).reverse();
+                                }
+                                else
+                                {
+                                    throw error('Invalid or missing argument for "'+op2+'"', o2[1]);
+                                }
+                            }
+                            else if (opc2.arity > terms.length)
                             {
                                 if ((null != opc2.arityalt) && (opc2.arityalt <= terms.length))
                                 {
@@ -10551,7 +10562,18 @@ Expr = Abacus.Expr = Class(Symbolic, {
                                     LEFT === opc2.associativity))))
                                 )
                                 {
-                                    if (opc2.arity > terms.length)
+                                    if ((1 < ops.length) && ((Expr.OP[ops[1][0]].arityalt || Expr.OP[ops[1][0]].arity) > 1) && (opc2.arity > terms.length-1))
+                                    {
+                                        if ((null != opc2.arityalt) && (opc2.arityalt <= terms.length-1))
+                                        {
+                                            args = terms.splice(0, opc2.arityalt).reverse();
+                                        }
+                                        else
+                                        {
+                                            throw error('Invalid or missing argument for "'+op2+'"', o2[1]);
+                                        }
+                                    }
+                                    else if (opc2.arity > terms.length)
                                     {
                                         if ((null != opc2.arityalt) && (opc2.arityalt <= terms.length))
                                         {
@@ -11453,22 +11475,23 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self.den.div(self.num);
     }
 
-    ,equ: function(other) {
+    ,equ: function(other, strict) {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (Arithmetic.isNumber(other) || is_instance(other, Numeric) || is_string(other)) other = Expr('', other);
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
+            strict = true === strict;
             if ('sym' === self.ast.type)
             {
                 if ('sym' === other.ast.type) return self.ast.arg === other.ast.arg; // symbol and symbol match
                 if (other.isConst(true)) return false;
-                return self.toString() === other.expand().toString();
+                return strict ? (self.toString() === other.toString()) : (self.toString() === other.expand().toString());
             }
             else if ('sym' === other.ast.type)
             {
                 if (self.isConst(true)) return false;
-                return self.expand().toString() === other.toString();
+                return strict ? (self.toString() === other.toString()) : (self.expand().toString() === other.toString());
             }
             else if (self.isConst() && other.isConst())
             {
@@ -11481,7 +11504,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 for (i=0; (i < l1) && (i < l2) && (s1[i] === s2[i]); ++i)
                 if (i < l1 || i < l2) return false; // symbols dont match
                 */
-                return self.expand().toString() === other.expand().toString();
+                return strict ? (self.toString() === other.toString()) : (self.expand().toString() === other.expand().toString());
             }
         }
         return false;
@@ -12163,7 +12186,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }
             else
             {
-                expr = self.expand().algebrify('@', 'default');
+                expr = self.expand().algebrify('@', 'factor');
                 map = expr.$map;
                 self._fctrd = Abacus.Factor(expr.toRationalFunc()).algebrify('@', map);
             }
@@ -12679,7 +12702,7 @@ function subexpr_substitute(expr, subexpr1, subexpr2, toplevel)
 function f_substitute(expr, map, sym, mode)
 {
     if (null == map.$cnt) map.$cnt = 0;
-    function _(e) {return 'expand' === mode ? e.expand() : ('simplify' === mode ? e.simplify() : e);}
+    function _(e) {return 'factor' === mode ? e.factors() : ('expand' === mode ? e.expand() : ('simplify' === mode ? e.simplify() : e));}
     var ret, key, e, e2, e3, e4, k, k2, dk, m,
         Arithmetic = Abacus.Arithmetic;
     if (expr.symbols().filter(function(s) {return sym === s.slice(0, sym.length);}).length)
@@ -12716,7 +12739,7 @@ function f_substitute(expr, map, sym, mode)
                 {
                     k = Arithmetic.val(e.c().den);
                     m = e.c().num;
-                    if ('expand' === mode)
+                    if ('factor' === mode || 'expand' === mode)
                     {
                         m = 1;
                         e2 = _(f_substitute(expr.ast.arg[0], map, sym, mode).pow(e.c().num));
@@ -24086,8 +24109,8 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
     ,next: function(dir) {
         var self = this, klass = self[CLASS], Arithmetic = Abacus.Arithmetic,
             O = Arithmetic.O, I = Arithmetic.I, J = Arithmetic.J, dI,
-            traversed, r, n = self.n, $ = self.$,
-            order = $.order, tot = $.count, tot_1, rs,
+            traversed, r, rr, rl, n = self.n, $ = self.$,
+            order = $.order, tot = $.count, tot_1,
             current, has_curr, has_next, has_subnext;
 
         dir = -1 === dir ? -1 : 1;
@@ -24128,8 +24151,23 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
                             // random unranking
                             // get next un-traversed index, reject if needed
                             r = self.random('index', true);
-                            rs = Abacus.Math.rnd() > 0.5 ? J : I;
-                            while (traversed.isset(+r)) r = Arithmetic.wrap(Arithmetic.add(r, rs), O, tot_1);
+                            //rs = Abacus.Math.rnd() > 0.5 ? J : I;
+                            rr = rl = r;
+                            for (;;)
+                            {
+                                if (!traversed.isset(+rr))
+                                {
+                                    r = rr;
+                                    break;
+                                }
+                                if (!traversed.isset(+rl))
+                                {
+                                    r = rl;
+                                    break;
+                                }
+                                rr = Arithmetic.wrap(Arithmetic.add(rr, I), O, tot_1);
+                                rl = Arithmetic.wrap(Arithmetic.add(rl, J), O, tot_1);
+                            }
                             traversed.set(+r);
                             self.__item = klass.unrank(r, n, $);
                             if (null != self.__item) self.__index = r;
