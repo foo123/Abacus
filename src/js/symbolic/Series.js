@@ -1,9 +1,10 @@
 // Abacus.Series, represents symbolic formal power series (infinite and finite)
 Series = Abacus.Series = Class(Symbolic, {
 
-    constructor: function Series(fn, x) {
+    constructor: function Series(fn, x, type) {
         var self = this;
-        if (!is_instance(self, Series)) return new Series(fn, x);
+        if (!is_instance(self, Series)) return new Series(fn, x, type);
+        self.type = 'product' === String(type || '').toLowerCase() ? 'product' : 'sum';
         self._fn = fn;
         self._x = is_instance(x, Expr) ? x : (is_string(x) ? Expr(x) : Expr('', 'x'));
         self._data = {};
@@ -14,55 +15,56 @@ Series = Abacus.Series = Class(Symbolic, {
             return true;
         }
 
-        ,Zero: function(x) {
-            return new Series(function(nth) {return 0 === nth ? Expr.Zero() : 0;}, x);
+        ,Zero: function(x, type) {
+            return new Series(function(nth) {return 0 === nth ? Expr.Zero() : null;}, x, type);
         }
-        ,One: function(x) {
-            return new Series(function(nth) {return 0 === nth ? Expr.One() : 0;}, x);
+        ,One: function(x, type) {
+            return new Series(function(nth) {return 0 === nth ? Expr.One() : null;}, x, type);
         }
-        ,MinusOne: function(x) {
-            return new Series(function(nth) {return 0 === nth ? Expr.MinusOne() : 0;}, x);
+        ,MinusOne: function(x, type) {
+            return new Series(function(nth) {return 0 === nth ? Expr.MinusOne() : null;}, x, type);
         }
-        ,Const: function(c, x) {
-            return new Series(function(nth) {return 0 === nth ? c : 0;}, x);
+        ,Const: function(c, x, type) {
+            return new Series(function(nth) {return 0 === nth ? c : null;}, x, type);
         }
-        ,Term: function(f_n, n, x) {
+        ,Term: function(f_n, n, x, type) {
             n = n || 0;
-            return new Series(function(nth) {return n === nth ? f_n : 0;}, x);
+            return new Series(function(nth) {return n === nth ? f_n : null;}, x, type);
         }
     }
 
+    ,type: 'sum'
     ,_fn: null
     ,_x: null
-    ,__: null
     ,_data: null
-    ,_iszero: null
+    ,__: null
+    ,_istrivial: null
     ,_F: null
     ,_N: 6
 
     ,dispose: function() {
         var self = this;
-        if (self._iszero)
+        if (self._istrivial)
         {
-            self._iszero.tested.dispose();
-            self._iszero.zero.dispose();
+            self._istrivial.tested.dispose();
+            self._istrivial.trivial.dispose();
         }
-        self._iszero = null;
+        self._istrivial = null;
         if (self._F)
         {
             self._F.dispose();
         }
         self._F = null;
-        self._data = null;
         self.__ = null;
+        self._data = null;
         self._x = null;
         self._fn = null;
         return self;
     }
 
     ,clone: function() {
-        var self = this, clone = new Series(self._fn, self._x);
-        if (self._iszero) clone._iszero = {tested:self._iszero.tested.clone(), zero:self._iszero.zero.clone()};
+        var self = this, clone = new Series(self._fn, self._x, self.type);
+        if (self._istrivial) clone._istrivial = {tested:self._istrivial.tested.clone(), trivial:self._istrivial.trivial.clone()};
         if (self._F) clone._F = F(clone, self._F);
         return clone;
     }
@@ -70,10 +72,13 @@ Series = Abacus.Series = Class(Symbolic, {
     ,_: function(nth) {
         nth = stdMath.max(0, (+nth) || 0);
         var self = this,
+            Z = 'product' === self.type ? 1 : 0,
             CACHE = 32,
             in_cache = (nth < CACHE) && self.__ && (null != self.__[nth]),
             fn = self._fn,
-            f_nth = in_cache ? self.__[nth] : to_expr(is_callable(fn) ? (fn(nth, self) || 0) : 0);
+            f_nth = in_cache ? self.__[nth] : (is_callable(fn) ? fn(nth, self) : null);
+        if (null == f_nth) f_nth = Z;
+        if (!is_instance(f_nth, Expr)) f_nth = to_expr(f_nth);
         if ((nth < CACHE) && !in_cache)
         {
             if (!self.__) self.__ = new Array(CACHE);
@@ -87,43 +92,43 @@ Series = Abacus.Series = Class(Symbolic, {
         return self._F(nth, kth);
     }
 
-    ,isZero: function(kth, nth) {
-        var self = this;
+    ,isTrivial: function(kth, nth) {
+        var self = this, Z = 'product' === self.type ? 1 : 0;
         kth = stdMath.max(1, kth || 0);
         nth = stdMath.max(kth, nth || 0);
         for (; kth<=nth; ++kth)
         {
             if (kth > 1024)
             {
-                if (!self._(kth).equ(0)) return false;
+                if (!self._(kth).equ(Z)) return false;
             }
             else
             {
-                self._iszero = test_zero(self, self._iszero, kth);
-                if (!self._iszero.zero.isset(kth-1)) return false;
+                self._istrivial = test_trivial(self, self._istrivial, kth, Z);
+                if (!self._istrivial.trivial.isset(kth-1)) return false;
             }
         }
         return true;
     }
-    ,isPoly: function(degree) {
+    ,isFinite: function(degree) {
         degree = stdMath.max(0, (+degree) || 0);
-        return this.isZero(degree+1, degree+21); // test up to 20 terms after degree
+        return this.isTrivial(degree+1, degree+21); // test up to 20 terms after degree
     }
     ,isSimple: function() {
         var self = this;
-        return self.isPoly(0) && self._(0).isSimple();
+        return self.isFinite(0) && self._(0).isSimple();
     }
     ,isSymbol: function() {
         var self = this;
-        return self.isPoly(0) && self._(0).isSymbol();
+        return self.isFinite(0) && self._(0).isSymbol();
     }
     ,isConst: function(not_exact) {
         var self = this;
-        return self.isPoly(0) && self._(0).isConst(not_exact);
+        return self.isFinite(0) && self._(0).isConst(not_exact);
     }
     ,isInt: function() {
         var self = this;
-        return self.isPoly(0) && self._(0).isInt();
+        return self.isFinite(0) && self._(0).isInt();
     }
     ,c: function() {
         return this._(0);
@@ -131,50 +136,60 @@ Series = Abacus.Series = Class(Symbolic, {
 
     ,neg: function() {
         var self = this;
-        return Series(function(nth) {return self._(nth).neg();}, self._x);
+        return Series('product' === self.type
+        ? function(nth) {return 0 === nth ? self._(nth).neg() : self._(nth);}
+        : function(nth) {return self._(nth).neg();},
+        self._x, self.type);
     }
     ,inv: function() {
-        var self = this, inv_0th = self._(0).inv();
-        return Series(function(nth, inv) {
+        var self = this, inv_0th = 'product' === self.type ? null : self._(0).inv();
+        return Series('product' === self.type
+        ? function(nth) {
+            return self._(nth).inv();
+        }
+        : function(nth, inv) {
             return 0 === nth ? inv_0th : inv_0th.neg().mul(sum(array(nth, function(ith) {return self._(nth-ith).mul(inv._(ith));})));
-        }, self._x);
+        }, self._x, self.type);
     }
 
     ,equ: function(other, up_to_nth) {
         var self = this;
-        return is_instance(other, Series) ? (self === other) || (self._fn === other._fn) || self.toExpr().equ(other.toExpr()) : (self.isPoly(0) && self._(0).equ(other));
+        return is_instance(other, Series) ? (self === other) || (self._fn === other._fn) || self.toExpr().equ(other.toExpr()) : (self.isFinite(0) && self._(0).equ(other));
     }
     ,gt: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).gt(0) : (self.isPoly(0) && self._(0).gt(other));
+        return is_instance(other, Series) ? self.sub(other).gt(0) : (self.isFinite(0) && self._(0).gt(other));
     }
     ,gte: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).gte(0) : (self.isPoly(0) && self._(0).gte(other));
+        return is_instance(other, Series) ? self.sub(other).gte(0) : (self.isFinite(0) && self._(0).gte(other));
     }
     ,lt: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).lt(0) : (self.isPoly(0) && self._(0).lt(other));
+        return is_instance(other, Series) ? self.sub(other).lt(0) : (self.isFinite(0) && self._(0).lt(other));
     }
     ,lte: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).lte(0) : (self.isPoly(0) && self._(0).lte(other));
+        return is_instance(other, Series) ? self.sub(other).lte(0) : (self.isFinite(0) && self._(0).lte(other));
     }
 
     ,add: function(other) {
         var self = this;
         other = to_series(other, self);
-        return Series(function(nth) {return self._(nth).add(other._(nth));}, self._x);
+        return Series(function(nth) {return self._(nth).add(other._(nth));}, self._x, self.type);
     }
     ,sub: function(other) {
         var self = this;
         other = to_series(other, self);
-        return Series(function(nth) {return self._(nth).sub(other._(nth));}, self._x);
+        return Series(function(nth) {return self._(nth).sub(other._(nth));}, self._x, self.type);
     }
     ,mul: function(other) {
         var self = this;
         other = to_series(other, self);
-        return Series(function(nth) {return sum(array(nth+1, function(ith) {return self._(ith).mul(other._(nth-ith));}));}, self._x);
+        return Series('product' === self.type
+        ? function(nth) {return self._(nth).mul(other._(nth));}
+        : function(nth) {return sum(array(nth+1, function(ith) {return self._(ith).mul(other._(nth-ith));}));},
+        self._x, self.type);
     }
     ,div: function(other) {
         var self = this;
@@ -182,16 +197,18 @@ Series = Abacus.Series = Class(Symbolic, {
     }
     ,divides: function(other) {
         var self = this;
-        return !self.isPoly(0) || !self._(0).equ(0);
+        return !self.isFinite(0) || !self._(0).equ(0);
     }
     ,pow: function(n) {
-        return npow(this, stdMath.floor((+n) || 0));
+        var self = this;
+        n = stdMath.floor((+n) || 0);
+        return 'product' === self.type ? Series(function(nth) {return self._(nth).pow(n);}, self._x, self.type) : npow(self, n);
     }
 
     ,d: function(n) {
         var self = this;
         n = stdMath.floor((+n) || 0);
-        return 0 >= n ? self : Series(function(nth) {return self._(nth+n).mul(product(array(n, function(i) {return nth+n-i;})));}, self._x);
+        return 0 >= n ? self : Series(function(nth) {return self._(nth+n).mul(product(array(n, function(i) {return nth+n-i;})));}, self._x, self.type);
     }
     ,compose: function(other) {
         var self = this;
@@ -200,19 +217,19 @@ Series = Abacus.Series = Class(Symbolic, {
             return 0 === nth ? self._(nth) : sum(array(nth, function(kth) {
                 return other.$(nth, kth+1).mul(self._(kth+1));
             }));
-        }, other._x);
+        }, other._x, 'sum');
     }
 
     ,map: function(f) {
         var self = this;
-        return is_callable(f) ? Series(function(nth) {return f(self._(nth), nth);}, self._x) : self;
+        return is_callable(f) ? Series(function(nth) {return f(self._(nth), nth);}, self._x, self.type) : self;
     }
     ,filter: function(f) {
-        var self = this;
+        var self = this, Z = 'product' === self.type ? Expr.One() : Expr.Zero();
         return is_callable(f) ? Series(function(nth) {
             var nth_term = self._(nth);
-            return f(nth_term, nth) ? nth_term : Expr.Zero();
-        }, self._x) : self;
+            return f(nth_term, nth) ? nth_term : Z;
+        }, self._x, self.type) : self;
     }
     ,sum: function(nterms, mode) {
         var self = this, terms = [], nth_term, nth;
@@ -224,7 +241,8 @@ Series = Abacus.Series = Class(Symbolic, {
             // skip redundant terms
             if (!nth_term.equ(0)) terms.push(('default' === mode ? nth_term : (nth_term.expand())).mul(0 < nth ? self._x.pow(nth) : 1));
         }
-        return terms.length ? Expr('+', terms) : (Expr.Zero());
+        if (!terms.length) terms.push(Expr.Zero());
+        return Expr('+', terms);
     }
     ,prod: function(nterms, mode) {
         var self = this, terms = [], nth_term, nth;
@@ -234,21 +252,23 @@ Series = Abacus.Series = Class(Symbolic, {
         {
             nth_term = self._(nth);
             // skip redundant terms
-            /*if (!nth_term.equ(1))*/ terms.push(('default' === mode ? nth_term : (nth_term.expand())).mul(0 < nth ? self._x.pow(nth) : 1));
+            if (!nth_term.equ(1)) terms.push('default' === mode ? nth_term : (nth_term.expand()));
         }
-        return terms.length ? Expr('*', terms) : (Expr.Zero());
+        if (!terms.length) terms.push(Expr.One());
+        return Expr('*', terms);
     }
 
     ,toExpr: function() {
-        return this.sum(this._N, 'expand');
+        var self = this;
+        return 'product' === self.type ? self.prod(self._N, 'expand') : self.sum(self._N, 'expand');
     }
     ,toString: function(type) {
-        var e = this.toExpr();
-        return e.toString(type) + (e.ast.arg.length < this._N ? '' : ' + ...');
+        var self = this, e = self.toExpr();
+        return e.toString(type) + (e.ast.arg.length < self._N ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
     }
     ,toTex: function() {
-        var e = this.toExpr();
-        return e.toTex() + (e.ast.arg.length < this._N ? '' : ' + \\dots');
+        var self = this, e = self.toExpr();
+        return e.toTex() + (e.ast.arg.length < self._N ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
     }
 });
 
@@ -256,16 +276,16 @@ function to_series(x, s)
 {
     return is_instance(x, Series) ? x : (to_expr(x).toSeries(s._x));
 }
-function test_zero(series, store, nth)
+function test_trivial(series, store, nth, Z)
 {
     if (!store)
     {
-        store = {tested:Abacus.BitArray(1024), zero:Abacus.BitArray(1024)};
+        store = {tested:Abacus.BitArray(1024), trivial:Abacus.BitArray(1024)};
     }
     if (!store.tested.isset(nth-1))
     {
         store.tested.set(nth-1);
-        if (series._(nth).equ(0)) store.zero.set(nth-1);
+        if (series._(nth).equ(Z || 0)) store.trivial.set(nth-1);
     }
     return store;
 }

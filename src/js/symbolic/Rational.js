@@ -1282,10 +1282,10 @@ Float = Abacus.Float = Class(Numeric, {
         return new Expr('', this);
     }
     ,toString: function() {
-        return String(this._);
+        return String(this._).split('Infinity').join('Inf');
     }
     ,toTex: function() {
-        return this.toString();
+        return this.toString().split('Inf').join('\\text{Inf}').split('NaN').join('\\text{NaN}');
     }
 });
 Float.cast = typecast([Float], function(a) {

@@ -195,7 +195,12 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 fn: nmax
              }
              ,'^': {
-                exact: function(args) {return args[1].isInt();},
+                exact: function(args) {
+                    var b = args[0], e = args[1];
+                    if (e.isInt()) return true;
+                    if (!e.isReal()) return false;
+                    return b.rad(e.real().den).pow(e.real().den).equ(b); // is it exact?
+                },
                 fn: function(args) {
                     if (!is_instance(args[0], [Float, ComplexFloat]) && is_callable(args[0].pow))
                     {
@@ -290,6 +295,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return equ(args[0], 0) ? Rational.One() : Rational.Zero();
                 }
              }
+        }
+        ,OP$: {
+             'pow': '^'
+            ,'div': '/'
+            ,'mul': '*'
+            ,'sub': '-'
+            ,'add': '+'
+            ,'ge': '>='
+            ,'le': '<='
+            ,'gt': '>'
+            ,'lt': '<'
+            ,'ne': '!='
+            ,'eq': '='
+            ,'lor': 'or'
+            ,'land': 'and'
+            ,'lnot': 'not'
         }
         ,OP: {
             '^': {
@@ -1084,7 +1105,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 return ast.arg.reduce(function(ops, subexpr) {
                     ops.push.apply(ops, subexpr.operators(op));
                     return ops;
-                }, (op === ast.op) || (Expr.OP[ast.op] && (op === Expr.OP[ast.op].name)) ? [self] : []);
+                }, ((HAS.call(Expr.OP$, op) ? Expr.OP$[op] : op) === ast.op) /*|| (Expr.OP[ast.op] && (op === Expr.OP[ast.op].name))*/ ? [self] : []);
             }
             else
             {
@@ -1276,6 +1297,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return 'sym' === this.ast.type;
     }
     ,isConst: function(not_exact) {
+        if ('approx' === not_exact) not_exact = true;
         var self = this;
         if (null == self._const)
         {
@@ -1294,26 +1316,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else
             {
                 self._const = [self.operators().reduce(function(exact, op) {
-                    return exact && self.operators(op).reduce(function(exact, expr) {
-                        if (exact)
+                    if (!exact) return exact;
+                    var op$ = HAS.call(Expr.OP$, op) ? Expr.OP$[op] : op;
+                    return self.operators(op).reduce(function(exact, expr) {
+                        if (exact && HAS.call(Expr.FN, op$) && is_callable(Expr.FN[op$].exact))
                         {
-                            if ('pow' === op)
-                            {
-                                var b = expr.ast.arg[0], bc, e = expr.ast.arg[1], ec, r;
-                                if (!b.isConst() || !e.isConst()) return false;
-                                ec = e.c();
-                                if (ec.isInt()) return true;
-                                if (!ec.isReal()) return false;
-                                bc = b.c(); r = bc.rad(ec.real().den);
-                                // non-exact pow should NOT be considered const
-                                return r.pow(ec.real().den).equ(bc);
-                            }
-                            else if (HAS.call(Expr.FN, op) && is_callable(Expr.FN[op].exact))
-                            {
-                                return expr.ast.arg.reduce(function(isconst, e) {
-                                    return isconst && e.isConst();
-                                }, true) && Expr.FN[op].exact(expr.ast.arg.map(function(e) {return e.c();}));
-                            }
+                            return expr.ast.arg.reduce(function(isconst, e) {
+                                return isconst && e.isConst();
+                            }, true) && Expr.FN[op$].exact(expr.ast.arg.map(function(e) {return e.c();}));
                         }
                         return exact;
                     }, exact);
@@ -1379,7 +1389,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
 
     ,c: function(not_exact) {
-        var self = this, ast = self.ast, c, c_;
+        if ('approx' === not_exact) not_exact = true;
+        var self = this, ast = self.ast, c;
         if (null == self._c)
         {
             // constant term
@@ -1394,13 +1405,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if (self.isConst())
             {
                 c = self.evaluate();
-                if (is_number(c)) c = Rational(c);
             }
             else
             {
                 c = Rational.Zero();
             }
-            self._c = [c, !self.isConst() && self.isConst(true) ? (is_instance(c_=self.evaluate(), Complex) ? new ComplexFloat(c_) : new Float(c_)) : c];
+            // make it exact
+            if (is_instance(c, ComplexFloat)) c = Complex(Rational.fromDec(+c.re), Rational.fromDec(+c.im));
+            else if (is_instance(c, Float) || is_number(c)) c = Rational.fromDec(+c);
+            self._c = [c, !self.isConst() && self.isConst(true) ? self.evaluate() : c];
         }
         return self._c[true === not_exact ? 1 : 0];
     }
@@ -2015,7 +2028,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return df;
     }
     ,evaluate: function(symbolValue, partial) {
-        var expr = this, ast = expr.ast, op = ast.op;
+        var expr = this, ast = expr.ast, op = ast.op, val;
 
         symbolValue = symbolValue || {};
         function evaluate(expr) {return expr.evaluate(symbolValue, partial);}
@@ -2042,22 +2055,24 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         else
         {
+            val = Rational.Zero();
             if ('' === op)
             {
                 if ('sym' === ast.type)
                 {
-                    return is_instance(symbolValue[ast.arg], [Float, Rational, Complex]) ? symbolValue[ast.arg] : Rational.cast(symbolValue[ast.arg] || 0);
+                    val = is_instance(symbolValue[ast.arg], [Float, Rational, Complex]) ? symbolValue[ast.arg] : Rational.cast(symbolValue[ast.arg] || 0);
                 }
                 else //if ('num' === ast.type)
                 {
-                    return ast.arg;
+                    val = ast.arg;
                 }
             }
             else if (Expr.FN[op] && Expr.FN[op].fn)
             {
-                return Expr.FN[op].fn(ast.arg.map(evaluate));
+                val = Expr.FN[op].fn(ast.arg.map(evaluate));
             }
-            return Rational.Zero();
+            if (is_number(val)) val = Float.cast(val);
+            return val;
         }
     }
     ,substitute: function(that, withthat, toplevel) {
@@ -2312,7 +2327,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(x, Expr) && !is_string(x)) return self;
         x = is_instance(x, Expr) ? x : Expr(x);
         if (!x.symbols().filter(function(s) {return '1' !== s;}).length) return self;
-        return self.den.isConst() ? expr_series(self.den.c().equ(1) ? self.num : (self.num.div(self.den.c())), x) : (expr_series(self.num, x).div(expr_series(self.den, x)));
+        return /*expr_series(self, x) // slow*/self.den.isConst() ? expr_series(self.den.c().equ(1) ? self.num : (self.num.div(self.den.c())), x) : (expr_series(self.num, x).div(expr_series(self.den, x)));
     }
     ,toPoly: function(symbol, ring, imagUnit) {
         var self = this, other_symbols = null, CoefficientRing = null;
@@ -2703,7 +2718,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         return self._tex;
     }
     ,valueOf: function() {
-        return (arguments.length ? this.evaluate(arguments[0]) : this.c()).valueOf();
+        return (arguments.length ? this.evaluate(arguments[0]) : this.c(true)).valueOf();
     }
 });
 Expr.cast = typecast([Expr], function(a) {
@@ -2718,7 +2733,7 @@ function expr_series(f, x)
 {
     var symbol = ((['x','y','z']).filter(function(s) {return -1 < x.symbols().indexOf(s);})[0]) || (x.symbols().filter(function(s) {return '1' !== s;})[0]),
         x0 = x.clone().substitute(symbol, 0).neg(); // must be x - x0
-    return -1 === f.symbols().indexOf(symbol) ? Series.Const(f, x) : Series(function(nth, series) {
+    return -1 === f.symbols().indexOf(symbol) ? Series.Const(f, x, 'sum') : new Series(function(nth, series) {
         if (!series._data.nth)
         {
             series._data.degree = Infinity;
@@ -2734,11 +2749,11 @@ function expr_series(f, x)
             else if (series._data.nth.length < nth+1) series._data.nth.push.apply(series._data.nth, array(nth+1-series._data.nth.length, null));
         }
         df_n = df_n.substitute(symbol, x0).expand();
-        if (df_n.isConst()) df_n = df_n.c();
-        f_nth = to_expr(df_n.div(factorial(nth)));
+        if (df_n.isConst()) df_n = Expr('', df_n.c());
+        f_nth = df_n.div(Expr('', factorial(nth)));
         if (nth < series._data.nth.length) series._data.nth[nth] = f_nth;
         return f_nth;
-    }, x);
+    }, x, 'sum');
 }
 function rational_expr(expr)
 {
@@ -3478,6 +3493,11 @@ function needs_parentheses(expr, is_tex, in_pow)
 }
 
 // convenience methods
+Abacus.Evaluate = function(expr, symbolValues) {
+    if (is_string(expr)) expr = Expr(expr);
+    if (is_instance(expr, Expr)) return expr.evaluate(symbolValues || {});
+    return expr;
+};
 Abacus.Expand = function(expr) {
     if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, Expr)) expr = expr.expand();

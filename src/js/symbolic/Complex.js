@@ -1267,12 +1267,12 @@ ComplexFloat = Abacus.ComplexFloat = Class(Complex, {
     }
     ,toString: function() {
         var self = this;
-        if (null == self._str) self._str = self.toExpr(true).toString();
+        if (null == self._str) self._str = self.toExpr(true).toString().split('Infinity').join('Inf');
         return self._str;
     }
     ,toTex: function() {
         var self = this;
-        if (null == self._tex) self._tex = self.toExpr(true).toTex();
+        if (null == self._tex) self._tex = self.toExpr(true).toTex().split('Infinity').join('\\text{Inf}').split('NaN').join('\\text{NaN}');
         return self._tex;
     }
     ,toDec: function(precision) {
