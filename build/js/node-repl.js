@@ -52,16 +52,19 @@ function str(x)
 
 function initContext(context)
 {
-    // export it
+    // export
     context.Abacus = Abacus;
     // symbolics
     context.Expr = Abacus.Expr;
     context.Poly = Abacus.Poly;
+    context.Series = Abacus.Series;
+    context.PowerSeries = Abacus.PowerSeries;
     context.Ring = Abacus.Ring;
     context.Matrix = Abacus.Matrix;
+    context.Evaluate = Abacus.Evaluate;
     context.Expand = Abacus.Expand;
-    context.Simplify = Abacus.Simplify;
     context.Factor = Abacus.Factor;
+    context.Simplify = Abacus.Simplify;
     context.Roots = Abacus.Roots;
     context.Zeros = Abacus.Zeros;
     // combinatorics
