@@ -1561,7 +1561,7 @@ function floyd_cycle_detection(f, x0, eq)
     }
     return [lam/*period*/, mu/*first_repeat*/];
 }
-function frac2dec(n, d)
+function frac2dec(n, d, tofloat)
 {
     // fraction to decimal, with optional repeating digits
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
@@ -1629,6 +1629,17 @@ function frac2dec(n, d)
     }
 
     dot = non_repeating.length || repeating.length ? '.' : '';
+    if ('tofloat' === tofloat)
+    {
+        decimal = '';
+        if ('.' === dot)
+        {
+            repeating = repeating.length ? repeating.slice(1, -1) : '';
+            decimal = non_repeating;
+            while (repeating.length && (16 > decimal.length)) decimal += repeating;
+        }
+        return parseFloat(whole + dot + decimal, 10);
+    }
     return whole + dot + non_repeating + repeating;
 }
 

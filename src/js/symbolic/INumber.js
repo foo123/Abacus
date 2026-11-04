@@ -236,10 +236,42 @@ Poly = Class(Symbolic, {
     }
 });
 
+function apply_(fn)
+{
+    return function(/*args*/) {
+        var args = is_array(arguments[0]) ? arguments[0] : arguments, MathFn = Abacus.Math.fn;
+        return MathFn[fn].apply(MathFn, [].slice.call(args, 0, MathFn[fn].length || 1));
+    };
+}
+function equ(a, b)
+{
+    return is_callable(a.equ) ? a.equ(b) : (is_callable(b.equ) ? b.equ(a) : (a === b));
+}
+function gte(a, b)
+{
+    return is_callable(a.gte) ? a.gte(b) : (is_callable(b.lte) ? b.lte(a) : (a >= b));
+}
+function lte(a, b)
+{
+    return is_callable(a.lte) ? a.lte(b) : (is_callable(b.gte) ? b.gte(a) : (a <= b));
+}
+function gt(a, b)
+{
+    return is_callable(a.gt) ? a.gt(b) : (is_callable(b.lt) ? b.lt(a) : (a > b));
+}
+function lt(a, b)
+{
+    return is_callable(a.lt) ? a.lt(b) : (is_callable(b.gt) ? b.gt(a) : (a < b));
+}
 function nmax(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
     return args.length ? operate(function(max, a) {
+        if (is_number(a))
+        {
+            if (is_number(max)) return a > max ? a : max;
+            a = max[CLASS].cast(a);
+        }
         return a.gt(max) ? a : max;
     }, args[0], args, 1, args.length-1, 1) : null;
 }
@@ -247,6 +279,11 @@ function nmin(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
     return args.length ? operate(function(min, a) {
+        if (is_number(a))
+        {
+            if (is_number(min)) return a < min ? a : min;
+            a = min[CLASS].cast(a);
+        }
         return a.lt(min) ? a : min;
     }, args[0], args, 1, args.length-1, 1) : null;
 }
@@ -254,6 +291,11 @@ function nadd(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
     return args.length ? operate(function(result, a) {
+        if (is_number(result))
+        {
+            if (is_number(a)) return result+a;
+            result = a[CLASS].cast(result);
+        }
         return result.add(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
@@ -261,6 +303,11 @@ function nsub(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
     return args.length ? operate(function(result, a) {
+        if (is_number(result))
+        {
+            if (is_number(a)) return result-a;
+            result = a[CLASS].cast(result);
+        }
         return result.sub(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
@@ -268,6 +315,11 @@ function nmul(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
     return args.length ? operate(function(result, a) {
+        if (is_number(result))
+        {
+            if (is_number(a)) return result*a;
+            result = a[CLASS].cast(result);
+        }
         return result.mul(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
@@ -275,6 +327,11 @@ function ndiv(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
     return args.length ? operate(function(result, a) {
+        if (is_number(result))
+        {
+            if (is_number(a)) return result/a;
+            result = a[CLASS].cast(result);
+        }
         return result.div(a);
     }, args[0], args, 1, args.length-1, 1) : null;
 }
@@ -342,7 +399,7 @@ function kthroot(x, k, limit)
     {
         r = new ObjectClass(ikthroot(x.num, k.num), ikthroot(x.den, k.num));
     }
-    else if (is_class(ObjectClass, nComplex))
+    else if (is_class(ObjectClass, ComplexFloat))
     {
         if (x.isReal() && ((x.real() >= 0) || !k.mod(two).equ(O)))
         {
@@ -372,7 +429,7 @@ function kthroot(x, k, limit)
     //if (null == limit) limit = 6; // for up to 6 tries Newton method converges with 64bit precision
     //limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
-    if (is_class(ObjectClass, nComplex))
+    if (is_class(ObjectClass, ComplexFloat))
     {
         do {
             d = x.div(r.pow(k_1)).sub(r).div(k);

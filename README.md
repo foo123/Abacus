@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (408 kB minified)
+**version 2.0.0** almost complete (416 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -72,6 +72,7 @@
 * Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/rings.js`)
 * `Matrix` **with coefficients from a Ring/Field**  (`test/matrices.js`)
 * `Expr` **general Symbolic Expressions** (`test/expressions.js`)
+* `Series` **formal Power Series** (`test/power_series.js`)
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * Diophantine Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
@@ -165,6 +166,10 @@ See the comments in the code for algorithms and references used.
 * [Solving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
 * [Use Gröbner Bases To Solve Polynomial Equations, Jingnan Shi](https://jingnanshi.com/blog/groebner_basis.html)
 * [Faster Linear Unification Algorithm, Dennis de Champeaux](https://raw.githubusercontent.com/ddccc/Unification/a5975a47bca1be3f7bf0afe9ad3595a707a29ea4/LinUnify3.pdf)
+* [Power Series, wikipedia](https://en.wikipedia.org/wiki/Power_series)
+* [Formal Power Series, wikipedia](https://en.wikipedia.org/wiki/Formal_power_series)
+* [Composita and its properties, Vladimir V. Kruchinin, Dmitry V. Kruchinin, 2013](https://arxiv.org/abs/1103.2582v2)
+* [Relax, but Don’t be Too Lazy, JORIS VAN DER HOEVEN, 2002](https://www.csd.uwo.ca/~mmorenom/Publications/Relax_but_dont_be_too_lazy.pdf)
 
 ### Example API
 
@@ -300,6 +305,18 @@ console.log(m2.inv().mul(m2).toString());
 |0 1|
 ```
 
+```javascript
+const exp = (x) => Abacus.PowerSeries("exp("+x+")", "x");
+
+console.log(exp("x").toString());
+console.log(exp("x").mul(exp("-x")).toString());
+```
+
+```text
+1 + x + (1/2)*x^2 + (1/6)*x^3 + (1/24)*x^4 + (1/120)*x^5 + ...
+1
+```
+
 ### Todo
 
 * apply built-in language `iterator`/`iterable` patterns (ES6 `iterator` protocol). Combinatorial objects additionaly support a `doubly-linked list`-like interface, i.e `prev`/`next` accessors **[DONE]**
@@ -328,8 +345,9 @@ console.log(m2.inv().mul(m2).toString());
 * implement `Rank` factorization` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**
 * implement `Hermite Normal Form`, `Smith Normal Form` **[DONE]**
-* implement numeric `EVD / SVD` computation  **[DONE]**
+* <del>implement numeric `EVD / SVD` computation</del>
 * support general symbolic expressions and computations in `Expr` **[DONE]**
+* support (formal) power series of symbolic expressions in `Series` **[ALMOST DONE]**
 * implement adequate and efficient simplification methods for symbolic expressions **[DONE PARTIALLY]**
 * support some basic functions in symbolic expressions (eg. `exp`, `log`, `sin`, `cos`, ..) **[DONE PARTIALLY]**
 * support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**

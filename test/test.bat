@@ -13,6 +13,7 @@ call node rings.js > rings.txt
 call node parse_strings.js > parse_strings.txt
 call node matrices.js > matrices.txt
 call node expressions.js > expressions.txt
+call node power_series.js > power_series.txt
 call node primes.js > primes.txt
 call node diophantine.js > diophantine.txt
 call node linears.js > linears.txt

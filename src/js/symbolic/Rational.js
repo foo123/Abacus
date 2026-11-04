@@ -35,6 +35,7 @@ Rational = Abacus.Rational = Class(Numeric, {
         if (is_instance(num, [Integer, IntegerMod])) num = num.num;
         if (is_instance(den, [Integer, IntegerMod])) den = den.num;
         if (is_instance(num, Complex)) num = num.real();
+        if (is_instance(num, Float)) num = num.toRational();
         if (is_instance(num, Rational))
         {
             simplified = num._simpl;
@@ -218,6 +219,7 @@ Rational = Abacus.Rational = Class(Numeric, {
     ,_dec: null
     ,_int: null
     ,_rem: null
+    ,_val: null
     ,_simpl: false
 
     ,dispose: function() {
@@ -404,7 +406,7 @@ Rational = Abacus.Rational = Class(Numeric, {
             if (!other.isReal()) return Complex(self).div(other);
             other = other.real();
         }
-        if (is_instance(other, [RationalFunc, Fractional, Expr]))
+        if (is_instance(other, [Float, RationalFunc, Fractional, Expr]))
             return other.inv().mul(self);
         else if (is_instance(other, Rational))
             return Rational(Arithmetic.mul(self.num, other.den), Arithmetic.mul(self.den, other.num));
@@ -638,7 +640,11 @@ Rational = Abacus.Rational = Class(Numeric, {
     }
     ,valueOf: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.val(self.num) / Arithmetic.val(self.den);
+        if (null == self._val)
+        {
+            self._val = frac2dec(self.num, self.den, 'tofloat');//Arithmetic.val(self.num) / Arithmetic.val(self.den);
+        }
+        return self._val;
     }
     ,toString: function(parenthesized) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -761,6 +767,7 @@ Fractional = Abacus.Fractional = Class(Numeric, {
     ,_dec: null
     ,_int: null
     ,_rem: null
+    ,_val: null
     ,_simpl: false
 
     ,dispose: function() {
@@ -1093,7 +1100,11 @@ Fractional = Abacus.Fractional = Class(Numeric, {
     }
     ,valueOf: function() {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        return Arithmetic.val(self.num.n) / Arithmetic.val(self.den.n);
+        if (null == self._val)
+        {
+            self._val = frac2dec(self.num.n, self.den.n, 'tofloat');//Arithmetic.val(self.num.n) / Arithmetic.val(self.den.n);
+        }
+        return self._val;
     }
     ,toString: function(parenthesized) {
         var self = this, Arithmetic = Abacus.Arithmetic;
@@ -1121,3 +1132,162 @@ Fractional.cast = function(a, modulo) {
     });
     return type_cast(a);
 };
+
+// Abacus.Float, represents a JavaScript floating point number
+Float = Abacus.Float = Class(Numeric, {
+    constructor: function Float(n) {
+        var self = this;
+        if (!is_instance(self, Float)) return new Float(n);
+        self._ = +n;
+
+        def(self, 'num', {
+            get: function() {
+                return self;
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+        def(self, 'den', {
+            get: function() {
+                return Float.One();
+            },
+            set: NOP,
+            enumerable: true,
+            configurable: false
+        });
+    }
+    ,__static__: {
+         hasInverse: function() {
+            return true;
+        }
+
+        ,Zero: function() {
+            return new Float(0);
+        }
+        ,One: function() {
+            return new Float(1);
+        }
+        ,MinusOne: function() {
+            return new Float(-1);
+        }
+
+        ,fromString: function(s) {
+            return new Float(parseFloat(s) || 0);
+        }
+
+        ,cast: null // added below
+    }
+
+    ,_: 0
+
+    ,clone: function() {
+        return new this[CLASS](this._);
+    }
+    ,isInt: function() {
+        return this._ === stdMath.floor(this._);
+    }
+    ,abs: function() {
+        return new Float(stdMath.abs(this._));
+    }
+    ,sign: function() {
+        return new Float(stdMath.sign(this._));
+    }
+    ,neg: function() {
+        return new Float(-this._);
+    }
+    ,inv: function() {
+        return new Float(1.0 / this._);
+    }
+
+    ,equ: function(other) {
+        return is_instance(other, ComplexFloat) ? other.equ(this._) : (is_instance(other, INumber) ? this._ === other.valueOf() : (is_string(other) ? (String(this) === other) : (this._ === other)));
+    }
+    ,gt: function(other) {
+        if (is_number(other)) return (this._ > other);
+        else if (is_instance(other, INumber)) return (this._ > other.valueOf());
+        return false;
+    }
+    ,gte: function(other) {
+        if (is_number(other)) return (this >= other);
+        else if (is_instance(other, INumber)) return (this._ >= other.valueOf());
+        return false;
+    }
+    ,lt: function(other) {
+        if (is_number(other)) return (this < other);
+        else if (is_instance(other, INumber)) return (this._ < other.valueOf());
+        return false;
+    }
+    ,lte: function(other) {
+        if (is_number(other)) return (this <= other);
+        else if (is_instance(other, INumber)) return (this._ <= other.valueOf());
+        return false;
+    }
+
+    ,add: function(other) {
+        return is_instance(other, ComplexFloat) ? other.add(this._) : new Float(this._ + other.valueOf());
+    }
+    ,sub: function(other) {
+        return is_instance(other, ComplexFloat) ? this.toComplex().sub(other) : new Float(this._ - other.valueOf());
+    }
+    ,mul: function(other) {
+        return is_instance(other, ComplexFloat) ? other.mul(this._) : new Float(this._ * other.valueOf());
+    }
+    ,div: function(other) {
+        return is_instance(other, ComplexFloat) ? this.toComplex().div(other) : new Float(this._ / other.valueOf());
+    }
+    ,mod: function(other) {
+        return is_instance(other, ComplexFloat) ? this.toComplex().mod(other) : new Float(this._ % other.valueOf());
+    }
+    ,divmod: function(other) {
+        return [this.div(other), this.mod(other)];
+    }
+    ,divides: function(other) {
+        return (0 !== this._);
+    }
+    ,pow: function(n) {
+        return new Float(stdMath.pow(this._, +n));
+    }
+    ,rad: function(n) {
+        return new Float(jskthroot(this._, +n));
+    }
+    ,round: function() {
+        return new Float(stdMath.round(this._));
+    }
+    ,fix: function() {
+        return new Float(0 > this._ ? stdMath.ceil(this._) : stdMath.floor(this._));
+    }
+    ,floor: function() {
+        return new Float(stdMath.floor(this._));
+    }
+    ,ceil: function() {
+        return new Float(stdMath.ceil(this._));
+    }
+    ,integer: function() {
+        return this.fix();
+    }
+    ,remainder: function() {
+        return new Float(this._ - this.integer()._);
+    }
+    ,valueOf: function() {
+        return this._;
+    }
+    ,toRational: function() {
+        return Rational.fromDec(this._);
+    }
+    ,toComplex: function() {
+        return new ComplexFloat(this._, 0);
+    }
+    ,toExpr: function() {
+        return new Expr('', this);
+    }
+    ,toString: function() {
+        return String(this._);
+    }
+    ,toTex: function() {
+        return this.toString();
+    }
+});
+Float.cast = typecast([Float], function(a) {
+    return is_string(a) ? Float.fromString(a) : new Float(a);
+});

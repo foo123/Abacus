@@ -781,9 +781,9 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
             zero, one,  p, dp, px, dpx;
         if (null == self._zeros)
         {
-            epsilonz = nComplex(epsilon);
-            zero = nComplex.Zero();
-            one = nComplex.One();
+            epsilonz = ComplexFloat(epsilon);
+            zero = ComplexFloat.Zero();
+            one = ComplexFloat.One();
             p = function(x) {
                 return self.evaluate(x);
             };
@@ -802,7 +802,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 roots = array(d, function() {
                     var radius = lo + (hi-lo)*stdMath.random();
                     var angle = stdMath.random()*stdMath.PI/2;
-                    return nComplex(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
+                    return ComplexFloat(radius*stdMath.cos(angle), radius*stdMath.sin(angle));
                 });
 
                 // root finding
@@ -821,7 +821,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                                 ++found;
                                 continue;
                             }
-                            ratio = nComplex(hi);
+                            ratio = ComplexFloat(hi);
                         }
                         else
                         {
@@ -1437,7 +1437,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         if (!t.length) return ring.Zero();
         if (!is_instance(x, [Numeric, Symbolic]) && !Arithmetic.isNumber(x) && is_obj(x)) x = x[self.symbol];
         x = x || O;
-        is_ncomplex = is_instance(x, nComplex);
+        is_ncomplex = is_instance(x, ComplexFloat);
         //x = ring.cast(x);
         i = t[0].e; v = t[0].c; j = 1;
         while (0 < i)
@@ -3017,7 +3017,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
             // memoize, sometimes same subpolynomial is re-evaluated
             str = p.toString(); if (HAS.call(memo, str)) return memo[str];
             xi = (HAS.call(x, s) ? x[s] : O) || O;
-            is_ncomplex = is_instance(xi, nComplex);
+            is_ncomplex = is_instance(xi, ComplexFloat);
             //xi = ring.cast(xi);
             tc = get_val(t[0].c, x);
             i = t[0].e[0]; v = tc; j = 1;

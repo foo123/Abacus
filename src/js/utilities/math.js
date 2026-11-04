@@ -21,6 +21,104 @@ function product(x, i0, i1, ik)
         return p instanceof INumber ? p.mul(x) : (x instanceof INumber ? x.mul(p) : Arithmetic.mul(p, x));
     }, Arithmetic.I, x, i0, i1, ik);
 }
+/*
+function series_sum(terms, stop)
+{
+    var gen = terms, k, ak, s = Expr.Zero();
+    // terms must be function or array
+    if (is_array(terms))
+    {
+        gen = function(k) {return terms[k];};
+        stop = function(k) {return k+1 >= terms.length;};
+    }
+    for (k=0; ; ++k)
+    {
+        ak = gen(k);
+        if ((null != stop) && stop(k, s, ak)) break;
+        s = s.add(ak);
+    }
+    return s;
+}
+function series_product(terms, stop)
+{
+    var gen = terms, k, ak, s = Expr.One();
+    // terms must be function or array
+    if (is_array(terms))
+    {
+        gen = function(k) {return terms[k];};
+        stop = function(k) {return k+1 >= terms.length;};
+    }
+    for (k=0;;++k)
+    {
+        ak = gen(k);
+        if ((null != stop) && stop(k, s, ak)) break;
+        s = s.mul(ak);
+    }
+    return s;
+}
+function rational_function(p, q, x)
+{
+    var k, np = p.length, nq = q.length, px = p[0], qx = q[0];
+    for (k=1; k<np; ++k) px = px.mul(x).add(p[k]); // horner method
+    for (k=1; k<nq; ++k) qx = qx.mul(x).add(q[k]); // horner method
+    return px.div(qx);
+}
+function continued_fraction(terms, stop)
+{
+    /*
+    https://en.wikipedia.org/wiki/Continued_fraction#Formulation
+    https://en.wikipedia.org/wiki/Lentz%27s_algorithm
+    x=b_{0}+{\cfrac {a_{1}}{b_{1}+{\cfrac {a_{2}}{b_{2}+{\cfrac {a_{3}}{b_{3}+{\cfrac {a_{4}}{b_{4}+\ddots \,}}}}}}}}
+
+    nth convergents p/q for n >= 1 are (recursively):
+    p = b_n*p0 + a_n*p1,
+    q = b_n*q0 + a_n*q1,
+
+    with initial values:
+    p1 = 1, p0 = b_0,
+    q1 = 0, q0 = 1
+    * /
+    var gen = terms,
+        p, q, p1, p0,
+        q1, q0, r,
+        k, abk, ak, bk
+    ;
+    // terms must be function or array
+    if (is_array(terms))
+    {
+        gen = function(k) {return terms[k];};
+        stop = function(k) {return k+1 >= terms.length;};
+    }
+    for (k=0;;++k)
+    {
+        abk = gen(k);
+        ak = abk.a;
+        bk = abk.b;
+
+        if (0 === k)
+        {
+            p1 = Expr.One();
+            p0 = bk;
+            q1 = Expr.Zero();
+            q0 = Expr.One();
+            r = bk;
+        }
+        else
+        {
+            p = p0.mul(bk).add(p1.mul(ak));
+            q = q0.mul(bk).add(q1.mul(ak));
+            r = p.div(q);
+        }
+
+        if ((null != stop) && stop(k, r)) break;
+
+        p1 = p0; p0 = p;
+        q1 = q0; q0 = q;
+    }
+    return r;
+}
+*/
+
 // modular arithmetic
 function negm(a, m)
 {
@@ -3881,66 +3979,6 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     ,rnd: rndInt
 };
 
-DefaultArithmeticFloat = Abacus.DefaultArithmeticFloat = { // keep default arithmetic as distinct
-     // whether using default arithmetic or using external implementation (eg decimal or other)
-     isDefault: function() {
-         return true;
-     }
-    ,isNumber: function(x) {
-        var Arithmetic = this;
-        if (Arithmetic.isDefault()) return is_number(x);
-        return is_number(x) || is_instance(x, Arithmetic.O[CLASS]);
-    }
-
-    ,J: -1.0
-    ,O: 0.0
-    ,I: 1.0
-    ,II: 2.0
-    ,INF: {valueOf: function() {return Infinity;}, toString: function() {return "Infinity";}, toTex: function() {return "\\infty";}} // a representation of Infinity
-    ,NINF: {valueOf: function() {return -Infinity;}, toString: function() {return "-Infinity";}, toTex: function() {return "-\\infty";}} // a representation of -Infinity
-
-    ,nums: function(a) {
-        var Arithmetic = this;
-        if (is_array(a) || is_args(a))
-        {
-            for (var i=0,l=a.length; i<l; ++i) a[i] = Arithmetic.nums(a[i]); // recursive
-            return a;
-        }
-        return Arithmetic.num(a);
-    }
-    ,num: function(a) {
-        return is_number(a) ? a : parseFloat(a || 0, 10);
-    }
-    ,val: function(a) {
-        return a.valueOf();
-    }
-
-    ,neg: function(a) {return -(+a);}
-    ,inv: function(a) {return 1.0 / a;}
-
-    ,equ: function(a, b) {return a === b;}
-    ,gte: function(a, b) {return a >= b;}
-    ,lte: function(a, b) {return a <= b;}
-    ,gt: function(a, b) {return a > b;}
-    ,lt: function(a, b) {return a < b;}
-
-    ,inside: function(a, m, M, closed) {return closed ? (a >= m) && (a <= M) : (a > m) && (a < M);}
-    ,clamp: function(a, m, M) {return a < m ? m : (a > M ? M : a);}
-    ,wrap: function(a, m, M) {return a < m ? M : (a > M ? m : a);}
-    ,wrapR: function(a, M) {return a < 0 ? a + M : a;}
-
-    ,add: addn
-    ,sub: function(a, b) {return a - b;}
-    ,mul: muln
-    ,div: function(a, b) {return a / b;}
-    ,pow: stdMath.pow
-
-    ,abs: stdMath.abs
-    ,min: stdMath.min
-    ,max: stdMath.max
-    ,rnd: rndFloat
-};
-
 // pluggable arithmetics, eg biginteger/decimal exact Arithmetic
 Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
     isDefault: function() {
@@ -3969,11 +4007,6 @@ Abacus.Arithmetic = Merge({}, DefaultArithmetic, {
             if (dividedEvenly) return roundedTowardsZeroQuotient;
             wasRoundedDown = (Arithmetic.gt(a, O) === Arithmetic.gt(b, O));
             return wasRoundedDown ? Arithmetic.add(roundedTowardsZeroQuotient, I) : roundedTowardsZeroQuotient;
-    }
-});
-Abacus.ArithmeticFloat = Merge({}, DefaultArithmeticFloat, {
-    isDefault: function() {
-        return (0.0 === this.O) && (this.add === addn);
     }
 });
 
@@ -4254,3 +4287,156 @@ Abacus.Math = {
         return (is_array(v) || is_args(v)) && v.length ? gramschmidt(v) : [];
     }
 };
+// real and complex functions
+function _r(x)
+{
+    return is_number(x) ? x : ((is_instance(x, [Integer, IntegerMod, Rational, Float]) ? x : (Rational.cast(x))).valueOf());
+}
+function _c(x)
+{
+    return is_instance(x, ComplexFloat) ? x : new ComplexFloat(x);
+}
+var realMath, complexMath,
+    PI = stdMath.PI,
+    E = stdMath.E,
+    zE = null,
+    LOG_10 = stdMath.log(10),
+    LOG_2 = stdMath.log(2),
+    FNs = [
+    'sign',
+    'abs',
+    'mod',
+    'pow',
+    'exp',
+    'log',
+    'log10',
+    'log2',
+    'sqrt',
+    'sin',
+    'cos',
+    'tan',
+    'sinh',
+    'cosh',
+    'tanh',
+    'asin',
+    'acos',
+    'atan',
+    'asinh',
+    'acosh',
+    'atanh'
+    ]
+;
+FNs.forEach(function(f) {
+    realMath = realMath || {};
+    if ('mod' === f)
+    {
+        realMath[f] = function(x, y) {
+            return _r(x) % _r(y);
+        };
+    }
+    else if ('pow' === f)
+    {
+        realMath[f] = function(x, y) {
+            return 1/2 === (y=_r(y)) ? realMath.sqrt(x) : stdMath.pow(_r(x), y);
+        };
+    }
+    else if ('sqrt' === f)
+    {
+        realMath[f] = function(x) {
+            return 0 > (x=_r(x)) ? new ComplexFloat(0, stdMath.sqrt(-x)) : stdMath.sqrt(x);
+        };
+    }
+    else
+    {
+        realMath[f] = function(x) {
+            return stdMath[f](_r(x));
+        };
+    }
+});
+complexMath = {
+    sign: function(z) {
+        return z.sign();
+    },
+    abs: function(z) {
+        return z.abs();
+    },
+    mod: function(z, w) {
+        return z.mod(w);
+    },
+    pow: function(z, w) {
+        return z.pow(w);
+    },
+    exp: function(z) {
+        if (null == zE) zE = new ComplexFloat(E, 0);
+        return zE.pow(z);
+    },
+    log: function(z) {
+        return new ComplexFloat(realMath.log(z.abs()), z.angle());
+    },
+    log10: function(z) {
+        return complexMath.log(z).div(LOG_10);
+    },
+    log2: function(z) {
+        return complexMath.log(z).div(LOG_2);
+    },
+    sqrt: function(z) {
+        return new ComplexFloat(realMath.sqrt(z.abs()), (z.angle()/2), 'polar');
+    },
+    sin: function(z) {
+      return new ComplexFloat((realMath.sin(z.re)*realMath.cosh(z.im)), (realMath.cos(z.re)*realMath.sinh(z.im)));
+    },
+    cos: function(z) {
+      return new ComplexFloat((realMath.cos(z.re)*realMath.cosh(z.im)), -((realMath.sin(z.re)*realMath.sinh(z.im))));
+    },
+    tan: function(z) {
+        return complexMath.sin(z).div(complexMath.cos(z));
+    },
+    sinh: function(z) {
+      return new ComplexFloat((realMath.sinh(z.re)*realMath.cos(z.im)), (realMath.cosh(z.re)*realMath.sin(z.im)));
+    },
+    cosh: function(z) {
+      return new ComplexFloat((realMath.cosh(z.re)*realMath.cos(z.im)), (realMath.sinh(z.re)*realMath.sin(z.im)));
+    },
+    tanh: function(z) {
+        return complexMath.sinh(z).div(complexMath.cosh(z));
+    },
+    asin: function(z) {
+        return ComplexFloat.MinusImg().mul(complexMath.log(ComplexFloat.Img().mul(z).add(complexMath.sqrt(ComplexFloat.One().sub(z.pow(2))))));
+    },
+    acos: function(z) {
+        return ComplexFloat.MinusImg().mul(complexMath.log(z.add(ComplexFloat.Img().mul(complexMath.sqrt(ComplexFloat.One().sub(z.pow(2)))))));
+    },
+    atan: function(z) {
+        return ComplexFloat.Img().div(2).mul(complexMath.log(ComplexFloat.Img().add(z).div(ComplexFloat.Img().sub(z))));
+    },
+    asinh: function(z) {
+        return complexMath.log(z.add(complexMath.sqrt(z.pow(2).add(1))));
+    },
+    acosh: function(z) {
+        return complexMath.log(z.add(complexMath.sqrt(z.pow(2).sub(1))));
+    },
+    atanh: function(z) {
+        return complexMath.log(z.add(I).div(z.neg().add(1))).div(2);
+    }
+};
+var MathFn = Abacus.Math.fn = {};
+FNs.forEach(function(f) {
+    if ('mod' === f)
+    {
+        MathFn[f] = function(x, y) {
+            return is_instance(x, Complex) || is_instance(y, Complex) ? complexMath.mod(_c(x), _c(y)) : realMath.mod(x, y);
+        };
+    }
+    else if ('pow' === f)
+    {
+        MathFn[f] = function(x, y) {
+            return is_instance(x, Complex) || is_instance(y, Complex) ? complexMath.pow(_c(x), _c(y)) : realMath.pow(x, y);
+        };
+    }
+    else
+    {
+        MathFn[f] = function(x) {
+            return is_instance(x, Complex) ? complexMath[f](_c(x)) : realMath[f](x);
+        };
+    }
+});

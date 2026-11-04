@@ -356,6 +356,7 @@ window.MathJax = {
 • <a href="#" aria-label="run polynomial zeros example" onclick="return runExample('zeros');">Polynomial Zeros</a>
 <br>
 <a href="#" aria-label="run simplifications example" onclick="return runExample('simplify');">Simplifications</a>
+• <a href="#" aria-label="run series example" onclick="return runExample('series');">Series</a>
 <br>
 <a href="#" aria-label="run permutations example" onclick="return runExample('permutations');">Permutations</a>
 • <a href="#" aria-label="run derangements example" onclick="return runExample('derangements');">Derangements</a>
@@ -451,7 +452,8 @@ function Tex(x)
     }
     else
     {
-        x = "\\[" + toTex(x) + "\\]";
+        x = toTex(x);
+        if (x.length) x = "\\[" + x + "\\]";
     }
     return x;
 }
@@ -524,6 +526,8 @@ function init()
         // symbolics
         sandbox.Expr = Abacus.Expr;
         sandbox.Poly = Abacus.Poly;
+        sandbox.Series = Abacus.Series;
+        sandbox.PowerSeries = Abacus.PowerSeries;
         sandbox.Ring = Abacus.Ring;
         sandbox.Matrix = Abacus.Matrix;
         sandbox.Expand = Abacus.Expand;
@@ -573,15 +577,17 @@ function init()
         currentLine += lines.length;
     }
 
-    function print_math(out)
+    function print_math(ans)
     {
-        if (null == out) return;
+        if (null == ans) return;
         if (MathJax.typesetPromise)
         {
+            const tex = Tex(ans);
+            if (!tex.length) return;
             const math = document.createElement('div');
             math.id = 'math-' + String(cnt);
             math.className = 'math';
-            math.innerHTML = esc(Tex(out));
+            math.innerHTML = esc(tex);
             output.appendChild(math);
             printCompleted = printCompleted.then(function() {
                 return MathJax.typesetPromise([math]);
@@ -593,7 +599,7 @@ function init()
 
     function print_err(err)
     {
-        let error = document.createElement('div');
+        const error = document.createElement('div');
         error.id = 'err-' + String(cnt);
         error.className = 'err';
         error.innerHTML = esc_html(err.toString());
@@ -628,34 +634,33 @@ function init()
     {
         if (null == inp) return;
         inp = String(inp).trim();
-        if (inp.length)
-        {
-            export_sandbox(sandbox, Abacus);
+        if (!inp.length) return;
 
-            // read
-            session.push(inp); // add to current session
-            let out = null, err = null;
+        export_sandbox(sandbox, Abacus);
 
-            // eval
-            try {
-                out = sandbox.eval(inp + ';');
-            } catch (e) {
-                err = e;
-            }
+        // read
+        session.push(inp); // add to current session
+        let ans = null, err = null;
 
-            // print
-            ++cnt;
-            print_code(inp);
-            if (err)
-            {
-                print_err(err);
-            }
-            else
-            {
-                print_math(out);
-            }
-            printCompleted = printCompleted.then(() => output.scrollTop = output.scrollHeight);
+        // eval
+        try {
+            ans = sandbox.eval(inp + ';');
+        } catch (e) {
+            err = e;
         }
+
+        // print
+        ++cnt;
+        print_code(inp);
+        if (err)
+        {
+            print_err(err);
+        }
+        else
+        {
+            print_math(ans);
+        }
+        printCompleted = printCompleted.then(() => output.scrollTop = output.scrollHeight);
     }
 
     function run_example(example)
@@ -807,6 +812,22 @@ function init()
                 'e2 = Simplify(e)'
                 ]);
             break;
+            case 'series':
+                run_session([
+                '/* power series */',
+                'PowerSeries("1+x+x^2", "x")',
+                'f = PowerSeries("1/(1-x)", "x")',
+                'f.inv()',
+                'sqrt = PowerSeries("sqrt(1+x)", "x")',
+                'sqrt.pow(2)',
+                'exp = (x) => PowerSeries("exp("+x+")", "x")',
+                'exp("x")',
+                'exp("-x")',
+                'exp("x").inv()',
+                'exp("-x").equ(exp("x").inv())',
+                'exp("x").mul(exp("-x"))'
+                ]);
+            break;
         }
     }
 
@@ -895,7 +916,7 @@ function init()
                                         "with","yield"
                                     ]
         ,"<keyword>"                : [
-                                        "Abacus", "Expr", "Poly", "Ring", "Matrix",
+                                        "Abacus", "Expr", "Poly", "Series", "PowerSeries", "Ring", "Matrix",
                                         "Expand", "Simplify", "Factor", "Roots", "Zeros",
                                         "Tensor", "Permutation", "Combination",
                                         "Subset", "Partition", "SetPartition"
