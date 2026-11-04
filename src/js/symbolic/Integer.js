@@ -6,6 +6,7 @@ Integer = Abacus.Integer = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (!is_instance(self, Integer)) return new Integer(num);
         if (is_instance(num, Symbolic)) num = num.c();
+        if (is_instance(num, [Float, ComplexFloat])) num = num.toRational();
         if (is_instance(num, Complex)) num = num.real();
         if (is_instance(num, [Rational, Fractional])) num = num.integer(true);
         if (is_instance(num, Integer)) self._isp = num._isp;
@@ -218,12 +219,10 @@ Integer = Abacus.Integer = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
             return Integer(Arithmetic.div(self.n, other.n));
-        else if (is_instance(other, Complex))
-            return Complex(self).div(other);
-        else if (is_instance(other, Rational))
-            return Rational(self).div(other);
         else if (is_instance(other, Fractional))
             return Fractional.cast(self, other.num.m).div(other);
+        else if (is_instance(other, Numeric))
+            return (new other[CLASS](self)).div(other);
         else if (Arithmetic.isNumber(other))
             return Integer(Arithmetic.div(self.n, other));
 
@@ -233,12 +232,10 @@ Integer = Abacus.Integer = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [Integer, IntegerMod]))
             return Integer(Arithmetic.mod(self.n, other.n));
-        else if (is_instance(other, Complex))
-            return Complex(self).mod(other);
-        else if (is_instance(other, Rational))
-            return Rational(self).mod(other);
         else if (is_instance(other, Fractional))
             return Fractional.cast(self, other.num.m).mod(other);
+        else if (is_instance(other, Numeric))
+            return (new other[CLASS](self)).mod(other);
         else if (Arithmetic.isNumber(other))
             return Integer(Arithmetic.mod(self.n, other));
 
@@ -309,7 +306,6 @@ Integer.cast = typecast([Integer], function(a) {
     return is_string(a) ? Integer.fromString(a) : new Integer(a);
 });
 
-
 // Abacus.IntegerMod, represents an Integer modulo M, for prime M IntegerMod numbers constitute a field
 IntegerMod = Abacus.IntegerMod = Class(Numeric, {
 
@@ -317,6 +313,7 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (!is_instance(self, IntegerMod)) return new IntegerMod(num, m, simplified);
         if (is_instance(num, Symbolic)) num = num.c();
+        if (is_instance(num, [Float, ComplexFloat])) num = num.toRational();
         if (is_instance(num, Complex)) num = num.real();
         if (is_instance(num, [Rational, Fractional])) num = num.integer(true);
         if (is_instance(num, Integer)) num = num.num;
@@ -579,12 +576,10 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]) || Arithmetic.isNumber(other))
             return self.mul(IntegerMod(other, self.m).inv());
-        else if (is_instance(other, Complex))
-            return Complex(self).div(other);
-        else if (is_instance(other, Rational))
-            return Rational(self).div(other);
         else if (is_instance(other, Fractional))
             return Fractional(self).div(other);
+        else if (is_instance(other, Numeric))
+            return (new other[CLASS](self)).div(other);
 
         return self;
     }
@@ -592,12 +587,10 @@ IntegerMod = Abacus.IntegerMod = Class(Numeric, {
         var self = this, Arithmetic = Abacus.Arithmetic;
         if (is_instance(other, [IntegerMod, Integer]))
             return IntegerMod(Arithmetic.mod(self.n, other.n), self.m);
-        else if (is_instance(other, Complex))
-            return Complex(self).mod(other);
-        else if (is_instance(other, Rational))
-            return Rational(self).mod(other);
         else if (is_instance(other, Fractional))
             return Fractional(self).mod(other);
+        else if (is_instance(other, Numeric))
+            return (new other[CLASS](self)).mod(other);
         else if (Arithmetic.isNumber(other))
             return IntegerMod(Arithmetic.mod(self.n, other), self.m);
 

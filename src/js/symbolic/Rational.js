@@ -34,8 +34,8 @@ Rational = Abacus.Rational = Class(Numeric, {
         }
         if (is_instance(num, [Integer, IntegerMod])) num = num.num;
         if (is_instance(den, [Integer, IntegerMod])) den = den.num;
+        if (is_instance(num, [Float, ComplexFloat])) num = num.toRational();
         if (is_instance(num, Complex)) num = num.real();
-        if (is_instance(num, Float)) num = num.toRational();
         if (is_instance(num, Rational))
         {
             simplified = num._simpl;
@@ -347,10 +347,10 @@ Rational = Abacus.Rational = Class(Numeric, {
 
     ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        if (is_instance(other, Complex) && !is_instance(other, ComplexFloat))
         {
             if (!other.isReal()) return other.add(self);
-            other = other.real();
+            other = other.toRational();
         }
         if (is_instance(other, Rational))
             return Arithmetic.equ(self.den, other.den) ? Rational(Arithmetic.add(self.num, other.num), self.den) : Rational(Arithmetic.add(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den)), Arithmetic.mul(self.den, other.den));
@@ -365,10 +365,10 @@ Rational = Abacus.Rational = Class(Numeric, {
     }
     ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        if (is_instance(other, Complex) && !is_instance(other, ComplexFloat))
         {
-            if (!other.isReal()) return Complex(self).sub(other);
-            other = other.real();
+            if (!other.isReal()) return (new other[CLASS](self)).sub(other);
+            other = other.toRational();
         }
         if (is_instance(other, Rational))
             return Arithmetic.equ(self.den, other.den) ? Rational(Arithmetic.sub(self.num, other.num), self.den) : Rational(Arithmetic.sub(Arithmetic.mul(self.num, other.den), Arithmetic.mul(other.num, self.den)), Arithmetic.mul(self.den, other.den));
@@ -383,10 +383,10 @@ Rational = Abacus.Rational = Class(Numeric, {
     }
     ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        if (is_instance(other, Complex) && !is_instance(other, ComplexFloat))
         {
             if (!other.isReal()) return other.mul(self);
-            other = other.real();
+            other = other.toRational();
         }
         if (is_instance(other, Rational))
             return Rational(Arithmetic.mul(self.num, other.num), Arithmetic.mul(self.den, other.den));
@@ -401,17 +401,17 @@ Rational = Abacus.Rational = Class(Numeric, {
     }
     ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        if (is_instance(other, Complex) && !is_instance(other, ComplexFloat))
         {
-            if (!other.isReal()) return Complex(self).div(other);
-            other = other.real();
+            if (!other.isReal()) return (new other[CLASS](self)).div(other);
+            other = other.toRational();
         }
-        if (is_instance(other, [Float, RationalFunc, Fractional, Expr]))
-            return other.inv().mul(self);
         else if (is_instance(other, Rational))
             return Rational(Arithmetic.mul(self.num, other.den), Arithmetic.mul(self.den, other.num));
         else if (is_instance(other, [Integer, IntegerMod]))
             return Rational(self.num, Arithmetic.mul(self.den, other.num));
+        else if (is_instance(other, INumber))
+            return other.inv().mul(self);
         else if (Arithmetic.isNumber(other)) // assume integer
             return Rational(self.num, Arithmetic.mul(self.den, other));
 
@@ -419,7 +419,7 @@ Rational = Abacus.Rational = Class(Numeric, {
     }
     ,mod: function(other, q) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex)) other = other.real();
+        if (is_instance(other, [Float, Complex])) other = other.toRational();
 
         if (is_instance(other, [Rational, Fractional, Integer, IntegerMod]))
             return self.sub((is_instance(q, [Rational, Fractional]) ? q : self.div(other).round()).mul(other));
@@ -679,6 +679,7 @@ Fractional = Abacus.Fractional = Class(Numeric, {
 
         if (is_instance(num, Symbolic)) num = num.c();
         if (is_instance(den, Symbolic)) den = den.c();
+        if (is_instance(num, [Float, ComplexFloat])) num = num.toRational();
         if (is_instance(num, Complex)) num = num.real();
         if (is_instance(num, [Rational, Fractional]))
         {
@@ -900,11 +901,11 @@ Fractional = Abacus.Fractional = Class(Numeric, {
 
     ,add: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        /*if (is_instance(other, [Float, Complex]))
         {
             if (!other.isReal()) return other.add(self);
-            other = other.real();
-        }
+            other = other.toRational();
+        }*/
         if (is_instance(other, [Rational, Fractional]))
             return self.den.equ(other.den) ? Fractional(self.num.add(other.num), self.den) : Fractional(self.num.mul(other.den).add(self.den.mul(other.num)), self.den.mul(other.den));
         else if (is_instance(other, [Integer, IntegerMod]))
@@ -918,11 +919,11 @@ Fractional = Abacus.Fractional = Class(Numeric, {
     }
     ,sub: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        /*if (is_instance(other, [Float, Complex]))
         {
-            if (!other.isReal()) return Complex(self).sub(other);
-            other = other.real();
-        }
+            if (!other.isReal()) return (new other[CLASS](self)).sub(other);
+            other = other.toRational();
+        }*/
         if (is_instance(other, [Rational, Fractional]))
             return self.den.equ(other.den) ? Fractional(self.num.sub(other.num), self.den) : Fractional(self.num.mul(other.den).sub(self.den.mul(other.num)), self.den.mul(other.den));
         else if (is_instance(other, [Integer, IntegerMod]))
@@ -936,11 +937,11 @@ Fractional = Abacus.Fractional = Class(Numeric, {
     }
     ,mul: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        /*if (is_instance(other, [Float, Complex]))
         {
             if (!other.isReal()) return other.mul(self);
-            other = other.real();
-        }
+            other = other.toRational();
+        }*/
         if (is_instance(other, [Rational, Fractional]))
             return Fractional(self.num.mul(other.num), self.den.mul(other.den));
         else if (is_instance(other, [Integer, IntegerMod]))
@@ -954,17 +955,17 @@ Fractional = Abacus.Fractional = Class(Numeric, {
     }
     ,div: function(other) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex))
+        /*if (is_instance(other, [Float, Complex]))
         {
-            if (!other.isReal()) return Complex(self).div(other);
-            other = other.real();
-        }
-        if (is_instance(other, [RationalFunc, Expr]))
-            return other.inv().mul(self);
-        else if (is_instance(other, [Rational, Fractional]))
+            if (!other.isReal()) return (new other[CLASS](self)).div(other);
+            other = other.toRational();
+        }*/
+        if (is_instance(other, [Rational, Fractional]))
             return Fractional(self.num.mul(other.den), self.den.mul(other.num));
         else if (is_instance(other, [Integer, IntegerMod]))
             return Fractional(self.num, self.den.mul(other.num));
+        else if (is_instance(other, INumber))
+            return other.inv().mul(self);
         else if (Arithmetic.isNumber(other)) // assume integer
             return Fractional(self.num, self.den.mul(other));
 
@@ -972,7 +973,7 @@ Fractional = Abacus.Fractional = Class(Numeric, {
     }
     ,mod: function(other, q) {
         var self = this, Arithmetic = Abacus.Arithmetic;
-        if (is_instance(other, Complex)) other = other.real();
+        if (is_instance(other, [Float, Complex])) other = other.toRational();
 
         if (is_instance(other, [Rational, Fractional, Integer, IntegerMod]))
             return self.sub((is_instance(q, Fractional) ? q : self.div(other).round()).mul(other));
@@ -1173,7 +1174,7 @@ Float = Abacus.Float = Class(Numeric, {
         }
 
         ,fromString: function(s) {
-            return new Float(parseFloat(s) || 0);
+            return new Float(parseFloat(s, 10) || 0);
         }
 
         ,cast: null // added below
@@ -1201,43 +1202,47 @@ Float = Abacus.Float = Class(Numeric, {
     }
 
     ,equ: function(other) {
-        return is_instance(other, ComplexFloat) ? other.equ(this._) : (is_instance(other, INumber) ? this._ === other.valueOf() : (is_string(other) ? (String(this) === other) : (this._ === other)));
+        return is_instance(other, Complex) ? ComplexFloat(this._).equ(other) : (is_instance(other, INumber) ? this._ === other.valueOf() : (is_string(other) ? (String(this._) === other) : (this._ === other)));
     }
     ,gt: function(other) {
-        if (is_number(other)) return (this._ > other);
+        if (is_instance(other, Complex)) return ComplexFloat(this._).gt(other);
         else if (is_instance(other, INumber)) return (this._ > other.valueOf());
+        else if (is_number(other)) return (this._ > other);
         return false;
     }
     ,gte: function(other) {
-        if (is_number(other)) return (this >= other);
+        if (is_instance(other, Complex)) return ComplexFloat(this._).gte(other);
         else if (is_instance(other, INumber)) return (this._ >= other.valueOf());
+        else if (is_number(other)) return (this._ >= other);
         return false;
     }
     ,lt: function(other) {
-        if (is_number(other)) return (this < other);
+        if (is_instance(other, Complex)) return ComplexFloat(this._).lt(other);
         else if (is_instance(other, INumber)) return (this._ < other.valueOf());
+        else if (is_number(other)) return (this._ < other);
         return false;
     }
     ,lte: function(other) {
-        if (is_number(other)) return (this <= other);
+        if (is_instance(other, Complex)) return ComplexFloat(this._).lte(other);
         else if (is_instance(other, INumber)) return (this._ <= other.valueOf());
+        else if (is_number(other)) return (this._ <= other);
         return false;
     }
 
     ,add: function(other) {
-        return is_instance(other, ComplexFloat) ? other.add(this._) : new Float(this._ + other.valueOf());
+        return is_instance(other, Complex) ? ComplexFloat(this._).add(other) : new Float(this._ + other.valueOf());
     }
     ,sub: function(other) {
-        return is_instance(other, ComplexFloat) ? this.toComplex().sub(other) : new Float(this._ - other.valueOf());
+        return is_instance(other, Complex) ? ComplexFloat(this._).sub(other) : new Float(this._ - other.valueOf());
     }
     ,mul: function(other) {
-        return is_instance(other, ComplexFloat) ? other.mul(this._) : new Float(this._ * other.valueOf());
+        return is_instance(other, Complex) ? ComplexFloat(this._).mul(other) : new Float(this._ * other.valueOf());
     }
     ,div: function(other) {
-        return is_instance(other, ComplexFloat) ? this.toComplex().div(other) : new Float(this._ / other.valueOf());
+        return is_instance(other, Complex) ? ComplexFloat(this._).div(other) : new Float(this._ / other.valueOf());
     }
     ,mod: function(other) {
-        return is_instance(other, ComplexFloat) ? this.toComplex().mod(other) : new Float(this._ % other.valueOf());
+        return is_instance(other, Complex) ? ComplexFloat(this._).mod(other) : new Float(this._ % other.valueOf());
     }
     ,divmod: function(other) {
         return [this.div(other), this.mod(other)];
@@ -1268,6 +1273,9 @@ Float = Abacus.Float = Class(Numeric, {
     }
     ,remainder: function() {
         return new Float(this._ - this.integer()._);
+    }
+    ,toDec: function(precision) {
+        return this._.toFixed(is_number(precision) && (4 !== precision) ? stdMath.ceil(stdMath.max(0, precision)) : 4).split('Infinity').join('Inf');
     }
     ,valueOf: function() {
         return this._;

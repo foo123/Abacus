@@ -348,15 +348,15 @@ window.MathJax = {
 <br>
 <a href="#" aria-label="run matrices example" onclick="return runExample('matrices');">Matrices</a>
 • <a href="#" aria-label="run polynomials example" onclick="return runExample('polys');">Polynomials</a>
-<br>
-<a href="#" aria-label="run polynomial factorization example" onclick="return runExample('factors');">Factorization</a>
-• <a href="#" aria-label="run polynomial gcd example" onclick="return runExample('gcd');">GCD</a>
+• <a href="#" aria-label="run series example" onclick="return runExample('series');">Series</a>
 <br>
 <a href="#" aria-label="run polynomial roots example" onclick="return runExample('roots');">Polynomial Roots</a>
 • <a href="#" aria-label="run polynomial zeros example" onclick="return runExample('zeros');">Polynomial Zeros</a>
 <br>
-<a href="#" aria-label="run simplifications example" onclick="return runExample('simplify');">Simplifications</a>
-• <a href="#" aria-label="run series example" onclick="return runExample('series');">Series</a>
+<a href="#" aria-label="run polynomial gcd example" onclick="return runExample('gcd');">GCD</a>
+• <a href="#" aria-label="run polynomial factorization example" onclick="return runExample('factors');">Factorization</a>
+<br>
+<a href="#" aria-label="run expression simplification example" onclick="return runExample('simplify');">Simplification</a>
 <br>
 <a href="#" aria-label="run permutations example" onclick="return runExample('permutations');">Permutations</a>
 • <a href="#" aria-label="run derangements example" onclick="return runExample('derangements');">Derangements</a>
@@ -426,7 +426,7 @@ function toTex(x)
     }
     else if (window.Abacus.Arithmetic.isNumber(x))
     {
-        x = String(x);
+        x = String(x).split('Infinity').join('\\text{Inf}').split('NaN').join('\\text{NaN}');
     }
     else if (Array.isArray(x))
     {
@@ -530,9 +530,10 @@ function init()
         sandbox.PowerSeries = Abacus.PowerSeries;
         sandbox.Ring = Abacus.Ring;
         sandbox.Matrix = Abacus.Matrix;
+        sandbox.Evaluate = Abacus.Evaluate;
         sandbox.Expand = Abacus.Expand;
-        sandbox.Simplify = Abacus.Simplify;
         sandbox.Factor = Abacus.Factor;
+        sandbox.Simplify = Abacus.Simplify;
         sandbox.Roots = Abacus.Roots;
         sandbox.Zeros = Abacus.Zeros;
         // combinatorics
@@ -780,7 +781,7 @@ function init()
             break;
             case 'simplify':
                 run_session([
-                '/* various simplifications, in progress */',
+                '/* simplifications, in progress */',
                 'e = Expr("(x+y)^2")',
                 'e2 = Expand(e)',
                 'e3 = Factor(e2)',
@@ -790,6 +791,7 @@ function init()
                 'e = Expr("sqrt((x+y)^2)")',
                 'e2 = Expand(e)',
                 'e = Expr("sqrt[3]((x+y)^2)")',
+                'Evaluate(e, {x:2, y:3})',
                 'e2 = Expand(e)',
                 'e = Expr("sqrt(x^2+2xy+y^2)")',
                 'e2 = Expand(e)',
@@ -803,13 +805,17 @@ function init()
                 'e = Expr("-12345678")',
                 'e2 = Factor(e)',
                 'e3 = Expand(e2)',
-                'e = Expr.fromString("12/5+4/3i", Abacus.Complex.Symbol)',
+                'e = Expr.fromString("12/5+4/3i", "i")',
                 'e2 = Factor(e)',
                 'e3 = Expand(e2)',
                 'e = Expr("(sqrt(2)+1)^2")',
                 'e2 = Simplify(e)',
+                'Evaluate(e2)',
                 'e = Expr("(sqrt(4*3)+1)^2")',
-                'e2 = Simplify(e)'
+                'e2 = Simplify(e)',
+                'Evaluate(e2)',
+                'Evaluate("exp(x)", {x:1})',
+                'Evaluate("log(0)")'
                 ]);
             break;
             case 'series':
@@ -897,12 +903,14 @@ function init()
     // Lexical model
     "Lex"                           : {
         "<comment>"                 : {"type":"comment","tokens":[
-                                        // line comment
-                                        // start, end delims  (null matches end-of-line)
-                                        [ "//",  null],
                                         // block comments
                                         // start,  end    delims
                                         ["/*",   "*/"]
+                                    ]}
+       ,"<linecomment>"              : {"type":"comment","tokens":[
+                                        // line comment
+                                        // start, end delims  (null matches end-of-line)
+                                        [ "//",  null]
                                     ]}
         ,"<jskeyword>"                : [
                                         "async","await","break",
@@ -912,12 +920,12 @@ function init()
                                         "function","goto","if","import","in","instanceof",
                                         "let","new","null","of","return","static",
                                         "switch","this","throw","true","try",
-                                        "typeof","var","void","while",
+                                        "typeof","undefined","var","void","while",
                                         "with","yield"
                                     ]
         ,"<keyword>"                : [
                                         "Abacus", "Expr", "Poly", "Series", "PowerSeries", "Ring", "Matrix",
-                                        "Expand", "Simplify", "Factor", "Roots", "Zeros",
+                                        "Evaluate", "Expand", "Factor", "Simplify", "Roots", "Zeros",
                                         "Tensor", "Permutation", "Combination",
                                         "Subset", "Partition", "SetPartition"
                                     ]
@@ -931,7 +939,7 @@ function init()
 
     // Syntax model
     "Syntax"                        : {
-        "<expr>"                    : "(<comment>.COMMENT | <jskeyword>.JSKEYWORD | <keyword>.KEYWORD | <identifier>.IDENTIFIER | '.' <comment>.COMMENT? <identifier>.PROPERTY | <string>.STRING | <number>.NUMBER | <op>.OP)*"
+        "<expr>"                    : "(<linecomment>.COMMENT | <comment>.COMMENT | <jskeyword>.JSKEYWORD | <keyword>.KEYWORD | <identifier>.IDENTIFIER | '.' <comment>.COMMENT? <identifier>.PROPERTY | <string>.STRING | <number>.NUMBER | <op>.OP)*"
     },
 
     // what to parse and in what order

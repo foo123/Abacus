@@ -90,12 +90,12 @@ INUMBER = {
     }
     ,div: function(other) {
         if (is_instance(other, Expr)) return Expr('', this).div(other);
-        else if (is_instance(other, Numeric)) return other[CLASS](this).div(other);
+        else if (is_instance(other, Numeric)) return new (other[CLASS](this)).div(other);
         return is_instance(other, INumber) ? null : stdMath.floor(this / other);
     }
     ,mod: function(other) {
         if (is_instance(other, Expr)) return Expr('', this).mod(other);
-        else if (is_instance(other, Numeric)) return other[CLASS](this).mod(other);
+        else if (is_instance(other, Numeric)) return new (other[CLASS](this)).mod(other);
         return is_instance(other, INumber) ? null : (this % other);
     }
     ,divmod: function(other) {
