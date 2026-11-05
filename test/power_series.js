@@ -37,3 +37,5 @@ echo('exp("x").mul(exp("-x"))');
 echo(exp("x").mul(exp("-x")).toString());
 echo('exp("ax")');
 echo(exp("ax").toString());
+echo('exp("ax+b")');
+echo(exp("ax+b").toString());

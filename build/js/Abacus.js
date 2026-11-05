@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-05 13:40:41)
+*   @version: 2.0.0 (2026-11-05 14:45:17)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-05 13:40:41)
+*   @version: 2.0.0 (2026-11-05 14:45:17)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -13194,11 +13194,12 @@ function expr_series(f, x)
 }
 function simplify_fn(expr)
 {
-    if (('()' === expr.ast.op.slice(-2)) && Expr.FN[expr.ast.op].exact)
+    if (('()' === expr.ast.op.slice(-2)) && Expr.FN[expr.ast.op].exact && expr.isConst())
     {
-        return expr.ast.arg.reduce(function(isconst, e) {
-            return isconst && e/*.expand()*/.isConst(); // assume already expanded
-        }, true) && (!is_callable(Expr.FN[expr.ast.op].exact) || Expr.FN[expr.ast.op].exact(expr.ast.arg.map(function(e) {return e/*.expand()*/.c();}))) ? Expr('', Expr.FN[expr.ast.op].fn(expr.ast.arg.map(function(e) {return e/*.expand()*/.c();}))) : expr;
+        return Expr('', expr.c());
+        /*return expr.ast.arg.reduce(function(isconst, e) {
+            return isconst && e/*.expand()* /.isConst(); // assume already expanded
+        }, true) && (!is_callable(Expr.FN[expr.ast.op].exact) || Expr.FN[expr.ast.op].exact(expr.ast.arg.map(function(e) {return e/*.expand()* /.c();}))) ? Expr('', Expr.FN[expr.ast.op].fn(expr.ast.arg.map(function(e) {return e/*.expand()* /.c();}))) : expr;*/
     }
     else if ('expr' === expr.ast.type)
     {

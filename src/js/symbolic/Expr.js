@@ -2761,11 +2761,12 @@ function expr_series(f, x)
 }
 function simplify_fn(expr)
 {
-    if (('()' === expr.ast.op.slice(-2)) && Expr.FN[expr.ast.op].exact)
+    if (('()' === expr.ast.op.slice(-2)) && Expr.FN[expr.ast.op].exact && expr.isConst())
     {
-        return expr.ast.arg.reduce(function(isconst, e) {
-            return isconst && e/*.expand()*/.isConst(); // assume already expanded
-        }, true) && (!is_callable(Expr.FN[expr.ast.op].exact) || Expr.FN[expr.ast.op].exact(expr.ast.arg.map(function(e) {return e/*.expand()*/.c();}))) ? Expr('', Expr.FN[expr.ast.op].fn(expr.ast.arg.map(function(e) {return e/*.expand()*/.c();}))) : expr;
+        return Expr('', expr.c());
+        /*return expr.ast.arg.reduce(function(isconst, e) {
+            return isconst && e/*.expand()* /.isConst(); // assume already expanded
+        }, true) && (!is_callable(Expr.FN[expr.ast.op].exact) || Expr.FN[expr.ast.op].exact(expr.ast.arg.map(function(e) {return e/*.expand()* /.c();}))) ? Expr('', Expr.FN[expr.ast.op].fn(expr.ast.arg.map(function(e) {return e/*.expand()* /.c();}))) : expr;*/
     }
     else if ('expr' === expr.ast.type)
     {
