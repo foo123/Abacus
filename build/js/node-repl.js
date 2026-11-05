@@ -19,7 +19,7 @@ function stringify(x)
     }
     else if (Abacus.Arithmetic.isNumber(x))
     {
-        x = String(x);
+        x = String(x).split('Infinity').join('Inf');
     }
     else if (Array.isArray(x))
     {
@@ -79,22 +79,24 @@ function initContext(context)
 const repl = require('repl').start({
     prompt: '>> ',
     useGlobal: true,
-    writer: function(res) {
-        return null != res ? str(res) : '';
+    ignoreUndefined: true,
+    writer: function(ans) {
+        return null != ans ? str(ans) : '';
     },
     eval: function(code, context, replResourceName, cb) {
         code = String(code).trim();
-        if (!code.length) return cb(null, null);
-        let res = null, err = null;
+        if (!code.length) return cb();
+        initContext(context);
+        let ans = null, err = null;
         try {
-            res = context.eval(code);
+            ans = context.eval(code);
         } catch (e) {
             err = e.toString();
-            res = null;
+            ans = null;
         }
-        cb(err, res);
+        cb(err, null == ans ? undefined : ans);
     }
 });
-initContext(repl.context);
-repl.on('reset', () => initContext(repl.context));
+//initContext(repl.context);
+//repl.on('reset', () => initContext(repl.context));
 })();

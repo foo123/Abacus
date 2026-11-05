@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-05 00:47:31)
+*   @version: 2.0.0 (2026-11-05 13:40:41)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-05 00:47:31)
+*   @version: 2.0.0 (2026-11-05 13:40:41)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -10730,11 +10730,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
              }
         }
         ,OP$: {
-             'pow': '^'
-            ,'div': '/'
-            ,'mul': '*'
+             'add': '+'
             ,'sub': '-'
-            ,'add': '+'
+            ,'mul': '*'
+            ,'div': '/'
+            ,'pow': '^'
             ,'ge': '>='
             ,'le': '<='
             ,'gt': '>'
@@ -10902,7 +10902,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         ]
 
         ,fromString: function(s, imagUnit) {
-            imagUnit = is_string(imagUnit) ? imagUnit : null;
+            imagUnit = is_array(imagUnit) ? imagUnit : (is_string(imagUnit) ? [imagUnit] : []);
             s = trim(String(s)).split(/\s+/).join(' ');
             var i = 0, t = s;
             function error(m, p)
@@ -11368,7 +11368,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         m = match[0];
                         if (-1 !== m.indexOf('_{')) m = m.split('_{').join('_');
                         if ('}' === m.slice(-1)) m = m.slice(0, -1);
-                        term = Expr('', imagUnit === m ? Complex.Img() : m);
+                        term = Expr('', -1 < imagUnit.indexOf(m) ? Complex.Img() : m);
                         if (prev_term)
                         {
                             ops.unshift(['*', i0]); // implicit multiplication assumed
@@ -12500,11 +12500,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     val = ast.arg;
                 }
             }
-            else if (Expr.FN[op] && Expr.FN[op].fn)
+            else if (Expr.FN[op] && is_callable(Expr.FN[op].fn))
             {
                 val = Expr.FN[op].fn(ast.arg.map(evaluate));
             }
-            if (is_number(val)) val = Float.cast(val);
+            if (is_number(val)) val = Float(val);
             return val;
         }
     }
@@ -12902,7 +12902,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
-                        sign = '';
+                        sign = ''; sign2 = '';
                         self._str = arg.reduce(function(out, subexpr, i) {
                             var str = trim(subexpr.toString()), isNeg, strp;
                             if (('*' === op) && (('0' === str) || ('0' === out[0]))) return ['0'];
@@ -12914,13 +12914,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             if ((('+' === op) || ('-' === op)) && ('0' === str))
                             {
-                                if ('-' === op && 0 === i) sign = '-' === sign ? '' : '-';
+                                if ('-' === op && 0 === i) sign2 = '-' === sign2 ? '' : '-';
                                 return out;
                             }
                             if (0 < out.length)
                             {
                                 isNeg = '-' === str.charAt(0);
                                 strp = isNeg ? trim(str.slice(1)) : str;
+                                isNeg = isNeg && ('' === sign2);
                                 if ('*' === op) out.push('*'/*'⋅'*/);
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
@@ -12930,6 +12931,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 out.push('*' === op ? subexpr : str);
                             }
+                            sign2 = '';
                             return out;
                         }, []);
                         if (self._str.length && is_instance(self._str[0], Expr))
@@ -13060,7 +13062,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
-                        sign = '';
+                        sign = ''; sign2 = '';
                         self._tex = arg.reduce(function(out, subexpr, i) {
                             var tex = trim(subexpr.toTex()), prevtex, isNeg, texp;
                             if (('*' === op) && (('0' === tex) || ('0' === out[0]))) return ['0'];
@@ -13072,13 +13074,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             if ((('+' === op) || ('-' === op)) && ('0' === tex))
                             {
-                                if ('-' === op && 0 === i) sign = '-' === sign ? '' : '-';
+                                if ('-' === op && 0 === i) sign2 = '-' === sign2 ? '' : '-';
                                 return out;
                             }
                             if (0 < out.length)
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
+                                isNeg = isNeg && ('' === sign2);
                                 if ('+' === op)
                                 {
                                     out.push(isNeg ? ' - ' : ' + ');
@@ -13122,6 +13125,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 out.push('*' === op ? subexpr : tex);
                             }
+                            sign2 = '';
                             return out;
                         }, []);
                         if (self._tex.length && is_instance(self._tex[0], Expr))
@@ -13181,12 +13185,26 @@ function expr_series(f, x)
             if (series._data.nth.length > nth+1) series._data.nth.length = nth+1;
             else if (series._data.nth.length < nth+1) series._data.nth.push.apply(series._data.nth, array(nth+1-series._data.nth.length, null));
         }
-        df_n = df_n.substitute(symbol, x0).expand();
+        df_n = simplify_fn(df_n.substitute(symbol, x0).expand());
         if (df_n.isConst()) df_n = Expr('', df_n.c());
         f_nth = df_n.div(Expr('', factorial(nth)));
         if (nth < series._data.nth.length) series._data.nth[nth] = f_nth;
         return f_nth;
     }, x, 'sum');
+}
+function simplify_fn(expr)
+{
+    if (('()' === expr.ast.op.slice(-2)) && Expr.FN[expr.ast.op].exact)
+    {
+        return expr.ast.arg.reduce(function(isconst, e) {
+            return isconst && e/*.expand()*/.isConst(); // assume already expanded
+        }, true) && (!is_callable(Expr.FN[expr.ast.op].exact) || Expr.FN[expr.ast.op].exact(expr.ast.arg.map(function(e) {return e/*.expand()*/.c();}))) ? Expr('', Expr.FN[expr.ast.op].fn(expr.ast.arg.map(function(e) {return e/*.expand()*/.c();}))) : expr;
+    }
+    else if ('expr' === expr.ast.type)
+    {
+        return Expr(expr.ast.op, expr.ast.arg.map(simplify_fn));
+    }
+    return expr;
 }
 function rational_expr(expr)
 {
