@@ -13,12 +13,12 @@ echo('---');
 
 echo('PowerSeries("1+x+x^2", "x")');
 echo(PowerSeries("1+x+x^2", "x").toString());
-echo('PowerSeries("1/(1-x)", "x")');
+echo('f = PowerSeries("1/(1-x)", "x")');
 let f = PowerSeries("1/(1-x)", "x");
 echo(f.toString());
 echo('f.inv()');
 echo(f.inv().toString());
-echo('PowerSeries("sqrt(1+x)", "x")');
+echo('sqrt = PowerSeries("sqrt(1+x)", "x")');
 let sqrt = PowerSeries("sqrt(1+x)", "x");
 echo(sqrt.toString());
 echo('sqrt.pow(2)');
