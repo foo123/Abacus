@@ -888,7 +888,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
-                    if (match = eat(/^\\?(([a-z][a-z0-9]*)((_[a-z0-9])|(_\{[a-z0-9]+\}))?)\s*([\(\{])/i, false))
+                    if ((match = eat(/^\\operatorname\{(([a-zA-Z][a-zA-Z0-9]*)((_[a-zA-Z0-9])|(_\{[a-zA-Z0-9]+\}))?)\}\s*([\(\{])/, false)) || (match = eat(/^\\?(([a-z][a-z0-9]*)((_[a-z0-9])|(_\{[a-z0-9]+\}))?)\s*([\(\{])/i, false)))
                     {
                         // function
                         m = match[1].toLowerCase() + '()';
@@ -2467,24 +2467,24 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         sign = '';
                         if ('-' === str.charAt(0) && '-' === str2.charAt(0))
                         {
-                            str = trim(str.slice(1));
-                            str2 = trim(str2.slice(1));
+                            str = trim(expr_reverse_sign(arg[0]).toString());
+                            str2 = trim(expr_reverse_sign(arg[1]).toString());
                         }
                         else if ('-' !== str.charAt(0) && '-' === str2.charAt(0))
                         {
                             sign = '-';
-                            str2 = trim(str2.slice(1));
+                            str2 = trim(expr_reverse_sign(arg[1]).toString());
                         }
                         else if ('-' === str.charAt(0) && '-' !== str2.charAt(0))
                         {
                             sign = '-';
-                            str = trim(str.slice(1));
+                            str = trim(expr_reverse_sign(arg[0]).toString());
                         }
                         self._str = sign + (('1' === str2) || ('0' === str) ? str : ((!needs_parentheses(arg[0]) ? str : ('(' + str + ')')) + '/' + (!needs_parentheses(arg[1]) ? str2 : ('(' + str2 + ')'))));
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
-                        sign = ''; sign2 = '';
+                        sign = '';
                         self._str = arg.reduce(function(out, subexpr, i) {
                             var str = trim(subexpr.toString()), isNeg, strp;
                             if (('*' === op) && (('0' === str) || ('0' === out[0]))) return ['0'];
@@ -2496,14 +2496,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             if ((('+' === op) || ('-' === op)) && ('0' === str))
                             {
-                                if ('-' === op && 0 === i) sign2 = '-' === sign2 ? '' : '-';
+                                if ('-' === op && 0 === i) sign = '-' === sign ? '' : '-';
                                 return out;
                             }
                             if (0 < out.length)
                             {
                                 isNeg = '-' === str.charAt(0);
                                 strp = isNeg ? trim(str.slice(1)) : str;
-                                isNeg = isNeg && ('' === sign2);
                                 if ('*' === op) out.push('*'/*'⋅'*/);
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
@@ -2513,7 +2512,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 out.push('*' === op ? subexpr : str);
                             }
-                            sign2 = '';
                             return out;
                         }, []);
                         if (self._str.length && is_instance(self._str[0], Expr))
@@ -2574,7 +2572,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if ('()' === op.slice(-2))
             {
                 // function
-                self._tex = '\\' + to_tex(op.slice(0, -2)) + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                self._tex = /*'\\' +*/ to_tex(op.slice(0, -2), 'op') + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
             }
             else if (Expr.OP[op])
             {
@@ -2627,24 +2625,24 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         sign = '';
                         if ('-' === tex.charAt(0) && '-' === tex2.charAt(0))
                         {
-                            tex = trim(tex.slice(1));
-                            tex2 = trim(tex2.slice(1));
+                            tex = trim(expr_reverse_sign(arg[0]).toTex());
+                            tex2 = trim(expr_reverse_sign(arg[1]).toTex());
                         }
                         else if ('-' !== tex.charAt(0) && '-' === tex2.charAt(0))
                         {
                             sign = '-';
-                            tex2 = trim(tex2.slice(1));
+                            tex2 = trim(expr_reverse_sign(arg[1]).toTex());
                         }
                         else if ('-' === tex.charAt(0) && '-' !== tex2.charAt(0))
                         {
                             sign = '-';
-                            tex = trim(tex.slice(1));
+                            tex = trim(expr_reverse_sign(arg[0]).toTex());
                         }
                         self._tex = sign + (('1' === tex2) || ('0' === tex) ? tex : ('\\frac{' + tex + '}{' + tex2 + '}'));
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
-                        sign = ''; sign2 = '';
+                        sign = '';
                         self._tex = arg.reduce(function(out, subexpr, i) {
                             var tex = trim(subexpr.toTex()), prevtex, isNeg, texp;
                             if (('*' === op) && (('0' === tex) || ('0' === out[0]))) return ['0'];
@@ -2656,14 +2654,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             if ((('+' === op) || ('-' === op)) && ('0' === tex))
                             {
-                                if ('-' === op && 0 === i) sign2 = '-' === sign2 ? '' : '-';
+                                if ('-' === op && 0 === i) sign = '-' === sign ? '' : '-';
                                 return out;
                             }
                             if (0 < out.length)
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                isNeg = isNeg && ('' === sign2);
                                 if ('+' === op)
                                 {
                                     out.push(isNeg ? ' - ' : ' + ');
@@ -2707,7 +2704,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 out.push('*' === op ? subexpr : tex);
                             }
-                            sign2 = '';
                             return out;
                         }, []);
                         if (self._tex.length && is_instance(self._tex[0], Expr))
@@ -2809,16 +2805,22 @@ function rational_expr(expr)
         a = expr.ast.arg.map(rational_expr);
         re = {
             num: Expr(expr.ast.op, a.map(function(re, i) {
-                var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I);
-                return re.num.mul(m);
+                return re.num.mul(a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I));
             })),
             den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+        };
+    }
+    else if (('num' === expr.ast.type) && expr.ast.arg.isReal())
+    {
+        re = {
+            num: Expr('', expr.ast.arg.real().num),
+            den: Expr('', expr.ast.arg.real().den)
         };
     }
     else
     {
         re = {
-            num: expr,
+            num: /*'()' === expr.ast.op.slice(-2) ? Expr(expr.ast.op, expr.ast.arg.map(rational_expr)) :*/ expr,
             den: I
         };
     }
@@ -3257,7 +3259,7 @@ function expr_derivative(f, x)
             case '^':
                 if (-1 === fi[1].symbols().indexOf(x))
                 {
-                    return fi[1].mul(fi[0].pow(fi[1].sub(I)));
+                    return expr_derivative(fi[0], x).mul(fi[1].mul(fi[0].pow(fi[1].sub(I))));
                 }
                 else
                 {
@@ -3506,9 +3508,26 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
         }
     }
 }
+function expr_reverse_sign(expr)
+{
+    if ('' === expr.ast.op)
+    {
+        return 'num' === expr.ast.type ? Expr('', expr.ast.arg.neg()) : expr.neg();
+    }
+    else if ('*' === expr.ast.op || '/' === expr.ast.op)
+    {
+        return Expr(expr.ast.op, [expr_reverse_sign(expr.ast.arg[0])].concat(expr.ast.arg.slice(1)));
+    }
+    else if ('+' === expr.ast.op || '-' === expr.ast.op)
+    {
+        return Expr(expr.ast.op, expr.ast.arg.map(expr_reverse_sign));
+    }
+    return expr.neg();
+}
 function expr_neg(expr)
 {
-    return expr.neg();
+    return expr_reverse_sign(expr);
+    //return expr.neg();
 }
 function expr_tex(expr)
 {

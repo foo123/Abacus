@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-05 23:44:09)
+*   @version: 2.0.0 (2026-11-06 14:02:50)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-05 23:44:09)
+*   @version: 2.0.0 (2026-11-06 14:02:50)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -191,10 +191,10 @@ function to_fixed_binary_string_32(b)
     var bs = b.toString(2), n = 32-bs.length;
     return n > 0 ? new Array(n+1).join('0') + bs : bs;
 }
-function to_tex(s)
+function to_tex(s, type)
 {
     var p = String(s).split('_');
-    return p[0] + (p.length > 1 ? ('_{' + p[1] + '}') : '');
+    return ('op' === type ? '\\operatorname{'+p[0]+'}' : ('text' === type ? '\\text{'+p[0]+'}' : p[0])) + (p.length > 1 ? ('_{' + p[1] + '}') : '');
 }
 function Tex(s)
 {
@@ -11321,7 +11321,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             continue;
                         }
                     }
-                    if (match = eat(/^\\?(([a-z][a-z0-9]*)((_[a-z0-9])|(_\{[a-z0-9]+\}))?)\s*([\(\{])/i, false))
+                    if ((match = eat(/^\\operatorname\{(([a-zA-Z][a-zA-Z0-9]*)((_[a-zA-Z0-9])|(_\{[a-zA-Z0-9]+\}))?)\}\s*([\(\{])/, false)) || (match = eat(/^\\?(([a-z][a-z0-9]*)((_[a-z0-9])|(_\{[a-z0-9]+\}))?)\s*([\(\{])/i, false)))
                     {
                         // function
                         m = match[1].toLowerCase() + '()';
@@ -12900,24 +12900,24 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         sign = '';
                         if ('-' === str.charAt(0) && '-' === str2.charAt(0))
                         {
-                            str = trim(str.slice(1));
-                            str2 = trim(str2.slice(1));
+                            str = trim(expr_reverse_sign(arg[0]).toString());
+                            str2 = trim(expr_reverse_sign(arg[1]).toString());
                         }
                         else if ('-' !== str.charAt(0) && '-' === str2.charAt(0))
                         {
                             sign = '-';
-                            str2 = trim(str2.slice(1));
+                            str2 = trim(expr_reverse_sign(arg[1]).toString());
                         }
                         else if ('-' === str.charAt(0) && '-' !== str2.charAt(0))
                         {
                             sign = '-';
-                            str = trim(str.slice(1));
+                            str = trim(expr_reverse_sign(arg[0]).toString());
                         }
                         self._str = sign + (('1' === str2) || ('0' === str) ? str : ((!needs_parentheses(arg[0]) ? str : ('(' + str + ')')) + '/' + (!needs_parentheses(arg[1]) ? str2 : ('(' + str2 + ')'))));
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
-                        sign = ''; sign2 = '';
+                        sign = '';
                         self._str = arg.reduce(function(out, subexpr, i) {
                             var str = trim(subexpr.toString()), isNeg, strp;
                             if (('*' === op) && (('0' === str) || ('0' === out[0]))) return ['0'];
@@ -12929,14 +12929,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             if ((('+' === op) || ('-' === op)) && ('0' === str))
                             {
-                                if ('-' === op && 0 === i) sign2 = '-' === sign2 ? '' : '-';
+                                if ('-' === op && 0 === i) sign = '-' === sign ? '' : '-';
                                 return out;
                             }
                             if (0 < out.length)
                             {
                                 isNeg = '-' === str.charAt(0);
                                 strp = isNeg ? trim(str.slice(1)) : str;
-                                isNeg = isNeg && ('' === sign2);
                                 if ('*' === op) out.push('*'/*'⋅'*/);
                                 else if ('+' === op) out.push(isNeg ? ' - ' : ' + ');
                                 else if ('-' === op) out.push(isNeg ? ' + ' : ' - ');
@@ -12946,7 +12945,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 out.push('*' === op ? subexpr : str);
                             }
-                            sign2 = '';
                             return out;
                         }, []);
                         if (self._str.length && is_instance(self._str[0], Expr))
@@ -13007,7 +13005,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             else if ('()' === op.slice(-2))
             {
                 // function
-                self._tex = '\\' + to_tex(op.slice(0, -2)) + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                self._tex = /*'\\' +*/ to_tex(op.slice(0, -2), 'op') + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
             }
             else if (Expr.OP[op])
             {
@@ -13060,24 +13058,24 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         sign = '';
                         if ('-' === tex.charAt(0) && '-' === tex2.charAt(0))
                         {
-                            tex = trim(tex.slice(1));
-                            tex2 = trim(tex2.slice(1));
+                            tex = trim(expr_reverse_sign(arg[0]).toTex());
+                            tex2 = trim(expr_reverse_sign(arg[1]).toTex());
                         }
                         else if ('-' !== tex.charAt(0) && '-' === tex2.charAt(0))
                         {
                             sign = '-';
-                            tex2 = trim(tex2.slice(1));
+                            tex2 = trim(expr_reverse_sign(arg[1]).toTex());
                         }
                         else if ('-' === tex.charAt(0) && '-' !== tex2.charAt(0))
                         {
                             sign = '-';
-                            tex = trim(tex.slice(1));
+                            tex = trim(expr_reverse_sign(arg[0]).toTex());
                         }
                         self._tex = sign + (('1' === tex2) || ('0' === tex) ? tex : ('\\frac{' + tex + '}{' + tex2 + '}'));
                     }
                     else if (('+' === op) || ('-' === op) || ('*' === op))
                     {
-                        sign = ''; sign2 = '';
+                        sign = '';
                         self._tex = arg.reduce(function(out, subexpr, i) {
                             var tex = trim(subexpr.toTex()), prevtex, isNeg, texp;
                             if (('*' === op) && (('0' === tex) || ('0' === out[0]))) return ['0'];
@@ -13089,14 +13087,13 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             }
                             if ((('+' === op) || ('-' === op)) && ('0' === tex))
                             {
-                                if ('-' === op && 0 === i) sign2 = '-' === sign2 ? '' : '-';
+                                if ('-' === op && 0 === i) sign = '-' === sign ? '' : '-';
                                 return out;
                             }
                             if (0 < out.length)
                             {
                                 isNeg = '-' === tex.charAt(0);
                                 texp = isNeg ? trim(tex.slice(1)) : tex;
-                                isNeg = isNeg && ('' === sign2);
                                 if ('+' === op)
                                 {
                                     out.push(isNeg ? ' - ' : ' + ');
@@ -13140,7 +13137,6 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             {
                                 out.push('*' === op ? subexpr : tex);
                             }
-                            sign2 = '';
                             return out;
                         }, []);
                         if (self._tex.length && is_instance(self._tex[0], Expr))
@@ -13242,16 +13238,22 @@ function rational_expr(expr)
         a = expr.ast.arg.map(rational_expr);
         re = {
             num: Expr(expr.ast.op, a.map(function(re, i) {
-                var m = a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I);
-                return re.num.mul(m);
+                return re.num.mul(a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I));
             })),
             den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+        };
+    }
+    else if (('num' === expr.ast.type) && expr.ast.arg.isReal())
+    {
+        re = {
+            num: Expr('', expr.ast.arg.real().num),
+            den: Expr('', expr.ast.arg.real().den)
         };
     }
     else
     {
         re = {
-            num: expr,
+            num: /*'()' === expr.ast.op.slice(-2) ? Expr(expr.ast.op, expr.ast.arg.map(rational_expr)) :*/ expr,
             den: I
         };
     }
@@ -13690,7 +13692,7 @@ function expr_derivative(f, x)
             case '^':
                 if (-1 === fi[1].symbols().indexOf(x))
                 {
-                    return fi[1].mul(fi[0].pow(fi[1].sub(I)));
+                    return expr_derivative(fi[0], x).mul(fi[1].mul(fi[0].pow(fi[1].sub(I))));
                 }
                 else
                 {
@@ -13939,9 +13941,26 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
         }
     }
 }
+function expr_reverse_sign(expr)
+{
+    if ('' === expr.ast.op)
+    {
+        return 'num' === expr.ast.type ? Expr('', expr.ast.arg.neg()) : expr.neg();
+    }
+    else if ('*' === expr.ast.op || '/' === expr.ast.op)
+    {
+        return Expr(expr.ast.op, [expr_reverse_sign(expr.ast.arg[0])].concat(expr.ast.arg.slice(1)));
+    }
+    else if ('+' === expr.ast.op || '-' === expr.ast.op)
+    {
+        return Expr(expr.ast.op, expr.ast.arg.map(expr_reverse_sign));
+    }
+    return expr.neg();
+}
 function expr_neg(expr)
 {
-    return expr.neg();
+    return expr_reverse_sign(expr);
+    //return expr.neg();
 }
 function expr_tex(expr)
 {
@@ -16003,13 +16022,20 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol, index, term;
         if (1 < arguments.length)
         {
-            index = symbol.indexOf(String(x || 'x'));
-            if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
-            term = operate(function(max, t) {
-                if ((null == max) || (max.e[index] < t.e[index])) max = t;
-                return max;
-            }, MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring), terms);
-            return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            if ((true === asPoly) && (true === x))
+            {
+                return self.term(self.maxdeg(true), true);
+            }
+            else
+            {
+                index = symbol.indexOf(String(x || 'x'));
+                if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+                term = operate(function(max, t) {
+                    if ((null == max) || (max.e[index] < t.e[index])) max = t;
+                    return max;
+                }, MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring), terms);
+                return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            }
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[0]] : [], symbol, ring);
         return terms.length ? terms[0] : MultiPolyTerm(0, array(symbol.length, 0), ring);
@@ -16019,13 +16045,20 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol, index, term;
         if (1 < arguments.length)
         {
-            index = symbol.indexOf(String(x || 'x'));
-            if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
-            term = operate(function(min, t) {
-                if ((0 < t.e[index]) && ((null == min) || (min.e[index] > t.e[index]))) min = t;
-                return min;
-            }, null, terms) || MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
-            return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            if ((true === asPoly) && (true === x))
+            {
+                return self.term(self.mindeg(true), true);
+            }
+            else
+            {
+                index = symbol.indexOf(String(x || 'x'));
+                if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+                term = operate(function(min, t) {
+                    if ((0 < t.e[index]) && ((null == min) || (min.e[index] > t.e[index]))) min = t;
+                    return min;
+                }, null, terms) || MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+                return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            }
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
         return terms.length ? terms[terms.length-1] : MultiPolyTerm(0, array(symbol.length, 0), ring);
@@ -18767,7 +18800,7 @@ function polykthroot(p, k, limit)
     // https://math.stackexchange.com/questions/3550942/algorithm-to-compute-nth-root-radical-sqrtnpx-of-polynomial
     // similarities with modified Newton's algorithm adapted for polynomials
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        PolynomialClass, k_1, r, rk, d, q, deg, nterms = 0;
+        PolynomialClass, k_1, r, rk, d, q, dtt, dtt2, rtt, deg, rdeg, rdeg2, nterms = 0, iter = 0;
 
     if (k.lt(I)) return null; // undefined
     else if ((k.equ(I)) || p.equ(O) || p.equ(I)) return p;
@@ -18777,17 +18810,41 @@ function polykthroot(p, k, limit)
     if (null == limit) limit = 6;
     limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
+    deg = p.maxdeg(true);
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
-    r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
-    deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-    while (!d.equ(O))
+    r = p.c().equ(O) ? new PolynomialClass(p.term(1, true).terms.map(function(t) {return t.rad(k);}), p.symbol, p.ring) : PolynomialClass.Zero(p.symbol, p.ring);
+    if (r.equ(O)) r = new PolynomialClass([p.ttm().rad(k)], p.symbol, p.ring);
+    rdeg = r.maxdeg(true);
+    for (;!r.equ(O);++iter)
     {
-        q = d.ttm(true).div(rk.mul(k).ttm(true));
-        if (q.equ(O)) break; // no update anymore
-        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
+        rk = r.pow(k_1);
+        d = p.sub(rk.mul(r));
+
+        if (d.equ(O)) break; // done
+
+        //dtt2 = dtt;
+        dtt = d.ttm(true);
+        if ((3 < iter) && dtt.isConst()) break; // possible infinite loop/combinatorial explosion
+
+        rk = rk.mul(k);
+        rtt = rk.ttm(true);
+        q = (dtt.isConst() /*|| (dtt2 && dtt.equ(dtt2))*/ ? d.sub(dtt).ttm(true)/*take next*/ : dtt).div(/*(0 < iter) && rtt.isConst() ? rk.sub(rtt).ttm(true)/*take next* :*/ rtt);
+
+        if (q.equ(O)) break; // no further update
+
+        r = r.add(q);
+        //d = d.sub(q.mul(rk.add(q.pow(k_1))));
+
+        if (q.isConst()) break; // possible infinite loop/combinatorial explosion
+
+        rdeg2 = rdeg;
+        rdeg = r.maxdeg(true);
+
         // compute only up to some terms of power series (truncated power series approximation)
         // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
-        if (r.maxdeg(true)*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
+        if (rdeg*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
+
+        if (rdeg === rdeg2) break; // possible infinite loop/combinatorial explosion
     }
     // normalise r to have positive lead coeff
     // if k is multiple of 2 (since then both r and -r are roots)

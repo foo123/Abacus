@@ -113,10 +113,10 @@ function to_fixed_binary_string_32(b)
     var bs = b.toString(2), n = 32-bs.length;
     return n > 0 ? new Array(n+1).join('0') + bs : bs;
 }
-function to_tex(s)
+function to_tex(s, type)
 {
     var p = String(s).split('_');
-    return p[0] + (p.length > 1 ? ('_{' + p[1] + '}') : '');
+    return ('op' === type ? '\\operatorname{'+p[0]+'}' : ('text' === type ? '\\text{'+p[0]+'}' : p[0])) + (p.length > 1 ? ('_{' + p[1] + '}') : '');
 }
 function Tex(s)
 {

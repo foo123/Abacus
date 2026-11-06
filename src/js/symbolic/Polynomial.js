@@ -2029,13 +2029,20 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol, index, term;
         if (1 < arguments.length)
         {
-            index = symbol.indexOf(String(x || 'x'));
-            if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
-            term = operate(function(max, t) {
-                if ((null == max) || (max.e[index] < t.e[index])) max = t;
-                return max;
-            }, MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring), terms);
-            return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            if ((true === asPoly) && (true === x))
+            {
+                return self.term(self.maxdeg(true), true);
+            }
+            else
+            {
+                index = symbol.indexOf(String(x || 'x'));
+                if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+                term = operate(function(max, t) {
+                    if ((null == max) || (max.e[index] < t.e[index])) max = t;
+                    return max;
+                }, MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring), terms);
+                return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            }
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[0]] : [], symbol, ring);
         return terms.length ? terms[0] : MultiPolyTerm(0, array(symbol.length, 0), ring);
@@ -2045,13 +2052,20 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         var self = this, terms = self.terms, ring = self.ring, symbol = self.symbol, index, term;
         if (1 < arguments.length)
         {
-            index = symbol.indexOf(String(x || 'x'));
-            if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
-            term = operate(function(min, t) {
-                if ((0 < t.e[index]) && ((null == min) || (min.e[index] > t.e[index]))) min = t;
-                return min;
-            }, null, terms) || MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
-            return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            if ((true === asPoly) && (true === x))
+            {
+                return self.term(self.mindeg(true), true);
+            }
+            else
+            {
+                index = symbol.indexOf(String(x || 'x'));
+                if ((-1 === index) || !terms.length) return true === asPoly ? MultiPolynomial([], symbol, ring) : MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+                term = operate(function(min, t) {
+                    if ((0 < t.e[index]) && ((null == min) || (min.e[index] > t.e[index]))) min = t;
+                    return min;
+                }, null, terms) || MultiPolyTerm(ring.Zero(), array(symbol.length, 0), ring);
+                return true === asPoly ? MultiPolynomial([term], symbol, ring) : term;
+            }
         }
         if (true === asPoly) return MultiPolynomial(terms.length ? [terms[terms.length-1]] : [], symbol, ring);
         return terms.length ? terms[terms.length-1] : MultiPolyTerm(0, array(symbol.length, 0), ring);
@@ -4793,7 +4807,7 @@ function polykthroot(p, k, limit)
     // https://math.stackexchange.com/questions/3550942/algorithm-to-compute-nth-root-radical-sqrtnpx-of-polynomial
     // similarities with modified Newton's algorithm adapted for polynomials
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        PolynomialClass, k_1, r, rk, d, q, deg, nterms = 0;
+        PolynomialClass, k_1, r, rk, d, q, dtt, dtt2, rtt, deg, rdeg, rdeg2, nterms = 0, iter = 0;
 
     if (k.lt(I)) return null; // undefined
     else if ((k.equ(I)) || p.equ(O) || p.equ(I)) return p;
@@ -4803,17 +4817,41 @@ function polykthroot(p, k, limit)
     if (null == limit) limit = 6;
     limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
+    deg = p.maxdeg(true);
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
-    r = new PolynomialClass(p.ttm().rad(k), p.symbol, p.ring);
-    deg = p.maxdeg(true); rk = r.pow(k_1); d = p.sub(rk.mul(r));
-    while (!d.equ(O))
+    r = p.c().equ(O) ? new PolynomialClass(p.term(1, true).terms.map(function(t) {return t.rad(k);}), p.symbol, p.ring) : PolynomialClass.Zero(p.symbol, p.ring);
+    if (r.equ(O)) r = new PolynomialClass([p.ttm().rad(k)], p.symbol, p.ring);
+    rdeg = r.maxdeg(true);
+    for (;!r.equ(O);++iter)
     {
-        q = d.ttm(true).div(rk.mul(k).ttm(true));
-        if (q.equ(O)) break; // no update anymore
-        /*d = d.sub(q.mul(rk.add(q.pow(k_1))));*/ r = r.add(q); rk = r.pow(k_1); d = p.sub(rk.mul(r));
+        rk = r.pow(k_1);
+        d = p.sub(rk.mul(r));
+
+        if (d.equ(O)) break; // done
+
+        //dtt2 = dtt;
+        dtt = d.ttm(true);
+        if ((3 < iter) && dtt.isConst()) break; // possible infinite loop/combinatorial explosion
+
+        rk = rk.mul(k);
+        rtt = rk.ttm(true);
+        q = (dtt.isConst() /*|| (dtt2 && dtt.equ(dtt2))*/ ? d.sub(dtt).ttm(true)/*take next*/ : dtt).div(/*(0 < iter) && rtt.isConst() ? rk.sub(rtt).ttm(true)/*take next* :*/ rtt);
+
+        if (q.equ(O)) break; // no further update
+
+        r = r.add(q);
+        //d = d.sub(q.mul(rk.add(q.pow(k_1))));
+
+        if (q.isConst()) break; // possible infinite loop/combinatorial explosion
+
+        rdeg2 = rdeg;
+        rdeg = r.maxdeg(true);
+
         // compute only up to some terms of power series (truncated power series approximation)
         // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
-        if (r.maxdeg(true)*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
+        if (rdeg*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
+
+        if (rdeg === rdeg2) break; // possible infinite loop/combinatorial explosion
     }
     // normalise r to have positive lead coeff
     // if k is multiple of 2 (since then both r and -r are roots)
