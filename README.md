@@ -168,8 +168,8 @@ See the comments in the code for algorithms and references used.
 * [Faster Linear Unification Algorithm, Dennis de Champeaux](https://raw.githubusercontent.com/ddccc/Unification/a5975a47bca1be3f7bf0afe9ad3595a707a29ea4/LinUnify3.pdf)
 * [Power Series, wikipedia](https://en.wikipedia.org/wiki/Power_series)
 * [Formal Power Series, wikipedia](https://en.wikipedia.org/wiki/Formal_power_series)
-* [Composita and its properties, Vladimir V. Kruchinin, Dmitry V. Kruchinin, 2013](https://arxiv.org/abs/1103.2582v2)
-* [Relax, but Don’t be Too Lazy, JORIS VAN DER HOEVEN, 2002](https://www.csd.uwo.ca/~mmorenom/Publications/Relax_but_dont_be_too_lazy.pdf)
+* [Composita and its properties, Vladimir V. Kruchinin, Dmitry V. Kruchinin](https://arxiv.org/abs/1103.2582v2)
+* [Relax, but Don’t be Too Lazy, JORIS VAN DER HOEVEN](https://www.csd.uwo.ca/~mmorenom/Publications/Relax_but_dont_be_too_lazy.pdf)
 
 ### Example API
 
