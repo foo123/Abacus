@@ -197,6 +197,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
              ,'^': {
                 exact: function(args) {
                     var b = args[0], e = args[1], re;
+                    if (is_instance(b, [Float, ComplexFloat]) || is_instance(e, [Float, ComplexFloat])) return false;
                     if (e.isInt()) return true;
                     if (!e.isReal()) return false;
                     re = e.real();
@@ -1315,7 +1316,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 self._const = [false, false];
             }
-            else if (self.operators().filter(function(op) {return ('()' === op.slice(-2)) && HAS.call(Expr.FN, op) && !Expr.FN[op].exact;}).length)
+            else if (self.operators().filter(function(op) {return /*('()' === op.slice(-2)) &&*/ HAS.call(Expr.FN, op) && !Expr.FN[op].exact;}).length)
             {
                 self._const = [false, true];
             }
@@ -2179,7 +2180,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 expr = self.algebrify('@', 'expand');
                 map = expr.$map;
                 expr = simplify_rf(expr_rf(expr), true);
-                expr = simplify_const(Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map));
+                expr = simplify_const(simplify_pow(Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map)));
             }
             self._xpnd = expr;
             self._xpnd._xpnd = expr; // idempotent
@@ -2210,7 +2211,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 expr = self.algebrify('@', 'simplify');
                 map = expr.$map;
                 expr = simplify_rf(simplify_radicals(expr_rf(expr), map, '@'), true);
-                expr = simplify_const(Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map));
+                expr = simplify_const(simplify_pow(Expr('/', [expr.num.toExpr(), expr.den.toExpr()]).algebrify('@', map)));
             }
             self._simpl = expr;
             self._simpl._simpl = expr; // idempotent
@@ -2907,7 +2908,7 @@ function f_substitute(expr, map, sym, mode)
             {
                 if (e.c().isInt())
                 {
-                    ret = f_substitute(expr.ast.arg[0], map, sym, mode).pow(e);
+                    ret = Expr('/', [f_substitute(expr.ast.arg[0].num, map, sym, mode).pow(e), f_substitute(expr.ast.arg[0].den, map, sym, mode).pow(e)]);
                 }
                 else
                 {
@@ -2915,8 +2916,8 @@ function f_substitute(expr, map, sym, mode)
                     m = e.c().num;
                     if ('factor' === mode || 'expand' === mode)
                     {
-                        m = 1;
-                        e2 = _(f_substitute(expr.ast.arg[0], map, sym, mode).pow(e.c().num));
+                        //m = 1;
+                        e2 = _(f_substitute(expr.ast.arg[0].num, map, sym, mode));
                         e2 = [Expr.One(), e2, Arithmetic.val(e.c().den)];
                     }
                     else if ('simplify' === mode)
@@ -3050,6 +3051,19 @@ function f_restore(expr, map, sym)
             }
             return expr;
         }, expr);
+    }
+    return expr;
+}
+function simplify_pow(expr)
+{
+    if ('^' === expr.ast.op)
+    {
+        var b = simplify_pow(expr.ast.arg[0]), e = expr.ast.arg[1];
+        expr = Expr('^', '^' === b.ast.op ? [b.ast.arg[0], b.ast.arg[1].mul(e)] : [b, e]);
+    }
+    else if ('expr' === expr.ast.type)
+    {
+        expr = Expr(expr.ast.op, expr.ast.arg.map(simplify_pow));
     }
     return expr;
 }

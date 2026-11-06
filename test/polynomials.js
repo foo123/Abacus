@@ -318,16 +318,16 @@ check_roots(poly("(x-1)(x-2)(x-3)(x-4)(x-5)(x-6)", "x"));
 
 check_roots(poly("x^2-1", "x"), true);
 check_roots(poly("x^2+1", "x"), true);
-//check_roots(poly("x^3+3x^2+5x+1", "x"), true); // cannot simplify
-//check_roots(poly("x^4+3x^2+1", "x"), true); // cannot simplify
-//check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // cannot simplify, slow
+check_roots(poly("x^3+3x^2+5x+1", "x"), true); // ~cannot~ CAN simplify
+check_roots(poly("x^4+3x^2+1", "x"), true); // ~cannot~ CAN simplify
+//check_roots(poly("x^4+5x^3+3x^2+2x+1", "x"), true); // cannot simplify, NOT ~slow~
 
 echo('---');
 
 check_roots(poly("ax+b", "x"), true);
 check_roots(poly("ax^2+bx+c", "x"), true);
 check_roots(poly("(x-a)(x-b)(x-c)", "x"), true);
-//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // cannot simplify, huge intermediate expressions, slow and runs out of memory
+//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // cannot simplify, huge intermediate expressions, NOT VERY slow and DOES NOT runs out of memory
 //check_roots(poly("ax^4+bx^3+cx^2+dx+e", "x"), true); // cannot simplify, huge intermediate expressions, slow and runs out of memory
 
 echo('---');
