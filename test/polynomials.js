@@ -327,7 +327,7 @@ echo('---');
 check_roots(poly("ax+b", "x"), true);
 check_roots(poly("ax^2+bx+c", "x"), true);
 check_roots(poly("(x-a)(x-b)(x-c)", "x"), true);
-//check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // cannot simplify, huge intermediate expressions, NOT VERY slow and DOES NOT runs out of memory
+check_roots(poly("ax^3+bx^2+cx+d", "x"), true); // ~cannot~ CAN simplify, NOT VERY huge intermediate expressions, NOT VERY slow and DOES NOT runs out of memory
 //check_roots(poly("ax^4+bx^3+cx^2+dx+e", "x"), true); // cannot simplify, huge intermediate expressions, slow and runs out of memory
 
 echo('---');

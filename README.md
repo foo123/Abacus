@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (419 kB minified)
+**version 2.0.0** almost complete (422 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -340,7 +340,7 @@ console.log(exp("x").mul(exp("-x")).toString());
 * implement efficient primality tests and prime sieves **[DONE PARTIALLY]**
 * implement efficient integer factorization algorithms **[DONE PARTIALLY]**
 * implement more efficient integer algorithms (maybe fine-tuned if BigInteger Arithmetic is used) (eg `fibonacci`, `factorial`, ..) **[DONE PARTIALLY]**
-* implement more efficient integer `GCD` algorithm (TODO)
+* implement more efficient integer `GCD` algorithm **[DONE PARTIALLY]**
 * implement `LU`,`QR`,`LDL` factorizations **[DONE]**
 * implement `Rank` factorization` **[DONE]**
 * implement `GINV` (Moore-Penrose Inverse) computation **[DONE]**

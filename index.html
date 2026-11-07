@@ -814,6 +814,14 @@ function init()
                 'e = Expr("(sqrt(4*3)+1)^2")',
                 'e2 = Simplify(e)',
                 'Evaluate(e2)',
+                'e = Expr("log(ab)")',
+                'Expand(e)',
+                'e = Expr("log(exp(a)*exp(b)^c)")',
+                'Expand(e)',
+                'e = Expr("exp(log(a)+log(b)*c)")',
+                'Expand(e)',
+                'e = Expr("acos(cos(\\\\theta))")',
+                'Expand(e)',
                 'Evaluate("exp(x)", {x:1})',
                 'Evaluate("log(0)")'
                 ]);
@@ -821,17 +829,19 @@ function init()
             case 'series':
                 run_session([
                 '/* power series */',
-                'PowerSeries("1+x+x^2", "x")',
+                'p = PowerSeries("1+x+x^2", "x")',
                 'f = PowerSeries("1/(1-x)", "x")',
                 'f.inv()',
                 'sqrt = PowerSeries("sqrt(1+x)", "x")',
                 'sqrt.pow(2)',
+                'sqrt3 = PowerSeries("sqrt[3](1+x)", "x")',
+                'sqrt3.pow(3)',
                 'exp = (x) => PowerSeries("exp("+x+")", "x")',
-                'exp("x")',
-                'exp("-x")',
-                'exp("x").inv()',
-                'exp("-x").equ(exp("x").inv())',
-                'exp("x").mul(exp("-x"))'
+                'exp_x = exp("x")',
+                'exp_x_neg = exp("-x")',
+                'exp_x_inv = exp_x.inv()',
+                'exp_x_neg.equ(exp_x_inv)',
+                'exp_x.mul(exp_x_neg)'
                 ]);
             break;
         }
