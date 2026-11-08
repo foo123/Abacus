@@ -104,7 +104,7 @@ var UniPolyTerm = Class({
             }
             else if (true === asTex)
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [RationalFunc, MultiPolynomialMod]) && !c.isConst() ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, [RationalFunc, MultiPolynomialMod]) && !c.isConst() ? '(' + c.toTex() + ')' : c.toTex());
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [RationalFunc, MultiPolynomialMod]) && !c.isConst() ? ('\\left(' + c.toTex() + '\\right)') : (!c.isReal() ? ('\\left(' + c.toTex() + '\\right)') : c.toTex())))) + term) : (is_instance(c, [RationalFunc, MultiPolynomialMod]) && !c.isConst() ? '\\left(' + c.toTex() + '\\right)' : c.toTex());
             }
             else
             {
@@ -1674,7 +1674,7 @@ var MultiPolyTerm = Class({
             }
             else if (true === asTex)
             {
-                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [MultiPolynomial, MultiPolynomialMod, RationalFunc]) && !c.isConst() ? ('(' + c.toTex() + ')') : (!c.isReal() ? ('(' + c.toTex() + ')') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, MultiPolynomialMod, RationalFunc]) && !c.isConst() ? '(' + c.toTex() + ')' : c.toTex());
+                term = term.length ? ((c.equ(I) ? '' : (c.equ(J) ? '-' : (is_instance(c, [MultiPolynomial, MultiPolynomialMod, RationalFunc]) && !c.isConst() ? ('\\left(' + c.toTex() + '\\right)') : (!c.isReal() ? ('\\left(' + c.toTex() + '\\right)') : c.toTex())))) + term) : (is_instance(c, [MultiPolynomial, MultiPolynomialMod, RationalFunc]) && !c.isConst() ? '\\left(' + c.toTex() + '\\right)' : c.toTex());
             }
             else
             {
@@ -4806,36 +4806,56 @@ function polykthroot(p, k, limit)
     // https://planetmath.org/SquareRootOfPolynomial
     // https://math.stackexchange.com/questions/3550942/algorithm-to-compute-nth-root-radical-sqrtnpx-of-polynomial
     // similarities with modified Newton's algorithm adapted for polynomials
+    /*
+    tests
+    Poly("x^2", "x").rad(2) -> x
+    Poly("9x^4+6x^3-11x^2-4x+4", "x").rad(2) -> 3x^2 + x - 2
+    Poly("4x^2-12xy+9y^2", ["x", "y"]).rad(2) -> 2x - 3y
+    Poly("(x+2y)^3", ["x", "y"]).rad(3) -> x + 2y
+    Poly("x+1", "x").rad(2) -> ~(7/256)x^5~ - (5/128)x^4 + (1/16)x^3 - (1/8)x^2 + (1/2)x + 1
+    Poly("x+a^2", "x").rad(2) -> ~(7/(256a^9))x^5 +~ (5/(-128a^7))x^4 + (1/(16a^5))x^3 + (1/(-8a^3))x^2 + (1/(2a))x + (a)
+    Poly("x+a", "x").rad(2) -> (1/(2a + 1))x + ((4a^2 + 8a + 1)/(8a + 4))
+    Poly("x+y+1", ["x", "y"]).rad(2) -> x/2 + y/2 + 1
+    Poly("x+y+z+1", ["x", "y", "z"]).rad(2) -> x/2 + y/2 + z/2 + 1
+    Poly("x+y+z+a^2", ["x", "y", "z"]).rad(2) -> x/(2a) + y/(2a) + z/(2a) + (a)
+    Poly("x+y", ["x", "y"]).rad(2) -> y + 1/2
+    */
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        PolynomialClass, k_1, r, rk, d, q, dtt, dtt2, rtt, deg, rdeg, rdeg2, nterms = 0, iter = 0;
+        PolynomialClass, k_1, r, rk, d, q, dtt, rtt, deg, rdeg, rdeg2, nterms = 0, iter = 0;
 
     if (k.lt(I)) return null; // undefined
     else if ((k.equ(I)) || p.equ(O) || p.equ(I)) return p;
 
     PolynomialClass = p[CLASS];
 
-    if (null == limit) limit = 6;
+    if (null == limit) limit = 5;
     limit = stdMath.abs(+limit);
     k_1 = k.sub(I);
     deg = p.maxdeg(true);
     // using tail term .ttm(), correctly computes (taylor) power series approximation if p is not perfect kth power
-    r = p.c().equ(O) ? new PolynomialClass(p.term(1, true).terms.map(function(t) {return t.rad(k);}), p.symbol, p.ring) : PolynomialClass.Zero(p.symbol, p.ring);
-    if (r.equ(O)) r = new PolynomialClass([p.ttm().rad(k)], p.symbol, p.ring);
+    //r = p.c().equ(O) ? new PolynomialClass(p.term(1, true).terms.map(function(t) {return t.rad(k);}), p.symbol, p.ring) : PolynomialClass.Zero(p.symbol, p.ring);
+    /*rdeg = 0;
+    do {
+        r = new PolynomialClass(p.term(rdeg++, true).terms.map(function(t) {return t.rad(k);}), p.symbol, p.ring);
+    } while ((rdeg <= 1) && r.equ(O));*/
+    /*if (r.equ(O))*/ r = new PolynomialClass([p.ttm().rad(k)], p.symbol, p.ring);
     rdeg = r.maxdeg(true);
     for (;!r.equ(O);++iter)
     {
+        rdeg2 = rdeg;
         rk = r.pow(k_1);
         d = p.sub(rk.mul(r));
 
         if (d.equ(O)) break; // done
 
-        //dtt2 = dtt;
-        dtt = d.ttm(true);
-        if ((3 < iter) && dtt.isConst()) break; // possible infinite loop/combinatorial explosion
+        dtt = (0 < iter) && (1 >= deg) ? d.term(1, true) : d.ttm(true);
+        if ((limit < iter) && dtt.isConst()) break; // possible infinite loop/combinatorial explosion
+
+        if (dtt.isConst()) {d = d.sub(dtt); dtt = d.ttm(true);} // take next
 
         rk = rk.mul(k);
         rtt = rk.ttm(true);
-        q = (dtt.isConst() /*|| (dtt2 && dtt.equ(dtt2))*/ ? d.sub(dtt).ttm(true)/*take next*/ : dtt).div(/*(0 < iter) && rtt.isConst() ? rk.sub(rtt).ttm(true)/*take next* :*/ rtt);
+        q = dtt.div(rtt);
 
         if (q.equ(O)) break; // no further update
 
@@ -4844,14 +4864,13 @@ function polykthroot(p, k, limit)
 
         if (q.isConst()) break; // possible infinite loop/combinatorial explosion
 
-        rdeg2 = rdeg;
         rdeg = r.maxdeg(true);
 
         // compute only up to some terms of power series (truncated power series approximation)
         // if p is not a perfect kth power and root begins to have powers not belonging to the root of p
         if (rdeg*k > deg) {++nterms; if ((r.terms.length >= limit) || (nterms >= limit)) break;}
 
-        if (rdeg === rdeg2) break; // possible infinite loop/combinatorial explosion
+        if ((0 < iter) && (rdeg === rdeg2)) break; // possible infinite loop/combinatorial explosion
     }
     // normalise r to have positive lead coeff
     // if k is multiple of 2 (since then both r and -r are roots)
