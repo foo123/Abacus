@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-08 10:55:59)
+*   @version: 2.0.0 (2026-11-08 21:27:47)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-08 10:55:59)
+*   @version: 2.0.0 (2026-11-08 21:27:47)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -11983,11 +11983,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,inv: function() {
         var self = this;
-        if (/*self.isConst()*/'num' === self.ast.type)
-        {
-            return Expr('', self.c().inv());
-        }
-        return self.den.div(self.num);
+        if (/*self.isConst()*/'num' === self.ast.type) return Expr('', self.c().inv());
+        return Expr('/', '/' === self.ast.op ? [self.ast.arg[1], self.ast.arg[0]] : [Expr.One(), self]);//self.den.div(self.num);
     }
 
     ,equ: function(other, strict) {
@@ -14198,6 +14195,7 @@ function needs_parentheses(expr, is_tex, in_pow)
 Abacus.Evaluate = function(expr, symbolValues) {
     if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, Expr)) return expr.evaluate(symbolValues || {});
+    else if (is_instance(expr, [Poly, RationalFunc])) return expr.evaluate(symbolValues || {});
     return expr;
 };
 Abacus.Expand = function(expr) {
@@ -15645,16 +15643,16 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
         // Horner's algorithm for fast evaluation
         // https://en.wikipedia.org/wiki/Horner%27s_method
         var self = this, ring = self.ring, Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-            t = self.terms, i, j, v, is_ncomplex;
+            t = self.terms, i, j, v, is_float;
         if (!t.length) return ring.Zero();
         if (!is_instance(x, [Numeric, Symbolic]) && !Arithmetic.isNumber(x) && is_obj(x)) x = x[self.symbol];
         x = x || O;
-        is_ncomplex = is_instance(x, ComplexFloat);
+        is_float = is_instance(x, [Float, ComplexFloat]);
         //x = ring.cast(x);
         i = t[0].e; v = t[0].c; j = 1;
         while (0 < i)
         {
-            --i; v = is_ncomplex ? x.mul(v) : v.mul(x);
+            --i; v = is_float ? x.mul(v) : v.mul(x);
             if (j < t.length && i === t[j].e) v = v.add(t[j++].c);
         }
         return v;
@@ -17213,6 +17211,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
     }
     ,evaluate: function(x, all) {
         // recursive Horner scheme
+        all = ('all' === all) || (false !== all) ? true : false;
         var self = this, symbol = self.symbol, ring = self.ring, O = ring.Zero(), memo = Obj();
         function get_val(p, x)
         {
@@ -17238,18 +17237,18 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
         }
         function horner(p, x, s)
         {
-            var t = p.terms, str, i, j, v, xi, tc, is_ncomplex;
+            var t = p.terms, str, i, j, v, xi, tc, is_float;
             if (!t.length) return O;
             // memoize, sometimes same subpolynomial is re-evaluated
             str = p.toString(); if (HAS.call(memo, str)) return memo[str];
             xi = (HAS.call(x, s) ? x[s] : O) || O;
-            is_ncomplex = is_instance(xi, ComplexFloat);
+            is_float = is_instance(xi, [Float, ComplexFloat]);
             //xi = ring.cast(xi);
             tc = get_val(t[0].c, x);
             i = t[0].e[0]; v = tc; j = 1;
             while (0 < i)
             {
-                --i; v = is_ncomplex ? xi.mul(v) : v.mul(xi);
+                --i; v = is_float ? xi.mul(v) : v.mul(xi);
                 if ((j < t.length) && (i === t[j].e[0]))
                 {
                     tc = get_val(t[j].c, x);
@@ -17927,7 +17926,7 @@ var PiecewisePolynomial = Class(Poly, {
     }
     ,evaluate: function(x) {
         var self = this, i, n = self.segments.length, s;
-        x = self.ring.cast(x);
+        x = is_instance(x, [Float, ComplexFloat]) ? x : self.ring.cast(x);
         for (i=0; i<n; ++i)
         {
             s = self.segments[i];
@@ -19746,7 +19745,7 @@ Abacus.Poly = function(expr, ring_or_symbol) {
 Abacus.Roots = function(expr, all) {
     if (is_instance(expr, Polynomial))
     {
-        return true === all ? p.allroots() : p.roots();
+        return 'all' === all || true === all ? p.allroots() : p.roots();
     }
     return [];
 };

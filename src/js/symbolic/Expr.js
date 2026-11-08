@@ -1550,11 +1550,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,inv: function() {
         var self = this;
-        if (/*self.isConst()*/'num' === self.ast.type)
-        {
-            return Expr('', self.c().inv());
-        }
-        return self.den.div(self.num);
+        if (/*self.isConst()*/'num' === self.ast.type) return Expr('', self.c().inv());
+        return Expr('/', '/' === self.ast.op ? [self.ast.arg[1], self.ast.arg[0]] : [Expr.One(), self]);//self.den.div(self.num);
     }
 
     ,equ: function(other, strict) {
@@ -3765,6 +3762,7 @@ function needs_parentheses(expr, is_tex, in_pow)
 Abacus.Evaluate = function(expr, symbolValues) {
     if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, Expr)) return expr.evaluate(symbolValues || {});
+    else if (is_instance(expr, [Poly, RationalFunc])) return expr.evaluate(symbolValues || {});
     return expr;
 };
 Abacus.Expand = function(expr) {
