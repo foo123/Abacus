@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-09 12:24:43)
+*   @version: 2.0.0 (2026-11-09 16:22:05)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-09 12:24:43)
+*   @version: 2.0.0 (2026-11-09 16:22:05)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -20480,10 +20480,10 @@ Series = Abacus.Series = Class(Symbolic, {
     ,$x: null
     ,_: null
     ,_$: null
-    ,_istrivial: null
     ,_$F: null
-    ,_neg: null
-    ,_inv: null
+    ,_n: null
+    ,_i: null
+    ,_istrivial: null
     ,_N: 6
 
     ,dispose: function() {
@@ -20493,13 +20493,13 @@ Series = Abacus.Series = Class(Symbolic, {
             self._istrivial.tested.dispose();
             self._istrivial.trivial.dispose();
         }
-        if (self._neg && (self._neg._neg === self)) self._neg._neg = null;
-        if (self._inv && (self._inv._inv === self)) self._inv._inv = null;
+        if (self._n && (self._n._n === self)) self._n._n = null;
+        if (self._i && (self._i._i === self)) self._i._i = null;
         if (self._$F) self._$F.dispose();
-        self._ = null;
         self._istrivial = null;
-        self._neg = null;
-        self._inv = null;
+        self._ = null;
+        self._n = null;
+        self._i = null;
         self._$F = null;
         self._$ = null;
         self.$x = null;
@@ -20542,7 +20542,7 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this, Z = 'product' === self.type ? 1 : 0;
         kth = stdMath.max(1, kth || 0);
         nth = stdMath.max(kth, nth || 0);
-        if (null != self.degree) return kth > self.degree;
+        //if (null != self.degree) return kth > self.degree;
         for (; kth<=nth; ++kth)
         {
             if (kth > 1024)
@@ -20559,7 +20559,9 @@ Series = Abacus.Series = Class(Symbolic, {
     }
     ,isDegree: function(degree) {
         degree = stdMath.max(0, (+degree) || 0);
-        return this.isTrivial(degree+1, degree+13); // test up to 12 terms after degree
+        var self = this;
+        if (null != self.degree) return degree >= self.degree;
+        return self.isTrivial(degree+1, degree+13); // test up to 12 terms after degree
     }
     ,isSimple: function() {
         var self = this;
@@ -20583,32 +20585,34 @@ Series = Abacus.Series = Class(Symbolic, {
 
     ,neg: function() {
         var self = this;
-        if (null == self._neg)
+        if (null == self._n)
         {
             // https://en.wikipedia.org/wiki/Formal_power_series#The_ring_of_formal_power_series
-            self._neg = Series('product' === self.type
+            self._n = Series('product' === self.type
                 ? function(nth) {return 0 === nth ? self.$(nth).neg() : self.$(nth);}
                 : function(nth) {return self.$(nth).neg();},
             self.$x, self.type);
-            self._neg._neg = self; // idempotent
+            self._n.degree = self.degree;
+            self._n._n = self; // idempotent
         }
-        return self._neg;
+        return self._n;
     }
     ,inv: function() {
         var self = this;
-        if (null == self._inv)
+        if (null == self._i)
         {
             // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
-            self._inv = Series('product' === self.type
+            self._i = Series('product' === self.type
             ? function(nth) {
                 return self.$(nth).inv();
             }
             : function(nth, inv) {
                 return 0 === nth ? self.$(0).inv() : self.$(0).inv().neg().mul(sum(array(nth, function(ith) {return self.$(nth-ith).mul(inv.$(ith));})));
             }, self.$x, self.type);
-            self._inv._inv = self; // idempotent
+            if ((null != self.degree) && isFinite(self.degree)) self._i.degree = Infinity;
+            self._i._i = self; // idempotent
         }
-        return self._inv;
+        return self._i;
     }
 
     ,equ: function(other, up_to_nth) {
@@ -20633,25 +20637,34 @@ Series = Abacus.Series = Class(Symbolic, {
     }
 
     ,add: function(other) {
-        var self = this;
+        var self = this, res;
         // https://en.wikipedia.org/wiki/Formal_power_series#The_ring_of_formal_power_series
         other = to_series(other, self);
-        return Series(function(nth) {return self.$(nth).add(other.$(nth));}, self.$x, self.type);
+        res = Series(function(nth) {return self.$(nth).add(other.$(nth));}, self.$x, self.type);
+        if (null != self.degree && null != other.degree) res.degree = stdMath.max(self.degree, other.degree);
+        return res;
     }
     ,sub: function(other) {
-        var self = this;
+        var self = this, res;
         // https://en.wikipedia.org/wiki/Formal_power_series#The_ring_of_formal_power_series
         other = to_series(other, self);
-        return Series(function(nth) {return self.$(nth).sub(other.$(nth));}, self.$x, self.type);
+        res = Series(function(nth) {return self.$(nth).sub(other.$(nth));}, self.$x, self.type);
+        if (null != self.degree && null != other.degree) res.degree = stdMath.max(self.degree, other.degree);
+        return res;
     }
     ,mul: function(other) {
-        var self = this;
+        var self = this, res;
         // https://en.wikipedia.org/wiki/Formal_power_series#The_ring_of_formal_power_series
         other = to_series(other, self);
-        return Series('product' === self.type
+        res = Series('product' === self.type
         ? function(nth) {return self.$(nth).mul(other.$(nth));}
         : function(nth) {return sum(array(nth+1, function(ith) {return self.$(ith).mul(other.$(nth-ith));}));},
         self.$x, self.type);
+        if (null != self.degree && null != other.degree)
+        {
+            res.degree = 'product' === self.type ? stdMath.max(self.degree, other.degree) : (self.degree+other.degree);
+        }
+        return res;
     }
     ,div: function(other) {
         var self = this;
@@ -20663,25 +20676,40 @@ Series = Abacus.Series = Class(Symbolic, {
         return !self.isDegree(0) || !self.$(0).equ(0);
     }
     ,pow: function(n) {
-        var series = this;
         n = stdMath.floor((+n) || 0);
-        if ('product' === series.type) return Series(function(nth) {return series.$(nth).pow(n);}, series.$x, series.type);
-        //return npow(series, n);
-        if (0 > n) {series = series.inv(); n = -n;}
-        if (1 === n) return series;
-        // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
-        return Series(function(nth, pseries) {
-            return 0 === nth
-                ? series.$(0).pow(n)
-                : series.$(0).inv().div(nth).mul(sum(array(nth, function(kth) {return series.$(kth+1).mul(pseries.$(nth-kth-1)).mul((kth+1)*n - nth + kth+1);})))
-            ;
-        }, series.$x, series.type);
+        var series = this, powseries;
+        if ('product' === series.type)
+        {
+            powseries = Series(function(nth) {return series.$(nth).pow(n);}, series.$x, series.type);
+            powseries.degree = series.degree;
+        }
+        else
+        {
+            //return npow(series, n);
+            if (0 > n) {series = series.inv(); n = -n;}
+            // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
+            powseries = 1 === n ? series : Series(function(nth, powseries) {
+                return 0 === nth
+                    ? series.$(0).pow(n)
+                    : series.$(0).inv().div(nth).mul(sum(array(nth, function(kth) {return series.$(kth+1).mul(powseries.$(nth-kth-1)).mul((kth+1)*n - nth + kth+1);})))
+                ;
+            }, series.$x, series.type);
+            if ((series !== powseries) && (null != series.degree)) powseries.degree = series.degree*n;
+        }
+        return powseries;
     }
 
     ,d: function(n) {
-        var self = this;
-        n = stdMath.floor((+n) || 0);
-        return 0 >= n ? self : Series(function(nth) {return self.$(nth+n).mul(product(array(n, function(i) {return nth+n-i;})));}, self.$x, 'sum');
+        n = stdMath.max(0, stdMath.floor((+n) || 0));
+        var f = this,
+            df = 0 === n
+                ? f
+                : Series(function(nth) {
+                    return f.$(nth+n).mul(product(array(n, function(i) {return nth+n-i;})));
+                }, f.$x, 'sum')
+        ;
+        if ((f !== df) && ('sum' === f.type) && (null != f.degree)) df.degree = stdMath.max(0, f.degree-n);
+        return df;
     }
     ,compose: function(other) {
         var self = this;
@@ -20734,6 +20762,9 @@ Series = Abacus.Series = Class(Symbolic, {
     ,toExpr: function() {
         var self = this;
         return 'product' === self.type ? self.prod(self._N, 'expand') : self.sum(self._N, 'expand');
+    }
+    ,toSeries: function() {
+        return this; // trivial
     }
     ,toString: function(type) {
         var self = this, e = self.toExpr();
@@ -20808,9 +20839,26 @@ function F_(f, F0)
 
 // convenience methods
 Abacus.PowerSeries = function(f, x) {
-    if (is_string(f)) f = Expr(f);
-    if (is_instance(f, Expr)) f = f.toSeries(null == x ? "x" : x);
-    else if ((null != f) && is_callable(f.toExpr)) f = f.toExpr().toSeries(null == x ? "x" : x);
+    x = null == x ? "x" : x;
+    if (is_string(f))
+    {
+        f = Expr(f);
+    }
+    if (is_instance(f, Series))
+    {
+        if ((f.type !== 'sum') || !f.$x.equ(x))
+        {
+            f = Series(f.$fn, x, 'sum');
+        }
+    }
+    else if (is_instance(f, Expr))
+    {
+        f = f.toSeries(x);
+    }
+    else if ((null != f) && is_callable(f.toExpr))
+    {
+        f = f.toExpr().toSeries(x);
+    }
     return f;
 };
 // Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
