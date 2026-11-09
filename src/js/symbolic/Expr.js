@@ -2763,23 +2763,23 @@ function expr_series(f, x)
     var symbol = ((['x','y','z']).filter(function(s) {return -1 < x.symbols().indexOf(s);})[0]) || (x.symbols().filter(function(s) {return '1' !== s;})[0]),
         x0 = x.clone().substitute(symbol, 0).neg(); // must be x - x0
     return -1 === f.symbols().indexOf(symbol) ? Series.Const(f, x, 'sum') : new Series(function(nth, series) {
-        if (!series._data.nth)
+        if (!series._.nth)
         {
-            series._data.degree = Infinity;
-            series._data.nth = new Array(20);
+            series.degree = Infinity;
+            series._.nth = new Array(20);
         }
-        if (nth > series._data.degree) return null;
-        if ((nth < series._data.nth.length) && (null != series._data.nth[nth])) return series._data.nth[nth];
+        if (nth > series.degree) return null;
+        if ((nth < series._.nth.length) && (null != series._.nth[nth])) return series._.nth[nth];
         var df_n = 0 < nth ? f.d(x, nth) : f.clone(), f_nth;
-        if ((series._data.degree > nth) && (-1 === df_n.symbols().indexOf(symbol)))
+        if ((series.degree > nth) && (-1 === df_n.symbols().indexOf(symbol)))
         {
-            series._data.degree = nth;
-            if (series._data.nth.length > nth+1) series._data.nth.length = nth+1;
-            else if (series._data.nth.length < nth+1) series._data.nth.push.apply(series._data.nth, array(nth+1-series._data.nth.length, null));
+            series.degree = nth;
+            if (series._.nth.length > nth+1) series._.nth.length = nth+1;
+            else if (series._.nth.length < nth+1) series._.nth.push.apply(series._.nth, array(nth+1-series._.nth.length, null));
         }
         df_n = df_n.substitute(symbol, x0).expand();
         f_nth = Expr('/', [df_n.num, df_n.den.mul(Expr('', factorial(nth)))]);
-        if (nth < series._data.nth.length) series._data.nth[nth] = f_nth;
+        if (nth < series._.nth.length) series._.nth[nth] = f_nth;
         return f_nth;
     }, x, 'sum');
 }

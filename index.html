@@ -832,6 +832,7 @@ function init()
                 'p = PowerSeries("1+x+x^2", "x")',
                 'f = PowerSeries("1/(1-x)", "x")',
                 'f.inv()',
+                'f.inv().inv()',
                 'sqrt = PowerSeries("sqrt(1+x)", "x")',
                 'sqrt.pow(2)',
                 'sqrt3 = PowerSeries("sqrt[3](1+x)", "x")',
@@ -839,8 +840,8 @@ function init()
                 'exp = (x) => PowerSeries("exp("+x+")", "x")',
                 'exp_x = exp("x")',
                 'exp_x_neg = exp("-x")',
-                'exp_x_inv = exp_x.inv()',
-                'exp_x_neg.equ(exp_x_inv)',
+                'exp_x.inv()',
+                'exp_x_neg.equ(exp_x.inv())',
                 'exp_x.mul(exp_x_neg)'
                 ]);
             break;
