@@ -23,7 +23,7 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
 var  Abacus = {VERSION: "@@VERSION@@"}
 
     // stdMath
-    ,stdMath = Math
+    ,stdMath = Math, inf = Infinity
 
     // consts
     ,MAX_DEFAULT = 2147483647 // maximum integer for default arithmetic, cmp Number.MAX_SAFE_INTEGER

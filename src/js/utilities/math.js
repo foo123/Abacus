@@ -3,10 +3,18 @@ function addn(s, a)
 {
     return s + a;
 }
+function subn(s, a)
+{
+    return s - a;
+}
 function muln(p, a)
 {
     return p * a;
 }
+/*function divn(p, a)
+{
+    return p / a;
+}*/
 function sum(x, i0, i1, ik)
 {
     var Arithmetic = Abacus.Arithmetic;
@@ -3921,8 +3929,8 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
     ,O: 0
     ,I: 1
     ,II: 2
-    ,INF: {valueOf: function() {return Infinity;}, toString: function() {return "Infinity";}, toTex: function() {return "\\infty";}} // a representation of Infinity
-    ,NINF: {valueOf: function() {return -Infinity;}, toString: function() {return "-Infinity";}, toTex: function() {return "-\\infty";}} // a representation of -Infinity
+    ,INF: {valueOf: function() {return inf;}, toString: function() {return "Infinity";}, toTex: function() {return "\\infty";}} // a representation of Infinity
+    ,NINF: {valueOf: function() {return -inf;}, toString: function() {return "-Infinity";}, toTex: function() {return "-\\infty";}} // a representation of -Infinity
 
     ,nums: function(a) {
         var Arithmetic = this;

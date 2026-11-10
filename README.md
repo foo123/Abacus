@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (423 kB minified)
+**version 2.0.0** almost complete (425 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -72,7 +72,7 @@
 * Algebraic `Rings` and `Fields` eg. `Ring.Z(), Ring.Q(), Ring.C(), Ring.Q("x","y"), ..` (`test/polynomials.js`, `test/multivariate.js`, `test/rings.js`)
 * `Matrix` **with coefficients from a Ring/Field**  (`test/matrices.js`)
 * `Expr` **general Symbolic Expressions** (`test/expressions.js`)
-* `Series` **formal Power Series** (`test/power_series.js`)
+* `Series` **formal univariate / multivariate Power Series** (`test/power_series.js`)
 * `Progression` (Infinite, Arithmetic, Geometric) (`test/progressions.js`)
 * `PrimeSieve`, Primality Tests, Prime Factorisation (`test/primes.js`)
 * Diophantine Linear Equations, Linear Congruences, Pythagorean n-Tuples (`test/diophantine.js`)
@@ -347,7 +347,7 @@ console.log(exp("x").mul(exp("-x")).toString());
 * implement `Hermite Normal Form`, `Smith Normal Form` **[DONE]**
 * <del>implement numeric `EVD / SVD` computation</del>
 * support general symbolic expressions and computations in `Expr` **[DONE]**
-* support (formal) power series of symbolic expressions in `Series` **[ALMOST DONE]**
+* support (formal) univariate and multivariate power series of symbolic expressions in `Series` **[ALMOST DONE]**
 * implement adequate and efficient simplification methods for symbolic expressions **[DONE PARTIALLY]**
 * support some basic functions in symbolic expressions (eg. `exp`, `log`, `sin`, `cos`, ..) **[DONE PARTIALLY]**
 * support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**

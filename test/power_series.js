@@ -23,6 +23,11 @@ let sqrt = PowerSeries("sqrt(1+x)", "x");
 echo(sqrt.toString());
 echo('sqrt.pow(2)');
 echo(sqrt.pow(2).toString());
+echo('sqrt3 = PowerSeries("sqrt[3](1+x)", "x")');
+let sqrt3 = PowerSeries("sqrt[3](1+x)", "x");
+echo(sqrt3.toString());
+echo('sqrt3.pow(3)');
+echo(sqrt3.pow(3).toString());
 echo('exp = (x) => PowerSeries("exp("+x+")", "x")');
 let exp = (x) => PowerSeries("exp("+x+")", "x");
 echo('exp("x")');
@@ -39,3 +44,5 @@ echo('exp("ax")');
 echo(exp("ax").toString());
 echo('exp("ax+b")');
 echo(exp("ax+b").toString());
+echo('PowerSeries("exp(x+y)", ["x","y"])')
+echo(PowerSeries("exp(x+y)", ["x","y"]).sum(12).toString());

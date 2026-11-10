@@ -2050,7 +2050,11 @@ Expr = Abacus.Expr = Class(Symbolic, {
             x = String(e || 'x');
             if ('1' === x) return Expr.Zero();
             df = df.clone();
-            for (; 0 < n; --n) df = expr_derivative(df, x);
+            for (; 0 < n; --n)
+            {
+                if (-1 === df.symbols().indexOf(x)) return Expr.Zero();
+                df = expr_derivative(df, x);
+            }
         }
         return df;
     }
@@ -2353,9 +2357,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
     ,toSeries: function(x) {
         var self = this;
-        if (!is_instance(x, Expr) && !is_string(x)) return self;
-        x = is_instance(x, Expr) ? x : Expr(x);
-        if (!x.symbols().filter(function(s) {return '1' !== s;}).length) return self;
+        if (!is_array(x)) x = [x];
+        x = x.map(function(x) {return is_instance(x, Expr) ? x : (is_string(x) ? Expr(x) : null);});
+        if (x.filter(function(x) {return (null == x) || !x.symbols().filter(function(s) {return '1' !== s;}).length;}).length) return self;
         return /*expr_series(self, x) // slow*/self.den.isConst() ? expr_series(self.den.c().equ(1) ? self.num : (self.num.div(self.den.c())), x) : (expr_series(self.num, x).div(expr_series(self.den, x)));
     }
     ,toPoly: function(symbol, ring, imagUnit) {
@@ -2758,28 +2762,46 @@ function to_expr(x)
 {
     return is_instance(x, Expr) ? x : ((null != x) && is_callable(x.toExpr) ? x.toExpr() : Expr('', x || 0));
 }
+function expr_is_independent_of(e, x)
+{
+    for (var i=0,n=x.length; i<n; ++i)
+    {
+        if (-1 < e.symbols().indexOf(x[i])) return false;
+    }
+    return true;
+}
 function expr_series(f, x)
 {
-    var symbol = ((['x','y','z']).filter(function(s) {return -1 < x.symbols().indexOf(s);})[0]) || (x.symbols().filter(function(s) {return '1' !== s;})[0]),
-        x0 = x.clone().substitute(symbol, 0).neg(); // must be x - x0
-    return -1 === f.symbols().indexOf(symbol) ? Series.Const(f, x, 'sum') : new Series(function(nth, series) {
-        if (!series._.nth)
-        {
-            series.degree = Infinity;
-            series._.nth = new Array(20);
-        }
-        if (nth > series.degree) return null;
-        if ((nth < series._.nth.length) && (null != series._.nth[nth])) return series._.nth[nth];
-        var df_n = 0 < nth ? f.d(x, nth) : f.clone(), f_nth;
-        if ((series.degree > nth) && (-1 === df_n.symbols().indexOf(symbol)))
-        {
-            series.degree = nth;
-            if (series._.nth.length > nth+1) series._.nth.length = nth+1;
-            else if (series._.nth.length < nth+1) series._.nth.push.apply(series._.nth, array(nth+1-series._.nth.length, null));
-        }
-        df_n = df_n.substitute(symbol, x0).expand();
-        f_nth = Expr('/', [df_n.num, df_n.den.mul(Expr('', factorial(nth)))]);
-        if (nth < series._.nth.length) series._.nth[nth] = f_nth;
+    var X = x.map(function(x, i) {
+            return x.symbols().reduce(function(s, si) {
+                if (s) return s;
+                return (['x','y','z']).reduce(function(s, sym) {
+                    if (!s && ((sym === si) || (sym+'_' === si.slice(0, sym.length+1)))) return si;
+                    return s;
+                }, s);
+            }, null) || (1 === x.length ? 'x' : ('x_'+String(i+1)));
+        }),
+        x0 = x.map(function(x, i) {
+            return x.substitute(X[i], Expr.Zero()).neg(); // must be x - x0
+        })
+    ;
+    return expr_is_independent_of(f, X) ? Series.Const(f, x, 'sum') : new Series(function(nth, series) {
+        if (!series._.nth) {series.degree = inf; series._.nth = {};}
+
+        var n = multi_index_deg(nth), key, df_nth, f_nth;
+        if (n > series.degree) return null; // none, trivial
+
+        key = nth.join(',');
+        f_nth = n < 32 ? series._.nth[key] : null;
+        if (null != f_nth) return f_nth;
+
+        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f.clone()) : f.clone();
+        if ((series.degree > n) && expr_is_independent_of(df_nth, X)) series.degree = n;
+
+        df_nth = x0.reduce(function(df_nth, x0, i) {return df_nth.substitute(X[i], x0);}, df_nth).expand();
+        f_nth = Expr('/', [df_nth.num, df_nth.den.mul(1 < nth.length ? Expr('*', nth.map(function(ith) {return factorial(ith);})) : Expr('', factorial(nth[0])))]);
+
+        if (n < 32) series._.nth[key] = f_nth;
         return f_nth;
     }, x, 'sum');
 }
@@ -3573,7 +3595,8 @@ function expr_poly(expr, symbol, other_symbols, ring, CoefficientRing, imagUnit)
     }
     function is_const(expr)
     {
-        return 0 === expr.symbols().filter(is_array(symbol) ? function(s) {return -1 !== symbol.indexOf(s);} : function(s) {return s === symbol;}).length;
+        return expr_is_independent_of(expr, is_array(symbol) ? symbol : [symbol]);
+        //return 0 === expr.symbols().filter(is_array(symbol) ? function(s) {return -1 !== symbol.indexOf(s);} : function(s) {return s === symbol;}).length;
     }
     var PolynomialClass = is_array(symbol) ? MultiPolynomial : Polynomial,
         ast = expr.ast, term, coeff, exp;

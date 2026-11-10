@@ -349,7 +349,7 @@ CombinatorialIterator = Abacus.CombinatorialIterator = Class(Iterator, {
             $.type = 'sequence';
             $.rand = $.rand || {};
             $.rand['sequence'] = 1;
-            var minbase = Infinity, maxbase = -Infinity, mindim = Infinity, maxdim = -Infinity;
+            var minbase = inf, maxbase = -inf, mindim = inf, maxdim = -inf;
             operate(function(_,iter) {
                 var bmin = iter.base(true, 'min'), bmax = iter.base(true, 'max'),
                     dmin = iter.dimension(true, 'min'), dmax = iter.dimension(true, 'max');

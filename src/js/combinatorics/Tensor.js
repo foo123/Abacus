@@ -87,7 +87,7 @@ Tensor = Abacus.Tensor = Class(CombinatorialIterator, {
                     if (k < m_M[0]) m_M[0] = k;
                     if (k > m_M[1]) m_M[1] = k;
                     return m_M;
-                }, [Infinity,0], n);
+                }, [inf,0], n);
                 $.base = n;
                 $.minbase = m_M[0]; $.maxbase = m_M[1];
                 $.dimension = n.length;

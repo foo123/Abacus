@@ -2385,7 +2385,7 @@ MultiPolynomial = Abacus.MultiPolynomial = Class(Poly, {
                     // check monomial factors
                     t = false;
                     p = self.symbol.reduce(function(monomial, xi, i) {
-                        var e = Infinity;
+                        var e = inf;
                         var monomial_present_in_all_terms = (p.terms.length === p.terms.filter(function(t) {
                             e = stdMath.min(e, t.e[i]);
                             return 0 < t.e[i];

@@ -1075,7 +1075,7 @@ function align_sequences(A, B, dist_AB, cmp_AA, cmp_BB)
             {
                 iperm_A[perm_A[i]] = i;
             }
-            sm = Infinity; km = 0;
+            sm = inf; km = 0;
             for (k=0; k+m<=n; ++k)
             {
                 s = 0;
@@ -1100,8 +1100,8 @@ function align_sequences(A, B, dist_AB, cmp_AA, cmp_BB)
                     k = iperm_A[i]-km;
                     j = k<=0 ? 0 : (k>=m ? (m-1) : k);
                     s = dist_AB(A[i], B[perm_B[j]]);
-                    sm = j-1>=0 ? dist_AB(A[i], B[perm_B[j-1]]) : Infinity;
-                    sM = j+1<m ? dist_AB(A[i], B[perm_B[j+1]]) : Infinity;
+                    sm = j-1>=0 ? dist_AB(A[i], B[perm_B[j-1]]) : inf;
+                    sM = j+1<m ? dist_AB(A[i], B[perm_B[j+1]]) : inf;
                     jm = j;
                     if (sm < s)
                     {
@@ -1119,7 +1119,7 @@ function align_sequences(A, B, dist_AB, cmp_AA, cmp_BB)
         }
         else if (n < m)
         {
-            sm = Infinity; km = 0;
+            sm = inf; km = 0;
             for (k=0; k+n<=m; ++k)
             {
                 s = 0;
@@ -1643,6 +1643,83 @@ function frac2dec(n, d, tofloat)
     return whole + dot + non_repeating + repeating;
 }
 
+function multi_index(n, d, min)
+{
+    // https://en.wikipedia.org/wiki/Multi-index_notation
+    // d-dimensional multi-indices that sum to n
+    // i.e all compositions of n into d parts with min=min and max=n-(d-1)*min
+    min = min || 0;
+    var max = n-(d-1)*min,
+        index = null,
+        do_next = false,
+
+        init = function() {
+            index = d < 1 ? null : array(d, function(i) {return 0 === i ? max : min;}); // initial
+            do_next = false;
+        },
+
+        next = function() {
+            if (index && do_next)
+            {
+                // compute next
+                if ((1 <= d) && (index[d-1] < max))
+                {
+                    var i = d-1, m = index[i];
+                    index[i--] = min;
+                    while ((0 < i) && (min === index[i])) --i;
+                    --index[i]; index[i+1] = 1+m;
+                }
+                else
+                {
+                    index = null; // done
+                }
+            }
+            do_next = true;
+            return index;
+        }
+    ;
+    next.list = function() {
+        init();
+        for (var list=[];next();) list.push(index.slice());
+        return list;
+    };
+    init(); return next;
+}
+function multi_index_(i, d)
+{
+    return is_array(i) ? i : array(d, i);
+}
+function multi_index_deg(a)
+{
+    return (is_array(a) ? a.reduce(addn, 0) : (+a)) || 0;
+}
+function multi_index_cmp(cmp, a, b)
+{
+    for (var a_arr=is_array(a),b_arr=is_array(b),i=0,n=stdMath.max(a_arr ? a.length : 1, b_arr ? b.length : 1),ai,bi; i<n; ++i)
+    {
+        ai = (a_arr ? a[i] : a) || 0;
+        bi = (b_arr ? b[i] : b) || 0;
+        switch (cmp)
+        {
+            case '<='   : if (ai > bi) return false; break;
+            case '<'    : if (ai >= bi) return false; break;
+            case '>='   : if (ai < bi) return false; break;
+            case '>'    : if (ai <= bi) return false; break;
+            case '!='   : if (ai === bi) return false; break;
+            default     : if (ai !== bi) return false;
+        }
+    }
+    return true;
+}
+function multi_index_op(op, a, b)
+{
+    return array(stdMath.max(a.length, b.length), function(i) {
+        return op(a[i] || 0, b[i] || 0);
+    });
+}
+multi_index.deg = multi_index_deg;
+multi_index.cmp = multi_index_cmp;
+
 Abacus.Class = Class;
 
 // array/list utilities
@@ -1666,6 +1743,7 @@ Abacus.Util = {
     ,igray: igray
     ,grayn: grayn
     ,igrayn: igrayn
+    ,multi_index: multi_index
     ,finitedifference: fdiff
     ,partialsum: psum
     ,convolution: convolution

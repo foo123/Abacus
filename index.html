@@ -842,7 +842,8 @@ function init()
                 'exp_x_neg = exp("-x")',
                 'exp_x.inv()',
                 'exp_x_neg.equ(exp_x.inv())',
-                'exp_x.mul(exp_x_neg)'
+                'exp_x.mul(exp_x_neg)',
+                'exp_xy = PowerSeries("exp(x+y)", ["x","y"])'
                 ]);
             break;
         }
