@@ -127,6 +127,49 @@ function continued_fraction(terms, stop)
 }
 */
 
+function Bell_(Zero, One)
+{
+    // Bell polynomials recursively memoized
+    // https://en.wikipedia.org/wiki/Bell_polynomials
+    if (null == Zero) {One = 1; Zero = 0;}
+    var Bell = function Bell(n, k, x) {
+        if (0 <= n && n <= 64 && 0 <= k && k <= 64)
+        {
+            var mem = Bell.mem,
+                key = String(n)+','+String(k),
+                val = mem[key];
+            if (null == val)
+            {
+                if (0 === n && 0 === k)
+                {
+                    val = One;
+                }
+                else if (0 === n || 0 === k)
+                {
+                    val = Zero;
+                }
+                else
+                {
+                    for (var sum=x[0].mul(Bell(n-1, k-1, x)),i=1,end=n-k; i<=end; ++i)
+                    {
+                        sum = sum.add(x[i].mul(Bell(n-1-i, k-1, x)).mul(factorial(n-1, i)));
+                    }
+                    val = sum;
+                }
+                mem[key] = val;
+            }
+            return val;
+        }
+        return Zero;
+    };
+    Bell.mem = {};
+    Bell.dispose = function() {
+        Bell.mem = null;
+        Bell.dispose = null;
+    };
+    return Bell;
+}
+
 // modular arithmetic
 function negm(a, m)
 {

@@ -46,3 +46,12 @@ echo('exp("ax+b")');
 echo(exp("ax+b").toString());
 echo('PowerSeries("exp(x+y)", ["x","y"])')
 echo(PowerSeries("exp(x+y)", ["x","y"]).sum(12).toString());
+echo('y(x) = Series((nth) => Expr("", 0 === nth[0] ? 0 : "a_"+String(nth[0])), "x")');
+let y = Abacus.Series((nth) => Abacus.Expr('', 0 === nth[0] ? 0 : 'a_'+String(nth[0])), "x");
+echo(y.toString());
+echo('x(y) = y(x).cinv()');
+let x = y.cinv();
+echo(x.sum(4).toString());
+echo('x(y(x)) = x.compose(y)');
+echo(x.compose(y).sum(4).toString());
+

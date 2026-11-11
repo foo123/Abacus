@@ -2772,11 +2772,11 @@ function expr_is_independent_of(e, x)
 }
 function expr_series(f, x)
 {
-    var X = x.map(function(x, i) {
-            return x.symbols().reduce(function(s, si) {
+    var X = x.map(function(xi, i) {
+            return xi.symbols().reduce(function(s, sij) {
                 if (s) return s;
                 return (['x','y','z']).reduce(function(s, sym) {
-                    if (!s && ((sym === si) || (sym+'_' === si.slice(0, sym.length+1)))) return si;
+                    if (!s && ((sym === sij) || (sym+'_' === sij.slice(0, sym.length+1)))) return sij;
                     return s;
                 }, s);
             }, null) || (1 === x.length ? 'x' : ('x_'+String(i+1)));
@@ -2785,14 +2785,14 @@ function expr_series(f, x)
             return x.substitute(X[i], Expr.Zero()).neg(); // must be x - x0
         })
     ;
-    return expr_is_independent_of(f, X) ? Series.Const(f, x, 'sum') : new Series(function(nth, series) {
+    return expr_is_independent_of(f, X) ? Series.Const(f, x, null, 'sum') : new Series(function(nth, series) {
         if (!series._.nth) {series.degree = inf; series._.nth = {};}
 
         var n = multi_index_deg(nth), key, df_nth, f_nth;
         if (n > series.degree) return null; // none, trivial
 
         key = nth.join(',');
-        f_nth = n < 32 ? series._.nth[key] : null;
+        f_nth = n < 64 ? series._.nth[key] : null;
         if (null != f_nth) return f_nth;
 
         df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f.clone()) : f.clone();
@@ -2801,9 +2801,9 @@ function expr_series(f, x)
         df_nth = x0.reduce(function(df_nth, x0, i) {return df_nth.substitute(X[i], x0);}, df_nth).expand();
         f_nth = Expr('/', [df_nth.num, df_nth.den.mul(1 < nth.length ? Expr('*', nth.map(function(ith) {return factorial(ith);})) : Expr('', factorial(nth[0])))]);
 
-        if (n < 32) series._.nth[key] = f_nth;
+        if (n < 64) series._.nth[key] = f_nth;
         return f_nth;
-    }, x, 'sum');
+    }, x, null, 'sum');
 }
 function rational_expr(expr)
 {

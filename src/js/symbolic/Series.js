@@ -1,10 +1,11 @@
 // Abacus.Series, represents symbolic formal univariate or multivariate power series
 Series = Abacus.Series = Class(Symbolic, {
 
-    constructor: function Series(fn, x, type) {
+    constructor: function Series(fn, x, ring, type) {
         var self = this;
-        if (!is_instance(self, Series)) return new Series(fn, x, type);
+        if (!is_instance(self, Series)) return new Series(fn, x, ring, type);
         self.type = 'product' === String(type || '').toLowerCase() ? 'product' : 'sum';
+        self.ring = ring;
         self.$fn = fn;
         if (!is_array(x)) x = [x];
         self.$x = x.map(function(xi, i) {return is_instance(xi, Expr) ? xi : (is_string(xi) ? Expr(xi) : Expr('', 'x'+(1 === x.length ? '' : '_'+String(i+1))));});
@@ -16,42 +17,45 @@ Series = Abacus.Series = Class(Symbolic, {
             return true;
         }
 
-        ,Zero: function(x, type) {
-            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? Expr.Zero() : null;}, x, type);
+        ,Zero: function(x, ring, type) {
+            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? Expr.Zero() : null;}, x, ring, type);
             series.degree = 0;
             return series;
         }
-        ,One: function(x, type) {
-            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? Expr.One() : null;}, x, type);
+        ,One: function(x, ring, type) {
+            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? Expr.One() : null;}, x, ring, type);
             series.degree = 0;
             return series;
         }
-        ,MinusOne: function(x, type) {
-            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? Expr.MinusOne() : null;}, x, type);
+        ,MinusOne: function(x, ring, type) {
+            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? Expr.MinusOne() : null;}, x, ring, type);
             series.degree = 0;
             return series;
         }
-        ,Const: function(c, x, type) {
-            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? c : null;}, x, type);
+        ,Const: function(c, x, ring, type) {
+            var series = new Series(function(nth) {return multi_index_cmp('==', nth, 0) ? c : null;}, x, ring, type);
             series.degree = 0;
             return series;
         }
-        ,Term: function(f_n, n, x, type) {
-            var series = new Series(function(nth) {return multi_index_cmp('==', nth, n) ? f_n : null;}, x, type);
+        ,Term: function(f_n, n, x, ring, type) {
+            var series = new Series(function(nth) {return multi_index_cmp('==', nth, n) ? f_n : null;}, x, ring, type);
             series.degree = multi_index_deg(n);
             return series;
         }
     }
 
     ,type: 'sum'
+    ,ring: null
     ,degree: null
     ,$fn: null
     ,$x: null
     ,_: null
     ,_$: null
     ,_$F: null
+    ,_$B: null
     ,_n: null
     ,_i: null
+    ,_ci: null
     ,_istrivial: null
     ,_N: 6
 
@@ -64,20 +68,25 @@ Series = Abacus.Series = Class(Symbolic, {
         }
         if (self._n && (self._n._n === self)) self._n._n = null;
         if (self._i && (self._i._i === self)) self._i._i = null;
+        if (self._ci && (self._ci._ci === self)) self._ci._ci = null;
         if (self._$F) self._$F.dispose();
+        if (self._$B) self._$B.dispose();
         self._istrivial = null;
         self._ = null;
         self._n = null;
         self._i = null;
+        self._ci = null;
         self._$F = null;
+        self._$B = null;
         self._$ = null;
         self.$x = null;
         self.$fn = null;
+        self.ring = null;
         return self;
     }
 
     ,clone: function() {
-        var self = this, clone = new Series(self.$fn, self.$x.slice(), self.type);
+        var self = this, clone = new Series(self.$fn, self.$x.slice(), self.ring, self.type);
         clone.degree = self.degree;
         if (self._istrivial) clone._istrivial = {tested:self._istrivial.tested.clone(), trivial:self._istrivial.trivial.clone()};
         if (self._$F) clone._$F = F_(clone, self._$F);
@@ -87,7 +96,7 @@ Series = Abacus.Series = Class(Symbolic, {
     ,$: function(nth) {
         var self = this;
         nth = is_array(nth) ? nth : multi_index_(nth, self.$x.length);
-        if (!multi_index_cmp('>=', nth, 0)) return 'product' === self.type ? Expr.One() : Expr.Zero();
+        if (!multi_index_cmp('>=', nth, 0)) return 'product' === self.type ? (self.ring || Expr).One() : (self.ring || Expr).Zero();
         var Z = 'product' === self.type ? 1 : 0,
             CACHE = 64,
             n = multi_index_deg(nth),
@@ -96,7 +105,8 @@ Series = Abacus.Series = Class(Symbolic, {
             fn = self.$fn,
             f_nth = in_cache ? self._$[key] : (is_callable(fn) ? fn(nth, self) : null);
         if (null == f_nth) f_nth = Z;
-        if (!is_instance(f_nth, Expr)) f_nth = to_expr(f_nth);
+        if (self.ring) self.ring.cast(f_nth);
+        else if (!is_instance(f_nth, Expr)) f_nth = to_expr(f_nth);
         if ((n < CACHE) && !in_cache)
         {
             if (!self._$) self._$ = {};
@@ -108,6 +118,11 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         if (null == self._$F) self._$F = F_(self); // composita
         return self._$F(nth, kth);
+    }
+    ,$Bell: function(n, k, x) {
+        var self = this;
+        if (null == self._$B) self._$B = Bell_((self.ring || Expr).Zero(), (self.ring || Expr).One());
+        return self._$B(n, k, x);
     }
 
     ,isTrivial: function(start, end) {
@@ -127,21 +142,13 @@ Series = Abacus.Series = Class(Symbolic, {
         if (null != self.degree) return degree >= self.degree;
         return self.isTrivial(degree+1, degree+13); // test up to 12 terms after degree
     }
-    ,isSimple: function() {
-        var self = this;
-        return self.isDegree(0) && self.$(0).isSimple();
-    }
-    ,isSymbol: function() {
-        var self = this;
-        return self.isDegree(0) && self.$(0).isSymbol();
-    }
     ,isConst: function(not_exact) {
         var self = this;
-        return self.isDegree(0) && self.$(0).isConst(not_exact);
+        return self.isDegree(0) && self.c().isConst(not_exact);
     }
     ,isInt: function() {
         var self = this;
-        return self.isDegree(0) && self.$(0).isInt();
+        return self.isDegree(0) && self.c().isInt();
     }
     ,c: function() {
         return this.$(0);
@@ -156,57 +163,105 @@ Series = Abacus.Series = Class(Symbolic, {
             self._n = Series('product' === self.type
                 ? function(nth) {return multi_index_cmp('==', nth, 0) ? self.$(nth).neg() : self.$(nth);}
                 : function(nth) {return self.$(nth).neg();},
-            self.$x, self.type);
+            self.$x, self.ring, self.type);
             self._n.degree = self.degree;
             self._n._n = self; // idempotent
         }
         return self._n;
     }
     ,inv: function() {
-        var self = this;
+        var self = this, inv_0th = null;
         if (null == self._i)
         {
             // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
             // https://en.wikipedia.org/wiki/Formal_power_series#Power_series_in_several_variables
             self._i = Series('product' === self.type
             ? function(nth) {
-                return self.$(nth).inv();
+                return self.$(nth).inv(); // must be invertible
             }
             : function(nth, inv) {
                 var n = multi_index_deg(nth), d = self.$x.length;
-                if (0 === n) return self.$(0).inv();
-                return self.$(0).inv().neg().mul(sum(array(n, function(i) {
+                if (null == inv_0th) inv_0th = self.$(0).inv(); // must be invertible
+                if (0 === n) return inv_0th;
+                return inv_0th.neg().mul(sum(array(n, function(i) {
                     return sum(multi_index(i, d).list().map(function(ith) {
                         var jth = multi_index_op(subn, nth, ith);
-                        return multi_index_cmp('>=', jth, 0) ? self.$(jth).mul(inv.$(ith)) : Expr.Zero();
+                        return multi_index_cmp('>=', jth, 0) ? self.$(jth).mul(inv.$(ith)) : (self.ring || Expr).Zero();
                     }));
                 })));
-            }, self.$x, self.type);
+            }, self.$x, self.ring, self.type);
             if ((null != self.degree) && isFinite(self.degree)) self._i.degree = inf;
             self._i._i = self; // idempotent
         }
         return self._i;
     }
-
-    ,equ: function(other, up_to_nth) {
+    ,cinv: function() {
         var self = this;
-        return is_instance(other, Series) ? (self === other) || (self.$fn === other.$fn) || self.toExpr().equ(other.toExpr()) : (self.isDegree(0) && self.$(0).equ(other));
+        if (null == self._ci)
+        {
+            // compositional inverse
+            // https://en.wikipedia.org/wiki/Lagrange_inversion_theorem
+            // test
+            // y_x = Series((nth) => Expr('', 0 === nth[0] ? 0 : 'a_'+String(nth[0])), "x")
+            // a_{1}x + a_{2}x^{2} + a_{3}x^{3} + a_{4}x^{4} + a_{5}x^{5} + a_{6}x^{6} + \dots
+            // x_y = y_x.cinv().sum(4)
+            // \frac{1}{a_{1}}x - \frac{a_{2}}{a_{1}^{3}}x^{2} + \frac{2a_{2}^{2} - a_{1}a_{3}}{a_{1}^{5}}x^{3} - \frac{5a_{2}^{3} - 5a_{1}a_{2}a_{3} + a_{1}^{2}a_{4}}{a_{1}^{7}}x^{4}
+            if ((1 === self.$x.length) && self.$([0]).equ(0) && !self.$([1]).equ(0))
+            {
+                self._ci = Series(function(nth) {
+                    var n = nth[0], $ = function(k) {return self.$([k]).mul(factorial(k));};
+                    if (0 === n) return /*$(n)*/0; // must be 0
+                    if (1 === n) return $(n).inv(); // must be invertible
+                    return sum(array(n-1, function(k) {
+                        var xk = array(n-k-1, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
+                            nk = product(array(k+1, function(i) {return n+i;}));
+                        return self.$Bell(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
+                    })).div($(1).pow(n).mul(factorial(n)));
+                }, self.$x, self.ring, 'sum');
+                self._ci._ci = 'sum' === self.type ? self : Series(self.$fn, self.$x, self.ring, 'sum'); // idempotent
+            }
+            else
+            {
+                self._ci = false;
+            }
+        }
+        return self._ci ? self._ci : null;
+    }
+    ,compose: function(other) {
+        var self = this;
+        other = to_series(other, self);
+        return 1 === self.$x.length && 1 === other.$x.length ? Series(function(nth) {
+            return 0 === nth[0] ? /*self.$(nth)*/0 : sum(array(nth[0], function(kth) {
+                return other.$F(nth[0], kth+1).mul(self.$([kth+1]));
+            }));
+        }, other.$x, other.ring, 'sum') : self;
+    }
+
+    ,equ: function(other) {
+        var self = this;
+        if (!is_instance(other, Series)) return self.isDegree(0) && self.c().equ(other);
+        if (
+            (self === other)
+            || ((self.$fn === other.$fn)
+            && ((!self.ring && !other.ring) || (self.ring && other.ring && self.ring.equ(other.ring))))
+        ) return true;
+        return self.toExpr().equ(other.toExpr());
     }
     ,gt: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).gt(0) : (self.isDegree(0) && self.$(0).gt(other));
+        return is_instance(other, Series) ? self.sub(other).gt(0) : (self.isDegree(0) && self.c().gt(other));
     }
     ,gte: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).gte(0) : (self.isDegree(0) && self.$(0).gte(other));
+        return is_instance(other, Series) ? self.sub(other).gte(0) : (self.isDegree(0) && self.c().gte(other));
     }
     ,lt: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).lt(0) : (self.isDegree(0) && self.$(0).lt(other));
+        return is_instance(other, Series) ? self.sub(other).lt(0) : (self.isDegree(0) && self.c().lt(other));
     }
     ,lte: function(other) {
         var self = this;
-        return is_instance(other, Series) ? self.sub(other).lte(0) : (self.isDegree(0) && self.$(0).lte(other));
+        return is_instance(other, Series) ? self.sub(other).lte(0) : (self.isDegree(0) && self.c().lte(other));
     }
 
     ,add: function(other) {
@@ -214,7 +269,7 @@ Series = Abacus.Series = Class(Symbolic, {
         // https://en.wikipedia.org/wiki/Formal_power_series#The_ring_of_formal_power_series
         // https://en.wikipedia.org/wiki/Formal_power_series#Power_series_in_several_variables
         other = to_series(other, self);
-        res = Series(function(nth) {return self.$(nth).add(other.$(nth));}, self.$x, self.type);
+        res = Series(function(nth) {return self.$(nth).add(other.$(nth));}, self.$x, self.ring, self.type);
         if ((null != self.degree) && (null != other.degree)) res.degree = stdMath.max(self.degree, other.degree);
         return res;
     }
@@ -223,7 +278,7 @@ Series = Abacus.Series = Class(Symbolic, {
         // https://en.wikipedia.org/wiki/Formal_power_series#The_ring_of_formal_power_series
         // https://en.wikipedia.org/wiki/Formal_power_series#Power_series_in_several_variables
         other = to_series(other, self);
-        res = Series(function(nth) {return self.$(nth).sub(other.$(nth));}, self.$x, self.type);
+        res = Series(function(nth) {return self.$(nth).sub(other.$(nth));}, self.$x, self.ring, self.type);
         if ((null != self.degree) && (null != other.degree)) res.degree = stdMath.max(self.degree, other.degree);
         return res;
     }
@@ -241,11 +296,11 @@ Series = Abacus.Series = Class(Symbolic, {
             return sum(array(n+1, function(i) {
                 return sum(multi_index(i, d).list().map(function(ith) {
                     var jth = multi_index_op(subn, nth, ith);
-                    return multi_index_cmp('>=', jth, 0) ? self.$(ith).mul(other.$(jth)) : Expr.Zero();
+                    return multi_index_cmp('>=', jth, 0) ? self.$(ith).mul(other.$(jth)) : (self.ring || Expr).Zero();
                 }));
             }));
         },
-        self.$x, self.type);
+        self.$x, self.ring, self.type);
         if ((null != self.degree) && (null != other.degree))
         {
             res.degree = 'product' === self.type ? stdMath.max(self.degree, other.degree) : (self.degree+other.degree);
@@ -260,14 +315,14 @@ Series = Abacus.Series = Class(Symbolic, {
     }
     ,divides: function(other) {
         var self = this;
-        return !self.isDegree(0) || !self.$(0).equ(0);
+        return !self.isDegree(0) || !self.c().equ(0);
     }
     ,pow: function(m) {
         m = stdMath.floor((+m) || 0);
         var series = this, powseries;
         if ('product' === series.type)
         {
-            powseries = Series(function(nth) {return series.$(nth).pow(m);}, series.$x, series.type);
+            powseries = Series(function(nth) {return series.$(nth).pow(m);}, series.$x, series.ring, series.type);
             powseries.degree = series.degree;
         }
         else
@@ -285,7 +340,7 @@ Series = Abacus.Series = Class(Symbolic, {
                     }));
                 })))
                 ;
-            }, series.$x, series.type);
+            }, series.$x, series.ring, series.type);
             if ((series !== powseries) && (null != series.degree)) powseries.degree = series.degree*m;
         }
         return powseries;
@@ -301,64 +356,55 @@ Series = Abacus.Series = Class(Symbolic, {
                 ? f
                 : Series(function(nth) {
                     return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(product(array(n, function(i) {return nth[xi]+n-i;})));
-                }, f.$x, 'sum')
+                }, f.$x, f.ring, 'sum')
         ;
         if ((f !== df) && ('sum' === f.type) && (null != f.degree)) df.degree = stdMath.max(0, f.degree-n);
         return df;
     }
-    ,compose: function(other) {
-        var self = this;
-        other = to_series(other, self);
-        return 1 === self.$x.length && 1 === other.$x.length ? Series(function(nth) {
-            return 0 === nth[0] ? /*self.$(nth)*/0 : sum(array(nth[0], function(kth) {
-                return other.$F(nth[0], kth+1).mul(self.$([kth+1]));
-            }));
-        }, other.$x, 'sum') : self;
-    }
 
     ,map: function(f) {
         var self = this;
-        return is_callable(f) ? Series(function(nth) {return f(self.$(nth), nth, self);}, self.$x, self.type) : self;
+        return is_callable(f) ? Series(function(nth) {return f(self.$(nth), nth, self);}, self.$x, self.ring, self.type) : self;
     }
     ,filter: function(f) {
-        var self = this, Z = 'product' === self.type ? Expr.One() : Expr.Zero();
+        var self = this, Z = 'product' === self.type ? (self.ring || Expr).One() : (self.ring || Expr).Zero();
         return is_callable(f) ? Series(function(nth) {
             var nth_term = self.$(nth);
             return f(nth_term, nth, self) ? nth_term : Z;
-        }, self.$x, self.type) : self;
+        }, self.$x, self.ring, self.type) : self;
     }
     ,sum: function(nterms, mode) {
         var self = this, n, d = self.$x.length, index, terms = [], nth_term, nth;
         if (null == nterms) nterms = self._N;
         nterms = stdMath.floor(stdMath.max(0, (+nterms) || 0));
-        for (n=0; n<=stdMath.max(nterms, 10) && terms.length<nterms; ++n)
+        for (n=0; n<=nterms && terms.length<nterms; ++n)
         {
             index = multi_index(n, d);
             while (nth=index())
             {
                 nth_term = self.$(nth);
                 // skip redundant terms
-                if (!nth_term.equ(0)) terms.push(('default' === mode ? nth_term : (nth_term.expand())).mul(0 < n ? product(self.$x.map(function(x, i) {return 0 < nth[i] ? x.pow(nth[i]) : 1;})) : 1));
+                if (!nth_term.equ(0)) terms.push(('default' === mode ? nth_term.toExpr() : (nth_term.toExpr().expand())).mul(0 < n ? product(self.$x.map(function(x, i) {return 0 < nth[i] ? x.pow(nth[i]) : 1;})) : 1));
             }
         }
-        if (!terms.length) terms.push(Expr.Zero());
+        if (!terms.length) terms = [Expr.Zero(), Expr.Zero()];
         return Expr('+', terms);
     }
     ,prod: function(nterms, mode) {
         var self = this, n, d = self.$x.length, index, terms = [], nth_term, nth;
         if (null == nterms) nterms = self._N;
         nterms = stdMath.floor(stdMath.max(0, (+nterms) || 0));
-        for (n=0; n<=stdMath.max(nterms, 10) && terms.length<nterms; ++n)
+        for (n=0; n<=nterms && terms.length<nterms; ++n)
         {
             index = multi_index(n, d);
             while (nth=index())
             {
                 nth_term = self.$(nth);
                 // skip redundant terms
-                if (!nth_term.equ(1)) terms.push('default' === mode ? nth_term : (nth_term.expand()));
+                if (!nth_term.equ(1)) terms.push('default' === mode ? nth_term.toExpr() : (nth_term.toExpr().expand()));
             }
         }
-        if (!terms.length) terms.push(Expr.One());
+        if (!terms.length) terms = [Expr.One(), Expr.One()];
         return Expr('*', terms);
     }
 
@@ -432,7 +478,7 @@ function F_(f, F0)
                 }
                 else
                 {
-                    for (sum=Expr.Zero(),ith=1,end=nth-kth+1; ith<=end; ++ith)
+                    for (sum=f.$([1]).mul(F(nth-1, kth-1)),ith=2,end=nth-kth+1; ith<=end; ++ith)
                     {
                         sum = sum.add(f.$([ith]).mul(F(nth-ith, kth-1)));
                     }
@@ -441,7 +487,7 @@ function F_(f, F0)
             }
             return mem[nth-1][kth-1];
         }
-        return Expr.Zero();
+        return (f.ring || Expr).Zero();
     };
     F.mem = F0 && F0.mem ? F0.mem.map(function(mem_nth) {return mem_nth.slice();}) : array(16, function(n) {return array(n+1, null);});
     F.dispose = function() {
