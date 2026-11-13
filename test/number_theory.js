@@ -119,6 +119,12 @@ echo((o * o) % 100049, 44402);
 echo('---');
 
 echo('Moebius Function');
+/*let arr = new Array(1000);
+for (let i=1; i<=arr.length; ++i)
+{
+    arr[i-1] = Abacus.Math.moebius(i)
+}
+echo('['+arr.join(',')+']');*/
 echo('o=Abacus.Math.moebius(1)');
 echo(o=Abacus.Math.moebius(1));
 

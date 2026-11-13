@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-12 13:37:14)
+*   @version: 2.0.0 (2026-11-13 14:55:19)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-12 13:37:14)
+*   @version: 2.0.0 (2026-11-13 14:55:19)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -1851,159 +1851,63 @@ function muln(p, a)
 {
     return p / a;
 }*/
+function add$(a, b)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.add(b) : (is_instance(b, INumber) ? b.add(a) : (is_number(a) && is_number(b) ? a+b : A.add(A.num(a), b)));
+}
+function sub$(a, b)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.sub(b) : (is_instance(b, INumber) ? b.neg().add(a) : (is_number(a) && is_number(b) ? a-b : A.sub(A.num(a), b)));
+}
+function mul$(a, b)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.mul(b) : (is_instance(b, INumber) ? b.mul(a) : (is_number(a) && is_number(b) ? a*b : A.mul(A.num(a), b)));
+}
+function div$(a, b)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.div(b) : (is_instance(b, INumber) ? b[CLASS].cast(a).div(b) : (is_number(a) && is_number(b) ? a/b : A.div(A.num(a), b)));
+}
+function pow$(a, b)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.pow(b) : (is_instance(b, INumber) ? b[CLASS].cast(a).pow(b) : A.pow(A.num(a), b));
+}
 function sum(x, i0, i1, ik)
 {
-    var Arithmetic = Abacus.Arithmetic;
-    return operate(function(s, x) {
-        return s instanceof INumber ? s.add(x) : (x instanceof INumber ? x.add(s) : Arithmetic.add(s, x));
-    }, Arithmetic.O, x, i0, i1, ik);
+    return operate(add$, Abacus.Arithmetic.O, x, i0, i1, ik);
 }
 function product(x, i0, i1, ik)
 {
-    var Arithmetic = Abacus.Arithmetic;
-    return operate(function(p, x) {
-        return p instanceof INumber ? p.mul(x) : (x instanceof INumber ? x.mul(p) : Arithmetic.mul(p, x));
-    }, Arithmetic.I, x, i0, i1, ik);
+    return operate(mul$, Abacus.Arithmetic.I, x, i0, i1, ik);
 }
-/*
-function series_sum(terms, stop)
+function equ(a, b)
 {
-    var gen = terms, k, ak, s = Expr.Zero();
-    // terms must be function or array
-    if (is_array(terms))
-    {
-        gen = function(k) {return terms[k];};
-        stop = function(k) {return k+1 >= terms.length;};
-    }
-    for (k=0; ; ++k)
-    {
-        ak = gen(k);
-        if ((null != stop) && stop(k, s, ak)) break;
-        s = s.add(ak);
-    }
-    return s;
+    var A = Abacus.Arithmetic;
+    return is_number(a) && is_number(b) ? (a === b) : (is_callable(a.equ) ? a.equ(b) : (is_callable(b.equ) ? b.equ(a) : A.equ(A.num(a), b)));
 }
-function series_product(terms, stop)
+function gte(a, b)
 {
-    var gen = terms, k, ak, s = Expr.One();
-    // terms must be function or array
-    if (is_array(terms))
-    {
-        gen = function(k) {return terms[k];};
-        stop = function(k) {return k+1 >= terms.length;};
-    }
-    for (k=0;;++k)
-    {
-        ak = gen(k);
-        if ((null != stop) && stop(k, s, ak)) break;
-        s = s.mul(ak);
-    }
-    return s;
+    var A = Abacus.Arithmetic;
+    return is_number(a) && is_number(b) ? (a >= b) : (is_callable(a.gte) ? a.gte(b) : (is_callable(b.lte) ? b.lte(a) : A.gte(A.num(a), b)));
 }
-function rational_function(p, q, x)
+function lte(a, b)
 {
-    var k, np = p.length, nq = q.length, px = p[0], qx = q[0];
-    for (k=1; k<np; ++k) px = px.mul(x).add(p[k]); // horner method
-    for (k=1; k<nq; ++k) qx = qx.mul(x).add(q[k]); // horner method
-    return px.div(qx);
+    var A = Abacus.Arithmetic;
+    return is_number(a) && is_number(b) ? (a <= b) : (is_callable(a.lte) ? a.lte(b) : (is_callable(b.gte) ? b.gte(a) : A.lte(A.num(a), b)));
 }
-function continued_fraction(terms, stop)
+function gt(a, b)
 {
-    /*
-    https://en.wikipedia.org/wiki/Continued_fraction#Formulation
-    https://en.wikipedia.org/wiki/Lentz%27s_algorithm
-    x=b_{0}+{\cfrac {a_{1}}{b_{1}+{\cfrac {a_{2}}{b_{2}+{\cfrac {a_{3}}{b_{3}+{\cfrac {a_{4}}{b_{4}+\ddots \,}}}}}}}}
-
-    nth convergents p/q for n >= 1 are (recursively):
-    p = b_n*p0 + a_n*p1,
-    q = b_n*q0 + a_n*q1,
-
-    with initial values:
-    p1 = 1, p0 = b_0,
-    q1 = 0, q0 = 1
-    * /
-    var gen = terms,
-        p, q, p1, p0,
-        q1, q0, r,
-        k, abk, ak, bk
-    ;
-    // terms must be function or array
-    if (is_array(terms))
-    {
-        gen = function(k) {return terms[k];};
-        stop = function(k) {return k+1 >= terms.length;};
-    }
-    for (k=0;;++k)
-    {
-        abk = gen(k);
-        ak = abk.a;
-        bk = abk.b;
-
-        if (0 === k)
-        {
-            p1 = Expr.One();
-            p0 = bk;
-            q1 = Expr.Zero();
-            q0 = Expr.One();
-            r = bk;
-        }
-        else
-        {
-            p = p0.mul(bk).add(p1.mul(ak));
-            q = q0.mul(bk).add(q1.mul(ak));
-            r = p.div(q);
-        }
-
-        if ((null != stop) && stop(k, r)) break;
-
-        p1 = p0; p0 = p;
-        q1 = q0; q0 = q;
-    }
-    return r;
+    var A = Abacus.Arithmetic;
+    return is_number(a) && is_number(b) ? (a > b) : (is_callable(a.gt) ? a.gt(b) : (is_callable(b.lt) ? b.lt(a) : A.gt(A.num(a), b)));
 }
-*/
-
-function Bell_(Zero, One)
+function lt(a, b)
 {
-    // Bell polynomials recursively memoized
-    // https://en.wikipedia.org/wiki/Bell_polynomials
-    if (null == Zero) {One = 1; Zero = 0;}
-    var Bell = function Bell(n, k, x) {
-        if (0 <= n && n <= 64 && 0 <= k && k <= 64)
-        {
-            var mem = Bell.mem,
-                key = String(n)+','+String(k),
-                val = mem[key];
-            if (null == val)
-            {
-                if (0 === n && 0 === k)
-                {
-                    val = One;
-                }
-                else if (0 === n || 0 === k)
-                {
-                    val = Zero;
-                }
-                else
-                {
-                    for (var sum=x[0].mul(Bell(n-1, k-1, x)),i=1,end=n-k; i<=end; ++i)
-                    {
-                        sum = sum.add(x[i].mul(Bell(n-1-i, k-1, x)).mul(factorial(n-1, i)));
-                    }
-                    val = sum;
-                }
-                mem[key] = val;
-            }
-            return val;
-        }
-        return Zero;
-    };
-    Bell.mem = {};
-    Bell.dispose = function() {
-        Bell.mem = null;
-        Bell.dispose = null;
-    };
-    return Bell;
+    var A = Abacus.Arithmetic;
+    return is_number(a) && is_number(b) ? (a < b) : (is_callable(a.lt) ? a.lt(b) : (is_callable(b.gt) ? b.gt(a) : A.lt(A.num(a), b)));
 }
 
 // modular arithmetic
@@ -3514,7 +3418,7 @@ function num_pp_factor(n, k)
     //m = Arithmetic.div(n, p);
     return p;
 }
-function gcd_bin(/* args */)
+/*function gcd_bin(/* args * /)
 {
     // https://en.wikipedia.org/wiki/Euclidean_algorithm
     // https://en.wikipedia.org/wiki/Greatest_common_divisor
@@ -3554,7 +3458,7 @@ function gcd_bin(/* args */)
         }
     }
     return Arithmetic.shl(a, z);
-}
+}*/
 function gcd(/* args */)
 {
     // https://en.wikipedia.org/wiki/Euclidean_algorithm
@@ -3689,15 +3593,75 @@ function moebius(n)
 {
     // https://en.wikipedia.org/wiki/M%C3%B6bius_function
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num,
-        O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
-        three, five, seven, four, six, eight, ten, inc, i, p, p2, m;
+        O = Arithmetic.O, I = Arithmetic.I,
+        J = Arithmetic.J, two = Arithmetic.II,
+        i, p, p2, m, primes;
 
+    //n = N(n);
+    // pre-computed values
+    if (Arithmetic.lte(n, 1000)) return N(([1,-1,-1,0,-1,1,-1,0,0,1,-1,0,-1,1,1,0,-1,0,-1,0,1,1,-1,0,0,1,0,0,-1,-1,-1,0,1,1,1,0,-1,1,1,0,-1,-1,-1,0,0,1,-1,0,0,0,1,0,-1,0,1,0,1,1,-1,0,-1,1,0,0,1,-1,-1,0,1,-1,-1,0,-1,1,0,0,1,-1,-1,0,0,1,-1,0,1,1,1,0,-1,0,1,0,1,1,1,0,-1,0,0,0,-1,-1,-1,0,-1,1,-1,0,-1,-1,1,0,-1,-1,1,0,0,1,1,0,0,1,1,0,0,0,-1,0,1,-1,-1,0,1,1,0,0,-1,-1,-1,0,1,1,1,0,1,1,0,0,-1,0,-1,0,0,-1,1,0,-1,1,1,0,1,0,-1,0,-1,1,-1,0,0,-1,0,0,-1,-1,0,0,1,1,-1,0,-1,-1,1,0,1,-1,1,0,0,-1,-1,0,-1,1,-1,0,-1,0,-1,0,1,1,1,0,1,1,0,0,1,1,-1,0,1,1,1,0,1,1,1,0,1,-1,-1,0,0,1,-1,0,-1,-1,-1,0,-1,0,1,0,1,-1,-1,0,-1,0,0,0,0,-1,1,0,1,0,-1,0,1,1,-1,0,-1,-1,1,0,0,1,-1,0,1,-1,1,0,-1,0,-1,0,-1,1,0,0,-1,1,0,0,-1,-1,-1,0,-1,-1,1,0,0,-1,1,0,-1,0,1,0,0,1,1,0,1,1,1,0,1,0,-1,0,1,-1,-1,0,-1,1,0,0,-1,-1,1,0,1,-1,1,0,0,1,1,0,1,1,-1,0,0,1,1,0,-1,0,1,0,1,0,0,0,-1,1,-1,0,-1,0,0,0,-1,-1,1,0,-1,1,-1,0,0,1,0,0,1,-1,-1,0,0,-1,1,0,-1,-1,0,0,1,0,-1,0,1,1,-1,0,-1,1,0,0,-1,1,1,0,1,1,1,0,-1,1,-1,0,-1,-1,1,0,0,-1,1,0,-1,-1,1,0,1,0,1,0,1,-1,-1,0,-1,1,0,0,0,-1,1,0,-1,-1,-1,0,-1,-1,-1,0,1,-1,-1,0,0,-1,-1,0,1,1,1,0,-1,0,1,0,1,1,-1,0,-1,1,0,0,-1,1,-1,0,-1,1,-1,0,1,-1,1,0,1,-1,0,0,0,1,-1,0,1,1,-1,0,1,0,-1,0,1,0,-1,0,1,-1,0,0,1,-1,-1,0,1,1,-1,0,1,-1,0,0,-1,1,1,0,0,1,1,0,1,-1,1,0,-1,0,-1,0,0,1,1,0,0,-1,0,0,1,-1,1,0,1,1,0,0,-1,1,1,0,1,1,-1,0,0,0,1,0,1,1,-1,0,-1,0,1,0,-1,1,-1,0,1,1,0,0,-1,1,-1,0,1,-1,0,0,-1,0,1,0,1,-1,1,0,0,1,-1,0,1,-1,1,0,-1,0,-1,0,1,-1,-1,0,-1,-1,0,0,0,-1,-1,0,-1,-1,1,0,-1,1,-1,0,-1,-1,-1,0,0,1,1,0,0,1,-1,0,1,0,-1,0,1,1,1,0,0,-1,0,0,-1,-1,-1,0,-1,-1,-1,0,1,0,-1,0,-1,-1,1,0,0,-1,-1,0,-1,1,-1,0,-1,0,1,0,1,-1,1,0,-1,1,0,0,-1,-1,1,0,1,-1,-1,0,1,0,1,0,1,1,-1,0,0,1,1,0,1,1,1,0,-1,0,1,0,-1,1,1,0,-1,-1,0,0,1,1,-1,0,1,1,-1,0,1,0,1,0,0,0,-1,0,0,-1,1,0,-1,1,0,0,1,0,-1,0,-1,-1,-1,0,1,1,0,0,1,0,-1,0,1,-1,1,0,-1,1,-1,0,-1,-1,1,0,0,1,1,0,-1,1,1,0,-1,0,0,0,-1,1,1,0,1,-1,0,0,1,-1,-1,0,1,-1,1,0,1,1,-1,0,-1,1,1,0,0,1,1,0,-1,-1,1,0,-1,0,-1,0,1,-1,1,0,1,1,0,0,-1,-1,-1,0,0,-1,-1,0,-1,-1,1,0,0,-1,1,0,0,1,-1,0,0,1,1,0,0,0,0,0,1,0,1,0,-1,-1,0,0,-1,1,-1,0,-1,1,-1,0,1,1,0,0,1,1,1,0,0,-1,0,0,-1,1,1,0,-1,0,-1,0,-1,1,-1,0,1,-1,0,0,1,-1,1,0,-1,1,1,0,1,-1,-1,0,1,-1,-1,0,0,1,-1,0,1,1,-1,0,1,0,-1,0,1,1,1,0,0,1,0,0,-1,1,0,0,1,1,-1,0,-1,-1,1,0,-1,-1,1,0,0,-1,-1,0,1,0,1,0,-1,0,1,0,-1,1,1,0,0,-1,0,0,1,1,-1,0,-1,-1,-1,0,1,1,0,0,-1,-1,1,0,0,1,-1,0,1,-1,-1,0,1,0,-1,0,1,-1,1,0,-1,1,0,0])[Arithmetic.val(n)-1]);
+
+    // faster algorithm
+    //if (Arithmetic.equ(I, n)) return I;
+    for (i=0,primes=small_primes(),m=primes.length; i<m; ++i)
+    {
+        p = primes[i];
+        if (Arithmetic.equ(n, p))
+        {
+            return J;
+        }
+        else if (Arithmetic.equ(O, Arithmetic.mod(n, p)))
+        {
+            if (Arithmetic.equ(O, Arithmetic.mod(n, Arithmetic.mul(p, p))))
+            {
+                return O; // not square-free
+            }
+            else
+            {
+                return Arithmetic.mul(J, moebius(Arithmetic.div(n, p)));
+            }
+        }
+    }
+    p = Arithmetic.add(p, two); p2 = Arithmetic.mul(p, p); // next candidate prime
+    while (Arithmetic.lte(p2, n))
+    {
+        if (Arithmetic.equ(O, Arithmetic.mod(n, p)))
+        {
+            if (Arithmetic.equ(O, Arithmetic.mod(n, p2)))
+            {
+                return O; // not square-free
+            }
+            else
+            {
+                return Arithmetic.mul(moebius(p), moebius(Arithmetic.div(n, p)));
+            }
+        }
+        p = Arithmetic.add(p, two); p2 = Arithmetic.mul(p, p);
+    }
+    return J; // assume prime
+
+    /*
     // use factorization of n
     p = factorize(n); m = p.length;
     for (i=0; i<m; ++i)
-        if (Arithmetic.lt(I, p[i][1]))
-            return O; // is not square-free
-    return m & 1 ? I : Arithmetic.J;
+    {
+        if (Arithmetic.lt(I, p[i][1])) return O; // is not square-free
+    }
+    return m & 1 ? J : I;
+    */
+}
+function moebius_inversion(gn, INT)
+{
+    // https://en.wikipedia.org/wiki/M%C3%B6bius_inversion_formula
+    return is_array(gn) ? array(gn.length, function(_n) {
+        var A = Abacus.Arithmetic, n = A.num(_n+1), fn;
+        fn = sum(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
+        return INT ? new INT(fn) : fn;
+    }) : function(n) {
+        var A = Abacus.Arithmetic, fn;
+        fn = sum(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
+        return INT ? new INT(fn) : fn;
+    };
 }
 function divisors(n, as_generator)
 {
@@ -5623,6 +5587,7 @@ function bell(n)
         res = O; i = O; n = sub(n, I);
         while (Arithmetic.lte(i, n))
         {
+            // not very efficient
             res = add(res, mul(factorial(n, i), bell(i)));
             i = add(i, I);
         }
@@ -5637,6 +5602,62 @@ function bell(n)
     return res;
 }
 bell.mem = Obj();
+function bernoulli(n)
+{
+    var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
+        NUM = Arithmetic.num, VAL = Arithmetic.val,
+        add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
+        R = function(n, d) {return new Rational(NUM(n), NUM(d||1));},
+        key, res = O, i, MAXMEM = Abacus.Options.MAXMEM;
+    // https://en.wikipedia.org/wiki/Bernoulli_number
+    // bernoulli numbers B(m) = 1 - \\sum_{k=0}^{m-1} \\binom{m}{k} \\frac{B(k)}{m - k + 1}
+    if (is_instance(n, Integer)) n = n.num;
+    n = NUM(n);
+    if (Arithmetic.lt(n, O) || (Arithmetic.gt(n, I) && Arithmetic.equ(I, Arithmetic.mod(n, 2)))) return Rational.Zero();
+    if (Arithmetic.lte(n, 20)) return ([
+        R(1),
+        R(1,2),
+        R(1,6),
+        R(0),
+        R(-1,30),
+        R(0),
+        R(1,42),
+        R(0),
+        R(-1,30),
+        R(0),
+        R(5,66),
+        R(0),
+        R(-691,2730),
+        R(0),
+        R(7,6),
+        R(0),
+        R(-3617,510),
+        R(0),
+        R(43867,798),
+        R(0),
+        R(-174611,330)
+        ])[VAL(n)];
+    key = String(n);
+    if (null == bernoulli.mem[key])
+    {
+        res = Rational.One(); i = O;
+        while (Arithmetic.lt(i, n))
+        {
+            // not very efficient
+            res = res.sub(bernoulli(i).mul(factorial(n, i)).div(Arithmetic.add(Arithmetic.sub(n, i), I)));
+            i = add(i, I);
+        }
+        // memoize only up to MAXMEM results
+        if (Arithmetic.lt(n, MAXMEM))
+            bernoulli.mem[key] = res;
+    }
+    else
+    {
+        res = bernoulli.mem[key];
+    }
+    return res;
+}
+bernoulli.mem = Obj();
 function fibonacci(n)
 {
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
@@ -5704,36 +5725,44 @@ function sum_nk(n, k)
     // https://brilliant.org/wiki/sum-of-n-n2-or-n3/
     var Arithmetic = Abacus.Arithmetic,
         O = Arithmetic.O, I = Arithmetic.I,
-        add = Arithmetic.add, sub = Arithmetic.sub,
-        mul = Arithmetic.mul, div = Arithmetic.div, pow = Arithmetic.pow,
-        NUM = Arithmetic.num, sum = O, m, f, k1, key, MAXMEM = Abacus.Options.MAXMEM;
-    if (is_instance(n, Integer)) return new n[CLASS](polygonal(n.num, k));
-    n = NUM(n);
+        NUM = Arithmetic.num, MAXMEM = Abacus.Options.MAXMEM,
+        symbolic_n = false, symbolic_k = false, m, f, k1, key, res;
+    if (is_instance(n, Numeric) && !is_instance(n, Integer)) n = new Integer(n);
+    if (is_instance(n, Integer)) return new n[CLASS](sum_nk(n.num, k));
+    if (is_instance(k, Numeric) && !is_instance(k, Integer)) k = new Integer(k);
     if (is_instance(k, Integer)) k = k.num;
-    k = NUM(k);
-    if (Arithmetic.lte(n, O) || Arithmetic.lt(k, O)) return sum;
-    if (Arithmetic.equ(k, O))
+    symbolic_n = is_instance(n, Symbolic);
+    symbolic_k = is_instance(k, Symbolic);
+    if (!symbolic_n) n = NUM(n);
+    if (!symbolic_k) k = NUM(k);
+    res = symbolic_n ? n[CLASS].Zero() : (symbolic_k ? k[CLASS].Zero() : O);
+    if (lte(n, O) || lt(k, O)) return res;
+    if (equ(k, O))
     {
-        sum = n;
+        res = n;
     }
-    else if (Arithmetic.equ(k, I))
+    else if (equ(k, I))
     {
-        sum = div(mul(n, add(n, I)), 2);
+        res = div$(mul$(n, add$(n, I)), 2);
     }
-    else if (Arithmetic.equ(k, 2))
+    else if (equ(k, 2))
     {
-        sum = div(mul(n, mul(add(n, I), add(mul(n, 2), I))), 6);
+        res = div$(mul$(n, mul$(add$(n, I), add$(mul$(n, 2), I))), 6);
     }
-    else if (Arithmetic.equ(k, 3))
+    else if (equ(k, 3))
     {
-        sum = div(mul(pow(n, 2), pow(add(n, I), 2)), 4);
+        res = div$(mul$(pow$(n, 2), pow$(add$(n, I), 2)), 4);
+    }
+    else if (symbolic_n && symbolic_k)
+    {
+        res = sum(array(6/*up to some n*/, function(i) {return pow$(i+1, k);}));
     }
     else
     {
         key = String(n) + ',' + String(k);
         if (null == sum_nk.mem[key])
         {
-            if (Arithmetic.lt(k, n))
+            if (symbolic_n || lt(k, n))
             {
                 /*
                 compute it using recurrence relation on k
@@ -5741,37 +5770,278 @@ function sum_nk(n, k)
 
                 n^{k+1} = \binom{k+1}1 s_{k,n} - \binom{k+1}2 s_{k-1,n} + \binom{k+1}3 s_{k-2,n} - \cdots + (-1)^{k-1} \binom{k+1}{k} s_{1,n} + (-1)^k n
                 */
-                m = I; f = I; k1 = add(k, I);
-                sum = pow(n, k1);
-                while (Arithmetic.lte(m, k))
+                m = I; f = I; k1 = add$(k, I);
+                res = pow$(n, k1);
+                while (lte(m, k))
                 {
-                    sum = add(sum, mul(f, mul(factorial(k1, add(m, I)), sum_nk(n, sub(k, m)))));
-                    m = add(m, I);
+                    res = add$(res, mul$(mul$(sum_nk(n, sub$(k, m)), factorial(k1, add$(m, I))), f));
+                    m = Arithmetic.add(m, I);
                     f = Arithmetic.neg(f);
                 }
-                sum = div(sum, k1);
+                res = div$(res, k1);
             }
-            else
+            else//if (symbolic_k || gte(k, n))
             {
                 // compute it directly, on iterating over n
-                while (Arithmetic.gt(n, O))
+                while (gt(n, O))
                 {
-                    sum = add(sum, pow(n, k));
-                    n = sub(n, I);
+                    res = add$(res, pow$(n, k));
+                    n = sub$(n, I);
                 }
             }
+            if (symbolic_n || symbolic_k) res = res.expand();
             // memoize only up to MAXMEM results
-            if (Arithmetic.lt(n, MAXMEM))
-                sum_nk.mem[key] = sum;
+            if (!symbolic_n && lt(n, MAXMEM))
+            {
+                sum_nk.mem[key] = res;
+            }
         }
         else
         {
-            sum = sum_nk.mem[key];
+            res = sum_nk.mem[key];
         }
     }
-    return sum;
+    return res;
 }
 sum_nk.mem = Obj();
+
+/*function series_sum(terms, stop)
+{
+    var gen = terms, k, ak, s = Expr.Zero();
+    // terms must be function or array
+    if (is_array(terms))
+    {
+        gen = function(k) {return terms[k];};
+        stop = function(k) {return k+1 >= terms.length;};
+    }
+    for (k=0; ; ++k)
+    {
+        ak = gen(k);
+        if ((null != stop) && stop(k, s, ak)) break;
+        s = s.add(ak);
+    }
+    return s;
+}
+function series_product(terms, stop)
+{
+    var gen = terms, k, ak, s = Expr.One();
+    // terms must be function or array
+    if (is_array(terms))
+    {
+        gen = function(k) {return terms[k];};
+        stop = function(k) {return k+1 >= terms.length;};
+    }
+    for (k=0;;++k)
+    {
+        ak = gen(k);
+        if ((null != stop) && stop(k, s, ak)) break;
+        s = s.mul(ak);
+    }
+    return s;
+}
+function rational_function(p, q, x)
+{
+    var k, np = p.length, nq = q.length, px = p[0], qx = q[0];
+    for (k=1; k<np; ++k) px = px.mul(x).add(p[k]); // horner method
+    for (k=1; k<nq; ++k) qx = qx.mul(x).add(q[k]); // horner method
+    return px.div(qx);
+}
+function continued_fraction(terms, stop)
+{
+    /*
+    https://en.wikipedia.org/wiki/Continued_fraction#Formulation
+    https://en.wikipedia.org/wiki/Lentz%27s_algorithm
+    x=b_{0}+{\cfrac {a_{1}}{b_{1}+{\cfrac {a_{2}}{b_{2}+{\cfrac {a_{3}}{b_{3}+{\cfrac {a_{4}}{b_{4}+\ddots \,}}}}}}}}
+
+    nth convergents p/q for n >= 1 are (recursively):
+    p = b_n*p0 + a_n*p1,
+    q = b_n*q0 + a_n*q1,
+
+    with initial values:
+    p1 = 1, p0 = b_0,
+    q1 = 0, q0 = 1
+    * /
+    var gen = terms,
+        p, q, p1, p0,
+        q1, q0, r,
+        k, abk, ak, bk
+    ;
+    // terms must be function or array
+    if (is_array(terms))
+    {
+        gen = function(k) {return terms[k];};
+        stop = function(k) {return k+1 >= terms.length;};
+    }
+    for (k=0;;++k)
+    {
+        abk = gen(k);
+        ak = abk.a;
+        bk = abk.b;
+
+        if (0 === k)
+        {
+            p1 = Expr.One();
+            p0 = bk;
+            q1 = Expr.Zero();
+            q0 = Expr.One();
+            r = bk;
+        }
+        else
+        {
+            p = p0.mul(bk).add(p1.mul(ak));
+            q = q0.mul(bk).add(q1.mul(ak));
+            r = p.div(q);
+        }
+
+        if ((null != stop) && stop(k, r)) break;
+
+        p1 = p0; p0 = p;
+        q1 = q0; q0 = q;
+    }
+    return r;
+}
+*/
+function $x(x, n)
+{
+    // dummy nth symbol
+    if ((null == x) && (null == n))
+    {
+        n = null;
+        x = '$x';
+    }
+    else if (is_number(x))
+    {
+        n = x;
+        x = '$x';
+    }
+    return new Expr('', String(x || '$x')+(null == n ? '' : ('_'+String(n || 0))));
+}
+function SymmetricPoly(k, n)
+{
+    // elementary symmetric polynomials as Exprs, recursively memoized
+    // https://en.wikipedia.org/wiki/Elementary_symmetric_polynomial
+    k = (+k) || 0; n = (+n) || 0;
+    var mem = SymmetricPoly.mem, key = String(k)+','+String(n), res = mem[key];
+    if (null == res)
+    {
+        if (k > n || 0 > k)
+        {
+            res = Expr.Zero();
+        }
+        else if (0 === k)
+        {
+            res = Expr.One();
+        }
+        else if (1 === k)
+        {
+            res = 1 === n ? $x(0) : sum(array(n, function(i) {return $x(i);}));
+        }
+        else
+        {
+            res = SymmetricPoly(k, n-1).add(SymmetricPoly(k-1, n-1).mul($x(n-1)));
+        }
+        // memoize only up to MAXMEM results
+        if (0 <= k && k <= 1000)
+        {
+            mem[key] = res;
+        }
+    }
+    return res;
+}
+SymmetricPoly.mem = Obj();
+function FibonacciPoly(n)
+{
+    // Fibonacci polynomials as Exprs, recursively memoized
+    // https://en.wikipedia.org/wiki/Fibonacci_polynomials
+    n = (+n) || 0;
+    var mem = FibonacciPoly.mem, key = String(n), res = mem[key];
+    if (null == res)
+    {
+        if (0 === n)
+        {
+            res = Expr.Zero();
+        }
+        else if (1 === n)
+        {
+            res = Expr.One();
+        }
+        else if (2 <= n)
+        {
+            res = $x().mul(FibonacciPoly(n-1)).add(FibonacciPoly(n-2));
+        }
+        // memoize only up to MAXMEM results
+        if (0 <= n && n <= 1000)
+        {
+            mem[key] = res;
+        }
+    }
+    return res;
+}
+FibonacciPoly.mem = Obj();
+function BellPoly(n, k)
+{
+    // partial exponential Bell polynomials as Exprs, recursively memoized
+    // https://en.wikipedia.org/wiki/Bell_polynomials
+    n = (+n) || 0; k = (+k) || 0;
+    var mem = BellPoly.mem, key = String(n)+','+String(k), res = mem[key], i, end;
+    if (null == res)
+    {
+        if ((0 === n) && (0 === k))
+        {
+            res = Expr.One();
+        }
+        else if ((0 === n) || (0 === k))
+        {
+            res = Expr.Zero();
+        }
+        else
+        {
+            for (res=$x(0).mul(BellPoly(n-1, k-1)),i=1,end=n-k; i<=end; ++i)
+            {
+                res = res.add($x(i).mul(BellPoly(n-1-i, k-1)).mul(factorial(n-1, i)));
+            }
+        }
+        // memoize only up to MAXMEM results
+        if (0 <= n && n <= 1000)
+        {
+            mem[key] = res;
+        }
+    }
+    return res;
+}
+BellPoly.mem = Obj();
+function BernoulliPoly(n)
+{
+    // Bernoulli polynomials as Exprs, recursively memoized
+    // https://en.wikipedia.org/wiki/Bernoulli_polynomials
+    n = (+n) || 0;
+    var mem = BernoulliPoly.mem, key = String(n), res = mem[key], k;
+    if (null == res)
+    {
+        if (0 > n)
+        {
+            res = Expr.Zero();
+        }
+        else if (0 === n)
+        {
+            res = Expr.One();
+        }
+        else
+        {
+            for (res=Expr.One(),k=1; k<=n; ++k)
+            {
+                res = res.add($x().pow(k).mul(bernoulli(n-k)).mul(factorial(n, k)));
+            }
+        }
+        // memoize only up to MAXMEM results
+        if (0 <= n && n <= 1000)
+        {
+            mem[key] = res;
+        }
+    }
+    return res;
+}
+BernoulliPoly.mem = Obj();
 
 function rndInt(m, M)
 {
@@ -5902,14 +6172,23 @@ Abacus.Math = {
      rnd: stdMath.random
     ,rndInt: rndInt
 
+    ,fibonacci: fibonacci
     ,factorial: factorial
     ,binomial: factorial
-    ,stirling: stirling
     ,bell: bell
+    ,bernoulli: bernoulli
+    ,stirling: stirling
     ,catalan: catalan
-    ,fibonacci: fibonacci
     ,polygonal: polygonal
     ,sum_nk: sum_nk
+
+    ,poly: {
+         symmetric: SymmetricPoly
+        ,fibonacci: FibonacciPoly
+        ,bell: BellPoly
+        ,bernoulli: BernoulliPoly
+        //,stirling: StirlingPoly //https://en.wikipedia.org/wiki/Stirling_polynomials
+    }
 
     ,sum: sum
     ,product: product
@@ -6003,6 +6282,28 @@ Abacus.Math = {
         if (is_instance(n, Integer)) return new n[CLASS](moebius(n.num));
         return moebius(Arithmetic.num(n));
     }
+    ,moebiusInversion: function(gn) {
+        var Arithmetic = Abacus.Arithmetic, fn, g1;
+        if (is_array(gn))
+        {
+            g1 = gn[0];
+            fn = moebius_inversion(function(n) {
+                var i = Arithmetic.val(n)-1,
+                    g = 0 <= i && i < gn.length ? gn[i] : 0;
+                return is_instance(g, Integer) ? g.num : Arithmetic.num(g);
+            }, is_instance(g1, Integer) ? g1[CLASS] : null);
+            return array(gn.length, function(n) {return fn(Arithmetic.num(n+1));});
+        }
+        else if (is_callable(gn))
+        {
+            g1 = gn(1);
+            fn = moebius_inversion(function(n) {
+                var g = gn(n);
+                return is_instance(g, Integer) ? g.num : Arithmetic.num(g);
+            }, is_instance(g1, Integer) ? g1[CLASS] : null);
+            return fn;
+        }
+    }
     ,pollardRho: function(n, s, a, retries, max_steps, F) {
         var N = Abacus.Arithmetic.num, f;
         if (null != a) a = is_instance(a, Integer) ? a.num : N(a);
@@ -6032,7 +6333,7 @@ Abacus.Math = {
         return next_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n), -1 === dir ? -1 : 1);
     }
 
-    ,gcd2: function(/* args */) {
+    /*,gcd2: function(/* args * /) {
         var Arithmetic = Abacus.Arithmetic,
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
             res, INT = null;
@@ -6045,7 +6346,7 @@ Abacus.Math = {
             return Arithmetic.num(a);
         }));
         return INT ? new INT(res) : res;
-    }
+    }*/
     ,gcd: function(/* args */) {
         var Arithmetic = Abacus.Arithmetic,
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
@@ -6327,6 +6628,13 @@ FNs.forEach(function(f) {
         };
     }
 });
+function apply_(fn)
+{
+    return function(/*args*/) {
+        var args = is_array(arguments[0]) ? arguments[0] : arguments, MathFn = Abacus.Math.fn;
+        return MathFn[fn].apply(MathFn, [].slice.call(args, 0, MathFn[fn].length || 1));
+    };
+}
 // Abacus.Node, Node class which can represent (dynamic) Linked Lists, Binary Trees and similar structures
 Node = Abacus.Node = function Node(value, left, right, top) {
     var self = this;
@@ -7016,33 +7324,6 @@ Poly = Class(Symbolic, {
     }
 });
 
-function apply_(fn)
-{
-    return function(/*args*/) {
-        var args = is_array(arguments[0]) ? arguments[0] : arguments, MathFn = Abacus.Math.fn;
-        return MathFn[fn].apply(MathFn, [].slice.call(args, 0, MathFn[fn].length || 1));
-    };
-}
-function equ(a, b)
-{
-    return is_callable(a.equ) ? a.equ(b) : (is_callable(b.equ) ? b.equ(a) : (a === b));
-}
-function gte(a, b)
-{
-    return is_callable(a.gte) ? a.gte(b) : (is_callable(b.lte) ? b.lte(a) : (a >= b));
-}
-function lte(a, b)
-{
-    return is_callable(a.lte) ? a.lte(b) : (is_callable(b.gte) ? b.gte(a) : (a <= b));
-}
-function gt(a, b)
-{
-    return is_callable(a.gt) ? a.gt(b) : (is_callable(b.lt) ? b.lt(a) : (a > b));
-}
-function lt(a, b)
-{
-    return is_callable(a.lt) ? a.lt(b) : (is_callable(b.gt) ? b.gt(a) : (a < b));
-}
 function nmax(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;
@@ -10597,21 +10878,34 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 expr.dispose();
             }
         }
-        else if ((1 === arguments.length) && is_string(arguments[0]))
+        else if (1 === arguments.length)
         {
-            // expression as string
-            expr = Expr.fromString(arguments[0]);
-            if (!is_instance(self, Expr)) return expr;
-            self.ast = expr.ast;
-            expr.dispose();
+            if (is_string(arguments[0]))
+            {
+                // expression as string
+                expr = Expr.fromString(arguments[0]);
+                if (!is_instance(self, Expr)) return expr;
+                self.ast = expr.ast;
+                expr.dispose();
+            }
+            else if (Arithmetic.isNumber(arguments[0]) || is_instance(arguments[0], Numeric))
+            {
+                // numeric constant expression
+                if (!is_instance(self, Expr)) return new Expr('', arguments[0]);
+                self.ast = {op:'', arg:is_instance(arg, [Float, Rational, Complex]) ? arg : (is_number(arg) ? Rational.fromDec(arg) : new Rational(arg)), type:'num'};
+            }
+            else
+            {
+                // zero constant expression
+                if (!is_instance(self, Expr)) return new Expr('', Rational.Zero());
+                self.ast = {op:'', arg:Rational.Zero(), type:'num'};
+            }
         }
         else
         {
             // zero constant expression
-            expr = Expr.Zero();
-            if (!is_instance(self, Expr)) return expr;
-            self.ast = expr.ast;
-            expr.dispose();
+            if (!is_instance(self, Expr)) return new Expr('', Rational.Zero());
+            self.ast = {op:'', arg:Rational.Zero(), type:'num'};
         }
 
         def(self, 'terms', {
@@ -12684,9 +12978,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
         else if (is_obj(that))
         {
             // symbol substitution map
-            return KEYS(that).reduce(function(expr, symbol) {
+            return symbol_substitute(self, null, that);
+            /*return KEYS(that).reduce(function(expr, symbol) {
                 return symbol_substitute(expr, symbol, that[symbol]);
-            }, self);
+            }, self);*/
         }
         else if (is_string(that))
         {
@@ -12814,7 +13109,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         // TODO: general simplify
         // using given/user-defined rules/equivalence relations
         // via iterative unification recast as optimization based on expr complexity
-        return this;
+        return this.simplify();
     }
     ,complexity: function() {
         var self = this, ast, cmplx = 0;
@@ -12917,12 +13212,14 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         return self._rexpr;
     }
-    ,toSeries: function(x) {
+    ,toSeries: function(x, x0) {
         var self = this;
         if (!is_array(x)) x = [x];
-        x = x.map(function(x) {return is_instance(x, Expr) ? x : (is_string(x) ? Expr(x) : null);});
-        if (x.filter(function(x) {return (null == x) || !x.symbols().filter(function(s) {return '1' !== s;}).length;}).length) return self;
-        return /*expr_series(self, x) // slow*/self.den.isConst() ? expr_series(self.den.c().equ(1) ? self.num : (self.num.div(self.den.c())), x) : (expr_series(self.num, x).div(expr_series(self.den, x)));
+        x = x.map(function(x) {return is_string(x) ? x : null;});
+        if (x.filter(function(x) {return (null == x) || ('1' === x);}).length) return self;
+        if (!is_array(x0)) x0 = [x0];
+        x0 = x.map(function(_, i) {return is_instance(x0[i], Expr) ? x0[i] : (null == x0[i] ? Expr.Zero() : Expr(x0[i]));});
+        return /*expr_series(self, x, x0) // slow*/self.den.isConst() ? expr_series(self.den.c().equ(1) ? self.num : (self.num.div(self.den.c())), x, x0) : (expr_series(self.num, x, x0).div(expr_series(self.den, x, x0)));
     }
     ,toPoly: function(symbol, ring, imagUnit) {
         var self = this, other_symbols = null, CoefficientRing = null;
@@ -13332,22 +13629,9 @@ function expr_is_independent_of(e, x)
     }
     return true;
 }
-function expr_series(f, x)
+function expr_series(f, x, x0)
 {
-    var X = x.map(function(xi, i) {
-            return xi.symbols().reduce(function(s, sij) {
-                if (s) return s;
-                return (['x','y','z']).reduce(function(s, sym) {
-                    if (!s && ((sym === sij) || (sym+'_' === sij.slice(0, sym.length+1)))) return sij;
-                    return s;
-                }, s);
-            }, null) || (1 === x.length ? 'x' : ('x_'+String(i+1)));
-        }),
-        x0 = x.map(function(x, i) {
-            return x.substitute(X[i], Expr.Zero()).neg(); // must be x - x0
-        })
-    ;
-    return expr_is_independent_of(f, X) ? Series.Const(f, x, null, 'sum') : new Series(function(nth, series) {
+    return expr_is_independent_of(f, x) ? Series.Const(f, x.map(function(_, i) {return [x[i], x0[i]];}), null, 'sum') : new Series(function(nth, series) {
         if (!series._.nth) {series.degree = inf; series._.nth = {};}
 
         var n = multi_index_deg(nth), key, df_nth, f_nth;
@@ -13358,14 +13642,17 @@ function expr_series(f, x)
         if (null != f_nth) return f_nth;
 
         df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f.clone()) : f.clone();
-        if ((series.degree > n) && expr_is_independent_of(df_nth, X)) series.degree = n;
+        if ((series.degree > n) && expr_is_independent_of(df_nth, x)) series.degree = n;
 
-        df_nth = x0.reduce(function(df_nth, x0, i) {return df_nth.substitute(X[i], x0);}, df_nth).expand();
+        df_nth = df_nth.substitute(x.reduce(function($, xi, i) {
+            $[xi] = null == x0[i] ? Expr.Zero() : x0[i];
+            return $;
+        }, {})).expand();
         f_nth = Expr('/', [df_nth.num, df_nth.den.mul(1 < nth.length ? Expr('*', nth.map(function(ith) {return factorial(ith);})) : Expr('', factorial(nth[0])))]);
 
         if (n < 64) series._.nth[key] = f_nth;
         return f_nth;
-    }, x, null, 'sum');
+    }, x.map(function(_, i) {return [x[i], x0[i]];}), null, 'sum');
 }
 function rational_expr(expr)
 {
@@ -13435,12 +13722,25 @@ function symbol_substitute(f, x, g)
         x = String(x);
         if (('sym' === f.ast.type) && (f.ast.arg === x))
         {
-            // substitute x -> g()
-            return is_string(g) ? Expr('', g) : g;
+            // substitute symbol
+            f = is_string(g) ? Expr(g) : g;
         }
         else if (('expr' === f.ast.type) && (-1 !== f.symbols().indexOf(x)))
         {
-            return Expr(f.ast.op, f.ast.arg.map(function(f) {return symbol_substitute(f, x, g);}));
+            f = Expr(f.ast.op, f.ast.arg.map(function(f) {return symbol_substitute(f, x, g);}));
+        }
+    }
+    else if ((null == x) && is_obj(g))
+    {
+        if (('sym' === f.ast.type) && HAS.call(g, f.ast.arg))
+        {
+            // substitute symbol
+            x = g[f.ast.arg];
+            if (is_instance(x, Expr) || is_string(x)) f = is_string(x) ? Expr(x) : x;
+        }
+        else if (('expr' === f.ast.type) && (0 < f.symbols().filter(function(s) {return HAS.call(g, s);}).length))
+        {
+            f = Expr(f.ast.op, f.ast.arg.map(function(f) {return symbol_substitute(f, null, g);}));
         }
     }
     return f;
@@ -13779,6 +14079,24 @@ function simplify_fn(expr, group)
         else
         {
             expr = Expr('exp()', [simplify_re(simplify_fn(expr.ast.arg[0], group))]);
+        }
+    }
+    else if ('abs()' === expr.ast.op)
+    {
+        a = simplify_re(simplify_fn(expr.ast.arg[0], group));
+        if (a.isConst() && a.c().isReal())
+        {
+            // abs(n) simplification
+            expr = Expr('', a.c().real().abs());
+        }
+        else if ('abs()' === a.ast.op)
+        {
+            // abs(abs()) simplification
+            expr = Expr('abs()', [a.ast.arg[0]]);
+        }
+        else
+        {
+            expr = Expr('abs()', [a]);
         }
     }
     else if (('()' === expr.ast.op.slice(-2)) && (1 === expr.ast.arg.length) && HAS.call(Expr.FN, expr.ast.op) && Expr.FN[expr.ast.op].inv)
@@ -14348,6 +14666,12 @@ Abacus.Evaluate = function(expr, symbolValues) {
     if (is_string(expr)) expr = Expr(expr);
     if (is_instance(expr, Expr)) return expr.evaluate(symbolValues || {});
     else if (is_instance(expr, [Poly, RationalFunc])) return expr.evaluate(symbolValues || {});
+    return expr;
+};
+Abacus.Substitute = function(expr, thisterm, otherterm) {
+    if (is_string(expr)) expr = Expr(expr);
+    if ((null != expr) && is_callable(expr.toExpr)) expr = expr.toExpr();
+    if (is_instance(expr, Expr)) expr = expr.substitute(thisterm, otherterm);
     return expr;
 };
 Abacus.Expand = function(expr) {
@@ -20591,7 +20915,12 @@ Series = Abacus.Series = Class(Symbolic, {
         self.ring = ring;
         self.$fn = fn;
         if (!is_array(x)) x = [x];
-        self.$x = x.map(function(xi, i) {return is_instance(xi, Expr) ? xi : (is_string(xi) ? Expr(xi) : Expr('', 'x'+(1 === x.length ? '' : '_'+String(i+1))));});
+        self.$x = x.map(function(xi, i) {
+            var xi0 = is_array(xi) ? xi[1] : null;
+            if (null == xi0) xi0 = Expr.Zero();
+            if (is_array(xi)) xi = xi[0];
+            return [is_instance(xi, Expr) ? xi : Expr('', is_string(xi) ? xi : ('x'+(1 === x.length ? '' : ('_'+String(i+1))))), is_instance(xi0, Expr) ? xi0 : Expr(xi0)];
+        });
         self._ = {};
     }
 
@@ -20635,7 +20964,6 @@ Series = Abacus.Series = Class(Symbolic, {
     ,_: null
     ,_$: null
     ,_$F: null
-    ,_$B: null
     ,_n: null
     ,_i: null
     ,_ci: null
@@ -20653,14 +20981,12 @@ Series = Abacus.Series = Class(Symbolic, {
         if (self._i && (self._i._i === self)) self._i._i = null;
         if (self._ci && (self._ci._ci === self)) self._ci._ci = null;
         if (self._$F) self._$F.dispose();
-        if (self._$B) self._$B.dispose();
         self._istrivial = null;
         self._ = null;
         self._n = null;
         self._i = null;
         self._ci = null;
         self._$F = null;
-        self._$B = null;
         self._$ = null;
         self.$x = null;
         self.$fn = null;
@@ -20669,7 +20995,7 @@ Series = Abacus.Series = Class(Symbolic, {
     }
 
     ,clone: function() {
-        var self = this, clone = new Series(self.$fn, self.$x.slice(), self.ring, self.type);
+        var self = this, clone = new Series(self.$fn, self.$x, self.ring, self.type);
         clone.degree = self.degree;
         if (self._istrivial) clone._istrivial = {tested:self._istrivial.tested.clone(), trivial:self._istrivial.trivial.clone()};
         if (self._$F) clone._$F = F_(clone, self._$F);
@@ -20697,15 +21023,20 @@ Series = Abacus.Series = Class(Symbolic, {
         }
         return f_nth;
     }
+    ,x: function(nth) {
+        var self = this,
+            $x = self.$x,
+            d = $x.length,
+            x = function(i) {
+                var x = $x[i][0], x0 = $x[i][1], n = is_number(nth) ? nth : (nth[i]);
+                return 1 < n ? x.sub(x0).pow(n) : (1 === n ? x.sub(x0) : Expr.One());
+            };
+        return is_number(nth) ? x(nth) : (0 < multi_index_deg(nth) ? (1 === d ? x(0) : product(array(d, x))) : Expr.One());
+    }
     ,$F: function(nth, kth) {
         var self = this;
         if (null == self._$F) self._$F = F_(self); // composita
         return self._$F(nth, kth);
-    }
-    ,$Bell: function(n, k, x) {
-        var self = this;
-        if (null == self._$B) self._$B = Bell_((self.ring || Expr).Zero(), (self.ring || Expr).One());
-        return self._$B(n, k, x);
     }
 
     ,isTrivial: function(start, end) {
@@ -20792,13 +21123,23 @@ Series = Abacus.Series = Class(Symbolic, {
             if ((1 === self.$x.length) && self.$([0]).equ(0) && !self.$([1]).equ(0))
             {
                 self._ci = Series(function(nth) {
-                    var n = nth[0], $ = function(k) {return self.$([k]).mul(factorial(k));};
+                    var n = nth[0],
+                        $ = function(k) {
+                            return self.$([k]).mul(factorial(k));
+                        },
+                        bellP = function(n, k, x) {
+                            return BellPoly(n, k).substitute(x.reduce(function($, xi, i) {
+                                $['$x_'+String(i)] = xi;
+                                return $;
+                            }, {}))
+                        }
+                    ;
                     if (0 === n) return /*$(n)*/0; // must be 0
                     if (1 === n) return $(n).inv(); // must be invertible
                     return sum(array(n-1, function(k) {
                         var xk = array(n-k-1, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
                             nk = product(array(k+1, function(i) {return n+i;}));
-                        return self.$Bell(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
+                        return bellP(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
                     })).div($(1).pow(n).mul(factorial(n)));
                 }, self.$x, self.ring, 'sum');
                 self._ci._ci = 'sum' === self.type ? self : Series(self.$fn, self.$x, self.ring, 'sum'); // idempotent
@@ -20957,6 +21298,27 @@ Series = Abacus.Series = Class(Symbolic, {
         return df;
     }
 
+    ,multisection: function(qq, pp) {
+        // https://en.wikipedia.org/wiki/Series_multisection
+        var self = this, q, p;
+        if (null == pp) pp = 0;
+        if (null == qq) qq = 1;
+        if (is_array(qq))
+        {
+            p = array(self.$x.length, function(i) {return (+pp[i]) || 0;});
+            q = array(self.$x.length, function(i) {return (+qq[i]) || 0;});
+        }
+        else
+        {
+            pp = (+pp) || 0;
+            qq = (+qq) || 0;
+            p = array(self.$x.length, function() {return pp;});
+            q = array(self.$x.length, function() {return qq;});
+        }
+        return Series(function(nth) {
+            return self.$(nth.map(function(i, j) {return q[j]*i + p[j];}));
+        }, self.$x, self.ring, self.type);
+    }
     ,map: function(f) {
         var self = this;
         return is_callable(f) ? Series(function(nth) {return f(self.$(nth), nth, self);}, self.$x, self.ring, self.type) : self;
@@ -20979,7 +21341,7 @@ Series = Abacus.Series = Class(Symbolic, {
             {
                 nth_term = self.$(nth);
                 // skip redundant terms
-                if (!nth_term.equ(0)) terms.push(('default' === mode ? nth_term.toExpr() : (is_instance(nth_term, Expr) ? nth_term.expand() : nth_term.toExpr())).mul(0 < n ? product(self.$x.map(function(x, i) {return 0 < nth[i] ? x.pow(nth[i]) : 1;})) : 1));
+                if (!nth_term.equ(0)) terms.push(('default' === mode ? nth_term.toExpr() : (is_instance(nth_term, Expr) ? nth_term.expand() : nth_term.toExpr())).mul(self.x(nth)));
             }
         }
         if (!terms.length) terms.push(Expr.Zero());
@@ -21026,7 +21388,7 @@ Series = Abacus.Series = Class(Symbolic, {
 
 function to_series(x, s)
 {
-    return is_instance(x, Series) ? x : (to_expr(x).toSeries(s.$x));
+    return is_instance(x, Series) ? x : (to_expr(x).toSeries(s.$x.map(function(x) {return x[0].symbols()[0]}), s.$x.map(function(x) {return x[1]})));
 }
 function test_trivial(series, store, n, Z)
 {
@@ -21097,26 +21459,27 @@ function F_(f, F0)
 }
 
 // convenience methods
-Abacus.PowerSeries = function(f, x) {
+Abacus.PowerSeries = function(f, x, x0) {
     if (!is_array(x)) x = [x];
+    if (!is_array(x0)) x0 = [x0];
     if (is_string(f))
     {
         f = Expr(f);
     }
     if (is_instance(f, Series))
     {
-        if ((f.type !== 'sum') || (!f.$x.length !== f.$x.filter(function($x, i) {return $x.equ(x[i]);}).length))
+        if ((f.type !== 'sum') && (f.$x.length === x.length))
         {
-            f = Series(f.$fn, x, 'sum');
+            f = Series(f.$fn, x.map(function(_, i) {return [x[i], x0[i]];}), 'sum');
         }
     }
     else if (is_instance(f, Expr))
     {
-        f = f.toSeries(x);
+        f = f.toSeries(x, x0);
     }
     else if ((null != f) && is_callable(f.toExpr))
     {
-        f = f.toExpr().toSeries(x);
+        f = f.toExpr().toSeries(x, x0);
     }
     return f;
 };

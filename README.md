@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
 
 
-**version 2.0.0** almost complete (426 kB minified)
+**version 2.0.0** almost complete (432 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -99,16 +99,18 @@ See the comments in the code for algorithms and references used.
 
 * [The Art of Computer Programming, Donald Knuth](http://www-cs-faculty.stanford.edu/~uno/taocp.html)
 * [FXT library, Joerg Arndt](http://www.jjj.de/fxt/) and his [PhD thesis](https://maths-people.anu.edu.au/~brent/pd/Arndt-thesis.pdf)
-* [Combinatorial Algorithms, Albert Nijenhuis, Herbert Wilf](https://www.math.upenn.edu/~wilf/website/CombAlgDownld.html)
 * [Combinatorial Generation, Frank Ruskey](http://www.1stworks.com/ref/ruskeycombgen.pdf)
+* [Combinatorial Algorithms, Albert Nijenhuis, Herbert Wilf](https://www.math.upenn.edu/~wilf/website/CombAlgDownld.html)
 * [Generating Functionology, Herbert Wilf](http://www.math.upenn.edu/%7Ewilf/gfologyLinked2.pdf)
+* [Enumerative and Algebraic Combinatorics, D. Zeilberger](https://sites.math.rutgers.edu/~zeilberg/mamarim/mamarimPDF/enuPCM.pdf)
+* [Enumerative Combinatorics vol. 1, Richard P. Stanley](https://math.mit.edu/~rstan/ec/ec1.pdf), [Enumerative Combinatorics vol. 2, Richard P. Stanley](https://api.pageplace.de/preview/DT0400.9780511835568_A23680075/preview-9780511835568_A23680075.pdf)
+* [Analytic Combinatorics, Philippe Flajolet, Robert Sedgewick](http://algo.inria.fr/flajolet/Publications/book.pdf) can also be used to produce combinatorial generation algorithms instead of just generating functions for counting and statistics
 * [A unified setting for sequencing, ranking, and selection algorithms for combinatorial objects, Herbert Wilf](https://www.sciencedirect.com/science/article/pii/S0001870877800467)
 * [Permutation Generation Methods, Robert Sedgewick](http://homepage.math.uiowa.edu/~goodman/22m150.dir/2007/Permutation%20Generation%20Methods.pdf)
 * [A Versatile Algorithm to Generate Various Combinatorial Structures, Pramod Ganapathi, Rama B](http://arxiv.org/abs/1009.4214v2)
 * [Generating All and Random Instances of a Combinatorial Object, Ivan Stojmenovic](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.211.6576) including the section on random generation **without large integers** &amp; **with only one `PRNG` call**
 * [Efficient Generation of Set Partitions, Michael Orlov](https://www.informatik.uni-ulm.de/ni/Lehre/WS03/DMM/Software/partitions.pdf)
 * [Algorithms for Unranking Combinations and Other Related Choice Functions, Zbigniew Kokosinski](http://riad.pk.edu.pl/~zk/pubs/95-1-006.pdf)
-* [Analytic Combinatorics, Philippe Flajolet, Robert Sedgewick](http://algo.inria.fr/flajolet/Publications/book.pdf) can also be used to produce combinatorial generation algorithms instead of just generating functions for counting and statistics
 * [Gray Code, wikipedia](https://en.wikipedia.org/wiki/Gray_code)
 * [A Survey of Combinatorial Gray Codes, Carla Savage](http://www4.ncsu.edu/~savage/AVAILABLE_FOR_MAILING/survey.pdf)
 * [Generalized  Gray  Codes  with  Applications, DAH-JYH GUAN](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1344&rep=rep1&type=pdf)

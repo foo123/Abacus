@@ -236,33 +236,6 @@ Poly = Class(Symbolic, {
     }
 });
 
-function apply_(fn)
-{
-    return function(/*args*/) {
-        var args = is_array(arguments[0]) ? arguments[0] : arguments, MathFn = Abacus.Math.fn;
-        return MathFn[fn].apply(MathFn, [].slice.call(args, 0, MathFn[fn].length || 1));
-    };
-}
-function equ(a, b)
-{
-    return is_callable(a.equ) ? a.equ(b) : (is_callable(b.equ) ? b.equ(a) : (a === b));
-}
-function gte(a, b)
-{
-    return is_callable(a.gte) ? a.gte(b) : (is_callable(b.lte) ? b.lte(a) : (a >= b));
-}
-function lte(a, b)
-{
-    return is_callable(a.lte) ? a.lte(b) : (is_callable(b.gte) ? b.gte(a) : (a <= b));
-}
-function gt(a, b)
-{
-    return is_callable(a.gt) ? a.gt(b) : (is_callable(b.lt) ? b.lt(a) : (a > b));
-}
-function lt(a, b)
-{
-    return is_callable(a.lt) ? a.lt(b) : (is_callable(b.gt) ? b.gt(a) : (a < b));
-}
 function nmax(/* args */)
 {
     var args = arguments.length && (is_array(arguments[0]) || is_args(arguments[0])) ? arguments[0] : arguments;

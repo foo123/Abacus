@@ -62,6 +62,7 @@ function initContext(context)
     context.Ring = Abacus.Ring;
     context.Matrix = Abacus.Matrix;
     context.Evaluate = Abacus.Evaluate;
+    context.Substitute = Abacus.Substitute;
     context.Expand = Abacus.Expand;
     context.Factor = Abacus.Factor;
     context.Simplify = Abacus.Simplify;

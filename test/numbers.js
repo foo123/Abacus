@@ -43,6 +43,11 @@ echo('------------');
 for (i=0; i<=30; ++i) echo('Bell('+i+')='+String(Abacus.Math.bell(i)));
 
 echo();
+echo('Bernoulli numbers');
+echo('------------');
+for (i=0; i<=30; ++i) echo('Bernoulli('+i+')='+String(Abacus.Math.bernoulli(i)));
+
+echo();
 echo('Factorial numbers');
 echo('-----------------');
 for (i=0; i<=30; ++i) echo('Factorial('+i+')='+String(Abacus.Math.factorial(i)));
