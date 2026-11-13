@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-13 14:55:19)
+*   @version: 2.0.0 (2026-11-13 20:28:07)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-13 14:55:19)
+*   @version: 2.0.0 (2026-11-13 20:28:07)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -1880,9 +1880,21 @@ function sum(x, i0, i1, ik)
 {
     return operate(add$, Abacus.Arithmetic.O, x, i0, i1, ik);
 }
+function sum_(x)
+{
+    if (!x.length) return 0;
+    for (var s=x[0],i=1,n=x.length; i<n; ++i) s = add$(s, x[i]);
+    return s;
+}
 function product(x, i0, i1, ik)
 {
     return operate(mul$, Abacus.Arithmetic.I, x, i0, i1, ik);
+}
+function product_(x)
+{
+    if (!x.length) return 1;
+    for (var p=x[0],i=1,n=x.length; i<n; ++i) p = mul$(p, x[i]);
+    return p;
 }
 function equ(a, b)
 {
@@ -3655,11 +3667,11 @@ function moebius_inversion(gn, INT)
     // https://en.wikipedia.org/wiki/M%C3%B6bius_inversion_formula
     return is_array(gn) ? array(gn.length, function(_n) {
         var A = Abacus.Arithmetic, n = A.num(_n+1), fn;
-        fn = sum(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
+        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
         return INT ? new INT(fn) : fn;
     }) : function(n) {
         var A = Abacus.Arithmetic, fn;
-        fn = sum(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
+        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
         return INT ? new INT(fn) : fn;
     };
 }
@@ -5607,7 +5619,7 @@ function bernoulli(n)
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         NUM = Arithmetic.num, VAL = Arithmetic.val,
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        R = function(n, d) {return new Rational(NUM(n), NUM(d||1));},
+        R = function(p, q) {return new Rational(NUM(p), NUM(q||1));},
         key, res = O, i, MAXMEM = Abacus.Options.MAXMEM;
     // https://en.wikipedia.org/wiki/Bernoulli_number
     // bernoulli numbers B(m) = 1 - \\sum_{k=0}^{m-1} \\binom{m}{k} \\frac{B(k)}{m - k + 1}
@@ -5618,23 +5630,23 @@ function bernoulli(n)
         R(1),
         R(1,2),
         R(1,6),
-        R(0),
+        0,
         R(-1,30),
-        R(0),
+        0,
         R(1,42),
-        R(0),
+        0,
         R(-1,30),
-        R(0),
+        0,
         R(5,66),
-        R(0),
+        0,
         R(-691,2730),
-        R(0),
+        0,
         R(7,6),
-        R(0),
+        0,
         R(-3617,510),
-        R(0),
+        0,
         R(43867,798),
-        R(0),
+        0,
         R(-174611,330)
         ])[VAL(n)];
     key = String(n);
@@ -5728,11 +5740,15 @@ function sum_nk(n, k)
         NUM = Arithmetic.num, MAXMEM = Abacus.Options.MAXMEM,
         symbolic_n = false, symbolic_k = false, m, f, k1, key, res;
     if (is_instance(n, Numeric) && !is_instance(n, Integer)) n = new Integer(n);
-    if (is_instance(n, Integer)) return new n[CLASS](sum_nk(n.num, k));
     if (is_instance(k, Numeric) && !is_instance(k, Integer)) k = new Integer(k);
     if (is_instance(k, Integer)) k = k.num;
     symbolic_n = is_instance(n, Symbolic);
     symbolic_k = is_instance(k, Symbolic);
+    if (is_instance(n, Integer))
+    {
+        if (!symbolic_k) return new n[CLASS](sum_nk(n.num, k));
+        n = n.num;
+    }
     if (!symbolic_n) n = NUM(n);
     if (!symbolic_k) k = NUM(k);
     res = symbolic_n ? n[CLASS].Zero() : (symbolic_k ? k[CLASS].Zero() : O);
@@ -5755,7 +5771,7 @@ function sum_nk(n, k)
     }
     else if (symbolic_n && symbolic_k)
     {
-        res = sum(array(6/*up to some n*/, function(i) {return pow$(i+1, k);}));
+        res = sum_(array(6/*up to some n*/, function(i) {return pow$(i+1, k);}));
     }
     else
     {
@@ -5934,7 +5950,7 @@ function SymmetricPoly(k, n)
         }
         else if (1 === k)
         {
-            res = 1 === n ? $x(0) : sum(array(n, function(i) {return $x(i);}));
+            res = sum_(array(n, function(i) {return $x(i);}));
         }
         else
         {
@@ -6028,11 +6044,12 @@ function BernoulliPoly(n)
         }
         else
         {
-            for (res=Expr.One(),k=1; k<=n; ++k)
+            for (res=Expr.One().mul(bernoulli(n)).mul(1 === n ? -1 : 1),k=1; k<=n; ++k)
             {
-                res = res.add($x().pow(k).mul(bernoulli(n-k)).mul(factorial(n, k)));
+                res = res.add($x().pow(k).mul(bernoulli(n-k)).mul(factorial(n, k)).mul(1 === n-k ? -1 : 1));
             }
         }
+        res = res.toPoly($x().symbols()[0]).toExpr(); // make it poly instead of rational func
         // memoize only up to MAXMEM results
         if (0 <= n && n <= 1000)
         {
@@ -6172,21 +6189,50 @@ Abacus.Math = {
      rnd: stdMath.random
     ,rndInt: rndInt
 
-    ,fibonacci: fibonacci
     ,factorial: factorial
     ,binomial: factorial
-    ,bell: bell
-    ,bernoulli: bernoulli
-    ,stirling: stirling
-    ,catalan: catalan
-    ,polygonal: polygonal
+    ,multinomial: factorial
     ,sum_nk: sum_nk
 
+    ,number: {
+         polygonal: polygonal
+        ,fibonacci: fibonacci
+        ,bell: bell
+        ,bernoulli: bernoulli
+        ,stirling: stirling
+        ,catalan: catalan
+    }
     ,poly: {
-         symmetric: SymmetricPoly
-        ,fibonacci: FibonacciPoly
-        ,bell: BellPoly
-        ,bernoulli: BernoulliPoly
+         symmetric: function(k, n, x) {
+            x = String(x || "x");
+            k = (+k) || 0; n = (+n) || 0;
+            return SymmetricPoly(k, n).expand().substitute(array(n, function(i) {
+                return "$x_"+String(i);
+            }).reduce(function($, xi, i) {
+                $[xi] = Expr('', x+'_'+String(i));
+                return $;
+            }, {}));
+         }
+        ,fibonacci: function(n, x) {
+            x = String(x || "x");
+            n = (+n) || 0;
+            return FibonacciPoly(n).expand().substitute("$x", Expr('', x));
+        }
+        ,bell: function(n, k, x) {
+            x = String(x || "x");
+            n = (+n) || 0; k = (+k) || 0;
+            return BellPoly(n, k).expand().substitute(array(n-k+1, function(i) {
+                return "$x_"+String(i);
+            }).reduce(function($, xi, i) {
+                $[xi] = Expr('', x+'_'+String(i));
+                return $;
+            }, {}));
+        }
+        ,bernoulli: function(n, x) {
+            x = String(x || "x");
+            n = (+n) || 0;
+            return BernoulliPoly(n).substitute("$x", Expr('', x));
+        }
         //,stirling: StirlingPoly //https://en.wikipedia.org/wiki/Stirling_polynomials
     }
 
@@ -12890,8 +12936,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         if (is_instance(e, Expr))
         {
-            df = df.clone();
-            e = e.clone();
+            //df = df.clone();
+            //e = e.clone();
             for (; 0 < n; --n)
             {
                 // which x chosen among common symbols is not important
@@ -12905,7 +12951,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             x = String(e || 'x');
             if ('1' === x) return Expr.Zero();
-            df = df.clone();
+            //df = df.clone();
             for (; 0 < n; --n)
             {
                 if (-1 === df.symbols().indexOf(x)) return Expr.Zero();
@@ -13641,7 +13687,7 @@ function expr_series(f, x, x0)
         f_nth = n < 64 ? series._.nth[key] : null;
         if (null != f_nth) return f_nth;
 
-        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f.clone()) : f.clone();
+        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f/*.clone()*/) : f/*.clone()*/;
         if ((series.degree > n) && expr_is_independent_of(df_nth, x)) series.degree = n;
 
         df_nth = df_nth.substitute(x.reduce(function($, xi, i) {
@@ -21031,7 +21077,7 @@ Series = Abacus.Series = Class(Symbolic, {
                 var x = $x[i][0], x0 = $x[i][1], n = is_number(nth) ? nth : (nth[i]);
                 return 1 < n ? x.sub(x0).pow(n) : (1 === n ? x.sub(x0) : Expr.One());
             };
-        return is_number(nth) ? x(nth) : (0 < multi_index_deg(nth) ? (1 === d ? x(0) : product(array(d, x))) : Expr.One());
+        return is_number(nth) ? x(nth) : (0 < multi_index_deg(nth) ? (1 === d ? x(0) : product_(array(d, x))) : Expr.One());
     }
     ,$F: function(nth, kth) {
         var self = this;
@@ -21097,8 +21143,8 @@ Series = Abacus.Series = Class(Symbolic, {
                 var n = multi_index_deg(nth), d = self.$x.length;
                 if (null == inv_0th) inv_0th = self.$(0).inv(); // must be invertible
                 if (0 === n) return inv_0th;
-                return inv_0th.neg().mul(sum(array(n, function(i) {
-                    return sum(multi_index(i, d).list().map(function(ith) {
+                return inv_0th.neg().mul(sum_(array(n, function(i) {
+                    return sum_(multi_index(i, d).list().map(function(ith) {
                         var jth = multi_index_op(subn, nth, ith);
                         return multi_index_cmp('>=', jth, 0) ? self.$(jth).mul(inv.$(ith)) : (self.ring || Expr).Zero();
                     }));
@@ -21136,9 +21182,9 @@ Series = Abacus.Series = Class(Symbolic, {
                     ;
                     if (0 === n) return /*$(n)*/0; // must be 0
                     if (1 === n) return $(n).inv(); // must be invertible
-                    return sum(array(n-1, function(k) {
+                    return sum_(array(n-1, function(k) {
                         var xk = array(n-k-1, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
-                            nk = product(array(k+1, function(i) {return n+i;}));
+                            nk = product_(array(k+1, function(i) {return n+i;}));
                         return bellP(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
                     })).div($(1).pow(n).mul(factorial(n)));
                 }, self.$x, self.ring, 'sum');
@@ -21155,7 +21201,7 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         other = to_series(other, self);
         return 1 === self.$x.length && 1 === other.$x.length ? Series(function(nth) {
-            return 0 === nth[0] ? /*self.$(nth)*/0 : sum(array(nth[0], function(kth) {
+            return 0 === nth[0] ? /*self.$(nth)*/0 : sum_(array(nth[0], function(kth) {
                 return other.$F(nth[0], kth+1).mul(self.$([kth+1]));
             }));
         }, other.$x, other.ring, 'sum') : self;
@@ -21223,8 +21269,8 @@ Series = Abacus.Series = Class(Symbolic, {
         }
         : function(nth) {
             var n = multi_index_deg(nth), d = self.$x.length;
-            return sum(array(n+1, function(i) {
-                return sum(multi_index(i, d).list().map(function(ith) {
+            return sum_(array(n+1, function(i) {
+                return sum_(multi_index(i, d).list().map(function(ith) {
                     var jth = multi_index_op(subn, nth, ith);
                     return multi_index_cmp('>=', jth, 0) ? self.$(ith).mul(other.$(jth)) : (self.ring || Expr).Zero();
                 }));
@@ -21263,8 +21309,8 @@ Series = Abacus.Series = Class(Symbolic, {
             powseries = 1 === m ? series : Series(function(nth, powseries) {
                 var n = multi_index_deg(nth), d = series.$x.length;
                 if (0 === n) return series.$(0).pow(m);
-                return series.$(0).inv().div(n).mul(sum(array(n, function(k) {
-                    return sum(multi_index(k+1, d).list().map(function(kth) {
+                return series.$(0).inv().div(n).mul(sum_(array(n, function(k) {
+                    return sum_(multi_index(k+1, d).list().map(function(kth) {
                         var jth = multi_index_op(subn, nth, kth);
                         return multi_index_cmp('>=', jth, 0) ? series.$(kth).mul(powseries.$(jth)).mul((k+1)*m - n + k+1) : (series.ring || Expr).Zero();
                     }));
@@ -21288,7 +21334,7 @@ Series = Abacus.Series = Class(Symbolic, {
             df = 0 === n
                 ? f
                 : Series(function(nth) {
-                    return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(product(array(n, function(i) {return nth[xi]+n-i;})));
+                    return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(product_(array(n, function(i) {return nth[xi]+n-i;})));
                 }, f.$x, f.ring, 'sum')
         ;
         if ((f !== df) && ('sum' === f.type) && (null != f.degree))
@@ -21386,10 +21432,6 @@ Series = Abacus.Series = Class(Symbolic, {
     }
 });
 
-function to_series(x, s)
-{
-    return is_instance(x, Series) ? x : (to_expr(x).toSeries(s.$x.map(function(x) {return x[0].symbols()[0]}), s.$x.map(function(x) {return x[1]})));
-}
 function test_trivial(series, store, n, Z)
 {
     if (!store)
@@ -21457,20 +21499,21 @@ function F_(f, F0)
     };
     return F;
 }
+function to_series(f, s)
+{
+    return is_instance(f, Series) ? f : (to_expr(f).toSeries(s.$x.map(function(x) {return x[0].symbols()[0];}), s.$x.map(function(x) {return x[1];})));
+}
 
 // convenience methods
 Abacus.PowerSeries = function(f, x, x0) {
     if (!is_array(x)) x = [x];
     if (!is_array(x0)) x0 = [x0];
-    if (is_string(f))
-    {
-        f = Expr(f);
-    }
+    if (is_string(f)) f = Expr(f);
     if (is_instance(f, Series))
     {
         if ((f.type !== 'sum') && (f.$x.length === x.length))
         {
-            f = Series(f.$fn, x.map(function(_, i) {return [x[i], x0[i]];}), 'sum');
+            f = Series(f.$fn, x.map(function(_, i) {return [x[i], x0[i]];}), f.ring, 'sum');
         }
     }
     else if (is_instance(f, Expr))
@@ -27384,7 +27427,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,DUAL: CombinatorialIterator.DUAL
         ,count: function(n, $) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-                //factorial = Abacus.Math.factorial, stirling = Abacus.Math.stirling,
+                //factorial = Abacus.Math.factorial, stirling = Abacus.Math.number.stirling,
                 type = $ && $.type ? $.type : "permutation",
                 kcycles = $ && (null != $['cycles=']) ? ($['cycles=']|0) : null,
                 kfixed = $ && (null != $['fixed=']) ? ($['fixed=']|0) : null
@@ -32389,6 +32432,7 @@ function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*
     return partitions.mem[key];
 }
 partitions.mem = Obj();
+//Abacus.Math.partitions = partitions;
 function c_nkab(n, k, a, b)
 {
     // recursively compute the composition count using the recursive relation:
@@ -32942,6 +32986,7 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
     return compositions.mem[key];
 }
 compositions.mem = Obj();
+//Abacus.Math.compositions = compositions;
 function conjugatepartition(is_composition, item, dir)
 {
     if (null == item) return null;

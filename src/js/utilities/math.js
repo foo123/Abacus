@@ -44,9 +44,21 @@ function sum(x, i0, i1, ik)
 {
     return operate(add$, Abacus.Arithmetic.O, x, i0, i1, ik);
 }
+function sum_(x)
+{
+    if (!x.length) return 0;
+    for (var s=x[0],i=1,n=x.length; i<n; ++i) s = add$(s, x[i]);
+    return s;
+}
 function product(x, i0, i1, ik)
 {
     return operate(mul$, Abacus.Arithmetic.I, x, i0, i1, ik);
+}
+function product_(x)
+{
+    if (!x.length) return 1;
+    for (var p=x[0],i=1,n=x.length; i<n; ++i) p = mul$(p, x[i]);
+    return p;
 }
 function equ(a, b)
 {
@@ -1819,11 +1831,11 @@ function moebius_inversion(gn, INT)
     // https://en.wikipedia.org/wiki/M%C3%B6bius_inversion_formula
     return is_array(gn) ? array(gn.length, function(_n) {
         var A = Abacus.Arithmetic, n = A.num(_n+1), fn;
-        fn = sum(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
+        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
         return INT ? new INT(fn) : fn;
     }) : function(n) {
         var A = Abacus.Arithmetic, fn;
-        fn = sum(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
+        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
         return INT ? new INT(fn) : fn;
     };
 }
@@ -3771,7 +3783,7 @@ function bernoulli(n)
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
         NUM = Arithmetic.num, VAL = Arithmetic.val,
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
-        R = function(n, d) {return new Rational(NUM(n), NUM(d||1));},
+        R = function(p, q) {return new Rational(NUM(p), NUM(q||1));},
         key, res = O, i, MAXMEM = Abacus.Options.MAXMEM;
     // https://en.wikipedia.org/wiki/Bernoulli_number
     // bernoulli numbers B(m) = 1 - \\sum_{k=0}^{m-1} \\binom{m}{k} \\frac{B(k)}{m - k + 1}
@@ -3782,23 +3794,23 @@ function bernoulli(n)
         R(1),
         R(1,2),
         R(1,6),
-        R(0),
+        0,
         R(-1,30),
-        R(0),
+        0,
         R(1,42),
-        R(0),
+        0,
         R(-1,30),
-        R(0),
+        0,
         R(5,66),
-        R(0),
+        0,
         R(-691,2730),
-        R(0),
+        0,
         R(7,6),
-        R(0),
+        0,
         R(-3617,510),
-        R(0),
+        0,
         R(43867,798),
-        R(0),
+        0,
         R(-174611,330)
         ])[VAL(n)];
     key = String(n);
@@ -3892,11 +3904,15 @@ function sum_nk(n, k)
         NUM = Arithmetic.num, MAXMEM = Abacus.Options.MAXMEM,
         symbolic_n = false, symbolic_k = false, m, f, k1, key, res;
     if (is_instance(n, Numeric) && !is_instance(n, Integer)) n = new Integer(n);
-    if (is_instance(n, Integer)) return new n[CLASS](sum_nk(n.num, k));
     if (is_instance(k, Numeric) && !is_instance(k, Integer)) k = new Integer(k);
     if (is_instance(k, Integer)) k = k.num;
     symbolic_n = is_instance(n, Symbolic);
     symbolic_k = is_instance(k, Symbolic);
+    if (is_instance(n, Integer))
+    {
+        if (!symbolic_k) return new n[CLASS](sum_nk(n.num, k));
+        n = n.num;
+    }
     if (!symbolic_n) n = NUM(n);
     if (!symbolic_k) k = NUM(k);
     res = symbolic_n ? n[CLASS].Zero() : (symbolic_k ? k[CLASS].Zero() : O);
@@ -3919,7 +3935,7 @@ function sum_nk(n, k)
     }
     else if (symbolic_n && symbolic_k)
     {
-        res = sum(array(6/*up to some n*/, function(i) {return pow$(i+1, k);}));
+        res = sum_(array(6/*up to some n*/, function(i) {return pow$(i+1, k);}));
     }
     else
     {
@@ -4098,7 +4114,7 @@ function SymmetricPoly(k, n)
         }
         else if (1 === k)
         {
-            res = 1 === n ? $x(0) : sum(array(n, function(i) {return $x(i);}));
+            res = sum_(array(n, function(i) {return $x(i);}));
         }
         else
         {
@@ -4192,11 +4208,12 @@ function BernoulliPoly(n)
         }
         else
         {
-            for (res=Expr.One(),k=1; k<=n; ++k)
+            for (res=Expr.One().mul(bernoulli(n)).mul(1 === n ? -1 : 1),k=1; k<=n; ++k)
             {
-                res = res.add($x().pow(k).mul(bernoulli(n-k)).mul(factorial(n, k)));
+                res = res.add($x().pow(k).mul(bernoulli(n-k)).mul(factorial(n, k)).mul(1 === n-k ? -1 : 1));
             }
         }
+        res = res.toPoly($x().symbols()[0]).toExpr(); // make it poly instead of rational func
         // memoize only up to MAXMEM results
         if (0 <= n && n <= 1000)
         {
@@ -4336,21 +4353,50 @@ Abacus.Math = {
      rnd: stdMath.random
     ,rndInt: rndInt
 
-    ,fibonacci: fibonacci
     ,factorial: factorial
     ,binomial: factorial
-    ,bell: bell
-    ,bernoulli: bernoulli
-    ,stirling: stirling
-    ,catalan: catalan
-    ,polygonal: polygonal
+    ,multinomial: factorial
     ,sum_nk: sum_nk
 
+    ,number: {
+         polygonal: polygonal
+        ,fibonacci: fibonacci
+        ,bell: bell
+        ,bernoulli: bernoulli
+        ,stirling: stirling
+        ,catalan: catalan
+    }
     ,poly: {
-         symmetric: SymmetricPoly
-        ,fibonacci: FibonacciPoly
-        ,bell: BellPoly
-        ,bernoulli: BernoulliPoly
+         symmetric: function(k, n, x) {
+            x = String(x || "x");
+            k = (+k) || 0; n = (+n) || 0;
+            return SymmetricPoly(k, n).expand().substitute(array(n, function(i) {
+                return "$x_"+String(i);
+            }).reduce(function($, xi, i) {
+                $[xi] = Expr('', x+'_'+String(i));
+                return $;
+            }, {}));
+         }
+        ,fibonacci: function(n, x) {
+            x = String(x || "x");
+            n = (+n) || 0;
+            return FibonacciPoly(n).expand().substitute("$x", Expr('', x));
+        }
+        ,bell: function(n, k, x) {
+            x = String(x || "x");
+            n = (+n) || 0; k = (+k) || 0;
+            return BellPoly(n, k).expand().substitute(array(n-k+1, function(i) {
+                return "$x_"+String(i);
+            }).reduce(function($, xi, i) {
+                $[xi] = Expr('', x+'_'+String(i));
+                return $;
+            }, {}));
+        }
+        ,bernoulli: function(n, x) {
+            x = String(x || "x");
+            n = (+n) || 0;
+            return BernoulliPoly(n).substitute("$x", Expr('', x));
+        }
         //,stirling: StirlingPoly //https://en.wikipedia.org/wiki/Stirling_polynomials
     }
 

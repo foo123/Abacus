@@ -18,34 +18,34 @@ function factorize(n)
     for (i=0; i<ps.length; i++) n2 = Arithmetic.mul(n2, Arithmetic.pow(ps[i][0], ps[i][1]));
     console.log(String(n)+'='+ps.map(factor).join('')+'='+String(n2),Arithmetic.equ(n, n2));
 }
-let o, i;
+let o, i, j;
 
 echo('Abacus.Numbers (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
 echo('Triangular numbers');
 echo('-----------------');
-for (i=0; i<=100; ++i) echo('Triangular('+i+')='+String(Abacus.Math.polygonal(i,3)));
+for (i=0; i<=100; ++i) echo('Triangular('+i+')='+String(Abacus.Math.number.polygonal(i,3)));
 
 echo();
 echo('Fibonacci numbers');
 echo('-----------------');
-for (i=0; i<=100; ++i) echo('Fibonacci('+i+')='+String(Abacus.Math.fibonacci(i)));
+for (i=0; i<=100; ++i) echo('Fibonacci('+i+')='+String(Abacus.Math.number.fibonacci(i)));
 
 echo();
 echo('Catalan numbers');
 echo('---------------');
-for (i=0; i<=30; ++i) echo('Catalan('+i+')='+String(Abacus.Math.catalan(i)));
+for (i=0; i<=30; ++i) echo('Catalan('+i+')='+String(Abacus.Math.number.catalan(i)));
 
 echo();
 echo('Bell numbers');
 echo('------------');
-for (i=0; i<=30; ++i) echo('Bell('+i+')='+String(Abacus.Math.bell(i)));
+for (i=0; i<=30; ++i) echo('Bell('+i+')='+String(Abacus.Math.number.bell(i)));
 
 echo();
 echo('Bernoulli numbers');
 echo('------------');
-for (i=0; i<=30; ++i) echo('Bernoulli('+i+')='+String(Abacus.Math.bernoulli(i)));
+for (i=0; i<=30; ++i) echo('Bernoulli('+i+')='+String(Abacus.Math.number.bernoulli(i)));
 
 echo();
 echo('Factorial numbers');
@@ -65,3 +65,23 @@ factorize(o=Abacus.Math.factorial(30));
 factorize(Abacus.Math.factorial(50));
 factorize(Abacus.Math.factorial(1000));
 factorize(Abacus.Math.nextPrime(o));
+
+echo();
+echo('Fibonacci polynomials');
+echo('-----------------');
+for (i=0; i<=10; ++i) echo('FibonacciPoly('+i+')='+String(Abacus.Math.poly.fibonacci(i)));
+
+echo();
+echo('Bernoulli polynomials');
+echo('------------');
+for (i=0; i<=10; ++i) echo('BernoulliPoly('+i+')='+String(Abacus.Math.poly.bernoulli(i)));
+
+echo();
+echo('Bell polynomials');
+echo('------------');
+for (j=0; j<=5; ++j) for (i=0; i<=j; ++i) echo('BellPoly('+j+','+i+')='+String(Abacus.Math.poly.bell(j, i)));
+
+echo();
+echo('Symmetric polynomials');
+echo('------------');
+for (j=0; j<=5; ++j) for (i=0; i<=j; ++i) echo('SymmetricPoly('+i+','+j+')='+String(Abacus.Math.poly.symmetric(i, j)));

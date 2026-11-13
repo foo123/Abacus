@@ -38,7 +38,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
         ,DUAL: CombinatorialIterator.DUAL
         ,count: function(n, $) {
             var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O,
-                //factorial = Abacus.Math.factorial, stirling = Abacus.Math.stirling,
+                //factorial = Abacus.Math.factorial, stirling = Abacus.Math.number.stirling,
                 type = $ && $.type ? $.type : "permutation",
                 kcycles = $ && (null != $['cycles=']) ? ($['cycles=']|0) : null,
                 kfixed = $ && (null != $['fixed=']) ? ($['fixed=']|0) : null

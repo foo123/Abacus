@@ -2184,6 +2184,7 @@ function partitions(n, K /*exactly K parts or null*/, M /*max part is M or null*
     return partitions.mem[key];
 }
 partitions.mem = Obj();
+//Abacus.Math.partitions = partitions;
 function c_nkab(n, k, a, b)
 {
     // recursively compute the composition count using the recursive relation:
@@ -2737,6 +2738,7 @@ function compositions(n, K /*exactly K parts or null*/, M /*max part is M or nul
     return compositions.mem[key];
 }
 compositions.mem = Obj();
+//Abacus.Math.compositions = compositions;
 function conjugatepartition(is_composition, item, dir)
 {
     if (null == item) return null;

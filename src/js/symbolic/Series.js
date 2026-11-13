@@ -124,7 +124,7 @@ Series = Abacus.Series = Class(Symbolic, {
                 var x = $x[i][0], x0 = $x[i][1], n = is_number(nth) ? nth : (nth[i]);
                 return 1 < n ? x.sub(x0).pow(n) : (1 === n ? x.sub(x0) : Expr.One());
             };
-        return is_number(nth) ? x(nth) : (0 < multi_index_deg(nth) ? (1 === d ? x(0) : product(array(d, x))) : Expr.One());
+        return is_number(nth) ? x(nth) : (0 < multi_index_deg(nth) ? (1 === d ? x(0) : product_(array(d, x))) : Expr.One());
     }
     ,$F: function(nth, kth) {
         var self = this;
@@ -190,8 +190,8 @@ Series = Abacus.Series = Class(Symbolic, {
                 var n = multi_index_deg(nth), d = self.$x.length;
                 if (null == inv_0th) inv_0th = self.$(0).inv(); // must be invertible
                 if (0 === n) return inv_0th;
-                return inv_0th.neg().mul(sum(array(n, function(i) {
-                    return sum(multi_index(i, d).list().map(function(ith) {
+                return inv_0th.neg().mul(sum_(array(n, function(i) {
+                    return sum_(multi_index(i, d).list().map(function(ith) {
                         var jth = multi_index_op(subn, nth, ith);
                         return multi_index_cmp('>=', jth, 0) ? self.$(jth).mul(inv.$(ith)) : (self.ring || Expr).Zero();
                     }));
@@ -229,9 +229,9 @@ Series = Abacus.Series = Class(Symbolic, {
                     ;
                     if (0 === n) return /*$(n)*/0; // must be 0
                     if (1 === n) return $(n).inv(); // must be invertible
-                    return sum(array(n-1, function(k) {
+                    return sum_(array(n-1, function(k) {
                         var xk = array(n-k-1, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
-                            nk = product(array(k+1, function(i) {return n+i;}));
+                            nk = product_(array(k+1, function(i) {return n+i;}));
                         return bellP(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
                     })).div($(1).pow(n).mul(factorial(n)));
                 }, self.$x, self.ring, 'sum');
@@ -248,7 +248,7 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         other = to_series(other, self);
         return 1 === self.$x.length && 1 === other.$x.length ? Series(function(nth) {
-            return 0 === nth[0] ? /*self.$(nth)*/0 : sum(array(nth[0], function(kth) {
+            return 0 === nth[0] ? /*self.$(nth)*/0 : sum_(array(nth[0], function(kth) {
                 return other.$F(nth[0], kth+1).mul(self.$([kth+1]));
             }));
         }, other.$x, other.ring, 'sum') : self;
@@ -316,8 +316,8 @@ Series = Abacus.Series = Class(Symbolic, {
         }
         : function(nth) {
             var n = multi_index_deg(nth), d = self.$x.length;
-            return sum(array(n+1, function(i) {
-                return sum(multi_index(i, d).list().map(function(ith) {
+            return sum_(array(n+1, function(i) {
+                return sum_(multi_index(i, d).list().map(function(ith) {
                     var jth = multi_index_op(subn, nth, ith);
                     return multi_index_cmp('>=', jth, 0) ? self.$(ith).mul(other.$(jth)) : (self.ring || Expr).Zero();
                 }));
@@ -356,8 +356,8 @@ Series = Abacus.Series = Class(Symbolic, {
             powseries = 1 === m ? series : Series(function(nth, powseries) {
                 var n = multi_index_deg(nth), d = series.$x.length;
                 if (0 === n) return series.$(0).pow(m);
-                return series.$(0).inv().div(n).mul(sum(array(n, function(k) {
-                    return sum(multi_index(k+1, d).list().map(function(kth) {
+                return series.$(0).inv().div(n).mul(sum_(array(n, function(k) {
+                    return sum_(multi_index(k+1, d).list().map(function(kth) {
                         var jth = multi_index_op(subn, nth, kth);
                         return multi_index_cmp('>=', jth, 0) ? series.$(kth).mul(powseries.$(jth)).mul((k+1)*m - n + k+1) : (series.ring || Expr).Zero();
                     }));
@@ -381,7 +381,7 @@ Series = Abacus.Series = Class(Symbolic, {
             df = 0 === n
                 ? f
                 : Series(function(nth) {
-                    return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(product(array(n, function(i) {return nth[xi]+n-i;})));
+                    return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(product_(array(n, function(i) {return nth[xi]+n-i;})));
                 }, f.$x, f.ring, 'sum')
         ;
         if ((f !== df) && ('sum' === f.type) && (null != f.degree))
@@ -479,10 +479,6 @@ Series = Abacus.Series = Class(Symbolic, {
     }
 });
 
-function to_series(x, s)
-{
-    return is_instance(x, Series) ? x : (to_expr(x).toSeries(s.$x.map(function(x) {return x[0].symbols()[0]}), s.$x.map(function(x) {return x[1]})));
-}
 function test_trivial(series, store, n, Z)
 {
     if (!store)
@@ -550,20 +546,21 @@ function F_(f, F0)
     };
     return F;
 }
+function to_series(f, s)
+{
+    return is_instance(f, Series) ? f : (to_expr(f).toSeries(s.$x.map(function(x) {return x[0].symbols()[0];}), s.$x.map(function(x) {return x[1];})));
+}
 
 // convenience methods
 Abacus.PowerSeries = function(f, x, x0) {
     if (!is_array(x)) x = [x];
     if (!is_array(x0)) x0 = [x0];
-    if (is_string(f))
-    {
-        f = Expr(f);
-    }
+    if (is_string(f)) f = Expr(f);
     if (is_instance(f, Series))
     {
         if ((f.type !== 'sum') && (f.$x.length === x.length))
         {
-            f = Series(f.$fn, x.map(function(_, i) {return [x[i], x0[i]];}), 'sum');
+            f = Series(f.$fn, x.map(function(_, i) {return [x[i], x0[i]];}), f.ring, 'sum');
         }
     }
     else if (is_instance(f, Expr))

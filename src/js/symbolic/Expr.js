@@ -2047,8 +2047,8 @@ Expr = Abacus.Expr = Class(Symbolic, {
 
         if (is_instance(e, Expr))
         {
-            df = df.clone();
-            e = e.clone();
+            //df = df.clone();
+            //e = e.clone();
             for (; 0 < n; --n)
             {
                 // which x chosen among common symbols is not important
@@ -2062,7 +2062,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         {
             x = String(e || 'x');
             if ('1' === x) return Expr.Zero();
-            df = df.clone();
+            //df = df.clone();
             for (; 0 < n; --n)
             {
                 if (-1 === df.symbols().indexOf(x)) return Expr.Zero();
@@ -2798,7 +2798,7 @@ function expr_series(f, x, x0)
         f_nth = n < 64 ? series._.nth[key] : null;
         if (null != f_nth) return f_nth;
 
-        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f.clone()) : f.clone();
+        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f/*.clone()*/) : f/*.clone()*/;
         if ((series.degree > n) && expr_is_independent_of(df_nth, x)) series.degree = n;
 
         df_nth = df_nth.substitute(x.reduce(function($, xi, i) {
