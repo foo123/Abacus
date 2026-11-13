@@ -71,32 +71,32 @@ echo(o=Abacus.Math.ikthroot(90, 4));
 echo('---');
 
 echo('Integer Divisors');
-echo('o=Abacus.Math.divisors(1)');
-echo(o=Abacus.Math.divisors(1));
+echo('o=Abacus.Math.divisors.numeric(1)');
+echo(o=Abacus.Math.divisors.numeric(1));
 
-echo('o=Abacus.Math.divisors(2)');
-echo(o=Abacus.Math.divisors(2));
+echo('o=Abacus.Math.divisors.numeric(2)');
+echo(o=Abacus.Math.divisors.numeric(2));
 
-echo('o=Abacus.Math.divisors(4)');
-echo(o=Abacus.Math.divisors(4));
+echo('o=Abacus.Math.divisors.numeric(4)');
+echo(o=Abacus.Math.divisors.numeric(4));
 
-echo('o=Abacus.Math.divisors(5)');
-echo(o=Abacus.Math.divisors(5));
+echo('o=Abacus.Math.divisors.numeric(5)');
+echo(o=Abacus.Math.divisors.numeric(5));
 
-echo('o=Abacus.Math.divisors(10)');
-echo(o=Abacus.Math.divisors(10));
+echo('o=Abacus.Math.divisors.numeric(10)');
+echo(o=Abacus.Math.divisors.numeric(10));
 
-echo('o=Abacus.Math.divisors(100)');
-echo(o=Abacus.Math.divisors(100));
+echo('o=Abacus.Math.divisors.numeric(100)');
+echo(o=Abacus.Math.divisors.numeric(100));
 
-echo('o=Abacus.Math.divisors(1000, true).get()');
-echo('o2=Abacus.Math.divisors(10000, true).get()');
-echo('o3=Abacus.Math.divisors(10000000, true).get()');
-o=Abacus.Math.divisors(1000, true);
-o2=Abacus.Math.divisors(10000, true);
+echo('o=Abacus.Math.divisors.numeric(1000, true).get()');
+echo('o2=Abacus.Math.divisors.numeric(10000, true).get()');
+echo('o3=Abacus.Math.divisors.numeric(10000000, true).get()');
+o=Abacus.Math.divisors.numeric(1000, true);
+o2=Abacus.Math.divisors.numeric(10000, true);
 echo(o.get());
 echo(o2.get());
-echo(Abacus.Math.divisors(10000000, true).get());
+echo(Abacus.Math.divisors.numeric(10000000, true).get());
 echo('---');
 
 echo('Square Root modulo Prime');

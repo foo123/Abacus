@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-13 20:28:07)
+*   @version: 2.0.0 (2026-11-14 00:07:03)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-13 20:28:07)
+*   @version: 2.0.0 (2026-11-14 00:07:03)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -6192,33 +6192,20 @@ Abacus.Math = {
     ,factorial: factorial
     ,binomial: factorial
     ,multinomial: factorial
-    ,sum_nk: sum_nk
-
-    ,number: {
-         polygonal: polygonal
-        ,fibonacci: fibonacci
-        ,bell: bell
-        ,bernoulli: bernoulli
-        ,stirling: stirling
-        ,catalan: catalan
+    ,polygonal: {
+        number: polygonal
     }
-    ,poly: {
-         symmetric: function(k, n, x) {
-            x = String(x || "x");
-            k = (+k) || 0; n = (+n) || 0;
-            return SymmetricPoly(k, n).expand().substitute(array(n, function(i) {
-                return "$x_"+String(i);
-            }).reduce(function($, xi, i) {
-                $[xi] = Expr('', x+'_'+String(i));
-                return $;
-            }, {}));
-         }
-        ,fibonacci: function(n, x) {
+    ,fibonacci: {
+         number: fibonacci
+        ,poly: function(n, x) {
             x = String(x || "x");
             n = (+n) || 0;
             return FibonacciPoly(n).expand().substitute("$x", Expr('', x));
         }
-        ,bell: function(n, k, x) {
+    }
+    ,bell: {
+         number: bell
+        ,poly: function(n, k, x) {
             x = String(x || "x");
             n = (+n) || 0; k = (+k) || 0;
             return BellPoly(n, k).expand().substitute(array(n-k+1, function(i) {
@@ -6228,14 +6215,37 @@ Abacus.Math = {
                 return $;
             }, {}));
         }
-        ,bernoulli: function(n, x) {
+    }
+    ,bernoulli: {
+         number: bernoulli
+        ,poly: function(n, x) {
             x = String(x || "x");
             n = (+n) || 0;
             return BernoulliPoly(n).substitute("$x", Expr('', x));
         }
-        //,stirling: StirlingPoly //https://en.wikipedia.org/wiki/Stirling_polynomials
+    }
+    ,stirling: {
+         number: stirling
+        ,poly: NOP //https://en.wikipedia.org/wiki/Stirling_polynomials
+    }
+    ,catalan: {
+         number: catalan
     }
 
+    ,symmetric: {
+        poly: function(k, n, x) {
+            x = String(x || "x");
+            k = (+k) || 0; n = (+n) || 0;
+            return SymmetricPoly(k, n).expand().substitute(array(n, function(i) {
+                return "$x_"+String(i);
+            }).reduce(function($, xi, i) {
+                $[xi] = Expr('', x+'_'+String(i));
+                return $;
+            }, {}));
+         }
+    }
+
+    ,sum_nk: sum_nk
     ,sum: sum
     ,product: product
     ,pow2: pow2
@@ -6303,13 +6313,15 @@ Abacus.Math = {
         if (is_instance(x, Integer)) return new x[CLASS](ilog(x.num, b));
         return ilog(Arithmetic.num(x), b);
     }
-    ,divisors: function(n, as_generator) {
-        var Arithmetic = Abacus.Arithmetic;
-        return divisors(is_instance(n, Integer) ? n : Arithmetic.num(n), true === as_generator);
-    }
-    ,symdivisors: function(x, as_generator) {
-        var symdivs = symbolic_divisors(x);
-        return true === as_generator ? symdivs : (symdivs.get());
+    ,divisors: {
+         numeric: function(n, as_generator) {
+            var Arithmetic = Abacus.Arithmetic;
+            return divisors(is_instance(n, Integer) ? n : Arithmetic.num(n), true === as_generator);
+        }
+        ,symbolic: function(x, as_generator) {
+            var symdivs = symbolic_divisors(x);
+            return true === as_generator ? symdivs : (symdivs.get());
+        }
     }
     ,legendre: function(a, p) {
         var Arithmetic = Abacus.Arithmetic;
@@ -6521,6 +6533,7 @@ Abacus.Math = {
         return (is_array(v) || is_args(v)) && v.length ? gramschmidt(v) : [];
     }
 };
+
 // real and complex functions
 function _r(x)
 {
