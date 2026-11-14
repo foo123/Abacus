@@ -5,8 +5,7 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         if (!is_instance(self, Series)) return new Series(fn, x, ring, type);
         self.type = 'product' === String(type || '').toLowerCase() ? 'product' : 'sum';
-        self.ring = ring;
-        self.$fn = fn;
+        self.ring = is_instance(ring, Ring) ? ring : null;
         if (!is_array(x)) x = [x];
         self.$x = x.map(function(xi, i) {
             var xi0 = is_array(xi) ? xi[1] : null;
@@ -14,6 +13,7 @@ Series = Abacus.Series = Class(Symbolic, {
             if (is_array(xi)) xi = xi[0];
             return [is_instance(xi, Expr) ? xi : Expr('', is_string(xi) ? xi : ('x'+(1 === x.length ? '' : ('_'+String(i+1))))), is_instance(xi0, Expr) ? xi0 : Expr(xi0)];
         });
+        self.$fn = fn;
         self._ = {};
     }
 
@@ -62,6 +62,9 @@ Series = Abacus.Series = Class(Symbolic, {
     ,_ci: null
     ,_istrivial: null
     ,_N: 6
+    ,_expr: null
+    ,_str: null
+    ,_tex: null
 
     ,dispose: function() {
         var self = this;
@@ -81,6 +84,9 @@ Series = Abacus.Series = Class(Symbolic, {
         self._ci = null;
         self._$F = null;
         self._$ = null;
+        self._expr = null;
+        self._str = null;
+        self._tex = null;
         self.$x = null;
         self.$fn = null;
         self.ring = null;
@@ -197,7 +203,7 @@ Series = Abacus.Series = Class(Symbolic, {
                     }));
                 })));
             }, self.$x, self.ring, self.type);
-            if ((null != self.degree) && isFinite(self.degree)) self._i.degree = inf;
+            if ((null != self.degree) && isFinite(self.degree)) self._i.degree = 0 === self.degree ? 0 : inf;
             self._i._i = self; // idempotent
         }
         return self._i;
@@ -231,7 +237,7 @@ Series = Abacus.Series = Class(Symbolic, {
                     if (1 === n) return $(n).inv(); // must be invertible
                     return sum_(array(n-1, function(k) {
                         var xk = array(n-k-1, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
-                            nk = product_(array(k+1, function(i) {return n+i;}));
+                            nk = pochhammer(n, k+1)/*product_(array(k+1, function(i) {return n+i;}))*/;
                         return bellP(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
                     })).div($(1).pow(n).mul(factorial(n)));
                 }, self.$x, self.ring, 'sum');
@@ -381,7 +387,7 @@ Series = Abacus.Series = Class(Symbolic, {
             df = 0 === n
                 ? f
                 : Series(function(nth) {
-                    return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(product_(array(n, function(i) {return nth[xi]+n-i;})));
+                    return f.$(array(nth.length, function(i) {return nth[i] + (i === xi ? n : 0);})).mul(pochhammer(nth[xi]+n, n, '-')/*product_(array(n, function(i) {return nth[xi]+n-i;}))*/);
                 }, f.$x, f.ring, 'sum')
         ;
         if ((f !== df) && ('sum' === f.type) && (null != f.degree))
@@ -409,7 +415,7 @@ Series = Abacus.Series = Class(Symbolic, {
             q = array(self.$x.length, function() {return qq;});
         }
         return Series(function(nth) {
-            return self.$(nth.map(function(i, j) {return q[j]*i + p[j];}));
+            return self.$(nth.map(function(ni, i) {return q[i]*ni + p[i];}));
         }, self.$x, self.ring, self.type);
     }
     ,map: function(f) {
@@ -460,22 +466,34 @@ Series = Abacus.Series = Class(Symbolic, {
 
     ,toExpr: function() {
         var self = this;
-        return 'product' === self.type ? self.prod(self._N, 'expand') : self.sum(self._N, 'expand');
+        if (null == self._expr)
+        {
+            self._expr = 'product' === self.type ? self.prod(self._N, 'expand') : self.sum(self._N, 'expand');
+        }
+        return self._expr;
     }
     ,toSeries: function() {
         return this; // trivial
     }
-    ,toString: function(type) {
-        var self = this,
-            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(self._N, 'expand', 'array'),
+    ,toString: function() {
+        var self = this, terms, expr;
+        if (null == self._str)
+        {
+            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(self._N, 'expand', 'array');
             expr = 1 < terms.length ? Expr('product' === self.type ? '*' : '+', terms) : terms[0];
-        return expr.toString(type) + (terms.length < self._N ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
+            self._str = expr.toString() + (terms.length < self._N ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
+        }
+        return self._str;
     }
     ,toTex: function() {
-        var self = this,
-            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(self._N, 'expand', 'array'),
+        var self = this, terms, expr;
+        if (null == self._tex)
+        {
+            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(self._N, 'expand', 'array');
             expr = 1 < terms.length ? Expr('product' === self.type ? '*' : '+', terms) : terms[0];
-        return expr.toTex() + (terms.length < self._N ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
+            self._tex = expr.toTex() + (terms.length < self._N ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
+        }
+        return self._tex;
     }
 });
 

@@ -3614,6 +3614,26 @@ function factorial(n, m)
 factorial.mem1 = Obj();
 factorial.mem2 = Obj();
 factorial.mem3 = Obj();
+function pochhammer(x, n, type)
+{
+    // https://en.wikipedia.org/wiki/Falling_and_rising_factorials
+    var res, k;
+    if (('falling' === type) || ('-' === type) || (-1 === type))
+    {
+        // falling factorial
+        if (is_instance(n, Symbolic)) n = n.c();
+        //if (equ(x, n)) return factorial(n);
+        for (res=x,k=1; lt(k, n); k=add$(k, 1)) res = mul$(res, sub$(x, k));
+    }
+    else
+    {
+        // rising factorial
+        if (is_instance(n, Symbolic)) n = n.c();
+        //if (equ(x, 1)) return factorial(n);
+        for (res=x,k=1; lt(k, n); k=add$(k, 1)) res = mul$(res, add$(x, k));
+    }
+    return res;
+}
 function stirling(n, k, s)
 {
     // https://en.wikipedia.org/wiki/Stirling_number
@@ -4368,6 +4388,9 @@ Abacus.Math = {
     ,subfactorial: function(n) {
         return factorial(n, 'subfactorial');
     }
+    ,pochhammer: function(x, n, type) {
+        return pochhammer(x, n, '-' === type ? '-' : '+');
+    }
     ,polygonal: {
         number: polygonal
     }
@@ -4376,7 +4399,7 @@ Abacus.Math = {
         ,poly: function(n, x) {
             x = String(x || "x");
             n = (+n) || 0;
-            return FibonacciPoly(n).expand().substitute("$x", Expr('', x));
+            return FibonacciPoly(n).expand().num.substitute("$x", Expr('', x));
         }
     }
     ,bell: {
@@ -4384,7 +4407,7 @@ Abacus.Math = {
         ,poly: function(n, k, x) {
             x = String(x || "x");
             n = (+n) || 0; k = (+k) || 0;
-            return BellPoly(n, k).expand().substitute(array(n-k+1, function(i) {
+            return BellPoly(n, k).expand().num.substitute(array(n-k+1, function(i) {
                 return "$x_"+String(i);
             }).reduce(function($, xi, i) {
                 $[xi] = Expr('', x+'_'+String(i));
@@ -4412,7 +4435,7 @@ Abacus.Math = {
         poly: function(k, n, x) {
             x = String(x || "x");
             k = (+k) || 0; n = (+n) || 0;
-            return SymmetricPoly(k, n).expand().substitute(array(n, function(i) {
+            return SymmetricPoly(k, n).expand().num.substitute(array(n, function(i) {
                 return "$x_"+String(i);
             }).reduce(function($, xi, i) {
                 $[xi] = Expr('', x+'_'+String(i));
