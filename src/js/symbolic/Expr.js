@@ -112,7 +112,22 @@ Expr = Abacus.Expr = Class(Symbolic, {
     }
 
     ,__static__: {
-         hasInverse: function() {
+         $: function(x, n) {
+            // dummy (nth) symbol
+            if ((null == x) && (null == n))
+            {
+                n = null;
+                x = '$x';
+            }
+            else if (is_number(x) || Abacus.Arithmetic.isNumber(x))
+            {
+                n = x;
+                x = '$x';
+            }
+            return new Expr('', String(x || '$x')+(null == n ? '' : ('_'+String(n || 0))));
+        }
+
+        ,hasInverse: function() {
             return true;
         }
 

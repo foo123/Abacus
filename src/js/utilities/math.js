@@ -256,31 +256,6 @@ function isqrt(n)
     }
     return sqrt;
 }
-function hypot(a, b)
-{
-    a = stdMath.abs(a);
-    b = stdMath.abs(b);
-    var r = 0;
-    if (0 === a)
-    {
-        return b;
-    }
-    else if (0 === b)
-    {
-        return a;
-    }
-    else if (a > b)
-    {
-        r = b/a;
-        return a*stdMath.sqrt(1 + r*r);
-    }
-    else if (a < b)
-    {
-        r = a/b;
-        return b*stdMath.sqrt(1 + r*r);
-    }
-    return a*stdMath.SQRT2;
-}
 function jskthroot(x, k)
 {
     var kg, r, p;
@@ -1369,10 +1344,10 @@ function factorize(n)
 {
     // https://en.wikipedia.org/wiki/Integer_factorization
     var Arithmetic = Abacus.Arithmetic, INT = null, ndigits, f, factors;
-    if (is_instance(n, Integer))
+    if (is_instance(n, INumber))
     {
         INT = n[CLASS];
-        n = n.num;
+        n = Integer.cast(n).num;
     }
     if (Arithmetic.lte(n, Arithmetic.II))
     {
@@ -1442,7 +1417,7 @@ function decomp_sum_of_squares(p)
         a, b, t, l, key, val;
 
     key = String(p);
-    val = decomp_sum_of_squares.memo[key];
+    val = decomp_sum_of_squares.mem[key];
 
     if (null == val)
     {
@@ -1471,12 +1446,12 @@ function decomp_sum_of_squares(p)
 
         val = [a, b];
         // store in cache
-        if (Arithmetic.lt(p, 2000)) decomp_sum_of_squares.memo[key] = val;
+        if (Arithmetic.lt(p, 2000)) decomp_sum_of_squares.mem[key] = val;
     }
 
     return val;
 }
-decomp_sum_of_squares.memo = {};
+decomp_sum_of_squares.mem = {};
 function cgcd2(w, z)
 {
     //return Complex.gcd(w, z);
@@ -1773,6 +1748,7 @@ function moebius(n)
         J = Arithmetic.J, two = Arithmetic.II,
         i, p, p2, m, primes;
 
+    if (is_instance(n, INumber)) return new n[CLASS](moebius(Integer.cast(n).num));
     //n = N(n);
     // pre-computed values
     if (Arithmetic.lte(n, 1000)) return N(([1,-1,-1,0,-1,1,-1,0,0,1,-1,0,-1,1,1,0,-1,0,-1,0,1,1,-1,0,0,1,0,0,-1,-1,-1,0,1,1,1,0,-1,1,1,0,-1,-1,-1,0,0,1,-1,0,0,0,1,0,-1,0,1,0,1,1,-1,0,-1,1,0,0,1,-1,-1,0,1,-1,-1,0,-1,1,0,0,1,-1,-1,0,0,1,-1,0,1,1,1,0,-1,0,1,0,1,1,1,0,-1,0,0,0,-1,-1,-1,0,-1,1,-1,0,-1,-1,1,0,-1,-1,1,0,0,1,1,0,0,1,1,0,0,0,-1,0,1,-1,-1,0,1,1,0,0,-1,-1,-1,0,1,1,1,0,1,1,0,0,-1,0,-1,0,0,-1,1,0,-1,1,1,0,1,0,-1,0,-1,1,-1,0,0,-1,0,0,-1,-1,0,0,1,1,-1,0,-1,-1,1,0,1,-1,1,0,0,-1,-1,0,-1,1,-1,0,-1,0,-1,0,1,1,1,0,1,1,0,0,1,1,-1,0,1,1,1,0,1,1,1,0,1,-1,-1,0,0,1,-1,0,-1,-1,-1,0,-1,0,1,0,1,-1,-1,0,-1,0,0,0,0,-1,1,0,1,0,-1,0,1,1,-1,0,-1,-1,1,0,0,1,-1,0,1,-1,1,0,-1,0,-1,0,-1,1,0,0,-1,1,0,0,-1,-1,-1,0,-1,-1,1,0,0,-1,1,0,-1,0,1,0,0,1,1,0,1,1,1,0,1,0,-1,0,1,-1,-1,0,-1,1,0,0,-1,-1,1,0,1,-1,1,0,0,1,1,0,1,1,-1,0,0,1,1,0,-1,0,1,0,1,0,0,0,-1,1,-1,0,-1,0,0,0,-1,-1,1,0,-1,1,-1,0,0,1,0,0,1,-1,-1,0,0,-1,1,0,-1,-1,0,0,1,0,-1,0,1,1,-1,0,-1,1,0,0,-1,1,1,0,1,1,1,0,-1,1,-1,0,-1,-1,1,0,0,-1,1,0,-1,-1,1,0,1,0,1,0,1,-1,-1,0,-1,1,0,0,0,-1,1,0,-1,-1,-1,0,-1,-1,-1,0,1,-1,-1,0,0,-1,-1,0,1,1,1,0,-1,0,1,0,1,1,-1,0,-1,1,0,0,-1,1,-1,0,-1,1,-1,0,1,-1,1,0,1,-1,0,0,0,1,-1,0,1,1,-1,0,1,0,-1,0,1,0,-1,0,1,-1,0,0,1,-1,-1,0,1,1,-1,0,1,-1,0,0,-1,1,1,0,0,1,1,0,1,-1,1,0,-1,0,-1,0,0,1,1,0,0,-1,0,0,1,-1,1,0,1,1,0,0,-1,1,1,0,1,1,-1,0,0,0,1,0,1,1,-1,0,-1,0,1,0,-1,1,-1,0,1,1,0,0,-1,1,-1,0,1,-1,0,0,-1,0,1,0,1,-1,1,0,0,1,-1,0,1,-1,1,0,-1,0,-1,0,1,-1,-1,0,-1,-1,0,0,0,-1,-1,0,-1,-1,1,0,-1,1,-1,0,-1,-1,-1,0,0,1,1,0,0,1,-1,0,1,0,-1,0,1,1,1,0,0,-1,0,0,-1,-1,-1,0,-1,-1,-1,0,1,0,-1,0,-1,-1,1,0,0,-1,-1,0,-1,1,-1,0,-1,0,1,0,1,-1,1,0,-1,1,0,0,-1,-1,1,0,1,-1,-1,0,1,0,1,0,1,1,-1,0,0,1,1,0,1,1,1,0,-1,0,1,0,-1,1,1,0,-1,-1,0,0,1,1,-1,0,1,1,-1,0,1,0,1,0,0,0,-1,0,0,-1,1,0,-1,1,0,0,1,0,-1,0,-1,-1,-1,0,1,1,0,0,1,0,-1,0,1,-1,1,0,-1,1,-1,0,-1,-1,1,0,0,1,1,0,-1,1,1,0,-1,0,0,0,-1,1,1,0,1,-1,0,0,1,-1,-1,0,1,-1,1,0,1,1,-1,0,-1,1,1,0,0,1,1,0,-1,-1,1,0,-1,0,-1,0,1,-1,1,0,1,1,0,0,-1,-1,-1,0,0,-1,-1,0,-1,-1,1,0,0,-1,1,0,0,1,-1,0,0,1,1,0,0,0,0,0,1,0,1,0,-1,-1,0,0,-1,1,-1,0,-1,1,-1,0,1,1,0,0,1,1,1,0,0,-1,0,0,-1,1,1,0,-1,0,-1,0,-1,1,-1,0,1,-1,0,0,1,-1,1,0,-1,1,1,0,1,-1,-1,0,1,-1,-1,0,0,1,-1,0,1,1,-1,0,1,0,-1,0,1,1,1,0,0,1,0,0,-1,1,0,0,1,1,-1,0,-1,-1,1,0,-1,-1,1,0,0,-1,-1,0,1,0,1,0,-1,0,1,0,-1,1,1,0,0,-1,0,0,1,1,-1,0,-1,-1,-1,0,1,1,0,0,-1,-1,1,0,0,1,-1,0,1,-1,-1,0,1,0,-1,0,1,-1,1,0,-1,1,0,0])[Arithmetic.val(n)-1]);
@@ -1826,19 +1802,6 @@ function moebius(n)
     return m & 1 ? J : I;
     */
 }
-function moebius_inversion(gn, INT)
-{
-    // https://en.wikipedia.org/wiki/M%C3%B6bius_inversion_formula
-    return is_array(gn) ? array(gn.length, function(_n) {
-        var A = Abacus.Arithmetic, n = A.num(_n+1), fn;
-        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
-        return INT ? new INT(fn) : fn;
-    }) : function(n) {
-        var A = Abacus.Arithmetic, fn;
-        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
-        return INT ? new INT(fn) : fn;
-    };
-}
 function divisors(n, as_generator)
 {
     var Arithmetic = Abacus.Arithmetic, O = Arithmetic.O, I = Arithmetic.I,
@@ -1858,7 +1821,7 @@ function divisors(n, as_generator)
         return true === as_generator ? divisors : (divisors.get());
     }
 
-    if (is_instance(n, Integer)) {INT = n[CLASS]; n = n.num;}
+    if (is_instance(n, INumber)) {INT = n[CLASS]; n = Integer.cast(n).num;}
 
     n = Arithmetic.abs(n);
     if (true === as_generator)
@@ -2124,6 +2087,35 @@ function symbolic_divisors(c, complex)
         return Iterator(c.equ(Arithmetic.I) ? [c] : [c[CLASS].One(c.symbol || null, c.ring || null), c]);
     }
 }
+function dirichlet_conv(f, g)
+{
+    // https://en.wikipedia.org/wiki/Dirichlet_convolution
+    return function fg(n) {
+        var A = Abacus.Arithmetic, N = function(n) {return n;};
+        if (is_instance(n, INumber))
+        {
+            N = (function(N) {return function(n) {return new N(n);};})(n[CLASS]);
+            n = Integer.cast(n).num;
+        }
+        return sum_(divisors(A.num(n)).map(function(d) {
+            return mul$(f(N(d)), g(N(A.div(n, d))));
+        }));
+    };
+}
+/*function moebius_inversion(gn, INT)
+{
+    // https://en.wikipedia.org/wiki/M%C3%B6bius_inversion_formula
+    return is_array(gn) ? array(gn.length, function(_n) {
+        var A = Abacus.Arithmetic, n = A.num(_n+1), fn;
+        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn[Abacus.Arithmetic.val(A.div(n, d))-1]);}));
+        return INT ? new INT(fn) : fn;
+    }) : function(n) {
+        var A = Abacus.Arithmetic, fn;
+        fn = sum_(divisors(n).map(function(d) {return A.mul(moebius(d), gn(A.div(n, d)));}));
+        return INT ? new INT(fn) : fn;
+    };
+    return dirichlet_conv(moebius, gn);
+}*/
 function dotp(a, b, Arithmetic)
 {
     Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
@@ -2131,24 +2123,7 @@ function dotp(a, b, Arithmetic)
     for (i=0; i<n; ++i)
     {
         // support dot product of numeric/symbolic as well
-        if (is_instance(c, INumber))
-        {
-            if (is_instance(a[i], INumber))
-                c = c.add(a[i].mul(b[i]));
-            else if (is_instance(b[i], INumber))
-                c = c.add(b[i].mul(a[i]));
-            else
-                c = c.add(Arithmetic.mul(a[i], b[i]));
-        }
-        else
-        {
-            if (is_instance(a[i], INumber))
-                c = a[i].mul(b[i]).add(c);
-            else if (is_instance(b[i], INumber))
-                c = b[i].mul(a[i]).add(c);
-            else
-                c = Arithmetic.add(c, Arithmetic.mul(a[i], b[i]));
-        }
+        c = add$(c, mul$(a[i], b[i]));
     }
     return c;
 }
@@ -3274,21 +3249,21 @@ function solvepolys(p, x, type)
 }
 function pow2(n)
 {
-    if (is_instance(n, Integer))
-        return new n[CLASS](pow2(n.num));
-    else if (is_instance(n, Rational))
+    if (is_instance(n, Rational))
         return new n[CLASS](pow2(n.num), pow2(n.den));
+    else if (is_instance(n, INumber))
+        return new n[CLASS](pow2(Integer.cast(n).num));
     var Arithmetic = Abacus.Arithmetic;
     return Arithmetic.shl(Arithmetic.I, Arithmetic.num(n));
 }
 function exp(n, k)
 {
     var Arithmetic = Abacus.Arithmetic, N = Arithmetic.num;
-    k = is_instance(k, Integer) ? k.num : N(k);
-    if (is_instance(n, Integer))
-        return new n[CLASS](exp(n.num, k));
-    else if (is_instance(n, Rational))
+    k = is_instance(k, INumber) ? Integer.cast(k).num : N(k);
+    if (is_instance(n, Rational))
         return new n[CLASS](exp(n.num, k), exp(n.den, k));
+    else if (is_instance(n, INumber))
+        return new n[CLASS](exp(Integer.cast(n).num, k));
     return Arithmetic.pow(N(n), k);
 }
 /*function prime_factorial(n)
@@ -3380,7 +3355,7 @@ function factorial(n, m)
         div = Arithmetic.div, mul = Arithmetic.mul, mod = Arithmetic.mod,
         key, res = O, i, f, MAXMEM = Abacus.Options.MAXMEM;
 
-    if (is_instance(n, Integer)) return new n[CLASS](factorial(n.num, m));
+    if (is_instance(n, INumber)) return new n[CLASS](factorial(Integer.cast(n).num, m));
 
     n = NUM(n);
 
@@ -3485,7 +3460,7 @@ function factorial(n, m)
             m = m[0];
             if (!m.length) return Arithmetic.lt(n, O) ? O : factorial(n);
             else if (1 === m.length) return factorial(n, m[0]);
-            res = operate(function(N, mk) {return add(N, mk);}, O, m);
+            res = operate(function(N, mk) {return add(N, is_instance(mk, INumber) ? Integer.cast(mk).num : mk);}, O, m);
             if (Arithmetic.equ(res, O)) return n;
             else if (Arithmetic.gt(res, n)) return O;
             key = String(n) + '@' + mergesort(m.map(String),1,true).join(',') + '@';
@@ -3523,9 +3498,9 @@ function factorial(n, m)
             }
         }
     }
-    else if (Arithmetic.isNumber(m) || is_instance(m, Integer))
+    else if (Arithmetic.isNumber(m) || is_instance(m, INumber))
     {
-        m = is_instance(m, Integer) ? m.num : NUM(m);
+        m = is_instance(m, INumber) ? Integer.cast(m).num : NUM(m);
 
         if (Arithmetic.lt(m, O))
         {
@@ -3614,23 +3589,22 @@ function factorial(n, m)
 factorial.mem1 = Obj();
 factorial.mem2 = Obj();
 factorial.mem3 = Obj();
-function pochhammer(x, n, type)
+function pochhammer(x, n, s)
 {
     // https://en.wikipedia.org/wiki/Falling_and_rising_factorials
-    var res, k;
-    if (('falling' === type) || ('-' === type) || (-1 === type))
+    var res = x, k = 1;
+    if (is_instance(n, Symbolic)) n = n.c();
+    if ('-' === s)
     {
         // falling factorial
-        if (is_instance(n, Symbolic)) n = n.c();
         //if (equ(x, n)) return factorial(n);
-        for (res=x,k=1; lt(k, n); k=add$(k, 1)) res = mul$(res, sub$(x, k));
+        for (; lt(k, n); k=add$(k, 1)) res = mul$(res, sub$(x, k));
     }
     else
     {
         // rising factorial
-        if (is_instance(n, Symbolic)) n = n.c();
         //if (equ(x, 1)) return factorial(n);
-        for (res=x,k=1; lt(k, n); k=add$(k, 1)) res = mul$(res, add$(x, k));
+        for (; lt(k, n); k=add$(k, 1)) res = mul$(res, add$(x, k));
     }
     return res;
 }
@@ -3645,9 +3619,9 @@ function stirling(n, k, s)
         add = Arithmetic.add, sub = Arithmetic.sub, mul = Arithmetic.mul,
         key, res = O, MAXMEM = Abacus.Options.MAXMEM;
 
-    if (is_instance(n, Integer)) return new n[CLASS](stirling(n.num, is_instance(k, Integer) ? k.num : k, s));
+    if (is_instance(n, INumber)) return new n[CLASS](stirling(Integer.cast(n).num, is_instance(k, INumber) ? Integer.cast(k).num : k, s));
 
-    if (is_instance(k, Integer)) k = k.num;
+    if (is_instance(k, INumber)) k = Integer.cast(k).num;
 
     n = Arithmetic.num(n); k = Arithmetic.num(k); s = +s;
 
@@ -3738,7 +3712,7 @@ function catalan(n)
     // https://rosettacode.org/wiki/Catalan_numbers
     // https://anonymouscoders.wordpress.com/2015/07/20/its-all-about-catalan/
     // catalan numbers C(n) = (4n+2)C(n-1)/(n+1)
-    if (is_instance(n, Integer)) return new n[CLASS](catalan(n.num));
+    if (is_instance(n, INumber)) return new n[CLASS](catalan(Integer.cast(n).num));
 
     n = NUM(n);
     if (Arithmetic.lte(n, 17)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,5,14,42,132,429,1430,4862,16796,58786,208012,742900,2674440,9694845,35357670,129644790])[VAL(n)]);
@@ -3776,7 +3750,7 @@ function bell(n)
     // https://en.wikipedia.org/wiki/Bell_triangle
     // http://fredrikj.net/blog/2015/08/computing-bell-numbers/
     // bell numbers B(n) = SUM[k:0->n-1] (C(n-1,k) B(k))
-    if (is_instance(n, Integer)) return new n[CLASS](bell(n.num));
+    if (is_instance(n, INumber)) return new n[CLASS](bell(Integer.cast(n).num));
 
     n = NUM(n);
     if (Arithmetic.lte(n, 14)) return Arithmetic.lt(n, O) ? O : NUM(([1,1,2,5,15,52,203,877,4140,21147,115975,678570,4213597,27644437,190899322])[VAL(n)]);
@@ -3810,7 +3784,7 @@ function bernoulli(n)
         key, res = O, i, MAXMEM = Abacus.Options.MAXMEM;
     // https://en.wikipedia.org/wiki/Bernoulli_number
     // bernoulli numbers B(m) = 1 - \\sum_{k=0}^{m-1} \\binom{m}{k} \\frac{B(k)}{m - k + 1}
-    if (is_instance(n, Integer)) n = n.num;
+    if (is_instance(n, INumber)) n = Integer.cast(n).num;
     n = NUM(n);
     if (Arithmetic.lt(n, O) || (Arithmetic.gt(n, I) && Arithmetic.equ(I, Arithmetic.mod(n, 2)))) return Rational.Zero();
     if (Arithmetic.lte(n, 20)) return ([
@@ -3864,7 +3838,7 @@ function fibonacci(n)
         key, res = O, MAXMEM = Abacus.Options.MAXMEM;
     // http://en.wikipedia.org/wiki/Fibonacci_number
     // fibonacci numbers F(n) = F(n-1) + F(n-2)
-    if (is_instance(n, Integer)) return new n[CLASS](fibonacci(n.num));
+    if (is_instance(n, INumber)) return new n[CLASS](fibonacci(Integer.cast(n).num));
 
     n = NUM(n);
     if (Arithmetic.lte(n, 36)) return Arithmetic.lt(n, O) ? O : NUM(([0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946,17711,28657,46368,75025,121393,196418,317811,514229,832040,1346269,2178309,3524578,5702887,9227465,14930352])[VAL(n)]);
@@ -3911,10 +3885,10 @@ function polygonal(n, k)
     var Arithmetic = Abacus.Arithmetic,
         O = Arithmetic.O, I = Arithmetic.I, two = Arithmetic.II,
         NUM = Arithmetic.num, number;
-    if (is_instance(k, Integer)) k = k.num;
+    if (is_instance(k, INumber)) k = Integer.cast(k).num;
     k = NUM(k);
     if (Arithmetic.lt(k, 3)) return null;
-    if (is_instance(n, Integer)) return new n[CLASS](polygonal(n.num, k));
+    if (is_instance(n, INumber)) return new n[CLASS](polygonal(Integer.cast(n).num, k));
     n = NUM(n);
     number = Arithmetic.div(Arithmetic.mul(n, Arithmetic.sub(Arithmetic.mul(n, Arithmetic.sub(k, two)), Arithmetic.sub(k, 4))), two);
     return number;
@@ -3926,14 +3900,13 @@ function sum_nk(n, k)
         O = Arithmetic.O, I = Arithmetic.I,
         NUM = Arithmetic.num, MAXMEM = Abacus.Options.MAXMEM,
         symbolic_n = false, symbolic_k = false, m, f, k1, key, res;
-    if (is_instance(n, Numeric) && !is_instance(n, Integer)) n = new Integer(n);
-    if (is_instance(k, Numeric) && !is_instance(k, Integer)) k = new Integer(k);
-    if (is_instance(k, Integer)) k = k.num;
+    if (is_instance(n, Numeric)) n = Integer.cast(n);
+    if (is_instance(k, Numeric)) k = Integer.cast(k).num;
     symbolic_n = is_instance(n, Symbolic);
     symbolic_k = is_instance(k, Symbolic);
     if (is_instance(n, Integer))
     {
-        if (!symbolic_k) return new n[CLASS](sum_nk(n.num, k));
+        if (!symbolic_k) return new n[CLASS](sum_nk(Integer.cast(n).num, k));
         n = n.num;
     }
     if (!symbolic_n) n = NUM(n);
@@ -4010,7 +3983,7 @@ sum_nk.mem = Obj();
 
 /*function series_sum(terms, stop)
 {
-    var gen = terms, k, ak, s = Expr.Zero();
+    var gen = terms, k, ak, s = 0;
     // terms must be function or array
     if (is_array(terms))
     {
@@ -4021,13 +3994,13 @@ sum_nk.mem = Obj();
     {
         ak = gen(k);
         if ((null != stop) && stop(k, s, ak)) break;
-        s = s.add(ak);
+        s = add$(s, ak);
     }
     return s;
 }
 function series_product(terms, stop)
 {
-    var gen = terms, k, ak, s = Expr.One();
+    var gen = terms, k, ak, s = 1;
     // terms must be function or array
     if (is_array(terms))
     {
@@ -4038,15 +4011,15 @@ function series_product(terms, stop)
     {
         ak = gen(k);
         if ((null != stop) && stop(k, s, ak)) break;
-        s = s.mul(ak);
+        s = mul$(s, ak);
     }
     return s;
 }
 function rational_function(p, q, x)
 {
     var k, np = p.length, nq = q.length, px = p[0], qx = q[0];
-    for (k=1; k<np; ++k) px = px.mul(x).add(p[k]); // horner method
-    for (k=1; k<nq; ++k) qx = qx.mul(x).add(q[k]); // horner method
+    for (k=1; k<np; ++k) px = add$(mul$(px, x), p[k]); // horner method
+    for (k=1; k<nq; ++k) qx = add$(mul$(qx, x), q[k]); // horner method
     return px.div(qx);
 }
 function continued_fraction(terms, stop)
@@ -4083,17 +4056,17 @@ function continued_fraction(terms, stop)
 
         if (0 === k)
         {
-            p1 = Expr.One();
+            p1 = 1;
             p0 = bk;
-            q1 = Expr.Zero();
-            q0 = Expr.One();
+            q1 = 0;
+            q0 = 1;
             r = bk;
         }
         else
         {
-            p = p0.mul(bk).add(p1.mul(ak));
-            q = q0.mul(bk).add(q1.mul(ak));
-            r = p.div(q);
+            p = add$(mul$(bk, p0), mul$(ak, p1));
+            q = add$(mul$(bk, q0), mul$(ak, q1));
+            r = div$(p, q);
         }
 
         if ((null != stop) && stop(k, r)) break;
@@ -4106,18 +4079,8 @@ function continued_fraction(terms, stop)
 */
 function $x(x, n)
 {
-    // dummy nth symbol
-    if ((null == x) && (null == n))
-    {
-        n = null;
-        x = '$x';
-    }
-    else if (is_number(x))
-    {
-        n = x;
-        x = '$x';
-    }
-    return new Expr('', String(x || '$x')+(null == n ? '' : ('_'+String(n || 0))));
+    // dummy (nth) symbol
+    return Expr.$(x, n);
 }
 function SymmetricPoly(k, n)
 {
@@ -4255,11 +4218,6 @@ function rndFloat(m, M)
 {
     return (M-m) * Abacus.Math.rnd() + m;
 }
-function is_approximately_equal(a, b, eps)
-{
-    if (null == eps) eps = Number.EPSILON;
-    return stdMath.abs(a - b) < eps;
-}
 
 // options
 Abacus.Options = {
@@ -4292,7 +4250,7 @@ DefaultArithmetic = Abacus.DefaultArithmetic = { // keep default arithmetic as d
             for (var i=0,l=a.length; i<l; ++i) a[i] = Arithmetic.nums(a[i]); // recursive
             return a;
         }
-        return Arithmetic.num(a);
+        return is_instance(a, INumber) ? Integer.cast(a).num : Arithmetic.num(a);
     }
     ,num: function(a) {
         return is_number(a) ? stdMath.floor(a) : parseInt(a || 0, 10);
@@ -4388,8 +4346,8 @@ Abacus.Math = {
     ,subfactorial: function(n) {
         return factorial(n, 'subfactorial');
     }
-    ,pochhammer: function(x, n, type) {
-        return pochhammer(x, n, '-' === type ? '-' : '+');
+    ,pochhammer: function(x, n, s) {
+        return pochhammer(x, n, '-' === s ? '-' : '+');
     }
     ,polygonal: {
         number: polygonal
@@ -4452,70 +4410,70 @@ Abacus.Math = {
 
     ,powsq: function(b, e) {
         var Arithmetic = Abacus.Arithmetic;
-        e = is_instance(e, Integer) ? e.num : Arithmetic.num(e);
-        if (is_instance(b, Integer)) return new b[CLASS](powsq(b.num, e));
+        e = is_instance(e, INumber) ? Integer.cast(e).num : Arithmetic.num(e);
+        if (is_instance(b, INumber)) return new b[CLASS](powsq(Integer.cast(b).num, e));
         return powsq(Arithmetic.num(b), e);
     }
     ,addm: function(a, b, m) {
         var Arithmetic = Abacus.Arithmetic;
-        m = is_instance(m, Integer) ? m.num : Arithmetic.num(m);
-        b = is_instance(b, Integer) ? b.num : Arithmetic.num(b);
-        if (is_instance(a, Integer)) return new a[CLASS](addm(a.num, b, m));
+        m = is_instance(m, INumber) ? Integer.cast(m).num : Arithmetic.num(m);
+        b = is_instance(b, INumber) ? Integer.cast(b).num : Arithmetic.num(b);
+        if (is_instance(a, INumber)) return new a[CLASS](addm(Integer.cast(a).num, b, m));
         return addm(Arithmetic.num(a), b, m);
     }
     ,negm: function(a, m) {
         var Arithmetic = Abacus.Arithmetic;
-        m = is_instance(m, Integer) ? m.num : Arithmetic.num(m);
-        if (is_instance(a, Integer)) return new a[CLASS](negm(a.num, m));
+        m = is_instance(m, INumber) ? Integer.cast(m).num : Arithmetic.num(m);
+        if (is_instance(a, INumber)) return new a[CLASS](negm(Integer.cast(a).num, m));
         return negm(Arithmetic.num(a), m);
     }
     ,mulm: function(a, b, m) {
         var Arithmetic = Abacus.Arithmetic;
-        m = is_instance(m, Integer) ? m.num : Arithmetic.num(m);
-        b = is_instance(b, Integer) ? b.num : Arithmetic.num(b);
-        if (is_instance(a, Integer)) return new a[CLASS](mulm(a.num, b, m));
+        m = is_instance(m, INumber) ? Integer.cast(m).num : Arithmetic.num(m);
+        b = is_instance(b, INumber) ? Integer.cast(b).num : Arithmetic.num(b);
+        if (is_instance(a, INumber)) return new a[CLASS](mulm(Integer.cast(a).num, b, m));
         return mulm(Arithmetic.num(a), b, m);
     }
     ,invm: function(a, m) {
         var Arithmetic = Abacus.Arithmetic;
-        m = is_instance(m, Integer) ? m.num : Arithmetic.num(m);
-        if (is_instance(a, Integer)) return new a[CLASS](invm(a.num, m));
+        m = is_instance(m, INumber) ? Integer.cast(m).num : Arithmetic.num(m);
+        if (is_instance(a, INumber)) return new a[CLASS](invm(Integer.cast(a).num, m));
         return invm(Arithmetic.num(a), m);
     }
     ,powm: function(a, b, m) {
         var Arithmetic = Abacus.Arithmetic;
-        m = is_instance(m, Integer) ? m.num : Arithmetic.num(m);
-        b = is_instance(b, Integer) ? b.num : Arithmetic.num(b);
-        if (is_instance(a, Integer)) return new a[CLASS](powm(a.num, b, m));
+        m = is_instance(m, INumber) ? Integer.cast(m).num : Arithmetic.num(m);
+        b = is_instance(b, INumber) ? Integer.cast(b).num : Arithmetic.num(b);
+        if (is_instance(a, INumber)) return new a[CLASS](powm(Integer.cast(a).num, b, m));
         return powm(Arithmetic.num(a), b, m);
     }
     ,isqrt: function(a) {
         var Arithmetic = Abacus.Arithmetic;
-        if (is_instance(a, Integer)) return new a[CLASS](isqrt(a.num));
+        if (is_instance(a, INumber)) return new a[CLASS](isqrt(Integer.cast(a).num));
         return isqrt(Arithmetic.num(a));
     }
     ,ikthroot: function(a, k) {
         var Arithmetic = Abacus.Arithmetic;
-        k = is_instance(k, Integer) ? k.num : Arithmetic.num(k);
-        if (is_instance(a, Integer)) return new a[CLASS](ikthroot(a.num, k));
+        k = is_instance(k, INumber) ? Integer.cast(k).num : Arithmetic.num(k);
+        if (is_instance(a, INumber)) return new a[CLASS](ikthroot(Integer.cast(a).num, k));
         return ikthroot(Arithmetic.num(a), k);
     }
     ,isqrtp: function(a, p) {
         var Arithmetic = Abacus.Arithmetic;
-        p = is_instance(p, Integer) ? p.num : Arithmetic.num(p);
-        if (is_instance(a, Integer)) return new a[CLASS](isqrtp(a.num, p));
+        p = is_instance(p, INumber) ? Integer.cast(p).num : Arithmetic.num(p);
+        if (is_instance(a, INumber)) return new a[CLASS](isqrtp(Integer.cast(a).num, p));
         return isqrtp(Arithmetic.num(a), p);
     }
     ,ilog: function(x, b) {
         var Arithmetic = Abacus.Arithmetic;
-        b = is_instance(b, Integer) ? b.num : Arithmetic.num(b);
-        if (is_instance(x, Integer)) return new x[CLASS](ilog(x.num, b));
+        b = is_instance(b, INumber) ? Integer.cast(b).num : Arithmetic.num(b);
+        if (is_instance(x, INumber)) return new x[CLASS](ilog(Integer.cast(x).num, b));
         return ilog(Arithmetic.num(x), b);
     }
     ,divisors: {
          numeric: function(n, as_generator) {
             var Arithmetic = Abacus.Arithmetic;
-            return divisors(is_instance(n, Integer) ? n : Arithmetic.num(n), true === as_generator);
+            return divisors(is_instance(n, INumber) ? Integer.cast(n) : Arithmetic.num(n), true === as_generator);
         }
         ,symbolic: function(x, as_generator) {
             var symdivs = symbolic_divisors(x);
@@ -4524,22 +4482,28 @@ Abacus.Math = {
     }
     ,legendre: function(a, p) {
         var Arithmetic = Abacus.Arithmetic;
-        p = is_instance(p, Integer) ? p.num : Arithmetic.num(p);
-        if (is_instance(a, Integer)) return new a[CLASS](legendre_symbol(a.num, p));
+        p = is_instance(p, INumber) ? Integer.cast(p).num : Arithmetic.num(p);
+        if (is_instance(a, INumber)) return new a[CLASS](legendre_symbol(Integer.cast(a).num, p));
         return legendre_symbol(Arithmetic.num(a), p);
     }
     ,jacobi: function(a, n) {
         var Arithmetic = Abacus.Arithmetic;
-        n = is_instance(n, Integer) ? n.num : Arithmetic.num(n);
-        if (is_instance(a, Integer)) return new a[CLASS](jacobi_symbol(a.num, n));
+        n = is_instance(n, INumber) ? Integer.cast(n).num : Arithmetic.num(n);
+        if (is_instance(a, INumber)) return new a[CLASS](jacobi_symbol(Integer.cast(a).num, n));
         return jacobi_symbol(Arithmetic.num(a), n);
     }
     ,moebius: function(n) {
         var Arithmetic = Abacus.Arithmetic;
-        if (is_instance(n, Integer)) return new n[CLASS](moebius(n.num));
+        if (is_instance(n, INumber)) return new n[CLASS](moebius(Integer.cast(n).num));
         return moebius(Arithmetic.num(n));
     }
-    ,moebiusInversion: function(gn) {
+    ,zero: function(n) {
+        return is_instance(n, INumber) ? n[CLASS].Zero() : Abacus.Arithmetic.O;
+    }
+    ,one: function(n) {
+        return is_instance(n, INumber) ? n[CLASS].One() : Abacus.Arithmetic.I;
+    }
+    /*,moebiusInversion: function(gn) {
         var Arithmetic = Abacus.Arithmetic, fn, g1;
         if (is_array(gn))
         {
@@ -4560,14 +4524,17 @@ Abacus.Math = {
             }, is_instance(g1, Integer) ? g1[CLASS] : null);
             return fn;
         }
+    }*/
+    ,dconv: function(f, g) {
+        return dirichlet_conv(f, g);
     }
     ,pollardRho: function(n, s, a, retries, max_steps, F) {
         var N = Abacus.Arithmetic.num, f;
-        if (null != a) a = is_instance(a, Integer) ? a.num : N(a);
-        if (null != s) s = is_instance(s, Integer) ? s.num : N(s);
-        if (is_instance(n, Integer))
+        if (null != a) a = is_instance(a, INumber) ? Integer.cast(a).num : N(a);
+        if (null != s) s = is_instance(s, INumber) ? Integer.cast(s).num : N(s);
+        if (is_instance(n, INumber))
         {
-            f = pollard_rho(n.num, s, a, retries, max_steps||null, F||null);
+            f = pollard_rho(Integer.cast(n).num, s, a, retries, max_steps||null, F||null);
             return null == f ? f : (new n[CLASS](f));
         }
         return pollard_rho(N(n), s, a, retries, max_steps || null, F || null);
@@ -4575,19 +4542,19 @@ Abacus.Math = {
     ,factorize: function(n) {
         var Arithmetic = Abacus.Arithmetic;
         // support gaussian integers as well
-        return is_instance(n, Complex) ? factorize_gi(n) : factorize(is_instance(n, Integer) ? n : Arithmetic.num(n));
+        return is_instance(n, Complex) ? factorize_gi(n) : factorize(is_instance(n, INumber) ? Integer.cast(n) : Arithmetic.num(n));
     }
     ,isProbablePrime: function(n) {
         var Arithmetic = Abacus.Arithmetic;
-        return is_probable_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n));
+        return is_probable_prime(is_instance(n, INumber) ? Integer.cast(n).num : Arithmetic.num(n));
     }
     ,isPrime: function(n) {
         var Arithmetic = Abacus.Arithmetic;
-        return is_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n));
+        return is_prime(is_instance(n, INumber) ? Integer.cast(n).num : Arithmetic.num(n));
     }
     ,nextPrime: function(n, dir) {
         var Arithmetic = Abacus.Arithmetic;
-        return next_prime(is_instance(n, Integer) ? n.num : Arithmetic.num(n), -1 === dir ? -1 : 1);
+        return next_prime(is_instance(n, INumber) ? Integer.cast(n).num : Arithmetic.num(n), -1 === dir ? -1 : 1);
     }
 
     /*,gcd2: function(/* args * /) {
@@ -4595,10 +4562,10 @@ Abacus.Math = {
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
             res, INT = null;
         res = gcd_bin(args.map(function(a) {
-            if (is_instance(a, Integer))
+            if (is_instance(a, INumber))
             {
                 if (!INT) INT = a[CLASS];
-                return a.num;
+                return Integer.cast(a).num;
             }
             return Arithmetic.num(a);
         }));
@@ -4609,10 +4576,10 @@ Abacus.Math = {
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
             res, INT = null;
         res = gcd(args.map(function(a) {
-            if (is_instance(a, Integer))
+            if (is_instance(a, INumber))
             {
                 if (!INT) INT = a[CLASS];
-                return a.num;
+                return Integer.cast(a).num;
             }
             return Arithmetic.num(a);
         }));
@@ -4623,10 +4590,10 @@ Abacus.Math = {
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
             res, INT = null;
         res = xgcd(args.map(function(a) {
-            if (is_instance(a, Integer))
+            if (is_instance(a, INumber))
             {
                 if (!INT) INT = a[CLASS];
-                return a.num;
+                return Integer.cast(a).num;
             }
             return Arithmetic.num(a);
         }));
@@ -4637,10 +4604,10 @@ Abacus.Math = {
             args = slice.call(arguments.length && (is_array(arguments[0])||is_args(arguments[0])) ? arguments[0] : arguments),
             res, INT = null;
         res = lcm(args.map(function(a) {
-            if (is_instance(a, Integer))
+            if (is_instance(a, INumber))
             {
                 if (!INT) INT = a[CLASS];
-                return a.num;
+                return Integer.cast(a).num;
             }
             return Arithmetic.num(a);
         }));
@@ -4734,6 +4701,37 @@ Abacus.Math = {
 };
 
 // real and complex functions
+/*function hypot(a, b)
+{
+    a = stdMath.abs(a);
+    b = stdMath.abs(b);
+    var r = 0;
+    if (0 === a)
+    {
+        return b;
+    }
+    else if (0 === b)
+    {
+        return a;
+    }
+    else if (a > b)
+    {
+        r = b/a;
+        return a*stdMath.sqrt(1 + r*r);
+    }
+    else if (a < b)
+    {
+        r = a/b;
+        return b*stdMath.sqrt(1 + r*r);
+    }
+    return a*stdMath.SQRT2;
+}
+function is_approximately_equal(a, b, eps)
+{
+    if (null == eps) eps = Number.EPSILON;
+    return stdMath.abs(a - b) < eps;
+}
+*/
 function _r(x)
 {
     return is_number(x) ? x : ((is_instance(x, [Integer, IntegerMod, Rational, Float]) ? x : (Rational.cast(x))).valueOf());
