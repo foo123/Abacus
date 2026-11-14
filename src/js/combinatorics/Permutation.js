@@ -50,9 +50,9 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else if ("multiset" === type)
                 return factorial(n, $.multiplicity);
             else if ("derangement" === type)
-                return null != kfixed ? Arithmetic.mul(factorial(n, kfixed), factorial(n-kfixed, false)) : factorial(n, false);
+                return null != kfixed ? Arithmetic.mul(factorial(n, kfixed), factorial(n-kfixed, 'subfactorial')) : factorial(n, 'subfactorial');
             else if ("involution" === type)
-                return factorial(n, true);
+                return factorial(n, 'involution');
             else if ("connected" === type)
                 return factorial(n-1);
             else//if ("permutation" === type)
@@ -404,7 +404,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item0 = decompose_kfixed(item0.slice(), n, kfixed, order);
                     i = Combination.rank(item0[0], [n, kfixed], {type:"combination", base:n, dimension:kfixed, order:order});
                     j = Permutation.rank(item0[1], n-kfixed, {type:"derangement", order:order});
-                    return add(j, mul(i, factorial(n-kfixed, false)));
+                    return add(j, mul(i, factorial(n-kfixed, 'subfactorial')));
                 }
                 else
                 {
@@ -535,7 +535,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null != kfixed)
                 {
                     if ((0 > kfixed) || (kfixed > n) || (kfixed+1 === n)) return null;
-                    r = factorial(n-kfixed, false);
+                    r = factorial(n-kfixed, 'subfactorial');
                     i = Combination.unrank(div(index0, r), [n, kfixed], {type:"combination", base:n, dimension:kfixed, order:order});
                     j = Permutation.unrank(mod(index0, r), n-kfixed, {type:"derangement", order:order});
                     if ((null == i) || (null == j)) return null;
@@ -1652,7 +1652,7 @@ function derange_k_of_n(n, k)
     k = is_instance(k, Integer) ? k.num : NUM(k);
     if (Arithmetic.lt(n, O) || Arithmetic.lt(k, O) || Arithmetic.gt(k, n)) return O;
     if (Arithmetic.equ(k, O)) return factorial(n);
-    if (Arithmetic.equ(k, n)) return factorial(n, false);
+    if (Arithmetic.equ(k, n)) return factorial(n, 'subfactorial');
     key = String(n) + ',' + String(k);
     if (null == derange_k_of_n.mem[key])
     {
@@ -1663,7 +1663,7 @@ function derange_k_of_n(n, k)
             // \sum\limits_{i=0}^{n-k} {{n-k} \choose i} \ !(k+i)
             for (i=O; Arithmetic.lte(i, nk); i=add(i, I))
             {
-                res = add(res, mul(factorial(nk, i), factorial(add(k, i), false)));
+                res = add(res, mul(factorial(nk, i), factorial(add(k, i), 'subfactorial')));
             }
         }
         else

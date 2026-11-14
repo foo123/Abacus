@@ -252,7 +252,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 for (i=n-2; i>=0; --i)
                 {
                     b0 = b0.shift(-1); b1 = b1._mul(b11);
-                    Bezier = Bezier._add(b1._mul(b0)._mul(factorial(n-1,i))._mul(ring.cast(points[i])));
+                    Bezier = Bezier._add(b1._mul(b0)._mul(factorial(n-1, i))._mul(ring.cast(points[i])));
                 }
             }
             return Bezier;

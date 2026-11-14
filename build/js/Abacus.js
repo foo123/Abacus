@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-14 00:07:03)
+*   @version: 2.0.0 (2026-11-14 09:16:04)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-14 00:07:03)
+*   @version: 2.0.0 (2026-11-14 09:16:04)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -5220,6 +5220,9 @@ function factorial(n, m)
 
     n = NUM(n);
 
+    if (false === m) m = 'subfactorial';
+    else if (true === m) m = 'involution';
+
     if (null == m)
     {
         // http://www.luschny.de/math/factorial/index.html
@@ -5248,7 +5251,7 @@ function factorial(n, m)
             res = factorial.mem1[key];
         }
     }
-    else if (false === m)
+    else if ('subfactorial' === m)
     {
         // http://mathworld.wolfram.com/Subfactorial.html
         // https://en.wikipedia.org/wiki/Derangement
@@ -5286,7 +5289,7 @@ function factorial(n, m)
             res = factorial.mem2[key];
         }
     }
-    else if (true === m)
+    else if ('involution' === m)
     {
         // involution factorial = I(n) = I(n-1) + (n-1) I(n-2)
         // http://oeis.org/A000085
@@ -5950,7 +5953,7 @@ function SymmetricPoly(k, n)
         }
         else if (1 === k)
         {
-            res = sum_(array(n, function(i) {return $x(i);}));
+            res = 1 === n ? $x(0) : sum_(array(n, function(i) {return $x(i);}));
         }
         else
         {
@@ -6189,9 +6192,18 @@ Abacus.Math = {
      rnd: stdMath.random
     ,rndInt: rndInt
 
-    ,factorial: factorial
-    ,binomial: factorial
-    ,multinomial: factorial
+    ,factorial: function(n) {
+        return factorial(n);
+    }
+    ,binomial: function(n, k) {
+        return factorial(n, k);
+    }
+    ,multinomial: function(n, m) {
+        return factorial(n, is_array(m) ? m : [].slice.call(arguments, 1));
+    }
+    ,subfactorial: function(n) {
+        return factorial(n, 'subfactorial');
+    }
     ,polygonal: {
         number: polygonal
     }
@@ -14997,7 +15009,7 @@ Polynomial = Abacus.Polynomial = Class(Poly, {
                 for (i=n-2; i>=0; --i)
                 {
                     b0 = b0.shift(-1); b1 = b1._mul(b11);
-                    Bezier = Bezier._add(b1._mul(b0)._mul(factorial(n-1,i))._mul(ring.cast(points[i])));
+                    Bezier = Bezier._add(b1._mul(b0)._mul(factorial(n-1, i))._mul(ring.cast(points[i])));
                 }
             }
             return Bezier;
@@ -27452,9 +27464,9 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
             else if ("multiset" === type)
                 return factorial(n, $.multiplicity);
             else if ("derangement" === type)
-                return null != kfixed ? Arithmetic.mul(factorial(n, kfixed), factorial(n-kfixed, false)) : factorial(n, false);
+                return null != kfixed ? Arithmetic.mul(factorial(n, kfixed), factorial(n-kfixed, 'subfactorial')) : factorial(n, 'subfactorial');
             else if ("involution" === type)
-                return factorial(n, true);
+                return factorial(n, 'involution');
             else if ("connected" === type)
                 return factorial(n-1);
             else//if ("permutation" === type)
@@ -27806,7 +27818,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                     item0 = decompose_kfixed(item0.slice(), n, kfixed, order);
                     i = Combination.rank(item0[0], [n, kfixed], {type:"combination", base:n, dimension:kfixed, order:order});
                     j = Permutation.rank(item0[1], n-kfixed, {type:"derangement", order:order});
-                    return add(j, mul(i, factorial(n-kfixed, false)));
+                    return add(j, mul(i, factorial(n-kfixed, 'subfactorial')));
                 }
                 else
                 {
@@ -27937,7 +27949,7 @@ Permutation = Abacus.Permutation = Class(CombinatorialIterator, {
                 if (null != kfixed)
                 {
                     if ((0 > kfixed) || (kfixed > n) || (kfixed+1 === n)) return null;
-                    r = factorial(n-kfixed, false);
+                    r = factorial(n-kfixed, 'subfactorial');
                     i = Combination.unrank(div(index0, r), [n, kfixed], {type:"combination", base:n, dimension:kfixed, order:order});
                     j = Permutation.unrank(mod(index0, r), n-kfixed, {type:"derangement", order:order});
                     if ((null == i) || (null == j)) return null;
@@ -29054,7 +29066,7 @@ function derange_k_of_n(n, k)
     k = is_instance(k, Integer) ? k.num : NUM(k);
     if (Arithmetic.lt(n, O) || Arithmetic.lt(k, O) || Arithmetic.gt(k, n)) return O;
     if (Arithmetic.equ(k, O)) return factorial(n);
-    if (Arithmetic.equ(k, n)) return factorial(n, false);
+    if (Arithmetic.equ(k, n)) return factorial(n, 'subfactorial');
     key = String(n) + ',' + String(k);
     if (null == derange_k_of_n.mem[key])
     {
@@ -29065,7 +29077,7 @@ function derange_k_of_n(n, k)
             // \sum\limits_{i=0}^{n-k} {{n-k} \choose i} \ !(k+i)
             for (i=O; Arithmetic.lte(i, nk); i=add(i, I))
             {
-                res = add(res, mul(factorial(nk, i), factorial(add(k, i), false)));
+                res = add(res, mul(factorial(nk, i), factorial(add(k, i), 'subfactorial')));
             }
         }
         else

@@ -3384,6 +3384,9 @@ function factorial(n, m)
 
     n = NUM(n);
 
+    if (false === m) m = 'subfactorial';
+    else if (true === m) m = 'involution';
+
     if (null == m)
     {
         // http://www.luschny.de/math/factorial/index.html
@@ -3412,7 +3415,7 @@ function factorial(n, m)
             res = factorial.mem1[key];
         }
     }
-    else if (false === m)
+    else if ('subfactorial' === m)
     {
         // http://mathworld.wolfram.com/Subfactorial.html
         // https://en.wikipedia.org/wiki/Derangement
@@ -3450,7 +3453,7 @@ function factorial(n, m)
             res = factorial.mem2[key];
         }
     }
-    else if (true === m)
+    else if ('involution' === m)
     {
         // involution factorial = I(n) = I(n-1) + (n-1) I(n-2)
         // http://oeis.org/A000085
@@ -4114,7 +4117,7 @@ function SymmetricPoly(k, n)
         }
         else if (1 === k)
         {
-            res = sum_(array(n, function(i) {return $x(i);}));
+            res = 1 === n ? $x(0) : sum_(array(n, function(i) {return $x(i);}));
         }
         else
         {
@@ -4353,9 +4356,18 @@ Abacus.Math = {
      rnd: stdMath.random
     ,rndInt: rndInt
 
-    ,factorial: factorial
-    ,binomial: factorial
-    ,multinomial: factorial
+    ,factorial: function(n) {
+        return factorial(n);
+    }
+    ,binomial: function(n, k) {
+        return factorial(n, k);
+    }
+    ,multinomial: function(n, m) {
+        return factorial(n, is_array(m) ? m : [].slice.call(arguments, 1));
+    }
+    ,subfactorial: function(n) {
+        return factorial(n, 'subfactorial');
+    }
     ,polygonal: {
         number: polygonal
     }

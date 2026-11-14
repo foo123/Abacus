@@ -27,6 +27,11 @@ echo('-----------------');
 for (i=0; i<=30; ++i) echo('Polygonal.Number('+i+',3)='+String(Abacus.Math.polygonal.number(i,3)));
 
 echo();
+echo('Pentagonal numbers');
+echo('-----------------');
+for (i=0; i<=30; ++i) echo('Polygonal.Number('+i+',5)='+String(Abacus.Math.polygonal.number(i,5)));
+
+echo();
 echo('Fibonacci numbers');
 echo('-----------------');
 for (i=0; i<=30; ++i) echo('Fibonacci.Number('+i+')='+String(Abacus.Math.fibonacci.number(i)));
@@ -47,15 +52,15 @@ echo('------------');
 for (i=0; i<=30; ++i) echo('Bernoulli.Number('+i+')='+String(Abacus.Math.bernoulli.number(i)));
 
 echo();
-echo('Factorial numbers');
+echo('Factorials');
 echo('-----------------');
 for (i=0; i<=30; ++i) echo('Factorial('+i+')='+String(Abacus.Math.factorial(i)));
 //echo('Factorial(1000)='+String(Abacus.Math.factorial(1000)));
 
 echo();
-echo('SubFactorial numbers');
+echo('SubFactorials');
 echo('--------------------');
-for (i=0; i<=30; ++i) echo('Subfactorial('+i+')='+String(Abacus.Math.factorial(i,false)));
+for (i=0; i<=30; ++i) echo('Subfactorial('+i+')='+String(Abacus.Math.subfactorial(i)));
 
 echo();
 echo('Large factorization');
