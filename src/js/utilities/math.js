@@ -2087,21 +2087,6 @@ function symbolic_divisors(c, complex)
         return Iterator(c.equ(Arithmetic.I) ? [c] : [c[CLASS].One(c.symbol || null, c.ring || null), c]);
     }
 }
-function dirichlet_conv(f, g)
-{
-    // https://en.wikipedia.org/wiki/Dirichlet_convolution
-    return function fg(n) {
-        var A = Abacus.Arithmetic, N = function(n) {return n;};
-        if (is_instance(n, INumber))
-        {
-            N = (function(N) {return function(n) {return new N(n);};})(n[CLASS]);
-            n = Integer.cast(n).num;
-        }
-        return sum_(divisors(A.num(n)).map(function(d) {
-            return mul$(f(N(d)), g(N(A.div(n, d))));
-        }));
-    };
-}
 /*function moebius_inversion(gn, INT)
 {
     // https://en.wikipedia.org/wiki/M%C3%B6bius_inversion_formula
@@ -2116,6 +2101,56 @@ function dirichlet_conv(f, g)
     };
     return dirichlet_conv(moebius, gn);
 }*/
+function dirichlet_conv(f, g)
+{
+    // https://en.wikipedia.org/wiki/Dirichlet_convolution
+    return function fg(n) {
+        var A = Abacus.Arithmetic, N = function(n) {return n;}, d_, d, fgn;
+        if (is_instance(n, INumber))
+        {
+            N = (function(N) {return function(n) {return new N(n);};})(n[CLASS]);
+            n = Integer.cast(n).num;
+        }
+        fgn = Abacus.Arithmetic.O;
+        d_ = divisors(A.num(n), true);
+        for (;d=d_.next();) fgn = add$(fgn, mul$(f(N(d)), g(N(A.div(n, d)))));
+        d_.dispose();
+        return fgn;
+    };
+}
+function discrete_conv(f, g, lim)
+{
+    // https://en.wikipedia.org/wiki/Convolution#Discrete_convolution
+    lim = lim || 0;
+    return function fg(n) {
+        var fgn = 0, dim, deg, d, i_, i, j;
+        if (is_array(n))
+        {
+            // n-d
+            dim = n.length;
+            deg = multi_index_deg(n)-lim;
+            for (d=0; d<=deg; ++d)
+            {
+                i_ = multi_index(d, dim);
+                for (;i=i_();)
+                {
+                    j = multi_index_op(subn, n, i);
+                    if (multi_index_cmp('>=', j, 0)) fgn = add$(fgn, mul$(f(i), g(j)));
+                }
+            }
+        }
+        else
+        {
+            // 1-d
+            n = n-lim;
+            for (i=0; i<=n; ++i)
+            {
+                fgn = add$(fgn, mul$(f(i), g(n-i)));
+            }
+        }
+        return fgn;
+    };
+}
 function dotp(a, b, Arithmetic)
 {
     Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
@@ -3472,7 +3507,7 @@ function factorial(n, m)
                     res = mul(res, sub(n, i));
                     i = sub(i, I);
                 }
-                res = operate(function(N, mk) {return div(N, factorial(mk));}, res, m);
+                res = operate(function(N, mk) {return div(N, factorial(is_instance(mk, INumber) ? Integer.cast(mk).num : mk));}, res, m);
                 // memoize only up to MAXMEM results
                 if (Arithmetic.lt(n, MAXMEM))
                     factorial.mem3[key] = res;
@@ -3487,7 +3522,7 @@ function factorial(n, m)
             key = String(n) + '@' + mergesort(m.map(String),1,true).join(',');
             if (null == factorial.mem3[key])
             {
-                res = operate(function(N, mk) {return div(N, factorial(mk));}, factorial(n), m);
+                res = operate(function(N, mk) {return div(N, factorial(is_instance(mk, INumber) ? Integer.cast(mk).num : mk));}, factorial(n), m);
                 // memoize only up to MAXMEM results
                 if (Arithmetic.lt(n, MAXMEM))
                     factorial.mem3[key] = res;
@@ -3597,13 +3632,13 @@ function pochhammer(x, n, s)
     if ('-' === s)
     {
         // falling factorial
-        //if (equ(x, n)) return factorial(n);
+        //if (is_instance(n, Numeric) && n.isInt() && equ(x, n)) return factorial(n);
         for (; lt(k, n); k=add$(k, 1)) res = mul$(res, sub$(x, k));
     }
     else
     {
         // rising factorial
-        //if (equ(x, 1)) return factorial(n);
+        //if (is_instance(n, Numeric) && n.isInt() && equ(x, 1)) return factorial(n);
         for (; lt(k, n); k=add$(k, 1)) res = mul$(res, add$(x, k));
     }
     return res;
@@ -4527,6 +4562,9 @@ Abacus.Math = {
     }*/
     ,dconv: function(f, g) {
         return dirichlet_conv(f, g);
+    }
+    ,conv: function(f, g) {
+        return discrete_conv(f, g);
     }
     ,pollardRho: function(n, s, a, retries, max_steps, F) {
         var N = Abacus.Arithmetic.num, f;

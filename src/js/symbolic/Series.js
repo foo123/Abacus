@@ -193,15 +193,21 @@ Series = Abacus.Series = Class(Symbolic, {
                 return self.$(nth).inv(); // must be invertible
             }
             : function(nth, inv) {
-                var n = multi_index_deg(nth), d = self.$x.length;
+                var n = multi_index_deg(nth), d = self.$x.length, res, f, i;
                 if (null == inv_0th) inv_0th = self.$(0).inv(); // must be invertible
                 if (0 === n) return inv_0th;
-                return inv_0th.neg().mul(sum_(array(n, function(i) {
-                    return sum_(multi_index(i, d).list().map(function(ith) {
-                        var jth = multi_index_op(subn, nth, ith);
-                        return multi_index_cmp('>=', jth, 0) ? self.$(jth).mul(inv.$(ith)) : (self.ring || Expr).Zero();
-                    }));
-                })));
+                f = function(i) {
+                    var res = (self.ring || Expr).Zero(), index = multi_index(i, d), ith, jth;
+                    for (;ith=index();)
+                    {
+                        jth = multi_index_op(subn, nth, ith);
+                        if (multi_index_cmp('>=', jth, 0)) res = res.add(self.$(jth).mul(inv.$(ith)));
+                    }
+                    return res;
+                };
+                res = (self.ring || Expr).Zero();
+                for (i=0; i<n; ++i) res = res.add(f(i));
+                return inv_0th.neg().mul(res);
             }, self.$x, self.ring, self.type);
             if ((null != self.degree) && isFinite(self.degree)) self._i.degree = 0 === self.degree ? 0 : inf;
             self._i._i = self; // idempotent
@@ -222,7 +228,7 @@ Series = Abacus.Series = Class(Symbolic, {
             if ((1 === self.$x.length) && self.$([0]).equ(0) && !self.$([1]).equ(0))
             {
                 self._ci = Series(function(nth) {
-                    var n = nth[0],
+                    var n = nth[0], k, f, res,
                         $ = function(k) {
                             return self.$([k]).mul(factorial(k));
                         },
@@ -235,11 +241,14 @@ Series = Abacus.Series = Class(Symbolic, {
                     ;
                     if (0 === n) return /*$(n)*/0; // must be 0
                     if (1 === n) return $(n).inv(); // must be invertible
-                    return sum_(array(n-1, function(k) {
-                        var xk = array(n-k-1, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
-                            nk = pochhammer(n, k+1)/*product_(array(k+1, function(i) {return n+i;}))*/;
-                        return bellP(n-1, k+1, xk).mul(nk).mul((k+1) & 1 ? -1 : 1);
-                    })).div($(1).pow(n).mul(factorial(n)));
+                    f = function(k) {
+                        var xk = array(n-k, function(ki) {return $((ki+1)+1).div($(1).mul((ki+1)+1));}),
+                            nk = pochhammer(n, k)/*product_(array(k, function(i) {return n+i;}))*/;
+                        return bellP(n-1, k, xk).mul(nk).mul((k) & 1 ? -1 : 1);
+                    };
+                    res = (self.ring || Expr).Zero();
+                    for (k=1; k<n; ++k) res = res.add(f(k));
+                    return res.div($(1).pow(n).mul(factorial(n)));
                 }, self.$x, self.ring, 'sum');
                 self._ci._ci = 'sum' === self.type ? self : Series(self.$fn, self.$x, self.ring, 'sum'); // idempotent
             }
@@ -254,9 +263,11 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         other = to_series(other, self);
         return 1 === self.$x.length && 1 === other.$x.length ? Series(function(nth) {
-            return 0 === nth[0] ? /*self.$(nth)*/0 : sum_(array(nth[0], function(kth) {
-                return other.$F(nth[0], kth+1).mul(self.$([kth+1]));
-            }));
+            var res, kth; nth = nth[0];
+            if (0 === nth) return /*self.$([nth])*/0; // must be 0
+            res = (other.ring || Expr).Zero();
+            for (kth=0; kth<nth; ++kth) res = res.add(other.$F(nth, kth+1).mul(self.$([kth+1])));
+            return res;
         }, other.$x, other.ring, 'sum') : self;
     }
 
@@ -320,15 +331,10 @@ Series = Abacus.Series = Class(Symbolic, {
         ? function(nth) {
             return self.$(nth).mul(other.$(nth));
         }
-        : function(nth) {
-            var n = multi_index_deg(nth), d = self.$x.length;
-            return sum_(array(n+1, function(i) {
-                return sum_(multi_index(i, d).list().map(function(ith) {
-                    var jth = multi_index_op(subn, nth, ith);
-                    return multi_index_cmp('>=', jth, 0) ? self.$(ith).mul(other.$(jth)) : (self.ring || Expr).Zero();
-                }));
-            }));
-        },
+        : discrete_conv(
+            function(ith) {return self.$(ith);},
+            function(jth) {return other.$(jth);}
+        ),
         self.$x, self.ring, self.type);
         if ((null != self.degree) && (null != other.degree))
         {
@@ -360,15 +366,20 @@ Series = Abacus.Series = Class(Symbolic, {
             if (0 > m) {series = series.inv(); m = -m;}
             // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
             powseries = 1 === m ? series : Series(function(nth, powseries) {
-                var n = multi_index_deg(nth), d = series.$x.length;
-                if (0 === n) return series.$(0).pow(m);
-                return series.$(0).inv().div(n).mul(sum_(array(n, function(k) {
-                    return sum_(multi_index(k+1, d).list().map(function(kth) {
-                        var jth = multi_index_op(subn, nth, kth);
-                        return multi_index_cmp('>=', jth, 0) ? series.$(kth).mul(powseries.$(jth)).mul((k+1)*m - n + k+1) : (series.ring || Expr).Zero();
-                    }));
-                })))
-                ;
+                var n = multi_index_deg(nth), d = series.$x.length, res, k, f;
+                if (0 === n) return series.$(nth).pow(m);
+                res = (series.ring || Expr).Zero();
+                f = function(k) {
+                    var res = (series.ring || Expr).Zero(), index = multi_index(k, d), kth, jth;
+                    for (;kth=index();)
+                    {
+                        jth = multi_index_op(subn, nth, kth);
+                        if (multi_index_cmp('>=', jth, 0)) res = res.add(series.$(kth).mul(powseries.$(jth)).mul(k*m - n + k));
+                    }
+                    return res;
+                };
+                for (k=1; k<=n; ++k) res = res.add(f(k));
+                return series.$(0).inv().div(n).mul(res);
             }, series.$x, series.ring, series.type);
             if ((series !== powseries) && (null != series.degree))
             {
