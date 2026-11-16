@@ -3271,6 +3271,20 @@ function simplify_fn(expr, group)
             expr = Expr('abs()', [a]);
         }
     }
+    else if ('sgn()' === expr.ast.op)
+    {
+        a = simplify_re(simplify_fn(expr.ast.arg[0], group));
+        if (a.isConst(true) && a.c(true).isReal())
+        {
+            // sgn(n) simplification
+            a = a.c(true).real();
+            expr = Expr('', lt(a, 0) ? Rational.MinusOne() : (gt(a, 0) ? Rational.One() : Rational.Zero()));
+        }
+        else
+        {
+            expr = Expr('sgn()', [a]);
+        }
+    }
     else if (('()' === expr.ast.op.slice(-2)) && (1 === expr.ast.arg.length) && HAS.call(Expr.FN, expr.ast.op) && Expr.FN[expr.ast.op].inv)
     {
         a = simplify_re(simplify_fn(expr.ast.arg[0], group));

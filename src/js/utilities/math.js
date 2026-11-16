@@ -3628,7 +3628,7 @@ function pochhammer(x, n, s)
 {
     // https://en.wikipedia.org/wiki/Falling_and_rising_factorials
     var res = x, k = 1;
-    if (is_instance(n, Symbolic)) n = n.c();
+    while (is_instance(n, Symbolic)) n = n.c();
     if ('-' === s)
     {
         // falling factorial

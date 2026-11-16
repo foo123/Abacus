@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-15 12:49:10)
+*   @version: 2.0.0 (2026-11-16 12:40:46)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-15 12:49:10)
+*   @version: 2.0.0 (2026-11-16 12:40:46)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -5464,7 +5464,7 @@ function pochhammer(x, n, s)
 {
     // https://en.wikipedia.org/wiki/Falling_and_rising_factorials
     var res = x, k = 1;
-    if (is_instance(n, Symbolic)) n = n.c();
+    while (is_instance(n, Symbolic)) n = n.c();
     if ('-' === s)
     {
         // falling factorial
@@ -14242,6 +14242,20 @@ function simplify_fn(expr, group)
         else
         {
             expr = Expr('abs()', [a]);
+        }
+    }
+    else if ('sgn()' === expr.ast.op)
+    {
+        a = simplify_re(simplify_fn(expr.ast.arg[0], group));
+        if (a.isConst(true) && a.c(true).isReal())
+        {
+            // sgn(n) simplification
+            a = a.c(true).real();
+            expr = Expr('', lt(a, 0) ? Rational.MinusOne() : (gt(a, 0) ? Rational.One() : Rational.Zero()));
+        }
+        else
+        {
+            expr = Expr('sgn()', [a]);
         }
     }
     else if (('()' === expr.ast.op.slice(-2)) && (1 === expr.ast.arg.length) && HAS.call(Expr.FN, expr.ast.op) && Expr.FN[expr.ast.op].inv)

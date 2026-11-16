@@ -138,7 +138,6 @@ See the comments in the code for algorithms and references used.
 * [Fraction-Free Methods for Determinants, Deanna Richelle Leggett (MSc thesis)](https://pdfs.semanticscholar.org/4188/73bbcad4e7bcdcf14475b4616febbdc729f2.pdf)
 * [Moore-Penrose Generalised Inverse, wikipedia](https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse)
 * [The Moore-Penrose Pseudoinverse. A Tutorial Review of the Theory, J.C.A. Barata, M.S. Hussein](https://arxiv.org/abs/1110.6882v1)
-* [A general matrix eigenvalue algorithm, Charles F. Van Loan](https://www.cs.cornell.edu/cv/ResearchPDF/Gen.Matrix.EigenV.Algorithm.pdf)
 * [Algorithms and Data Structures for Sparse Polynomial Arithmetic, M. Asadi, A. Brandt, R. H. C. Moir, M. M. Maza](https://www.researchgate.net/publication/333182217_Algorithms_and_Data_Structures_for_Sparse_Polynomial_Arithmetic)
 * [High Performance Sparse Multivariate Polynomials: Fundamental Data Structures and Algorithms, Alex Brandt (MSc thesis)](https://www.semanticscholar.org/paper/High-Performance-Sparse-Multivariate-Polynomials%3A-Brandt/016a97690ecaed04d7a60c1dbf27eb5a96de2dc1)
 * [GCDHEU: Heuristic Polynomial GCD Algorithm Based On Integer GCD Computation, B. W. Char, K. O. Geddes and G. H. Gonnet](https://www.researchgate.net/publication/221149887_GCDHEU_Heuristic_Polynomial_GCD_Algorithm_Based_on_Integer_GCD_Computation)
@@ -175,6 +174,7 @@ See the comments in the code for algorithms and references used.
 * [Formal Power Series, wikipedia](https://en.wikipedia.org/wiki/Formal_power_series)
 * [Composita and its properties, Vladimir V. Kruchinin, Dmitry V. Kruchinin](https://arxiv.org/abs/1103.2582v2)
 * [Relax, but Don’t be Too Lazy, JORIS VAN DER HOEVEN](https://www.csd.uwo.ca/~mmorenom/Publications/Relax_but_dont_be_too_lazy.pdf)
+<!--* [A general matrix eigenvalue algorithm, Charles F. Van Loan](https://www.cs.cornell.edu/cv/ResearchPDF/Gen.Matrix.EigenV.Algorithm.pdf)-->
 
 ### Example API
 
@@ -352,17 +352,17 @@ console.log(exp("x").mul(exp("-x")).toString());
 * implement `Hermite Normal Form`, `Smith Normal Form` **[DONE]**
 * <del>implement numeric `EVD / SVD` computation</del>
 * support general symbolic expressions and computations in `Expr` **[DONE]**
-* support (formal) univariate and multivariate power series of symbolic expressions in `Series` **[ALMOST DONE]**
+* support (formal) univariate and multivariate power series of symbolic expressions in `Series` **[DONE]**
 * implement adequate and efficient simplification methods for symbolic expressions **[DONE PARTIALLY]**
-* support some basic functions in symbolic expressions (eg. `exp`, `log`, `sin`, `cos`, ..) **[DONE PARTIALLY]**
+* support basic analytic functions in symbolic expressions (eg. `exp`, `log`, `sin`, `cos`, ..) **[DONE]**
 * support solutions of systems of **linear diophantine and linear congruence equations** (with one or many variables) **[DONE]**
 * support general and least-squares solutions of systems of **arbitrary linear equations** **[DONE]**
 * support solutions of systems of **linear inequalities** (with one or many variables) **[DONE]**
 * support solutions of systems of **linear diophantine and linear congruence inequalities** (with one or many variables) (TODO)
 * support all exact rational solutions of systems of **arbitrary multivariate polynomial equations** **[DONE]**
 * support all exact solutions of systems of **arbitrary multivariate polynomial equations** **[DONE PARTIALLY]**
-* implement multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
 * implement optimized sparse representation and computations for polynomials instead of the inefficient dense representation **[DONE]**
+* implement multivariate polynomials, multivariate operations, multivariate orderings **[DONE]**
 * implement univariate polynomial factorization, rational root finding (`Kronecker` algorithm) **[DONE]**
 * implement univariate polynomial exact root finding for solvable polynomials **[DONE]**
 * implement univariate polynomial approximate root finding (`Aberth` algorithm) **[DONE]**
