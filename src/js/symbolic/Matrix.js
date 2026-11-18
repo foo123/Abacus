@@ -1,4 +1,4 @@
-// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
+// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring/field
 Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix(ring, r, c, values) {
@@ -221,9 +221,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             return m;
         }
 
-        ,toString: function(m, bar) {
+        ,toString: function(m, type) {
             if (!is_array(m)) return String(m);
-            bar = String(bar || '|');
+            type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
+            var left = 'pmatrix' === type ? '|' : '[', right = 'pmatrix' === type ? '|' : ']';
             // compute length of greatest entry in matrix (per column)
             // so to pad other entries (in same column) same to aling properly
             var max = is_array(m[0]) ? array(m[0].length, 0) : 0;
@@ -263,7 +264,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             });
 
             return m.map(function(mi, i) {
-                return bar + (is_array(mi) ? mi.map(function(mij, j) {return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
+                return left + (is_array(mi) ? mi.map(function(mij, j) {return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + right;
             }).join("\n");
         }
         ,toTex: function(m, type) {
@@ -271,9 +272,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
             return '\\begin{' + type + '}' + m.map(function(x) {return is_array(x) ? x.map(function(xi) {return Tex(xi);}).join(' & \\hskip 1em ') : Tex(x);}).join(' \\\\ ') + '\\end{' + type + '}';
         }
-        ,toDec: function(m, precision, bar) {
+        ,toDec: function(m, precision, type) {
             if (!is_array(m)) return is_callable(m.toDec) ? m.toDec(precision) : String(m);
-            bar = String(bar || '|');
+            type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
+            var left = 'pmatrix' === type ? '|' : '[', right = 'pmatrix' === type ? '|' : ']';
             // compute length of greatest entry in matrix (per column)
             // so to pad other entries (in same column) same to aling properly
             var max = is_array(m[0]) ? array(m[0].length, 0) : 0;
@@ -312,7 +314,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 }
             });
             return m.map(function(mi, i) {
-                return bar + (is_array(mi) ? mi.map(function(mij, j){return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
+                return left + (is_array(mi) ? mi.map(function(mij, j){return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + right;
             }).join("\n");
         }
     }
@@ -1781,14 +1783,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
     ,toString: function() {
         var self = this;
-        if (null == self._str)
-            self._str = Matrix.toString(self.val);
+        if (null == self._str) self._str = Matrix.toString(self.val);
         return self._str;
     }
     ,toTex: function() {
         var self = this;
-        if (null == self._tex)
-            self._tex = Matrix.toTex(self.val);
+        if (null == self._tex) self._tex = Matrix.toTex(self.val);
         return self._tex;
     }
     ,toDec: function(precision) {

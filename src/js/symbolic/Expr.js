@@ -516,7 +516,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         ,Alias: [
             {token:'\\left(',  alias:'('},
-            {token:'\\right)', alias:')'}
+            {token:'\\right)', alias:')'},
+            {token:'\\left|',  alias:'|'},
+            {token:'\\right|', alias:'|'}
         ]
 
         ,fromString: function(s, imagUnit) {
@@ -1027,6 +1029,30 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         continue;
                     }
                     c = s.charAt(0);
+                    if ('|' === c)
+                    {
+                        if ((expected) && (-1 !== expected.indexOf('|')))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            // alternative abs op
+                            s = s.slice(1);
+                            i += 1;
+                            if (!(arg = parse_until('|'))) throw error('Invalid abs "||" operator', i0);
+                            if (!eat('|')) throw error('Missing "|" in abs "||" operator', i0);
+                            term = Expr('abs()', [arg]);
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            terms.unshift(term);
+                            prev_term = true;
+                            continue;
+                        }
+                    }
                     if (('(' === c) || ('{' === c))
                     {
                         s = s.slice(1);
@@ -2460,8 +2486,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }*/
             else if ('()' === op.slice(-2))
             {
-                // function
-                self._str = op.slice(0, -2) + '(' + arg.map(expr_str).join(',') + ')';
+                if ('abs()' === op)
+                {
+                    self._str = '|' + arg.map(expr_str).join(',') + '|';
+                }
+                else
+                {
+                    // other function
+                    self._str = op.slice(0, -2) + '(' + arg.map(expr_str).join(',') + ')';
+                }
             }
             else if (Expr.OP[op])
             {
@@ -2620,8 +2653,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }*/
             else if ('()' === op.slice(-2))
             {
-                // function
-                self._tex = /*'\\' +*/ to_tex(op.slice(0, -2), 'op') + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                if ('abs()' === op)
+                {
+                    self._tex = '\\left|' + arg.map(expr_tex).join(',') + '\\right|';
+                }
+                else
+                {
+                    // other function
+                    self._tex = /*'\\' +*/ to_tex(op.slice(0, -2), 'op') + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                }
             }
             else if (Expr.OP[op])
             {

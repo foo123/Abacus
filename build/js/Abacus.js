@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-16 12:40:46)
+*   @version: 2.0.0 (2026-11-19 00:47:22)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-16 12:40:46)
+*   @version: 2.0.0 (2026-11-19 00:47:22)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -1721,51 +1721,35 @@ function frac2dec(n, d, tofloat)
     return whole + dot + non_repeating + repeating;
 }
 
-function multi_index(n, d, min)
+function multi_index(n, d, m)
 {
     // https://en.wikipedia.org/wiki/Multi-index_notation
-    // d-dimensional multi-indices that sum to n
-    // i.e all compositions of n into d parts with min=min and max=n-(d-1)*min
-    min = min || 0;
-    var max = n-(d-1)*min,
-        index = null,
-        do_next = false,
+    // all d-dimensional multi-indices that sum to n
+    // i.e all compositions of n into d parts with min=m and max=n-(d-1)*m
+    m = stdMath.max(0, m || 0);
+    var M = n-(d-1)*m,
+        index = index = d < 1 ? null : array(d, function(i) {return 0 === i ? M : m;}),
+        do_next = 0;
 
-        init = function() {
-            index = d < 1 ? null : array(d, function(i) {return 0 === i ? max : min;}); // initial
-            do_next = false;
-        },
-
-        next = function() {
-            if (index && do_next)
+    return function() {
+        if (index && do_next)
+        {
+            // compute next
+            if ((1 <= d) && (index[d-1] < M))
             {
-                // compute next
-                if ((1 <= d) && (index[d-1] < max))
-                {
-                    var i = d-1, m = index[i];
-                    index[i--] = min;
-                    while ((0 < i) && (min === index[i])) --i;
-                    --index[i]; index[i+1] = 1+m;
-                }
-                else
-                {
-                    index = null; // done
-                }
+                var i = d-1, mi = index[i];
+                index[i--] = m;
+                while ((0 < i) && (m === index[i])) --i;
+                --index[i]; index[i+1] = 1+mi;
             }
-            do_next = true;
-            return index;
+            else
+            {
+                index = null; // done
+            }
         }
-    ;
-    next.list = function() {
-        init();
-        for (var list=[];next();) list.push(index.slice());
-        return list;
+        do_next = 1;
+        return index;
     };
-    init(); return next;
-}
-function multi_index_(i, d)
-{
-    return is_array(i) ? i : array(d, i);
 }
 function multi_index_deg(a)
 {
@@ -1779,8 +1763,10 @@ function multi_index_cmp(cmp, a, b)
         bi = (b_arr ? b[i] : b) || 0;
         switch (cmp)
         {
+            case '=<'   :
             case '<='   : if (ai > bi) return false; break;
             case '<'    : if (ai >= bi) return false; break;
+            case '=>'   :
             case '>='   : if (ai < bi) return false; break;
             case '>'    : if (ai <= bi) return false; break;
             case '!='   : if (ai === bi) return false; break;
@@ -1789,14 +1775,62 @@ function multi_index_cmp(cmp, a, b)
     }
     return true;
 }
-function multi_index_op(op, a, b)
+function multi_index_split(i, n, n0)
 {
-    return array(stdMath.max(a.length, b.length), function(i) {
-        return op(a[i] || 0, b[i] || 0);
-    });
+    // i multi-index, all pairs of multi-indices j, k s.t. j+k = i, compatible with deg
+    var dim, deg, j, k, next_index;
+    deg = null == n0 ? 0 : n0;
+    if (is_array(i))
+    {
+        // n-d
+        dim = i.length;
+        if (null == n) n = multi_index_deg(i);
+    }
+    else
+    {
+        // 0-d
+        dim = 0;
+        if (null == n) n = i;
+    }
+    return function() {
+        var in_range = 0;
+        for (;deg<=n;)
+        {
+            if (0 < dim)
+            {
+                if (null == k) k = array(dim, 0);
+                if (null == next_index) next_index = multi_index(deg, dim);
+                for (;j=next_index();)
+                {
+                    in_range = 1;
+                    for (var _=0; _<dim; ++_)
+                    {
+                        k[_] = i[_] - j[_];
+                        if (0 > k[_])
+                        {
+                            in_range = 0;
+                            break;
+                        }
+                    }
+                    if (in_range) break;
+                }
+                if (in_range) break;
+                ++deg; next_index = null;
+            }
+            else
+            {
+                j = n; k = i-j;
+                in_range = 1;
+                ++deg;
+                break;
+            }
+        }
+        return in_range ? [j, k] : null; // j+k=i
+    };
 }
 multi_index.deg = multi_index_deg;
 multi_index.cmp = multi_index_cmp;
+multi_index.split = multi_index_split;
 
 Abacus.Class = Class;
 
@@ -3954,48 +3988,22 @@ function dirichlet_conv(f, g)
         return fgn;
     };
 }
-function discrete_conv(f, g, lim)
+function discrete_conv(f, g)
 {
     // https://en.wikipedia.org/wiki/Convolution#Discrete_convolution
-    lim = lim || 0;
     return function fg(n) {
-        var fgn = 0, dim, deg, d, i_, i, j;
-        if (is_array(n))
-        {
-            // n-d
-            dim = n.length;
-            deg = multi_index_deg(n)-lim;
-            for (d=0; d<=deg; ++d)
-            {
-                i_ = multi_index(d, dim);
-                for (;i=i_();)
-                {
-                    j = multi_index_op(subn, n, i);
-                    if (multi_index_cmp('>=', j, 0)) fgn = add$(fgn, mul$(f(i), g(j)));
-                }
-            }
-        }
-        else
-        {
-            // 1-d
-            n = n-lim;
-            for (i=0; i<=n; ++i)
-            {
-                fgn = add$(fgn, mul$(f(i), g(n-i)));
-            }
-        }
+        var fgn = 0, ij_ = multi_index_split(n), ij;
+        for (;ij=ij_();) fgn = add$(fgn, mul$(f(ij[0]), g(ij[1])));
         return fgn;
     };
 }
-function dotp(a, b, Arithmetic)
+function dot_prod(a, b, Arithmetic)
 {
+    // https://en.wikipedia.org/wiki/Dot_product
     Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
     var c = Arithmetic.O, n = stdMath.min(a.length, b.length), i;
-    for (i=0; i<n; ++i)
-    {
-        // support dot product of numeric/symbolic as well
-        c = add$(c, mul$(a[i], b[i]));
-    }
+    // support dot product of numeric/symbolic as well
+    for (i=0; i<n; ++i) c = add$(c, mul$(a[i], b[i]));
     return c;
 }
 function gramschmidt(v)
@@ -4015,12 +4023,12 @@ function gramschmidt(v)
             kl = ui.length;
             for (j=0; j<i; ++j)
             {
-                uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
+                uj = u[j]; pij = dot_prod(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
                 for (k=0; k<kl; ++k) ui[k] = pjj[j].mul(ui[k]).sub(pij.mul(uj[k]));
             }
             g = igcd(ui);
             if (g.gt(Arithmetic.I)) for (k=0; k<kl; ++k) ui[k] = ui[k].div(g);
-            pjj[i] = dotp(ui, ui, Arithmetic);
+            pjj[i] = dot_prod(ui, ui, Arithmetic);
         }
     }
     else
@@ -4032,12 +4040,12 @@ function gramschmidt(v)
             kl = ui.length;
             for (j=0; j<i; ++j)
             {
-                uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
+                uj = u[j]; pij = dot_prod(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
                 for (k=0; k<kl; ++k) ui[k] = Arithmetic.sub(Arithmetic.mul(pjj[j], ui[k]), Arithmetic.mul(pij, uj[k]));
             }
             g = igcd(ui);
             if (Arithmetic.gt(g, Arithmetic.I)) for (k=0; k<kl; ++k) ui[k] = Arithmetic.div(ui[k], g);
-            pjj[i] = dotp(ui, ui, Arithmetic);
+            pjj[i] = dot_prod(ui, ui, Arithmetic);
         }
     }
     return u;
@@ -6402,6 +6410,10 @@ Abacus.Math = {
     ,conv: function(f, g) {
         return discrete_conv(f, g);
     }
+    ,dotp: function(a, b) {
+        var Arithmetic = Abacus.Arithmetic;
+        return (is_array(a) || is_args(a)) && (is_array(b) || is_args(b)) ? dot_prod(a, b, Arithmetic) : Arithmetic.O;
+    }
     ,pollardRho: function(n, s, a, retries, max_steps, F) {
         var N = Abacus.Arithmetic.num, f;
         if (null != a) a = is_instance(a, INumber) ? Integer.cast(a).num : N(a);
@@ -6565,10 +6577,6 @@ Abacus.Math = {
     }
     ,groebner: buchberger_groebner
 
-    ,dotp: function(a, b) {
-        var Arithmetic = Abacus.Arithmetic;
-        return (is_array(a) || is_args(a)) && (is_array(b) || is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
-    }
     ,orthogonalize: function(v) {
         return (is_array(v) || is_args(v)) && v.length ? gramschmidt(v) : [];
     }
@@ -11489,7 +11497,9 @@ Expr = Abacus.Expr = Class(Symbolic, {
         }
         ,Alias: [
             {token:'\\left(',  alias:'('},
-            {token:'\\right)', alias:')'}
+            {token:'\\right)', alias:')'},
+            {token:'\\left|',  alias:'|'},
+            {token:'\\right|', alias:'|'}
         ]
 
         ,fromString: function(s, imagUnit) {
@@ -12000,6 +12010,30 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         continue;
                     }
                     c = s.charAt(0);
+                    if ('|' === c)
+                    {
+                        if ((expected) && (-1 !== expected.indexOf('|')))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            // alternative abs op
+                            s = s.slice(1);
+                            i += 1;
+                            if (!(arg = parse_until('|'))) throw error('Invalid abs "||" operator', i0);
+                            if (!eat('|')) throw error('Missing "|" in abs "||" operator', i0);
+                            term = Expr('abs()', [arg]);
+                            if (prev_term)
+                            {
+                                ops.unshift(['*', i0]); // implicit multiplication assumed
+                                merge();
+                            }
+                            terms.unshift(term);
+                            prev_term = true;
+                            continue;
+                        }
+                    }
                     if (('(' === c) || ('{' === c))
                     {
                         s = s.slice(1);
@@ -13433,8 +13467,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }*/
             else if ('()' === op.slice(-2))
             {
-                // function
-                self._str = op.slice(0, -2) + '(' + arg.map(expr_str).join(',') + ')';
+                if ('abs()' === op)
+                {
+                    self._str = '|' + arg.map(expr_str).join(',') + '|';
+                }
+                else
+                {
+                    // other function
+                    self._str = op.slice(0, -2) + '(' + arg.map(expr_str).join(',') + ')';
+                }
             }
             else if (Expr.OP[op])
             {
@@ -13593,8 +13634,15 @@ Expr = Abacus.Expr = Class(Symbolic, {
             }*/
             else if ('()' === op.slice(-2))
             {
-                // function
-                self._tex = /*'\\' +*/ to_tex(op.slice(0, -2), 'op') + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                if ('abs()' === op)
+                {
+                    self._tex = '\\left|' + arg.map(expr_tex).join(',') + '\\right|';
+                }
+                else
+                {
+                    // other function
+                    self._tex = /*'\\' +*/ to_tex(op.slice(0, -2), 'op') + '\\left(' + arg.map(expr_tex).join(',') + '\\right)';
+                }
             }
             else if (Expr.OP[op])
             {
@@ -21169,7 +21217,7 @@ Series = Abacus.Series = Class(Symbolic, {
 
     ,$: function(nth) {
         var self = this;
-        nth = is_array(nth) ? nth : multi_index_(nth, self.$x.length);
+        nth = is_array(nth) ? nth : array(self.$x.length, nth);
         if (!multi_index_cmp('>=', nth, 0)) return 'product' === self.type ? (self.ring || Expr).One() : (self.ring || Expr).Zero();
         var Z = 'product' === self.type ? 1 : 0,
             CACHE = 64,
@@ -21229,8 +21277,8 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         return self.isDegree(0) && self.c().isInt();
     }
-    ,c: function() {
-        return this.$(0);
+    ,c: function(n) {
+        return this.$(n || 0);
     }
 
     ,neg: function() {
@@ -21259,20 +21307,12 @@ Series = Abacus.Series = Class(Symbolic, {
                 return self.$(nth).inv(); // must be invertible
             }
             : function(nth, inv) {
-                var n = multi_index_deg(nth), d = self.$x.length, res, f, i;
+                var n = multi_index_deg(nth), ijth_, ijth, res;
                 if (null == inv_0th) inv_0th = self.$(0).inv(); // must be invertible
                 if (0 === n) return inv_0th;
-                f = function(i) {
-                    var res = (self.ring || Expr).Zero(), index = multi_index(i, d), ith, jth;
-                    for (;ith=index();)
-                    {
-                        jth = multi_index_op(subn, nth, ith);
-                        if (multi_index_cmp('>=', jth, 0)) res = res.add(self.$(jth).mul(inv.$(ith)));
-                    }
-                    return res;
-                };
+                ijth_ = multi_index_split(nth, n-1, 0);
                 res = (self.ring || Expr).Zero();
-                for (i=0; i<n; ++i) res = res.add(f(i));
+                for (;ijth=ijth_();) res = res.add(self.$(ijth[1]).mul(inv.$(ijth[0])));
                 return inv_0th.neg().mul(res);
             }, self.$x, self.ring, self.type);
             if ((null != self.degree) && isFinite(self.degree)) self._i.degree = 0 === self.degree ? 0 : inf;
@@ -21432,19 +21472,15 @@ Series = Abacus.Series = Class(Symbolic, {
             if (0 > m) {series = series.inv(); m = -m;}
             // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
             powseries = 1 === m ? series : Series(function(nth, powseries) {
-                var n = multi_index_deg(nth), d = series.$x.length, res, k, f;
+                var n = multi_index_deg(nth), k, kjth_, kjth, res;
                 if (0 === n) return series.$(nth).pow(m);
+                kjth_ = multi_index_split(nth, n, 1);
                 res = (series.ring || Expr).Zero();
-                f = function(k) {
-                    var res = (series.ring || Expr).Zero(), index = multi_index(k, d), kth, jth;
-                    for (;kth=index();)
-                    {
-                        jth = multi_index_op(subn, nth, kth);
-                        if (multi_index_cmp('>=', jth, 0)) res = res.add(series.$(kth).mul(powseries.$(jth)).mul(k*m - n + k));
-                    }
-                    return res;
-                };
-                for (k=1; k<=n; ++k) res = res.add(f(k));
+                for (;kjth=kjth_();)
+                {
+                    k = multi_index_deg(kjth[0]);
+                    res = res.add(series.$(kjth[0]).mul(powseries.$(kjth[1])).mul(k*m - n + k));
+                }
                 return series.$(0).inv().div(n).mul(res);
             }, series.$x, series.ring, series.type);
             if ((series !== powseries) && (null != series.degree))
@@ -21668,7 +21704,7 @@ Abacus.PowerSeries = function(f, x, x0) {
     }
     return f;
 };
-// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring, default Ring.Z()
+// Abacus.Matrix, represents a (2-dimensional) (dense) matrix with coefficients from a ring/field
 Matrix = Abacus.Matrix = Class(INumber, {
 
     constructor: function Matrix(ring, r, c, values) {
@@ -21891,9 +21927,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             return m;
         }
 
-        ,toString: function(m, bar) {
+        ,toString: function(m, type) {
             if (!is_array(m)) return String(m);
-            bar = String(bar || '|');
+            type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
+            var left = 'pmatrix' === type ? '|' : '[', right = 'pmatrix' === type ? '|' : ']';
             // compute length of greatest entry in matrix (per column)
             // so to pad other entries (in same column) same to aling properly
             var max = is_array(m[0]) ? array(m[0].length, 0) : 0;
@@ -21933,7 +21970,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
             });
 
             return m.map(function(mi, i) {
-                return bar + (is_array(mi) ? mi.map(function(mij, j) {return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
+                return left + (is_array(mi) ? mi.map(function(mij, j) {return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + right;
             }).join("\n");
         }
         ,toTex: function(m, type) {
@@ -21941,9 +21978,10 @@ Matrix = Abacus.Matrix = Class(INumber, {
             type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
             return '\\begin{' + type + '}' + m.map(function(x) {return is_array(x) ? x.map(function(xi) {return Tex(xi);}).join(' & \\hskip 1em ') : Tex(x);}).join(' \\\\ ') + '\\end{' + type + '}';
         }
-        ,toDec: function(m, precision, bar) {
+        ,toDec: function(m, precision, type) {
             if (!is_array(m)) return is_callable(m.toDec) ? m.toDec(precision) : String(m);
-            bar = String(bar || '|');
+            type = 'pmatrix' === type ? 'pmatrix' : 'bmatrix';
+            var left = 'pmatrix' === type ? '|' : '[', right = 'pmatrix' === type ? '|' : ']';
             // compute length of greatest entry in matrix (per column)
             // so to pad other entries (in same column) same to aling properly
             var max = is_array(m[0]) ? array(m[0].length, 0) : 0;
@@ -21982,7 +22020,7 @@ Matrix = Abacus.Matrix = Class(INumber, {
                 }
             });
             return m.map(function(mi, i) {
-                return bar + (is_array(mi) ? mi.map(function(mij, j){return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + bar;
+                return left + (is_array(mi) ? mi.map(function(mij, j){return pad(mij, is_array(max) ? max[j] : max);}).join('  ') : pad(mi, is_array(max) ? max[0] : max)) + right;
             }).join("\n");
         }
     }
@@ -23451,14 +23489,12 @@ Matrix = Abacus.Matrix = Class(INumber, {
     }
     ,toString: function() {
         var self = this;
-        if (null == self._str)
-            self._str = Matrix.toString(self.val);
+        if (null == self._str) self._str = Matrix.toString(self.val);
         return self._str;
     }
     ,toTex: function() {
         var self = this;
-        if (null == self._tex)
-            self._tex = Matrix.toTex(self.val);
+        if (null == self._tex) self._tex = Matrix.toTex(self.val);
         return self._tex;
     }
     ,toDec: function(precision) {

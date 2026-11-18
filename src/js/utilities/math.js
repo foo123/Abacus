@@ -2118,48 +2118,22 @@ function dirichlet_conv(f, g)
         return fgn;
     };
 }
-function discrete_conv(f, g, lim)
+function discrete_conv(f, g)
 {
     // https://en.wikipedia.org/wiki/Convolution#Discrete_convolution
-    lim = lim || 0;
     return function fg(n) {
-        var fgn = 0, dim, deg, d, i_, i, j;
-        if (is_array(n))
-        {
-            // n-d
-            dim = n.length;
-            deg = multi_index_deg(n)-lim;
-            for (d=0; d<=deg; ++d)
-            {
-                i_ = multi_index(d, dim);
-                for (;i=i_();)
-                {
-                    j = multi_index_op(subn, n, i);
-                    if (multi_index_cmp('>=', j, 0)) fgn = add$(fgn, mul$(f(i), g(j)));
-                }
-            }
-        }
-        else
-        {
-            // 1-d
-            n = n-lim;
-            for (i=0; i<=n; ++i)
-            {
-                fgn = add$(fgn, mul$(f(i), g(n-i)));
-            }
-        }
+        var fgn = 0, ij_ = multi_index_split(n), ij;
+        for (;ij=ij_();) fgn = add$(fgn, mul$(f(ij[0]), g(ij[1])));
         return fgn;
     };
 }
-function dotp(a, b, Arithmetic)
+function dot_prod(a, b, Arithmetic)
 {
+    // https://en.wikipedia.org/wiki/Dot_product
     Arithmetic = Arithmetic || Abacus.DefaultArithmetic;
     var c = Arithmetic.O, n = stdMath.min(a.length, b.length), i;
-    for (i=0; i<n; ++i)
-    {
-        // support dot product of numeric/symbolic as well
-        c = add$(c, mul$(a[i], b[i]));
-    }
+    // support dot product of numeric/symbolic as well
+    for (i=0; i<n; ++i) c = add$(c, mul$(a[i], b[i]));
     return c;
 }
 function gramschmidt(v)
@@ -2179,12 +2153,12 @@ function gramschmidt(v)
             kl = ui.length;
             for (j=0; j<i; ++j)
             {
-                uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
+                uj = u[j]; pij = dot_prod(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
                 for (k=0; k<kl; ++k) ui[k] = pjj[j].mul(ui[k]).sub(pij.mul(uj[k]));
             }
             g = igcd(ui);
             if (g.gt(Arithmetic.I)) for (k=0; k<kl; ++k) ui[k] = ui[k].div(g);
-            pjj[i] = dotp(ui, ui, Arithmetic);
+            pjj[i] = dot_prod(ui, ui, Arithmetic);
         }
     }
     else
@@ -2196,12 +2170,12 @@ function gramschmidt(v)
             kl = ui.length;
             for (j=0; j<i; ++j)
             {
-                uj = u[j]; pij = dotp(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
+                uj = u[j]; pij = dot_prod(/*0===j?*/vi/*:u[j-1]*//*modified g-s*/, uj, Arithmetic);
                 for (k=0; k<kl; ++k) ui[k] = Arithmetic.sub(Arithmetic.mul(pjj[j], ui[k]), Arithmetic.mul(pij, uj[k]));
             }
             g = igcd(ui);
             if (Arithmetic.gt(g, Arithmetic.I)) for (k=0; k<kl; ++k) ui[k] = Arithmetic.div(ui[k], g);
-            pjj[i] = dotp(ui, ui, Arithmetic);
+            pjj[i] = dot_prod(ui, ui, Arithmetic);
         }
     }
     return u;
@@ -4566,6 +4540,10 @@ Abacus.Math = {
     ,conv: function(f, g) {
         return discrete_conv(f, g);
     }
+    ,dotp: function(a, b) {
+        var Arithmetic = Abacus.Arithmetic;
+        return (is_array(a) || is_args(a)) && (is_array(b) || is_args(b)) ? dot_prod(a, b, Arithmetic) : Arithmetic.O;
+    }
     ,pollardRho: function(n, s, a, retries, max_steps, F) {
         var N = Abacus.Arithmetic.num, f;
         if (null != a) a = is_instance(a, INumber) ? Integer.cast(a).num : N(a);
@@ -4729,10 +4707,6 @@ Abacus.Math = {
     }
     ,groebner: buchberger_groebner
 
-    ,dotp: function(a, b) {
-        var Arithmetic = Abacus.Arithmetic;
-        return (is_array(a) || is_args(a)) && (is_array(b) || is_args(b)) ? dotp(a, b, Arithmetic) : Arithmetic.O;
-    }
     ,orthogonalize: function(v) {
         return (is_array(v) || is_args(v)) && v.length ? gramschmidt(v) : [];
     }

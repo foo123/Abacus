@@ -1643,51 +1643,35 @@ function frac2dec(n, d, tofloat)
     return whole + dot + non_repeating + repeating;
 }
 
-function multi_index(n, d, min)
+function multi_index(n, d, m)
 {
     // https://en.wikipedia.org/wiki/Multi-index_notation
-    // d-dimensional multi-indices that sum to n
-    // i.e all compositions of n into d parts with min=min and max=n-(d-1)*min
-    min = min || 0;
-    var max = n-(d-1)*min,
-        index = null,
-        do_next = false,
+    // all d-dimensional multi-indices that sum to n
+    // i.e all compositions of n into d parts with min=m and max=n-(d-1)*m
+    m = stdMath.max(0, m || 0);
+    var M = n-(d-1)*m,
+        index = index = d < 1 ? null : array(d, function(i) {return 0 === i ? M : m;}),
+        do_next = 0;
 
-        init = function() {
-            index = d < 1 ? null : array(d, function(i) {return 0 === i ? max : min;}); // initial
-            do_next = false;
-        },
-
-        next = function() {
-            if (index && do_next)
+    return function() {
+        if (index && do_next)
+        {
+            // compute next
+            if ((1 <= d) && (index[d-1] < M))
             {
-                // compute next
-                if ((1 <= d) && (index[d-1] < max))
-                {
-                    var i = d-1, m = index[i];
-                    index[i--] = min;
-                    while ((0 < i) && (min === index[i])) --i;
-                    --index[i]; index[i+1] = 1+m;
-                }
-                else
-                {
-                    index = null; // done
-                }
+                var i = d-1, mi = index[i];
+                index[i--] = m;
+                while ((0 < i) && (m === index[i])) --i;
+                --index[i]; index[i+1] = 1+mi;
             }
-            do_next = true;
-            return index;
+            else
+            {
+                index = null; // done
+            }
         }
-    ;
-    next.list = function() {
-        init();
-        for (var list=[];next();) list.push(index.slice());
-        return list;
+        do_next = 1;
+        return index;
     };
-    init(); return next;
-}
-function multi_index_(i, d)
-{
-    return is_array(i) ? i : array(d, i);
 }
 function multi_index_deg(a)
 {
@@ -1701,8 +1685,10 @@ function multi_index_cmp(cmp, a, b)
         bi = (b_arr ? b[i] : b) || 0;
         switch (cmp)
         {
+            case '=<'   :
             case '<='   : if (ai > bi) return false; break;
             case '<'    : if (ai >= bi) return false; break;
+            case '=>'   :
             case '>='   : if (ai < bi) return false; break;
             case '>'    : if (ai <= bi) return false; break;
             case '!='   : if (ai === bi) return false; break;
@@ -1711,14 +1697,62 @@ function multi_index_cmp(cmp, a, b)
     }
     return true;
 }
-function multi_index_op(op, a, b)
+function multi_index_split(i, n, n0)
 {
-    return array(stdMath.max(a.length, b.length), function(i) {
-        return op(a[i] || 0, b[i] || 0);
-    });
+    // i multi-index, all pairs of multi-indices j, k s.t. j+k = i, compatible with deg
+    var dim, deg, j, k, next_index;
+    deg = null == n0 ? 0 : n0;
+    if (is_array(i))
+    {
+        // n-d
+        dim = i.length;
+        if (null == n) n = multi_index_deg(i);
+    }
+    else
+    {
+        // 0-d
+        dim = 0;
+        if (null == n) n = i;
+    }
+    return function() {
+        var in_range = 0;
+        for (;deg<=n;)
+        {
+            if (0 < dim)
+            {
+                if (null == k) k = array(dim, 0);
+                if (null == next_index) next_index = multi_index(deg, dim);
+                for (;j=next_index();)
+                {
+                    in_range = 1;
+                    for (var _=0; _<dim; ++_)
+                    {
+                        k[_] = i[_] - j[_];
+                        if (0 > k[_])
+                        {
+                            in_range = 0;
+                            break;
+                        }
+                    }
+                    if (in_range) break;
+                }
+                if (in_range) break;
+                ++deg; next_index = null;
+            }
+            else
+            {
+                j = n; k = i-j;
+                in_range = 1;
+                ++deg;
+                break;
+            }
+        }
+        return in_range ? [j, k] : null; // j+k=i
+    };
 }
 multi_index.deg = multi_index_deg;
 multi_index.cmp = multi_index_cmp;
+multi_index.split = multi_index_split;
 
 Abacus.Class = Class;
 

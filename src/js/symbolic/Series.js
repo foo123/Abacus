@@ -103,7 +103,7 @@ Series = Abacus.Series = Class(Symbolic, {
 
     ,$: function(nth) {
         var self = this;
-        nth = is_array(nth) ? nth : multi_index_(nth, self.$x.length);
+        nth = is_array(nth) ? nth : array(self.$x.length, nth);
         if (!multi_index_cmp('>=', nth, 0)) return 'product' === self.type ? (self.ring || Expr).One() : (self.ring || Expr).Zero();
         var Z = 'product' === self.type ? 1 : 0,
             CACHE = 64,
@@ -163,8 +163,8 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         return self.isDegree(0) && self.c().isInt();
     }
-    ,c: function() {
-        return this.$(0);
+    ,c: function(n) {
+        return this.$(n || 0);
     }
 
     ,neg: function() {
@@ -193,20 +193,12 @@ Series = Abacus.Series = Class(Symbolic, {
                 return self.$(nth).inv(); // must be invertible
             }
             : function(nth, inv) {
-                var n = multi_index_deg(nth), d = self.$x.length, res, f, i;
+                var n = multi_index_deg(nth), ijth_, ijth, res;
                 if (null == inv_0th) inv_0th = self.$(0).inv(); // must be invertible
                 if (0 === n) return inv_0th;
-                f = function(i) {
-                    var res = (self.ring || Expr).Zero(), index = multi_index(i, d), ith, jth;
-                    for (;ith=index();)
-                    {
-                        jth = multi_index_op(subn, nth, ith);
-                        if (multi_index_cmp('>=', jth, 0)) res = res.add(self.$(jth).mul(inv.$(ith)));
-                    }
-                    return res;
-                };
+                ijth_ = multi_index_split(nth, n-1, 0);
                 res = (self.ring || Expr).Zero();
-                for (i=0; i<n; ++i) res = res.add(f(i));
+                for (;ijth=ijth_();) res = res.add(self.$(ijth[1]).mul(inv.$(ijth[0])));
                 return inv_0th.neg().mul(res);
             }, self.$x, self.ring, self.type);
             if ((null != self.degree) && isFinite(self.degree)) self._i.degree = 0 === self.degree ? 0 : inf;
@@ -366,19 +358,15 @@ Series = Abacus.Series = Class(Symbolic, {
             if (0 > m) {series = series.inv(); m = -m;}
             // https://en.wikipedia.org/wiki/Formal_power_series#Operations_on_formal_power_series
             powseries = 1 === m ? series : Series(function(nth, powseries) {
-                var n = multi_index_deg(nth), d = series.$x.length, res, k, f;
+                var n = multi_index_deg(nth), k, kjth_, kjth, res;
                 if (0 === n) return series.$(nth).pow(m);
+                kjth_ = multi_index_split(nth, n, 1);
                 res = (series.ring || Expr).Zero();
-                f = function(k) {
-                    var res = (series.ring || Expr).Zero(), index = multi_index(k, d), kth, jth;
-                    for (;kth=index();)
-                    {
-                        jth = multi_index_op(subn, nth, kth);
-                        if (multi_index_cmp('>=', jth, 0)) res = res.add(series.$(kth).mul(powseries.$(jth)).mul(k*m - n + k));
-                    }
-                    return res;
-                };
-                for (k=1; k<=n; ++k) res = res.add(f(k));
+                for (;kjth=kjth_();)
+                {
+                    k = multi_index_deg(kjth[0]);
+                    res = res.add(series.$(kjth[0]).mul(powseries.$(kjth[1])).mul(k*m - n + k));
+                }
                 return series.$(0).inv().div(n).mul(res);
             }, series.$x, series.ring, series.type);
             if ((series !== powseries) && (null != series.degree))
