@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-19 00:47:22)
+*   @version: 2.0.0 (2026-11-19 13:32:23)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-19 00:47:22)
+*   @version: 2.0.0 (2026-11-19 13:32:23)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -1819,7 +1819,7 @@ function multi_index_split(i, n, n0)
             }
             else
             {
-                j = n; k = i-j;
+                j = deg; k = i-j;
                 in_range = 1;
                 ++deg;
                 break;

@@ -1,6 +1,6 @@
 # Abacus
 
-**Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript and Python
+**Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript
 
 
 **version 2.0.0** almost complete (435 kB minified)
@@ -382,7 +382,7 @@ console.log(exp("x").mul(exp("-x")).toString());
 
 **see also:**
 
-* [Abacus](https://github.com/foo123/Abacus) Computer Algebra and Symbolic Computation System for Combinatorics and Algebraic Number Theory for JavaScript and Python
+* [Abacus](https://github.com/foo123/Abacus) Computer Algebra and Symbolic Computation System for Combinatorics and Algebraic Number Theory for JavaScript
 * [SciLite](https://github.com/foo123/SciLite) Scientific Computing Environment similar to Octave/Matlab/SciPy in pure JavaScript
 * [TensorView](https://github.com/foo123/TensorView) view array data as multidimensional tensors of various shapes efficiently
 * [FILTER.js](https://github.com/foo123/FILTER.js) video and image processing and computer vision Library in pure JavaScript (browser and nodejs)

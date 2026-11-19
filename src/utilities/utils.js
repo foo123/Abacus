@@ -1741,7 +1741,7 @@ function multi_index_split(i, n, n0)
             }
             else
             {
-                j = n; k = i-j;
+                j = deg; k = i-j;
                 in_range = 1;
                 ++deg;
                 break;
