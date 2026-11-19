@@ -435,7 +435,7 @@ Series = Abacus.Series = Class(Symbolic, {
         for (n=0; n<=nterms && terms.length<nterms; ++n)
         {
             index = multi_index(n, d);
-            while (nth=index())
+            for (;nth=index();)
             {
                 nth_term = self.$(nth);
                 // skip redundant terms
@@ -452,7 +452,7 @@ Series = Abacus.Series = Class(Symbolic, {
         for (n=0; n<=nterms && terms.length<nterms; ++n)
         {
             index = multi_index(n, d);
-            while (nth=index())
+            for (;nth=index();)
             {
                 nth_term = self.$(nth);
                 // skip redundant terms

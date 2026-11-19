@@ -1939,7 +1939,26 @@ function symbolic_divisors(c, complex)
     }
     else if (is_instance(c, Numeric))
     {
-        return (is_instance(c, Complex) && (true === complex) || (!c.isReal() && !c.isImag())
+        return is_instance(c, [Float, ComplexFloat]) ? Iterator((function(c) {
+                var s = 1, i = 1, imax = 4, d = c; // up to 4th root
+                return function(curr, dir, state, init) {
+                    if (init)
+                    {
+                        i = 1;
+                        s = 1;
+                        d = c;
+                    }
+                    if (i > imax) return null;
+                    var ret = 0 > s ? d.neg() : d;
+                    s = -1 === s ? 1 : -1;
+                    if (1 === s)
+                    {
+                        ++i;
+                        if (i <= imax) d = c.rad(i);
+                    }
+                    return ret;
+                };
+            })(c)) : (is_instance(c, Complex) && ((true === complex) || (!c.isReal() && !c.isImag()))
             ? Iterator((function(c) {
                 /*var iter_gcd = symbolic_divisors(Rational.gcd(c.real(), c.imag())),
                     iter_i = [Complex.One(), Complex.Img()], i, g;
@@ -2113,7 +2132,7 @@ function dirichlet_conv(f, g)
         }
         fgn = Abacus.Arithmetic.O;
         d_ = divisors(A.num(n), true);
-        for (;d=d_.next();) fgn = add$(fgn, mul$(f(N(d)), g(N(A.div(n, d)))));
+        for (;d=d_.next();) fgn = add$(mul$(f(N(d)), g(N(A.div(n, d)))), fgn);
         d_.dispose();
         return fgn;
     };
@@ -2123,7 +2142,7 @@ function discrete_conv(f, g)
     // https://en.wikipedia.org/wiki/Convolution#Discrete_convolution
     return function fg(n) {
         var fgn = 0, ij_ = multi_index_split(n), ij;
-        for (;ij=ij_();) fgn = add$(fgn, mul$(f(ij[0]), g(ij[1])));
+        for (;ij=ij_();) fgn = add$(mul$(f(ij[0]), g(ij[1])), fgn);
         return fgn;
     };
 }

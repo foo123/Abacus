@@ -1292,8 +1292,13 @@ function cartesian(/* var args here */)
 function summation(a, b, Arithmetic, do_subtraction)
 {
     // O(max(n1,n2))
-    var i, j, n1 = a.length, n2 = b.length, c;
-    if (true === Arithmetic)
+    var n1 = a.length, n2 = b.length, c;
+    c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
+        return i >= n1 ? sub$(0, b[i]) : (i >= n2 ? a[i] : sub$(a[i], b[i]));
+    } : function(i) {
+        return i >= n1 ? b[i] : (i >= n2 ? a[i] : add$(a[i], b[i]));
+    });
+    /*if (true === Arithmetic)
     {
         c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
             return i >= n1 ? b[i].neg() : (i >= n2 ? a[i] : a[i].sub(b[i]));
@@ -1316,7 +1321,7 @@ function summation(a, b, Arithmetic, do_subtraction)
         } : function(i) {
             return i >= n1 ? b[i] : (i >= n2 ? a[i] : a[i] + b[i]);
         });
-    }
+    }*/
     return c;
 }
 function convolution(a, b, Arithmetic)
@@ -1325,7 +1330,15 @@ function convolution(a, b, Arithmetic)
     // 1. by using FFT multiplication, not implemented here
     // 2. by Divide&Conquer and using eg. Strassen multiplication, not implemented here
     var i, j, n1 = a.length, n2 = b.length, c;
-    if (true === Arithmetic)
+    c = array(n1+n2-1, 0/*discrete_conv(function(i) {return 0 <= i && i < n1 ? a[i] : 0;}, function(j) {return 0 <= j && j < n2 ? b[j] : 0;})*/);
+    for (i=0; i<n1; ++i)
+    {
+        for (j=0; j<n2; ++j)
+        {
+            c[i+j] = add$(mul$(a[i], b[j]), c[i+j]);
+        }
+    }
+    /*if (true === Arithmetic)
     {
         c = array(n1+n2-1, function() {return 0;});
         for (i=0; i<n1; ++i)
@@ -1345,7 +1358,7 @@ function convolution(a, b, Arithmetic)
         for (i=0; i<n1; ++i)
             for (j=0; j<n2; ++j)
                 c[i+j] += a[i] * b[j];
-    }
+    }*/
     return c;
 }
 function complement(n, item, sort/*, dupl*/)
@@ -1643,39 +1656,155 @@ function frac2dec(n, d, tofloat)
     return whole + dot + non_repeating + repeating;
 }
 
-function multi_index(n, d, m)
+// https://en.wikipedia.org/wiki/Multi-index_notation
+function multi_index(deg, dim, min)
 {
-    // https://en.wikipedia.org/wiki/Multi-index_notation
-    // all d-dimensional multi-indices that sum to n
-    // i.e all compositions of n into d parts with min=m and max=n-(d-1)*m
-    m = stdMath.max(0, m || 0);
-    var M = n-(d-1)*m,
-        index = index = d < 1 ? null : array(d, function(i) {return 0 === i ? M : m;}),
+    // all multi-indices i that have degree deg (ie each sums to deg)
+    // i.e all compositions of deg into dim parts with min part min
+    min = stdMath.max(0, min || 0);
+    var max = deg-(dim-1)*min,
+        i = 0 < dim ? array(dim, function(_) {return 0 === _ ? max : min;}) : null,
         do_next = 0;
 
     return function() {
-        if (index && do_next)
+        if (i && do_next)
         {
             // compute next
-            if ((1 <= d) && (index[d-1] < M))
+            if (i[dim-1] < max)
             {
-                var i = d-1, mi = index[i];
-                index[i--] = m;
-                while ((0 < i) && (m === index[i])) --i;
-                --index[i]; index[i+1] = 1+mi;
+                var _ = dim-1, mi = i[_];
+                i[_--] = min;
+                while ((0 < _) && (min === i[_])) --_;
+                --i[_];
+                i[_+1] = mi+1;
             }
             else
             {
-                index = null; // done
+                i = null; // done
             }
         }
         do_next = 1;
-        return index;
+        return i;
     };
 }
-function multi_index_deg(a)
+function multi_index_lte(i, cmp)
 {
-    return (is_array(a) ? a.reduce(addn, 0) : (+a)) || 0;
+    // i multi-index, all multi-indices j s.t. j <= i or j < i
+    // i.e all tuples of dim parts each between 0 and i[dim_k]
+    var dim = i.length,
+        guard = '<' === cmp ? 1 : 0,
+        j = 0 < dim ? array(dim, 0) : null,
+        do_next = 0;
+
+    return function next() {
+        if (j && do_next)
+        {
+            // compute next
+            var _ = dim-1;
+            while ((0 <= _) && (j[_]+1+guard > i[_])) --_;
+            if (0 <= _)
+            {
+                ++j[_];
+                while (_+1 < dim) j[++_] = 0;
+            }
+            else
+            {
+                j = null; // done
+            }
+        }
+        do_next = 1;
+        return j;
+    };
+}
+function multi_index_split(i, n, n0)
+{
+    // i multi-index, all pairs of multi-indices j, k s.t. j+k = i, compatible with deg
+    var dim, deg, j_, j, k;
+    if (null == n0) n0 = 0;
+    if (is_array(i))
+    {
+        // n-d
+        dim = i.length;
+        j_ = multi_index_lte(i);
+        k = array(dim, 0);
+        if (null == n) n = multi_index_deg(i);
+    }
+    else
+    {
+        // 0-d
+        dim = 0;
+        deg = n0;
+        if (null == n) n = i;
+    }
+    return function() {
+        var _, in_range = 0;
+        if (0 < dim)
+        {
+            for (;j=j_();)
+            {
+                in_range = 1;
+                for (deg=0,_=0; _<dim; ++_)
+                {
+                    deg += j[_];
+                    k[_] = i[_] - j[_];
+                    if ((deg > n) || (0 > k[_]))
+                    {
+                        in_range = 0;
+                        break;
+                    }
+                }
+                if (deg < n0) in_range = 0;
+                if (in_range) break;
+            }
+        }
+        else if (deg <= n)
+        {
+            j = deg;
+            k = i-j;
+            in_range = 1;
+            ++deg;
+        }
+        return in_range ? [j, k] : null; // j+k=i
+    };
+    /*return function() {
+        var in_range = 0;
+        for (;deg<=n;)
+        {
+            if (0 < dim)
+            {
+                if (null == k) k = array(dim, 0);
+                if (null == j_) j_ = multi_index(deg, dim);
+                for (;j=j_();)
+                {
+                    in_range = 1;
+                    for (var _=0; _<dim; ++_)
+                    {
+                        k[_] = i[_] - j[_];
+                        if (0 > k[_])
+                        {
+                            in_range = 0;
+                            break;
+                        }
+                    }
+                    if (in_range) break;
+                }
+                if (in_range) break;
+                ++deg; j_ = null;
+            }
+            else
+            {
+                j = deg; k = i-j;
+                in_range = 1;
+                ++deg;
+                break;
+            }
+        }
+        return in_range ? [j, k] : null; // j+k=i
+    };*/
+}
+function multi_index_deg(i)
+{
+    return (is_array(i) ? i.reduce(addn, 0) : (+i)) || 0;
 }
 function multi_index_cmp(cmp, a, b)
 {
@@ -1697,62 +1826,10 @@ function multi_index_cmp(cmp, a, b)
     }
     return true;
 }
-function multi_index_split(i, n, n0)
-{
-    // i multi-index, all pairs of multi-indices j, k s.t. j+k = i, compatible with deg
-    var dim, deg, j, k, next_index;
-    deg = null == n0 ? 0 : n0;
-    if (is_array(i))
-    {
-        // n-d
-        dim = i.length;
-        if (null == n) n = multi_index_deg(i);
-    }
-    else
-    {
-        // 0-d
-        dim = 0;
-        if (null == n) n = i;
-    }
-    return function() {
-        var in_range = 0;
-        for (;deg<=n;)
-        {
-            if (0 < dim)
-            {
-                if (null == k) k = array(dim, 0);
-                if (null == next_index) next_index = multi_index(deg, dim);
-                for (;j=next_index();)
-                {
-                    in_range = 1;
-                    for (var _=0; _<dim; ++_)
-                    {
-                        k[_] = i[_] - j[_];
-                        if (0 > k[_])
-                        {
-                            in_range = 0;
-                            break;
-                        }
-                    }
-                    if (in_range) break;
-                }
-                if (in_range) break;
-                ++deg; next_index = null;
-            }
-            else
-            {
-                j = deg; k = i-j;
-                in_range = 1;
-                ++deg;
-                break;
-            }
-        }
-        return in_range ? [j, k] : null; // j+k=i
-    };
-}
+multi_index.lte = multi_index_lte;
+multi_index.split = multi_index_split;
 multi_index.deg = multi_index_deg;
 multi_index.cmp = multi_index_cmp;
-multi_index.split = multi_index_split;
 
 Abacus.Class = Class;
 
@@ -1777,11 +1854,11 @@ Abacus.Util = {
     ,igray: igray
     ,grayn: grayn
     ,igrayn: igrayn
-    ,multi_index: multi_index
     ,finitedifference: fdiff
     ,partialsum: psum
     ,convolution: convolution
     ,summation: summation
+    ,multi_index: multi_index
     ,wheel: wheel
     ,sort: mergesort
     ,shuffle: shuffle
