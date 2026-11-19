@@ -1799,7 +1799,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return Expr('', self.c().add(other.c()));
             }*/
-            if (other.isConst() && other.c().equ(O))
+            if (expr_is_const(other) && other.c().equ(O))
             {
                 /*if (other.c().equ(O))
                 {*/
@@ -1810,7 +1810,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return Expr('', self.c().add(other.c()));
                 }*/
             }
-            if (self.isConst() && self.c().equ(O))
+            if (expr_is_const(self) && self.c().equ(O))
             {
                 return other;
             }
@@ -1866,7 +1866,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return Expr('', self.c().sub(other.c()));
             }*/
-            if (other.isConst() && other.c().equ(O))
+            if (expr_is_const(other) && other.c().equ(O))
             {
                 /*if (other.c().equ(O))
                 {*/
@@ -1877,7 +1877,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return Expr('', self.c().sub(other.c()));
                 }*/
             }
-            if (self.isConst() && self.c().equ(O))
+            if (expr_is_const(self) && self.c().equ(O))
             {
                 return other.neg();
             }
@@ -1933,7 +1933,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return Expr('', self.c().mul(other.c()));
             }*/
-            if (other.isConst())
+            if (expr_is_const(other))
             {
                 if (other.c().equ(O))
                 {
@@ -1948,7 +1948,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     return Expr('', self.c().mul(other.c()));
                 }*/
             }
-            if (self.isConst())
+            if (expr_is_const(self))
             {
                 if (self.c().equ(O))
                 {
@@ -1989,7 +1989,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
             {
                 return Expr('', self.c().div(other.c()));
             }*/
-            if (other.isConst())
+            if (expr_is_const(other))
             {
                 if (other.c().equ(Rational/*Expr*/.One()))
                 {
@@ -2031,7 +2031,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (other.isInt())
+            if (expr_is_const(other) && other.isInt())
             {
                 //O = Expr.Zero(); I = Expr.One();
                 /*if (self.isConst())
@@ -2061,7 +2061,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
         if (!is_instance(other, Expr) && is_callable(other.toExpr)) other = other.toExpr();
         if (is_instance(other, Expr))
         {
-            if (other.isInt() && other.c().gt(Arithmetic.I))
+            /*if (other.isInt() && other.c().gt(Arithmetic.I))
             {
                 if (self.isConst())
                 {
@@ -2073,7 +2073,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                     rf = self.toRationalFunc();
                     return rf ? rf.rad(other.c()).toExpr() : self.pow(other.inv());
                 }
-            }
+            }*/
             return self.pow(other.inv());
         }
         return self;
@@ -2526,7 +2526,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else if (
                             /*('asciimath' === type) &&*/
-                            arg[1].isConst()
+                            expr_is_const(arg[1])
                             && arg[1].c().isReal()
                             && Arithmetic.equ(arg[1].c().real().num, 1)
                             && Arithmetic.gt(arg[1].c().real().den, 1)
@@ -2692,7 +2692,7 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             self._tex = tex;
                         }
                         else if (
-                            arg[1].isConst()
+                            expr_is_const(arg[1])
                             && arg[1].c().isReal()
                             && Arithmetic.equ(arg[1].c().real().num, 1)
                             && Arithmetic.gt(arg[1].c().real().den, 1)
@@ -3881,6 +3881,10 @@ function expr_tex(expr)
 function expr_str(expr)
 {
     return is_callable(expr.toString) ? expr.toString() : String(expr);
+}
+function expr_is_const(expr, strict, loose)
+{
+    return false === strict ? expr.isConst(loose) : ('num' === expr.ast.type);
 }
 function needs_parentheses(expr, is_tex, in_pow)
 {
