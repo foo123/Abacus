@@ -1940,21 +1940,37 @@ function symbolic_divisors(c, complex)
     else if (is_instance(c, Numeric))
     {
         return is_instance(c, [Float, ComplexFloat]) ? Iterator((function(c) {
-                var s = 1, i = 1, imax = 4, d = c; // up to 4th root
+                var is_int = is_instance(c, Float) && c.isInt(),
+                    i = 0, s = 1, d, iter = is_int ? divisors(c, true) : null;
                 return function(curr, dir, state, init) {
                     if (init)
                     {
-                        i = 1;
+                        i = 0;
                         s = 1;
-                        d = c;
+                        if (iter)
+                        {
+                            iter.rewind();
+                            d = d.next();
+                        }
+                        else
+                        {
+                            d = c[CLASS].One();
+                        }
                     }
-                    if (i > imax) return null;
-                    var ret = 0 > s ? d.neg() : d;
+                    if (null == d) return null;
+                    var ret = 1 === s ? d : d.neg();
                     s = -1 === s ? 1 : -1;
                     if (1 === s)
                     {
-                        ++i;
-                        if (i <= imax) d = c.rad(i);
+                        if (iter)
+                        {
+                            d = d.next();
+                        }
+                        else
+                        {
+                            ++i;
+                            d = i <= 4 ? (1 === i ? c : c.rad(i)) : null; // up to 4th root
+                        }
                     }
                     return ret;
                 };

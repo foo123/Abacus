@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-20 01:34:28)
+*   @version: 2.0.0 (2026-11-20 13:23:13)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-20 01:34:28)
+*   @version: 2.0.0 (2026-11-20 13:23:13)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -3887,21 +3887,37 @@ function symbolic_divisors(c, complex)
     else if (is_instance(c, Numeric))
     {
         return is_instance(c, [Float, ComplexFloat]) ? Iterator((function(c) {
-                var s = 1, i = 1, imax = 4, d = c; // up to 4th root
+                var is_int = is_instance(c, Float) && c.isInt(),
+                    i = 0, s = 1, d, iter = is_int ? divisors(c, true) : null;
                 return function(curr, dir, state, init) {
                     if (init)
                     {
-                        i = 1;
+                        i = 0;
                         s = 1;
-                        d = c;
+                        if (iter)
+                        {
+                            iter.rewind();
+                            d = d.next();
+                        }
+                        else
+                        {
+                            d = c[CLASS].One();
+                        }
                     }
-                    if (i > imax) return null;
-                    var ret = 0 > s ? d.neg() : d;
+                    if (null == d) return null;
+                    var ret = 1 === s ? d : d.neg();
                     s = -1 === s ? 1 : -1;
                     if (1 === s)
                     {
-                        ++i;
-                        if (i <= imax) d = c.rad(i);
+                        if (iter)
+                        {
+                            d = d.next();
+                        }
+                        else
+                        {
+                            ++i;
+                            d = i <= 4 ? (1 === i ? c : c.rad(i)) : null; // up to 4th root
+                        }
                     }
                     return ret;
                 };
@@ -13072,10 +13088,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return self;
                 }
-                /*else if (self.isConst())
+                else if (expr_is_const(self) && self.c().isInt() && other.c().isInt())
                 {
                     return Expr('', self.c().div(other.c()));
-                }*/
+                }
             }
             return Expr('/', [self, other]);
         }
@@ -13603,14 +13619,21 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else if (
                             /*('asciimath' === type) &&*/
-                            expr_is_const(arg[1])
+                            (expr_is_const(arg[1])
+                            || (('/' === arg[1].ast.op)
+                            && expr_is_const(arg[1].ast.arg[0]) && arg[1].ast.arg[0].c().isInt()
+                            && expr_is_const(arg[1].ast.arg[1]) && arg[1].ast.arg[1].c().isInt()))
                             && arg[1].c().isReal()
-                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().num, 0)/*Arithmetic.equ(arg[1].c().real().num, 1)*/
                             && Arithmetic.gt(arg[1].c().real().den, 1)
                         )
                         {
                             // radical sqrt
                             self._str = (Arithmetic.equ(arg[1].c().real().den, 2) ? 'sqrt' : ('root(' + String(arg[1].c().real().den) + ')')) + '(' + str + ')';
+                            if (Arithmetic.gt(arg[1].c().real().num, 1))
+                            {
+                                self._str = '(' + self._str + ')' + '^' + String(arg[1].c().real().num) + '';
+                            }
                         }
                         else
                         {
@@ -13769,14 +13792,21 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             self._tex = tex;
                         }
                         else if (
-                            expr_is_const(arg[1])
+                            (expr_is_const(arg[1])
+                            || (('/' === arg[1].ast.op)
+                            && expr_is_const(arg[1].ast.arg[0]) && arg[1].ast.arg[0].c().isInt()
+                            && expr_is_const(arg[1].ast.arg[1]) && arg[1].ast.arg[1].c().isInt()))
                             && arg[1].c().isReal()
-                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().num, 0)/*Arithmetic.equ(arg[1].c().real().num, 1)*/
                             && Arithmetic.gt(arg[1].c().real().den, 1)
                         )
                         {
                             // radical sqrt
                             self._tex = '\\sqrt' + (Arithmetic.equ(arg[1].c().real().den, 2) ? '' : ('[' + Tex(arg[1].c().real().den) + ']')) + '{' + tex + '}';
+                            if (Arithmetic.gt(arg[1].c().real().num, 1))
+                            {
+                                self._tex = '\\left(' + self._tex + '\\right)' + '^{' + Tex(arg[1].c().real().num) + '}';
+                            }
                         }
                         else
                         {

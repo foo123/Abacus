@@ -1995,10 +1995,10 @@ Expr = Abacus.Expr = Class(Symbolic, {
                 {
                     return self;
                 }
-                /*else if (self.isConst())
+                else if (expr_is_const(self) && self.c().isInt() && other.c().isInt())
                 {
                     return Expr('', self.c().div(other.c()));
-                }*/
+                }
             }
             return Expr('/', [self, other]);
         }
@@ -2526,14 +2526,21 @@ Expr = Abacus.Expr = Class(Symbolic, {
                         }
                         else if (
                             /*('asciimath' === type) &&*/
-                            expr_is_const(arg[1])
+                            (expr_is_const(arg[1])
+                            || (('/' === arg[1].ast.op)
+                            && expr_is_const(arg[1].ast.arg[0]) && arg[1].ast.arg[0].c().isInt()
+                            && expr_is_const(arg[1].ast.arg[1]) && arg[1].ast.arg[1].c().isInt()))
                             && arg[1].c().isReal()
-                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().num, 0)/*Arithmetic.equ(arg[1].c().real().num, 1)*/
                             && Arithmetic.gt(arg[1].c().real().den, 1)
                         )
                         {
                             // radical sqrt
                             self._str = (Arithmetic.equ(arg[1].c().real().den, 2) ? 'sqrt' : ('root(' + String(arg[1].c().real().den) + ')')) + '(' + str + ')';
+                            if (Arithmetic.gt(arg[1].c().real().num, 1))
+                            {
+                                self._str = '(' + self._str + ')' + '^' + String(arg[1].c().real().num) + '';
+                            }
                         }
                         else
                         {
@@ -2692,14 +2699,21 @@ Expr = Abacus.Expr = Class(Symbolic, {
                             self._tex = tex;
                         }
                         else if (
-                            expr_is_const(arg[1])
+                            (expr_is_const(arg[1])
+                            || (('/' === arg[1].ast.op)
+                            && expr_is_const(arg[1].ast.arg[0]) && arg[1].ast.arg[0].c().isInt()
+                            && expr_is_const(arg[1].ast.arg[1]) && arg[1].ast.arg[1].c().isInt()))
                             && arg[1].c().isReal()
-                            && Arithmetic.equ(arg[1].c().real().num, 1)
+                            && Arithmetic.gt(arg[1].c().real().num, 0)/*Arithmetic.equ(arg[1].c().real().num, 1)*/
                             && Arithmetic.gt(arg[1].c().real().den, 1)
                         )
                         {
                             // radical sqrt
                             self._tex = '\\sqrt' + (Arithmetic.equ(arg[1].c().real().den, 2) ? '' : ('[' + Tex(arg[1].c().real().den) + ']')) + '{' + tex + '}';
+                            if (Arithmetic.gt(arg[1].c().real().num, 1))
+                            {
+                                self._tex = '\\left(' + self._tex + '\\right)' + '^{' + Tex(arg[1].c().real().num) + '}';
+                            }
                         }
                         else
                         {

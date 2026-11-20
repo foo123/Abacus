@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript
 
 
-**version 2.0.0** almost complete (434 kB minified)
+**version 2.0.0** almost complete (435 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -291,23 +291,23 @@ console.log(m2.inv().mul(m2).toString());
 ```
 
 ```text
-|  x-1 x^2-1|
-|x^2-1   x-1|
+[  x-1 x^2-1]
+[x^2-1   x-1]
 
-|   -1/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)|
-|(x+1)/(x^3+x^2-2*x)    -1/(x^3+x^2-2*x)|
+[   -1/(x^3+x^2-2*x) (x+1)/(x^3+x^2-2*x)]
+[(x+1)/(x^3+x^2-2*x)    -1/(x^3+x^2-2*x)]
 
-|1 0|
-|0 1|
+[1 0]
+[0 1]
 
-|x^2 + x*y x*y + y^2|
-|x*y + y^2 x^2 + x*y|
+[x^2 + x*y x*y + y^2]
+[x*y + y^2 x^2 + x*y]
 
-| x/(x^3 + x^2*y - x*y^2 - y^3)      -y/(x^3 + x^2*y - x*y^2 - y^3)|
-|-y/(x^3 + x^2*y - x*y^2 - y^3) x*y/(x^3*y + x^2*y^2 - x*y^3 - y^4)|
+[ x/(x^3 + x^2*y - x*y^2 - y^3)      -y/(x^3 + x^2*y - x*y^2 - y^3)]
+[-y/(x^3 + x^2*y - x*y^2 - y^3) x*y/(x^3*y + x^2*y^2 - x*y^3 - y^4)]
 
-|1 0|
-|0 1|
+[1 0]
+[0 1]
 ```
 
 ```javascript
