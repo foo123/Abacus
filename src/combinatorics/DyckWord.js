@@ -1,10 +1,11 @@
+// https://en.wikipedia.org/wiki/Dyck_language
 // https://en.wikipedia.org/wiki/Catalan_number
-CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
+DyckWord = Abacus.DyckWord = Class(CombinatorialIterator, {
 
     // extends and implements CombinatorialIterator
-    constructor: function CatalanWord(n, $) {
+    constructor: function DyckWord(n, $) {
         var self = this, sub = null, K;
-        if (!is_instance(self, CatalanWord)) return new CatalanWord(n, $);
+        if (!is_instance(self, DyckWord)) return new DyckWord(n, $);
         $ = $ || {}; $.type = "catalan";
         n = n || 0;
         if (is_instance(n, CombinatorialIterator))
@@ -18,9 +19,9 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         }
         $.base = n;
         $.dimension = stdMath.max(0, 2*n);
-        $.rand = $.rand || {}; $.rand['catalan'] = 1;
+        $.rand = $.rand || {}; $.rand['dyck'] = $.rand['catalan'] = 1;
         $.symbols = $.symbols || ['(',')']; if (is_string($.symbols)) $.symbols = $.symbols.split('');
-        CombinatorialIterator.call(self, "CatalanWord", n, $, sub ? {method:$.submethod, iter:sub, pos:$.subpos, cascade:$.subcascade} : null);
+        CombinatorialIterator.call(self, "DyckWord", n, $, sub ? {method:$.submethod, iter:sub, pos:$.subpos, cascade:$.subcascade} : null);
     }
 
     ,__static__: {
@@ -82,7 +83,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_catalan(item, n, dir, $ && (null != $.order) ? $.order : LEX);
+            return next_dyck(item, n, dir, $ && (null != $.order) ? $.order : LEX);
         }
         ,rand: function(n, $) {
             var klass = this, seq, prefix, suffix, word, partial_sum, i, s, nn;
@@ -157,7 +158,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         return self;
     }
 });
-function next_catalan(item, n, dir, order)
+function next_dyck(item, n, dir, order)
 {
     var i, j, z, m, t, y, d, nn = n << 1;
 
@@ -267,3 +268,5 @@ function next_catalan(item, n, dir, order)
     }
     return item;
 }
+// alias
+Abacus.CatalanWord = Abacus.DyckWord;

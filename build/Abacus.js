@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-20 13:23:13)
+*   @version: 2.0.0 (2026-11-21 00:04:24)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-20 13:23:13)
+*   @version: 2.0.0 (2026-11-21 00:04:24)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -72,7 +72,7 @@ var  Abacus = {VERSION: "2.0.0"}
 
     // combinatorics
     ,Tensor, Permutation, Combination
-    ,Subset, Partition, SetPartition, CatalanWord
+    ,Subset, Partition, SetPartition, DyckWord
     ,Diophantine // TODO
     ,LatinSquare, MagicSquare
 ;
@@ -1372,7 +1372,7 @@ function summation(a, b, Arithmetic, do_subtraction)
     // O(max(n1,n2))
     var n1 = a.length, n2 = b.length, c;
     c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
-        return i >= n1 ? sub$(0, b[i]) : (i >= n2 ? a[i] : sub$(a[i], b[i]));
+        return i >= n1 ? neg$(b[i]) : (i >= n2 ? a[i] : sub$(a[i], b[i]));
     } : function(i) {
         return i >= n1 ? b[i] : (i >= n2 ? a[i] : add$(a[i], b[i]));
     });
@@ -1971,6 +1971,11 @@ function sub$(a, b)
 {
     var A = Abacus.Arithmetic;
     return is_instance(a, INumber) ? a.sub(b) : (is_instance(b, INumber) ? b.neg().add(a) : (is_number(a) && is_number(b) ? a-b : A.sub(A.num(a), b)));
+}
+function neg$(a)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.neg() : (is_number(a) ? -a : A.neg(A.num(a)));
 }
 function mul$(a, b)
 {
@@ -6494,6 +6499,11 @@ Abacus.Math = {
     ,one: function(n) {
         return is_instance(n, INumber) ? n[CLASS].One() : Abacus.Arithmetic.I;
     }
+    ,delta: function(i) {
+        return function(j) {
+            return equ(i, j) ? (is_instance(j, INumber) ? j[CLASS].One() : Abacus.Arithmetic.I) : (is_instance(j, INumber) ? j[CLASS].Zero() : Abacus.Arithmetic.O);
+        };
+    }
     /*,moebiusInversion: function(gn) {
         var Arithmetic = Abacus.Arithmetic, fn, g1;
         if (is_array(gn))
@@ -6520,7 +6530,7 @@ Abacus.Math = {
         return dirichlet_conv(f, g);
     }
     ,conv: function(f, g) {
-        return discrete_conv(f, g);
+        return (is_array(f) || is_args(f)) && (is_array(g) || is_args(g)) ? convolution(f, g) : discrete_conv(f, g);
     }
     ,dotp: function(a, b) {
         var Arithmetic = Abacus.Arithmetic;
@@ -21769,34 +21779,42 @@ function F_(f, F0)
     // https://arxiv.org/abs/1103.2582v2
     // f.$(0) necessarily 0
     var F = function F(nth, kth) {
-        if ((1 <= nth) && (nth <= 64) && (1 <= kth) && (kth <= nth))
+        if ((1 <= nth) && (1 <= kth) && (kth <= nth))
         {
-            var mem = F.mem, sum, ith, end;
-            while (mem.length < nth)
+            var mem = F.mem, Fv = null, ith, end;
+            if (nth <= 64)
             {
-                // expand 2x
-                mem.push.apply(mem, array(mem.length, function(n) {return array(mem.length+n+1, null);}));
+                while (mem.length < nth)
+                {
+                    // expand 2x
+                    mem.push.apply(mem, array(mem.length, function(n) {return array(mem.length+n+1, null);}));
+                }
+                Fv = mem[nth-1][kth-1];
             }
-            if (null == mem[nth-1][kth-1])
+            if (null == Fv)
             {
                 if (1 === kth)
                 {
-                    mem[nth-1][kth-1] = f.$([nth]);
+                    Fv = f.$([nth]);
                 }
                 else if (nth === kth)
                 {
-                    mem[nth-1][kth-1] = f.$([1]).pow(nth);
+                    Fv = f.$([1]).pow(nth);
                 }
                 else
                 {
-                    for (sum=f.$([1]).mul(F(nth-1, kth-1)),ith=2,end=nth-kth+1; ith<=end; ++ith)
+                    for (Fv=f.$([1]).mul(F(nth-1, kth-1)),ith=2,end=nth-kth+1; ith<=end; ++ith)
                     {
-                        sum = sum.add(f.$([ith]).mul(F(nth-ith, kth-1)));
+                        Fv = Fv.add(f.$([ith]).mul(F(nth-ith, kth-1)));
                     }
-                    mem[nth-1][kth-1] = sum;
+                }
+                if (nth <= 64)
+                {
+                    // memoize up to 64 sequences
+                    mem[nth-1][kth-1] = Fv;
                 }
             }
-            return mem[nth-1][kth-1];
+            return Fv;
         }
         return (f.ring || Expr).Zero();
     };
@@ -33848,13 +33866,14 @@ function conjugatesetpartition(item, n)
     return conjugate;
 }
 SetPartition.toConjugate = conjugatesetpartition;
+// https://en.wikipedia.org/wiki/Dyck_language
 // https://en.wikipedia.org/wiki/Catalan_number
-CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
+DyckWord = Abacus.DyckWord = Class(CombinatorialIterator, {
 
     // extends and implements CombinatorialIterator
-    constructor: function CatalanWord(n, $) {
+    constructor: function DyckWord(n, $) {
         var self = this, sub = null, K;
-        if (!is_instance(self, CatalanWord)) return new CatalanWord(n, $);
+        if (!is_instance(self, DyckWord)) return new DyckWord(n, $);
         $ = $ || {}; $.type = "catalan";
         n = n || 0;
         if (is_instance(n, CombinatorialIterator))
@@ -33868,9 +33887,9 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         }
         $.base = n;
         $.dimension = stdMath.max(0, 2*n);
-        $.rand = $.rand || {}; $.rand['catalan'] = 1;
+        $.rand = $.rand || {}; $.rand['dyck'] = $.rand['catalan'] = 1;
         $.symbols = $.symbols || ['(',')']; if (is_string($.symbols)) $.symbols = $.symbols.split('');
-        CombinatorialIterator.call(self, "CatalanWord", n, $, sub ? {method:$.submethod, iter:sub, pos:$.subpos, cascade:$.subcascade} : null);
+        CombinatorialIterator.call(self, "DyckWord", n, $, sub ? {method:$.submethod, iter:sub, pos:$.subpos, cascade:$.subcascade} : null);
     }
 
     ,__static__: {
@@ -33932,7 +33951,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         ,succ: function(item, index, n, $, dir) {
             if ((null == n) || (null == item) || (0 >= n)) return null;
             dir = -1 === dir ? -1 : 1;
-            return next_catalan(item, n, dir, $ && (null != $.order) ? $.order : LEX);
+            return next_dyck(item, n, dir, $ && (null != $.order) ? $.order : LEX);
         }
         ,rand: function(n, $) {
             var klass = this, seq, prefix, suffix, word, partial_sum, i, s, nn;
@@ -34007,7 +34026,7 @@ CatalanWord = Abacus.CatalanWord = Class(CombinatorialIterator, {
         return self;
     }
 });
-function next_catalan(item, n, dir, order)
+function next_dyck(item, n, dir, order)
 {
     var i, j, z, m, t, y, d, nn = n << 1;
 
@@ -34117,6 +34136,8 @@ function next_catalan(item, n, dir, order)
     }
     return item;
 }
+// alias
+Abacus.CatalanWord = Abacus.DyckWord;
 MagicSquare = Abacus.MagicSquare = Class({
 
     constructor: function MagicSquare(n, s) {

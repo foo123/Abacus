@@ -43,6 +43,10 @@ function str(x)
     {
         x = x.map(stringify).join("\n\n");
     }
+    else if ("string" === typeof x)
+    {
+        x = '"' + String(x) + '"';
+    }
     else
     {
         x = stringify(x);
@@ -75,6 +79,7 @@ function initContext(context)
     context.Subset = Abacus.Subset;
     context.Partition = Abacus.Partition;
     context.SetPartition = Abacus.SetPartition;
+    context.DyckWord = Abacus.DyckWord;
 }
 
 const repl = require('repl').start({

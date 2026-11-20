@@ -25,6 +25,11 @@ function sub$(a, b)
     var A = Abacus.Arithmetic;
     return is_instance(a, INumber) ? a.sub(b) : (is_instance(b, INumber) ? b.neg().add(a) : (is_number(a) && is_number(b) ? a-b : A.sub(A.num(a), b)));
 }
+function neg$(a)
+{
+    var A = Abacus.Arithmetic;
+    return is_instance(a, INumber) ? a.neg() : (is_number(a) ? -a : A.neg(A.num(a)));
+}
 function mul$(a, b)
 {
     var A = Abacus.Arithmetic;
@@ -4547,6 +4552,11 @@ Abacus.Math = {
     ,one: function(n) {
         return is_instance(n, INumber) ? n[CLASS].One() : Abacus.Arithmetic.I;
     }
+    ,delta: function(i) {
+        return function(j) {
+            return equ(i, j) ? (is_instance(j, INumber) ? j[CLASS].One() : Abacus.Arithmetic.I) : (is_instance(j, INumber) ? j[CLASS].Zero() : Abacus.Arithmetic.O);
+        };
+    }
     /*,moebiusInversion: function(gn) {
         var Arithmetic = Abacus.Arithmetic, fn, g1;
         if (is_array(gn))
@@ -4573,7 +4583,7 @@ Abacus.Math = {
         return dirichlet_conv(f, g);
     }
     ,conv: function(f, g) {
-        return discrete_conv(f, g);
+        return (is_array(f) || is_args(f)) && (is_array(g) || is_args(g)) ? convolution(f, g) : discrete_conv(f, g);
     }
     ,dotp: function(a, b) {
         var Arithmetic = Abacus.Arithmetic;

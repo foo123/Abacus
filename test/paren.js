@@ -25,46 +25,13 @@ function print_all(o, prev, f)
 // generate all combinatorial objects without storing all of them in memory at once
 let o;
 
-echo('Abacus.CatalanWords (VERSION = '+Abacus.VERSION+')');
+echo('Abacus.DyckWords (VERSION = '+Abacus.VERSION+')');
 echo('---');
 
-// Binary Trees / Balanced Parentheses / Cataln Words
+// Binary Trees / Balanced Parentheses / Dyck Words
 
-echo('o = Abacus.CatalanWord(1)');
-o = Abacus.CatalanWord(1);
-
-echo('o.total()');
-echo(o.total());
-
-echo('default order is "lex", lexicographic-order');
-echo('o.rewind()');
-print_all( o.rewind() );
-
-echo('backwards');
-echo('o.rewind(-1)');
-print_all( o.rewind(-1), -1 );
-
-echo('o.order("lex,reflected")');
-print_all( o.order("lex,reflected") );
-
-echo('o.order("colex")');
-print_all( o.order("colex") );
-
-echo('o.order("colex,reversed")');
-print_all( o.order("colex,reversed") );
-
-echo('o.order("random")');
-print_all( o.order("random") );
-
-echo('o.random()');
-print(o.random());
-
-// dispose
-echo('o.dispose()');
-o.dispose();
-
-echo('o = Abacus.CatalanWord(2)');
-o = Abacus.CatalanWord(2);
+echo('o = Abacus.DyckWord(1)');
+o = Abacus.DyckWord(1);
 
 echo('o.total()');
 echo(o.total());
@@ -96,8 +63,8 @@ print(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.CatalanWord(5)');
-o = Abacus.CatalanWord(5);
+echo('o = Abacus.DyckWord(2)');
+o = Abacus.DyckWord(2);
 
 echo('o.total()');
 echo(o.total());
@@ -129,8 +96,41 @@ print(o.random());
 echo('o.dispose()');
 o.dispose();
 
-echo('o = Abacus.CatalanWord(8)');
-o = Abacus.CatalanWord(8);
+echo('o = Abacus.DyckWord(5)');
+o = Abacus.DyckWord(5);
+
+echo('o.total()');
+echo(o.total());
+
+echo('default order is "lex", lexicographic-order');
+echo('o.rewind()');
+print_all( o.rewind() );
+
+echo('backwards');
+echo('o.rewind(-1)');
+print_all( o.rewind(-1), -1 );
+
+echo('o.order("lex,reflected")');
+print_all( o.order("lex,reflected") );
+
+echo('o.order("colex")');
+print_all( o.order("colex") );
+
+echo('o.order("colex,reversed")');
+print_all( o.order("colex,reversed") );
+
+echo('o.order("random")');
+print_all( o.order("random") );
+
+echo('o.random()');
+print(o.random());
+
+// dispose
+echo('o.dispose()');
+o.dispose();
+
+echo('o = Abacus.DyckWord(8)');
+o = Abacus.DyckWord(8);
 
 echo('o.total()');
 echo(o.total());

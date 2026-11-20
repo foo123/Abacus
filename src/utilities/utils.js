@@ -1294,7 +1294,7 @@ function summation(a, b, Arithmetic, do_subtraction)
     // O(max(n1,n2))
     var n1 = a.length, n2 = b.length, c;
     c = array(stdMath.max(n1, n2), do_subtraction ? function(i) {
-        return i >= n1 ? sub$(0, b[i]) : (i >= n2 ? a[i] : sub$(a[i], b[i]));
+        return i >= n1 ? neg$(b[i]) : (i >= n2 ? a[i] : sub$(a[i], b[i]));
     } : function(i) {
         return i >= n1 ? b[i] : (i >= n2 ? a[i] : add$(a[i], b[i]));
     });

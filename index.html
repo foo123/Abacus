@@ -360,6 +360,7 @@ window.MathJax = {
 <br>
 <a href="#" aria-label="run permutations example" onclick="return runExample('permutations');">Permutations</a>
 • <a href="#" aria-label="run derangements example" onclick="return runExample('derangements');">Derangements</a>
+• <a href="#" aria-label="run dyck words example" onclick="return runExample('dyckwords');">DyckWords</a>
 <br>
 <a href="#" aria-label="run combinations example" onclick="return runExample('combinations');">Combinations</a>
 • <a href="#" aria-label="run variations example" onclick="return runExample('variations');">Variations</a>
@@ -449,6 +450,10 @@ function Tex(x)
     if (Array.isArray(x))
     {
         x = "\\[" + x.map(toTex).join("\\]\n\\[") + "\\]";
+    }
+    else if ("string" === typeof x)
+    {
+        x = "\\[" + '\\text{"' + String(x) + '"}' + "\\]";
     }
     else
     {
@@ -544,6 +549,7 @@ function init()
         sandbox.Subset = Abacus.Subset;
         sandbox.Partition = Abacus.Partition;
         sandbox.SetPartition = Abacus.SetPartition;
+        sandbox.DyckWord = Abacus.DyckWord;
     }
 
     const Abacus = window.Abacus;
@@ -679,6 +685,12 @@ function init()
                 run_session([
                 '/* derangements */',
                 'derangements = Permutation(4, {type:"derangement"}).get()'
+                ]);
+            break;
+            case 'dyckwords':
+                run_session([
+                '/* Dyck words */',
+                'dyckwords = DyckWord(3).get().map(word => word.join(""))'
                 ]);
             break;
             case 'combinations':
@@ -942,7 +954,7 @@ function init()
                                         "Abacus", "Expr", "Poly", "Series", "PowerSeries", "Ring", "Matrix",
                                         "Evaluate", "Substitute", "Expand", "Factor", "Simplify", "Roots", "Zeros",
                                         "Tensor", "Permutation", "Combination",
-                                        "Subset", "Partition", "SetPartition"
+                                        "Subset", "Partition", "SetPartition", "DyckWord"
                                     ]
         ,"<identifier>"             : "RE::/[_A-Za-z$][_A-Za-z0-9$]*/"
         ,"<string>"                 : {"type":"escaped-block","escape":"\\","tokens":

@@ -66,7 +66,7 @@ var  Abacus = {VERSION: "@@VERSION@@"}
 
     // combinatorics
     ,Tensor, Permutation, Combination
-    ,Subset, Partition, SetPartition, CatalanWord
+    ,Subset, Partition, SetPartition, DyckWord
     ,Diophantine // TODO
     ,LatinSquare, MagicSquare
 ;

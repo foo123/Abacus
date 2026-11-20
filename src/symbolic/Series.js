@@ -525,34 +525,42 @@ function F_(f, F0)
     // https://arxiv.org/abs/1103.2582v2
     // f.$(0) necessarily 0
     var F = function F(nth, kth) {
-        if ((1 <= nth) && (nth <= 64) && (1 <= kth) && (kth <= nth))
+        if ((1 <= nth) && (1 <= kth) && (kth <= nth))
         {
-            var mem = F.mem, sum, ith, end;
-            while (mem.length < nth)
+            var mem = F.mem, Fv = null, ith, end;
+            if (nth <= 64)
             {
-                // expand 2x
-                mem.push.apply(mem, array(mem.length, function(n) {return array(mem.length+n+1, null);}));
+                while (mem.length < nth)
+                {
+                    // expand 2x
+                    mem.push.apply(mem, array(mem.length, function(n) {return array(mem.length+n+1, null);}));
+                }
+                Fv = mem[nth-1][kth-1];
             }
-            if (null == mem[nth-1][kth-1])
+            if (null == Fv)
             {
                 if (1 === kth)
                 {
-                    mem[nth-1][kth-1] = f.$([nth]);
+                    Fv = f.$([nth]);
                 }
                 else if (nth === kth)
                 {
-                    mem[nth-1][kth-1] = f.$([1]).pow(nth);
+                    Fv = f.$([1]).pow(nth);
                 }
                 else
                 {
-                    for (sum=f.$([1]).mul(F(nth-1, kth-1)),ith=2,end=nth-kth+1; ith<=end; ++ith)
+                    for (Fv=f.$([1]).mul(F(nth-1, kth-1)),ith=2,end=nth-kth+1; ith<=end; ++ith)
                     {
-                        sum = sum.add(f.$([ith]).mul(F(nth-ith, kth-1)));
+                        Fv = Fv.add(f.$([ith]).mul(F(nth-ith, kth-1)));
                     }
-                    mem[nth-1][kth-1] = sum;
+                }
+                if (nth <= 64)
+                {
+                    // memoize up to 64 sequences
+                    mem[nth-1][kth-1] = Fv;
                 }
             }
-            return mem[nth-1][kth-1];
+            return Fv;
         }
         return (f.ring || Expr).Zero();
     };
