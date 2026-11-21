@@ -417,7 +417,7 @@ function toTex(x)
         // pass
         x = '';
     }
-    else if ((true === x) || (false === x))
+    else if ((true === x) || (false === x) || ("string" === typeof x))
     {
         x = '\\text{' + String(x) + '}';
     }
@@ -450,10 +450,6 @@ function Tex(x)
     if (Array.isArray(x))
     {
         x = "\\[" + x.map(toTex).join("\\]\n\\[") + "\\]";
-    }
-    else if ("string" === typeof x)
-    {
-        x = "\\[" + '\\text{"' + String(x) + '"}' + "\\]";
     }
     else
     {

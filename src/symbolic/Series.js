@@ -163,8 +163,8 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this;
         return self.isDegree(0) && self.c().isInt();
     }
-    ,c: function(n) {
-        return this.$(n || 0);
+    ,c: function(nth) {
+        return this.$(nth || 0);
     }
 
     ,neg: function() {
@@ -464,10 +464,11 @@ Series = Abacus.Series = Class(Symbolic, {
     }
 
     ,toExpr: function() {
-        var self = this;
+        var self = this, N;
         if (null == self._expr)
         {
-            self._expr = 'product' === self.type ? self.prod(self._N, 'expand') : self.sum(self._N, 'expand');
+            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree : self._N;
+            self._expr = 'product' === self.type ? self.prod(N, 'expand') : self.sum(N, 'expand');
         }
         return self._expr;
     }
@@ -475,22 +476,24 @@ Series = Abacus.Series = Class(Symbolic, {
         return this; // trivial
     }
     ,toString: function() {
-        var self = this, terms, expr;
+        var self = this, terms, expr, N;
         if (null == self._str)
         {
-            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(self._N, 'expand', 'array');
+            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree : self._N;
+            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(N, 'expand', 'array');
             expr = 1 < terms.length ? Expr('product' === self.type ? '*' : '+', terms) : terms[0];
-            self._str = expr.toString() + (terms.length < self._N ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
+            self._str = expr.toString() + (N === self.degree || terms.length < N ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
         }
         return self._str;
     }
     ,toTex: function() {
-        var self = this, terms, expr;
+        var self = this, terms, expr, N;
         if (null == self._tex)
         {
-            terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(self._N, 'expand', 'array');
+            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree : self._N;
+            terms = 'product' === self.type ? self.prod(N, 'expand', 'array') : self.sum(N, 'expand', 'array');
             expr = 1 < terms.length ? Expr('product' === self.type ? '*' : '+', terms) : terms[0];
-            self._tex = expr.toTex() + (terms.length < self._N ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
+            self._tex = expr.toTex() + (N === self.degree || terms.length < N ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
         }
         return self._tex;
     }

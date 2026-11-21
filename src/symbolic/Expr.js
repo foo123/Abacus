@@ -2847,8 +2847,9 @@ function to_expr(x)
 {
     return is_instance(x, Expr) ? x : ((null != x) && is_callable(x.toExpr) ? x.toExpr() : Expr('', x || 0));
 }
-function expr_is_independent_of(e, x)
+function expr_is_independent_of(e, x, strict)
 {
+    if (true === strict) e = e.expand();
     for (var i=0,n=x.length; i<n; ++i)
     {
         if (-1 < e.symbols().indexOf(x[i])) return false;
@@ -2857,6 +2858,7 @@ function expr_is_independent_of(e, x)
 }
 function expr_series(f, x, x0)
 {
+    f = f.expand();
     return expr_is_independent_of(f, x) ? Series.Const(f, x.map(function(_, i) {return [x[i], x0[i]];}), null, 'sum') : new Series(function(nth, series) {
         if (!series._.nth) {series.degree = inf; series._.nth = {};}
 
@@ -2867,8 +2869,8 @@ function expr_series(f, x, x0)
         f_nth = n < 64 ? series._.nth[key] : null;
         if (null != f_nth) return f_nth;
 
-        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f/*.clone()*/) : f/*.clone()*/;
-        if ((series.degree > n) && expr_is_independent_of(df_nth, x)) series.degree = n;
+        df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f).expand() : f;
+        if ((series.degree > n-1) && expr_is_independent_of(df_nth, x)) series.degree = n-1;
 
         df_nth = df_nth.substitute(x.reduce(function($, xi, i) {
             $[xi] = null == x0[i] ? Expr.Zero() : x0[i];
@@ -2907,8 +2909,8 @@ function rational_expr(expr)
     {
         a = expr.ast.arg.map(rational_expr);
         re = {
-            num: a.reduce(function(num, re) {return num.mul(re.num);}, I),
-            den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+            num: product_(a.map(function(re) {return re.num;})),
+            den: product_(a.map(function(re) {return re.den;}))
         };
     }
     else if (('+' === expr.ast.op) || ('-' === expr.ast.op))
@@ -2916,9 +2918,9 @@ function rational_expr(expr)
         a = expr.ast.arg.map(rational_expr);
         re = {
             num: Expr(expr.ast.op, a.map(function(re, i) {
-                return re.num.mul(a.reduce(function(m, re, j) {return i !== j ? m.mul(re.den) : m;}, I));
+                return re.num.mul(product_(a.filter(function(re, j) {return i !== j;}).map(function(re) {return re.den;})));
             })),
-            den: a.reduce(function(den, re) {return den.mul(re.den);}, I)
+            den: product_(a.map(function(re) {return re.den;}))
         };
     }
     else if (('num' === expr.ast.type) && expr.ast.arg.isReal())
@@ -3548,7 +3550,7 @@ function expr_derivative(f, x)
         // identity derivative rule wrt to x
         return x === fi ? I : O;
     }
-    else if (-1 === f.symbols().indexOf(x))
+    else if ((-1 === f.symbols().indexOf(x)) || (-1 === f.expand().symbols().indexOf(x)))
     {
         // constant derivative rule wrt to x
         return O;
@@ -3645,7 +3647,13 @@ function expr_derivative(f, x)
                 }
                 return 1 === fi.length ? expr_derivative(fi[0], x) : O;
 
+            // linearity derivative rule
+            case '+':
+            case '-':
+                return Expr(f.ast.op, fi.map(function(fi) {return expr_derivative(fi, x);}));
+
             // differentiate only the arguments rule (applicable?)
+            case 'sgn()':
             case 'abs()':
             case 'min()':
             case 'max()':
@@ -3660,10 +3668,6 @@ function expr_derivative(f, x)
             case '>':
             case '<':
             case '=':
-
-            // linearity derivative rule
-            case '+':
-            case '-':
                 return Expr(f.ast.op, fi.map(function(fi) {return expr_derivative(fi, x);}));
 
             // unknown / not supported currently
@@ -3896,9 +3900,9 @@ function expr_str(expr)
 {
     return is_callable(expr.toString) ? expr.toString() : String(expr);
 }
-function expr_is_const(expr, strict, loose)
+function expr_is_const(expr, strict, not_exact)
 {
-    return false === strict ? expr.isConst(loose) : ('num' === expr.ast.type);
+    return false === strict ? expr.isConst(not_exact) : ('num' === expr.ast.type);
 }
 function needs_parentheses(expr, is_tex, in_pow)
 {
