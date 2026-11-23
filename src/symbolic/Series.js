@@ -429,10 +429,11 @@ Series = Abacus.Series = Class(Symbolic, {
         }, self.$x, self.ring, self.type) : self;
     }
     ,sum: function(nterms, mode, type) {
-        var self = this, n, d = self.$x.length, index, terms = [], nth_term, nth;
+        var self = this, n, d = self.$x.length, index, terms = [], nth_term, nth, N;
         if (null == nterms) nterms = self._N;
         nterms = stdMath.floor(stdMath.max(0, (+nterms) || 0));
-        for (n=0; n<=nterms && terms.length<nterms; ++n)
+        N = nterms+1;
+        for (n=0; n<N && terms.length<nterms; ++n)
         {
             index = multi_index(n, d);
             for (;nth=index();)
@@ -446,10 +447,11 @@ Series = Abacus.Series = Class(Symbolic, {
         return 'array' === type ? terms : (1 < terms.length ? Expr('+', terms) : terms[0]);
     }
     ,prod: function(nterms, mode, type) {
-        var self = this, n, d = self.$x.length, index, terms = [], nth_term, nth;
+        var self = this, n, d = self.$x.length, index, terms = [], nth_term, nth, N;
         if (null == nterms) nterms = self._N;
         nterms = stdMath.floor(stdMath.max(0, (+nterms) || 0));
-        for (n=0; n<=nterms && terms.length<nterms; ++n)
+        N = nterms+1;
+        for (n=0; n<N && terms.length<nterms; ++n)
         {
             index = multi_index(n, d);
             for (;nth=index();)
@@ -467,7 +469,7 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this, N;
         if (null == self._expr)
         {
-            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree : self._N;
+            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree+1 : self._N;
             self._expr = 'product' === self.type ? self.prod(N, 'expand') : self.sum(N, 'expand');
         }
         return self._expr;
@@ -479,10 +481,10 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this, terms, expr, N;
         if (null == self._str)
         {
-            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree : self._N;
+            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree+1 : self._N;
             terms = 'product' === self.type ? self.prod(self._N, 'expand', 'array') : self.sum(N, 'expand', 'array');
             expr = 1 < terms.length ? Expr('product' === self.type ? '*' : '+', terms) : terms[0];
-            self._str = expr.toString() + (N === self.degree || terms.length < N ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
+            self._str = expr.toString() + (((null != self.degree) && isFinite(self.degree)) || ((null == self.degree || terms.length <= 2) && (terms.length < self._N)) ? '' : (('product' === self.type ? ' * ' : ' + ') + '...'));
         }
         return self._str;
     }
@@ -490,10 +492,10 @@ Series = Abacus.Series = Class(Symbolic, {
         var self = this, terms, expr, N;
         if (null == self._tex)
         {
-            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree : self._N;
+            N = 'sum' === self.type && (null != self.degree) && isFinite(self.degree) ? self.degree+1 : self._N;
             terms = 'product' === self.type ? self.prod(N, 'expand', 'array') : self.sum(N, 'expand', 'array');
             expr = 1 < terms.length ? Expr('product' === self.type ? '*' : '+', terms) : terms[0];
-            self._tex = expr.toTex() + (N === self.degree || terms.length < N ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
+            self._tex = expr.toTex() + (((null != self.degree) && isFinite(self.degree)) || ((null == self.degree || terms.length <= 2) && (terms.length < self._N)) ? '' : (('product' === self.type ? ' \\cdot ' : ' + ') + '\\dots'));
         }
         return self._tex;
     }

@@ -2870,7 +2870,7 @@ function expr_series(f, x, x0)
         if (null != f_nth) return f_nth;
 
         df_nth = 0 < n ? nth.reduce(function(df, _, i) {return 0 < nth[i] ? df.d(x[i], nth[i]) : df;}, f).expand() : f;
-        if ((series.degree > n-1) && expr_is_independent_of(df_nth, x)) series.degree = n-1;
+        if ((series.degree > n) && expr_is_independent_of(df_nth, x)) series.degree = n;
 
         df_nth = df_nth.substitute(x.reduce(function($, xi, i) {
             $[xi] = null == x0[i] ? Expr.Zero() : x0[i];

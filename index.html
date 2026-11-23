@@ -710,19 +710,22 @@ function init()
             case 'partitions':
                 run_session([
                 '/* partitions */',
-                'partitions = Partition(5).get()'
+                'partitions = Partition(4).get()',
+                'kpartitions = Partition(5, {"parts=":3}).get()'
                 ]);
             break;
             case 'compositions':
                 run_session([
                 '/* compositions */',
-                'compositions = Partition(4, {type:"composition"}).get()'
+                'compositions = Partition(3, {type:"composition"}).get()',
+                'mcompositions = Partition(4, {type:"composition","max=":2}).get()'
                 ]);
             break;
             case 'setpartitions':
                 run_session([
                 '/* set partitions */',
-                'setpartitions = SetPartition(4,{"parts=":3}).get()'
+                'setpartitions = SetPartition(2).get()',
+                'ksetpartitions = SetPartition(4,{"parts=":3}).get()'
                 ]);
             break;
             case 'matrices':
@@ -773,6 +776,9 @@ function init()
                 'p = Poly("(x+y)^2", GF2)',
                 'Factor(p)',
                 'p.rad(2)',
+                'p = Poly("(x+y)^3", GF2)',
+                'Factor(p)',
+                'p.rad(3)',
                 'p = Poly("(x+y)^4", GF2)',
                 'Factor(p)',
                 'p.rad(2)',
@@ -783,10 +789,10 @@ function init()
                 'p.rad(2)',
                 'p = Poly("(x+y)^3", QR)',
                 'Factor(p)',
-                'p.rad(3)',
+                'p.rad(3)'/*,
                 'p = Poly("(x+y)(2x+1)", QR)',
                 'Factor(p)',
-                'p.rad(2)'
+                'p.rad(2)'*/
                 ]);
             break;
             case 'roots':
