@@ -762,13 +762,31 @@ function init()
                 run_session([
                 '/* polynomial factorization */',
                 'Q = Ring.Q("x","y")',
+                'p = Poly("(x+y)^2", Q)',
+                'Factor(p)',
+                'p.rad(2)',
                 'p = Poly("3(x+y)(xy+1)(x^2+x+2)", Q)',
                 'Factor(p)',
                 'GF2 = Ring.Zn(2)("x","y")',
                 'p = Poly("x^2+x+y^2+y", GF2)',
                 'Factor(p)',
                 'p = Poly("(x+y)^2", GF2)',
-                'Factor(p)'
+                'Factor(p)',
+                'p.rad(2)',
+                'p = Poly("(x+y)^4", GF2)',
+                'Factor(p)',
+                'p.rad(2)',
+                'p.rad(4)',
+                'QR = Ring.Q("x","y").quotientRing("x^2-2","y^2-3")',
+                'p = Poly("(x+y)^2", QR)',
+                'Factor(p)',
+                'p.rad(2)',
+                'p = Poly("(x+y)^3", QR)',
+                'Factor(p)',
+                'p.rad(3)',
+                'p = Poly("(x+y)(2x+1)", QR)',
+                'Factor(p)',
+                'p.rad(2)'
                 ]);
             break;
             case 'roots':

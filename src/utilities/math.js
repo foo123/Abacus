@@ -1946,12 +1946,11 @@ function symbolic_divisors(c, complex)
     {
         return is_instance(c, [Float, ComplexFloat]) ? Iterator((function(c) {
                 var is_int = is_instance(c, Float) && c.isInt(),
-                    i = 0, s = 1, d, iter = is_int ? divisors(c, true) : null;
+                    i = 0, d, iter = is_int ? divisors(c, true) : null;
                 return function(curr, dir, state, init) {
                     if (init)
                     {
                         i = 0;
-                        s = 1;
                         if (iter)
                         {
                             iter.rewind();
@@ -1963,19 +1962,15 @@ function symbolic_divisors(c, complex)
                         }
                     }
                     if (null == d) return null;
-                    var ret = 1 === s ? d : d.neg();
-                    s = -1 === s ? 1 : -1;
-                    if (1 === s)
+                    var ret = d;
+                    if (iter)
                     {
-                        if (iter)
-                        {
-                            d = d.next();
-                        }
-                        else
-                        {
-                            ++i;
-                            d = i <= 4 ? (1 === i ? c : c.rad(i)) : null; // up to 4th root
-                        }
+                        d = d.next();
+                    }
+                    else
+                    {
+                        ++i;
+                        d = i <= 4 ? (1 === i ? c : c.rad(i)) : null; // up to 4th root
                     }
                     return ret;
                 };

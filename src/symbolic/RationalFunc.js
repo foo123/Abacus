@@ -420,13 +420,13 @@ RationalFunc = Abacus.RationalFunc = Class(Symbolic, {
         {
             return Expr('mod()', [self.toExpr(), other]);
         }
-        return RationaFunc(self.num.mod(other), self.den.mod(other));
+        return RationalFunc(self.num.mod(other), self.den.mod(other));
     }
     ,divmod: function(other) {
         var self = this,
             qr1 = self.num.divmod(other),
             qr2 = self.den.divmod(other);
-        return [RationaFunc(qr1[0], qr2[0]), RationaFunc(qr1[1], qr2[1])];
+        return [RationalFunc(qr1[0], qr2[0]), RationalFunc(qr1[1], qr2[1])];
     }
     ,divides: function(other) {
         return !this.equ(Abacus.Arithmetic.O);
