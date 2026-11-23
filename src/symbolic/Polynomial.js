@@ -3415,15 +3415,6 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         var self = this, p = self.p, m = self.m;
         if (null == self._factors)
         {
-/*
-QR = Ring.Q("x","y").quotientRing("x^2-2","y^2-3")
-p = Poly("(x+y)^2", QR)
-Factor(p)
-p = Poly("(x+y)^3", QR)
-Factor(p)
-p = Poly("(x+y)(2x+1)", QR)
-Factor(p)
-*/
             var terms = [
                 p.symbol.concat('').map(function(x) {
                     var c = '' === x ? p.cc() : p.ttm(false, x).c,
@@ -3468,9 +3459,9 @@ Factor(p)
                     {
                         encore = 0;
                         r = pp._div(pf);
-                        if ((r.p.terms.length <= pp.p.terms.length) && ((m3=r.p.maxdeg(true)) <= m2)/* && ((r.p.terms.length !== pp.p.terms.length) || (m3 !== m2))*/)
+                        if ((r.p.terms.length <= pp.p.terms.length) && ((m3=r.p.maxdeg(true)) <= m2))
                         {
-                            encore = r.p.isConst() || ((r.p.terms.length === pp.p.terms.length) || (r.p.maxdeg(true, true) === pp.p.maxdeg(true, true))) ? 0 : 1;
+                            encore = r.p.isConst() || ((r.p.terms.length === pp.p.terms.length) && (r.p.maxdeg(true, true) === pp.p.maxdeg(true, true))) ? 0 : 1;
                             pp = r;
                             m2 = m3;
                             // accept only smaller non-trivial factors
@@ -3491,7 +3482,7 @@ Factor(p)
             }
             if (pp.p.isConst() && found)
             {
-                if (!p.p.equ(0)) f0 = f0.mul(p.p.cc());
+                if (!pp.p.equ(0)) f0 = f0.mul(pp.p.cc());
             }
             else if (!HAS.call(f, String(pp)))
             {
