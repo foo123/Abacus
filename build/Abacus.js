@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-23 23:19:52)
+*   @version: 2.0.0 (2026-11-25 00:40:14)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-23 23:19:52)
+*   @version: 2.0.0 (2026-11-25 00:40:14)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -6496,7 +6496,10 @@ Abacus.Math = {
     }
     ,delta: function(i) {
         return function(j) {
-            return equ(i, j) ? (is_instance(j, INumber) ? j[CLASS].One() : Abacus.Arithmetic.I) : (is_instance(j, INumber) ? j[CLASS].Zero() : Abacus.Arithmetic.O);
+            var arr_j = is_array(j), arr_i = is_array(i),
+                equal = (arr_j && arr_i && multi_index_cmp('==', i, j)) || (!arr_j && !arr_i && equ(i, j))
+            ;
+            return equal ? (is_instance(j, INumber) ? j[CLASS].One() : Abacus.Arithmetic.I) : (is_instance(j, INumber) ? j[CLASS].Zero() : Abacus.Arithmetic.O);
         };
     }
     /*,moebiusInversion: function(gn) {
@@ -18745,47 +18748,66 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         if (1 <= n)
         {
             if (1 === n) return self;
-            if (p.isConst()) return MultiPolynomialMod.Const(p.cc().rad(n), p.symbol, p.ring, m);
-            var terms = [
-                p.symbol.concat('').map(function(x) {
-                    var c = '' === x ? p.cc() : p.ttm(false, x).c,
-                        rc = c.rad(n),
-                        z = c.equ(0) ? [rc, rc.neg()] : [p.ring.Zero(), rc, rc.neg()],
-                        d = symbolic_divisors(c, true).get().reduce(function(d, di) {
-                            d.push(di); if (!di.equ(0)) d.push(di.neg());
-                            return d;
-                        }, []);
-                    return '' === x ? {c:z.concat(d), e:array(p.symbol.length, 0)} : {c:d.concat(z), e:p.symbol.map(function(xi) {return xi === x ? 1 : 0})};
-                }),
-                p.terms.map(function(t) {
-                    var c = t.c,
-                        rc = c.rad(n),
-                        z = [rc, rc.neg(), p.ring.Zero()],
-                        d = symbolic_divisors(c, true).get().reduce(function(d, di) {
-                            d.push(di); if (!di.equ(0)) d.push(di.neg());
-                            return d;
-                        }, []);
-                    return {c:d.concat(z), e:t.e.slice()};
-                })
-                ],
-                factors = [
-                Tensor(terms[0].map(function(t) {return t.c.length;})),
-                Tensor(terms[1].map(function(t) {return t.c.length;}))
-                ],
-                r, k
-            ;
-            for (k=0; k<=1; ++k)
-            {
-                for (;factors[k].hasNext();)
-                {
-                    r = MultiPolynomialMod(MultiPolynomial(factors[k].next().map(function(i, j) {
-                        return MultiPolyTerm(terms[k][j].c[i], terms[k][j].e, p.ring);
-                    }), p.symbol, p.ring), m);
+            // all candidate terms
+            var all_terms = p.symbol.map(function(xi) {return p.symbol.map(function(xj) {return xi === xj ? 1 : 0;});}).concat(p.terms.map(function(t) {return t.e;}))/*Tensor(p.symbol.map(function(xi) {
+                    return m.reduce(function(d, mj) {return stdMath.max(d, mj.maxdeg(xi));}, 1);
+                })).get().concat([array(p.symbol.length, 0)])*/,
 
-                    if (r._pow(n).equ(self)) return r;
+                // all factors => all combinations of all candidate terms
+                all_factors = Tensor(all_terms.length, 2, {type:"tuple"}),
+
+                // candidate factors for each combination of all factors
+                factors = function(factor) {
+                    var tuple = factor.reduce(function(iter, fi, i) {
+                        if (0 < fi) iter.push(divisors(all_terms[i]));
+                        return iter;
+                    }, []);
+                    return Iterator({tuple:tuple.reverse()});
+                },
+
+                // divisors for each term of each candidate factor
+                divisors = function(e) {
+                    var _c = p.term(e, true, true).c,
+                        c = _c.equ(0) ? p.ring.One() : _c,
+                        //rc = c.rad(n), negrc = rc.neg(),
+                        iter = symbolic_divisors(c, true),
+                        s = -1, d = iter.next()
+                    ;
+                    return Iterator(function(curr, dir, state, init) {
+                        var c;
+                        if (init)
+                        {
+                            s = -1;
+                            iter.rewind();
+                            d = iter.next();
+                        }
+                        if (null == d)
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            c = -1 === s ? d.neg() : d;
+                            s = -1 === s ? 1 : -1;
+                            if (-1 === s) d = iter.next();
+                            return MultiPolyTerm(c, e.slice(), p.ring);
+                        }
+                    });
+                },
+
+                factor, radical
+            ;
+            all_factors.next(); // skip none
+            for (;all_factors.hasNext();)
+            {
+                factor = factors(all_factors.next());
+                for (;factor.hasNext();)
+                {
+                    radical = MultiPolynomialMod(MultiPolynomial(factor.next(), p.symbol, p.ring), m);
+                    if (radical._pow(n).equ(self)) return /*MultiPolynomialMod(poly_mod(radical.p, m), m)*/radical; // found
                 }
             }
-            return MultiPolynomialMod.One(p.symbol, p.ring, m); // default
+            return MultiPolynomialMod.Const(p.cc().rad(n), p.symbol, p.ring, m); // default
         }
     }
     ,substitute: function(v, xi) {
@@ -24625,6 +24647,27 @@ Iterator = Abacus.Iterator = Class({
             self.$ = $ || {};
             self.$.seq = slice.call(name);
             self.$.count = self.$.seq.length;
+            self.rewind();
+        }
+        else if ((is_obj(name) && is_array(name.tuple) && is_instance(name.tuple[0], Iterator)))
+        {
+            // sequence of iterators as a tuple, convert to generator
+            self.name = "Generator";
+            self.$ = {};
+            self.$.seq_ = name.tuple;
+            self.$.generator = function(curr, dir, state, init) {
+                var self = this,
+                    seq = self.$.seq_,
+                    index = self.$.seq_.length-1;
+                if (init) seq.forEach(function(iter) {iter.rewind(dir);});
+                for (;0<=index && !seq[index].hasNext(dir); --index);
+                if (0 > index) return null; // done
+                seq[index++].next(dir);
+                for (;index<seq.length; ++index) seq[index].rewind(dir);
+                return array(seq.length, function(i) {return seq[i].item();});
+            };
+            self.$.state = $ || {};
+            self.$.count = Arithmetic.I;
             self.rewind();
         }
         else if (is_callable(name))

@@ -24,6 +24,27 @@ Iterator = Abacus.Iterator = Class({
             self.$.count = self.$.seq.length;
             self.rewind();
         }
+        else if ((is_obj(name) && is_array(name.tuple) && is_instance(name.tuple[0], Iterator)))
+        {
+            // sequence of iterators as a tuple, convert to generator
+            self.name = "Generator";
+            self.$ = {};
+            self.$.seq_ = name.tuple;
+            self.$.generator = function(curr, dir, state, init) {
+                var self = this,
+                    seq = self.$.seq_,
+                    index = self.$.seq_.length-1;
+                if (init) seq.forEach(function(iter) {iter.rewind(dir);});
+                for (;0<=index && !seq[index].hasNext(dir); --index);
+                if (0 > index) return null; // done
+                seq[index++].next(dir);
+                for (;index<seq.length; ++index) seq[index].rewind(dir);
+                return array(seq.length, function(i) {return seq[i].item();});
+            };
+            self.$.state = $ || {};
+            self.$.count = Arithmetic.I;
+            self.rewind();
+        }
         else if (is_callable(name))
         {
             // generator function iterator
