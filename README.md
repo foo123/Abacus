@@ -168,12 +168,14 @@ See the comments in the code for algorithms and references used.
 * [Geometrical properties of polynomial roots, wikipedia](https://en.wikipedia.org/wiki/Geometrical_properties_of_polynomial_roots)
 * [Solving Systems of Algebraic Equations by Using Gröbner Bases, Michael Kalkbrener](http://kalkbrener.at/Selected_publications_files/Kalkbrener87.pdf)
 * [Use Gröbner Bases To Solve Polynomial Equations, Jingnan Shi](https://jingnanshi.com/blog/groebner_basis.html)
-* [Unification and Anti-Unification, Erik Jacobsen](https://erikjacobsen.com/pdf/unification.pdf)
-* [Faster Linear Unification Algorithm, Dennis de Champeaux](https://raw.githubusercontent.com/ddccc/Unification/a5975a47bca1be3f7bf0afe9ad3595a707a29ea4/LinUnify3.pdf)
 * [Power Series, wikipedia](https://en.wikipedia.org/wiki/Power_series)
 * [Formal Power Series, wikipedia](https://en.wikipedia.org/wiki/Formal_power_series)
 * [Composita and its properties, Vladimir V. Kruchinin, Dmitry V. Kruchinin](https://arxiv.org/abs/1103.2582v2)
 * [Relax, but Don’t be Too Lazy, JORIS VAN DER HOEVEN](https://www.csd.uwo.ca/~mmorenom/Publications/Relax_but_dont_be_too_lazy.pdf)
+* [Algebraic Simplification a Guide for the Perplexed, Joel Moses](https://groups.csail.mit.edu/mac/users/gjs/6.945/readings/simplification/moses-simp.pdf)
+* [Understanding Expression Simplification, Jacques Carette](https://www.scispace.com/pdf/understanding-expression-simplification-52x0czuft8.pdf)
+* [Unification and Anti-Unification, Erik Jacobsen](https://erikjacobsen.com/pdf/unification.pdf)
+* [Faster Linear Unification Algorithm, Dennis de Champeaux](https://raw.githubusercontent.com/ddccc/Unification/a5975a47bca1be3f7bf0afe9ad3595a707a29ea4/LinUnify3.pdf)
 <!--* [A general matrix eigenvalue algorithm, Charles F. Van Loan](https://www.cs.cornell.edu/cv/ResearchPDF/Gen.Matrix.EigenV.Algorithm.pdf)-->
 
 ### Example API
