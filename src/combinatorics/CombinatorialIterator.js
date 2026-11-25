@@ -26,23 +26,21 @@ Iterator = Abacus.Iterator = Class({
         }
         else if ((is_obj(name) && is_array(name.tuple) && is_instance(name.tuple[0], Iterator)))
         {
-            // sequence of iterators as a tuple, convert to generator
+            // tuple of iterators, convert to generator
             self.name = "Generator";
             self.$ = {};
-            self.$.seq_ = name.tuple;
+            self.$.tuple = name.tuple;
             self.$.generator = function(curr, dir, state, init) {
-                var self = this,
-                    seq = self.$.seq_,
-                    index = self.$.seq_.length-1;
-                if (init) seq.forEach(function(iter) {iter.rewind(dir);});
-                for (;0<=index && !seq[index].hasNext(dir); --index);
-                if (0 > index) return null; // done
-                seq[index++].next(dir);
-                for (;index<seq.length; ++index) seq[index].rewind(dir);
-                return array(seq.length, function(i) {return seq[i].item();});
+                var self = this, tuple = self.$.tuple, n = tuple.length, i = n-1;
+                if (init) tuple.forEach(function(iter) {iter.rewind(dir);});
+                for (;0<=i && !tuple[i].hasNext(dir); --i);
+                if (0 > i) return null; // done
+                tuple[i++].next(dir);
+                for (;i<n; ++i) tuple[i].rewind(dir);
+                return tuple.map(function(iter) {return iter.item();});
             };
             self.$.state = $ || {};
-            self.$.count = Arithmetic.I;
+            self.$.count = product_(self.$.tuple.map(function(iter) {return iter.total();}));
             self.rewind();
         }
         else if (is_callable(name))

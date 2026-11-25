@@ -3714,7 +3714,7 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         {
             if (1 === n) return self;
             // all candidate terms
-            var all_terms = p.symbol.map(function(xi) {return p.symbol.map(function(xj) {return xi === xj ? 1 : 0;});}).concat(p.terms.map(function(t) {return t.e;}))/*Tensor(p.symbol.map(function(xi) {
+            var all_terms = p.symbol.map(function(xi) {return p.symbol.map(function(xj) {return xi === xj ? 1 : 0;});}).concat([array(p.symbol.length, 0)]).concat(p.terms.map(function(t) {return t.e;}))/*Tensor(p.symbol.map(function(xi) {
                     return m.reduce(function(d, mj) {return stdMath.max(d, mj.maxdeg(xi));}, 1);
                 })).get().concat([array(p.symbol.length, 0)])*/,
 

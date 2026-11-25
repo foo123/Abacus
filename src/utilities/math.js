@@ -4549,8 +4549,8 @@ Abacus.Math = {
     }
     ,delta: function(i) {
         return function(j) {
-            var arr_j = is_array(j), arr_i = is_array(i),
-                equal = (arr_j && arr_i && multi_index_cmp('==', i, j)) || (!arr_j && !arr_i && equ(i, j))
+            var arr_j = is_array(j),
+                equal = (arr_j && multi_index_cmp('==', j, i)) || (!arr_j && equ(j, i))
             ;
             return equal ? (is_instance(j, INumber) ? j[CLASS].One() : Abacus.Arithmetic.I) : (is_instance(j, INumber) ? j[CLASS].Zero() : Abacus.Arithmetic.O);
         };
