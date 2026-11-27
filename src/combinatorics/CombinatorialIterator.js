@@ -24,24 +24,44 @@ Iterator = Abacus.Iterator = Class({
             self.$.count = self.$.seq.length;
             self.rewind();
         }
-        else if ((is_obj(name) && is_array(name.tuple) && is_instance(name.tuple[0], Iterator)))
+        else if (is_obj(name))
         {
-            // tuple of iterators, convert to generator
-            self.name = "Generator";
-            self.$ = {};
-            self.$.tuple = name.tuple;
-            self.$.generator = function(curr, dir, state, init) {
-                var self = this, tuple = self.$.tuple, n = tuple.length, i = n-1;
-                if (init) tuple.forEach(function(iter) {iter.rewind(dir);});
-                for (;0<=i && !tuple[i].hasNext(dir); --i);
-                if (0 > i) return null; // done
-                tuple[i++].next(dir);
-                for (;i<n; ++i) tuple[i].rewind(dir);
-                return tuple.map(function(iter) {return iter.item();});
-            };
-            self.$.state = $ || {};
-            self.$.count = product_(self.$.tuple.map(function(iter) {return iter.total();}));
-            self.rewind();
+            if (is_array(name.tuple) && is_instance(name.tuple[0], Iterator))
+            {
+                // tuple of iterators, convert to generator
+                self.name = "Generator";
+                self.$ = {};
+                self.$.tuple = slice.call(name.tuple);
+                self.$.generator = function(curr, dir, state, init) {
+                    var self = this, tuple = self.$.tuple, n = tuple.length, i = n-1;
+                    if (init) tuple.forEach(function(iter) {iter.rewind(dir);});
+                    for (;0<=i && !tuple[i].hasNext(dir); --i);
+                    if (0 > i) return null; // done
+                    tuple[i++].next(dir);
+                    for (;i<n; ++i) tuple[i].rewind(dir);
+                    return tuple.map(function(iter) {return iter.item();});
+                };
+                self.$.state = $ || {};
+                self.$.count = product_(self.$.tuple.map(function(iter) {return iter.total();}));
+                self.rewind();
+            }
+            else if (is_array(name.sequence) && is_instance(name.sequence[0], Iterator))
+            {
+                // sequence of iterators
+                self.name = "Sequence";
+                self.$ = $ || {};
+                self.$.seq = slice.call(name.sequence);
+                self.$.count = operate(function(count, iter) {
+                    return Arithmetic.add(count, iter.total());
+                }, Arithmetic.O, self.$.seq);
+                self.rewind();
+            }
+            else
+            {
+                self.name = "Iterator";
+                self.$ = $ || {};
+                self.$.count = self.$.count || Arithmetic.O;
+            }
         }
         else if (is_callable(name))
         {

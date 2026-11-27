@@ -3,7 +3,7 @@
 **Computer Algebra System** for Symbolic Computations for Combinatorics and Algebraic Number Theory for JavaScript
 
 
-**version 2.0.0** almost complete (438 kB minified)
+**version 2.0.0** almost complete (439 kB minified)
 
 ![abacus computer algebra system](/abacus.jpg)
 
@@ -22,10 +22,10 @@
 * [Live Playground Example](https://foo123.github.io/examples/abacus)
 * [Online REPL](https://foo123.github.io/examples/abacus-repl)
 * [Combinatorial and Number Theory Examples](/examples/README.md)
+* [Example API](/api.md)
 * [Features](#features)
 * [Performance](#performance)
-* [Credits and References](/references.md)
-* [Example API](/api.md)
+* [References](/references.md)
 * [Todo](#todo)
 
 
@@ -53,7 +53,7 @@
 * `RestrictedComposition` (`test/restricted_compositions.js`) **partial support for COLEX**
 * `SetPartition` (`test/setpartitions.js`) **rank/unrank methods missing, only LEX/REVLEX order**
 * `RestrictedSetPartition` (`test/setpartitions.js`) **exactly K #parts, rank/unrank methods missing, only LEX/REVLEX order**
-* `CatalanWord` (eg balanced parentheses) (`test/paren.js`) **rank/unrank methods missing**
+* `DyckWord` (eg balanced parentheses) (`test/paren.js`) **rank/unrank methods missing**
 * `LatinSquare` (`test/latin_squares.js`)
 * `MagicSquare` (`test/magic_squares.js`)
 

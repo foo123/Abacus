@@ -2,13 +2,13 @@
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-25 11:25:14)
+*   @version: 2.0.0 (2026-11-27 22:03:40)
 *   https://github.com/foo123/Abacus
 **//**
 *
 *   Abacus
 *   Computer Algebra and Symbolic Computations System for Combinatorics and Algebraic Number Theory for JavaScript
-*   @version: 2.0.0 (2026-11-25 11:25:14)
+*   @version: 2.0.0 (2026-11-27 22:03:40)
 *   https://github.com/foo123/Abacus
 **/
 !function(root, name, factory){
@@ -18743,41 +18743,52 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         return MultiPolynomialMod(poly_mod(self.p.pow(n), self.m), self.m);
     }
     ,rad: function(n) {
-        var self = this, p = self.p, m = self.m;
+        var self = this, primitive, content, p, m;
         n = Abacus.Arithmetic.val(Integer.cast(n).num);
         if (1 <= n)
         {
             if (1 === n) return self;
+            m = self.m;
+            primitive = self.primitive(true);
+            content = primitive[1];
+            primitive = primitive[0];
+            p = primitive.p.div(content);
+            // radical may, in general, not be part of the quotient ring
+            // methods like Newton's method and Groebner bases may be used,
+            // but may be inefficient, inexact and/or need more assumptions
+            // here an adequate search among combinations of candidate terms is tried
             // all candidate terms
-            var all_terms = p.symbol.map(function(xi) {return p.symbol.map(function(xj) {return xi === xj ? 1 : 0;});}).concat([array(p.symbol.length, 0)]).concat(p.terms.map(function(t) {return t.e;}))/*Tensor(p.symbol.map(function(xi) {
-                    return m.reduce(function(d, mj) {return stdMath.max(d, mj.maxdeg(xi));}, 1);
-                })).get().concat([array(p.symbol.length, 0)])*/,
+            var all_terms = [array(p.symbol.length, 0)].concat(Tensor(p.symbol.map(function(xi) {
+                    return m.reduce(function(deg, mj) {return stdMath.max(deg, mj.maxdeg(xi));}, 1);
+                })).get()),
 
                 // all factors => all combinations of all candidate terms
                 all_factors = Tensor(all_terms.length, 2, {type:"tuple"}),
 
-                // candidate factors for each combination of all factors
+                // candidate factors for each entry of all factors
                 factors = function(factor) {
-                    var tuple = factor.reduce(function(iter, fi, i) {
+                    return Iterator({tuple:factor.reduce(function(iter, fi, i) {
                         if (0 < fi) iter.push(divisors(all_terms[i]));
                         return iter;
-                    }, []);
-                    return Iterator({tuple:tuple.reverse()});
+                    }, [])});
                 },
 
                 // divisors for each term of each candidate factor
                 divisors = function(e) {
-                    var _c = p.term(e, true, true).c,
-                        c = _c.equ(0) ? p.ring.One() : _c,
-                        //rc = c.rad(n), negrc = rc.neg(),
-                        iter = symbolic_divisors(c, true),
-                        s = -1, d = iter.next()
+                    var iter = Iterator({sequence:[p].concat(m).map(function(pi) {
+                            var c = pi.term(e, true, true).c;//,
+                                //terms = pi.term(e.reduce(addn, 0)).terms.slice();
+                            //while (c.equ(0) && terms.length) c = terms.shift().c;
+                            if (c.equ(0)) c = pi.cc();
+                            return symbolic_divisors(c.equ(0) ? pi.ring.One() : c, true);
+                        })}),
+                        s = 1, d = iter.next()
                     ;
                     return Iterator(function(curr, dir, state, init) {
                         var c;
                         if (init)
                         {
-                            s = -1;
+                            s = 1;
                             iter.rewind();
                             d = iter.next();
                         }
@@ -18789,7 +18800,7 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
                         {
                             c = -1 === s ? d.neg() : d;
                             s = -1 === s ? 1 : -1;
-                            if (-1 === s) d = iter.next();
+                            if (1 === s) d = iter.next();
                             return MultiPolyTerm(c, e.slice(), p.ring);
                         }
                     });
@@ -18803,10 +18814,40 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
                 factor = factors(all_factors.next());
                 for (;factor.hasNext();)
                 {
-                    radical = MultiPolynomialMod(MultiPolynomial(factor.next(), p.symbol, p.ring), m);
-                    if (radical._pow(n).equ(self)) return /*MultiPolynomialMod(poly_mod(radical.p, m), m)*/radical; // found
+                    radical = MultiPolynomialMod(MultiPolynomial(factor.next(), p.symbol, p.ring), m).mul(content);
+                    if (radical._pow(n).equ(self)) return 0 === (n & 1) ? radical.abs() : radical; // found
                 }
             }
+            /*
+            var x = p.symbol, n = x.length,
+                x0 = x.concat('').map(function(xi) {return x.map(function(xj) {return xi === xj ? 1 : 0;})}),
+                p0, dp0, r, m0, i, Mi, Xi,
+                X = Tensor(x0.length, 2, {type:"tuple"}),
+                M = Tensor(m.length, 2, {type:"tuple"});
+            for (;M.hasNext();)
+            {
+                Mi = M.next();
+                X.rewind();
+                for (;X.hasNext();)
+                {
+                    Xi = MultiPolynomial(X.next().reduce(function(Xi, xi, i) {
+                        if (0 < xi) Xi.push(MultiPolyTerm(p.ring.One(), x0[i], p.ring));
+                        return Xi;
+                    }, []), x, p.ring);
+                    m0 = Mi.reduce(function(m0, mi, i) {
+                        if (0 < mi) m0 = m0._add(m[i]._mul(Xi));
+                        return m0;
+                    }, MultiPolynomial.Zero(x, p.ring));
+                    p0 = p._add(m0);
+                    for (i=0; i<n; ++i)
+                    {
+                        dp0 = p0.d(x[i]);
+                        r = MultiPolynomialMod(poly_mod(MultiPolynomial.gcd(p0, dp0), m), m);
+                        if (r._pow(n).equ(self)) return r; // found
+                    }
+                }
+            }
+            */
             return MultiPolynomialMod.Const(p.cc().rad(n), p.symbol, p.ring, m); // default
         }
     }
@@ -24649,24 +24690,44 @@ Iterator = Abacus.Iterator = Class({
             self.$.count = self.$.seq.length;
             self.rewind();
         }
-        else if ((is_obj(name) && is_array(name.tuple) && is_instance(name.tuple[0], Iterator)))
+        else if (is_obj(name))
         {
-            // tuple of iterators, convert to generator
-            self.name = "Generator";
-            self.$ = {};
-            self.$.tuple = name.tuple;
-            self.$.generator = function(curr, dir, state, init) {
-                var self = this, tuple = self.$.tuple, n = tuple.length, i = n-1;
-                if (init) tuple.forEach(function(iter) {iter.rewind(dir);});
-                for (;0<=i && !tuple[i].hasNext(dir); --i);
-                if (0 > i) return null; // done
-                tuple[i++].next(dir);
-                for (;i<n; ++i) tuple[i].rewind(dir);
-                return tuple.map(function(iter) {return iter.item();});
-            };
-            self.$.state = $ || {};
-            self.$.count = product_(self.$.tuple.map(function(iter) {return iter.total();}));
-            self.rewind();
+            if (is_array(name.tuple) && is_instance(name.tuple[0], Iterator))
+            {
+                // tuple of iterators, convert to generator
+                self.name = "Generator";
+                self.$ = {};
+                self.$.tuple = slice.call(name.tuple);
+                self.$.generator = function(curr, dir, state, init) {
+                    var self = this, tuple = self.$.tuple, n = tuple.length, i = n-1;
+                    if (init) tuple.forEach(function(iter) {iter.rewind(dir);});
+                    for (;0<=i && !tuple[i].hasNext(dir); --i);
+                    if (0 > i) return null; // done
+                    tuple[i++].next(dir);
+                    for (;i<n; ++i) tuple[i].rewind(dir);
+                    return tuple.map(function(iter) {return iter.item();});
+                };
+                self.$.state = $ || {};
+                self.$.count = product_(self.$.tuple.map(function(iter) {return iter.total();}));
+                self.rewind();
+            }
+            else if (is_array(name.sequence) && is_instance(name.sequence[0], Iterator))
+            {
+                // sequence of iterators
+                self.name = "Sequence";
+                self.$ = $ || {};
+                self.$.seq = slice.call(name.sequence);
+                self.$.count = operate(function(count, iter) {
+                    return Arithmetic.add(count, iter.total());
+                }, Arithmetic.O, self.$.seq);
+                self.rewind();
+            }
+            else
+            {
+                self.name = "Iterator";
+                self.$ = $ || {};
+                self.$.count = self.$.count || Arithmetic.O;
+            }
         }
         else if (is_callable(name))
         {
