@@ -3712,12 +3712,20 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
         n = Abacus.Arithmetic.val(Integer.cast(n).num);
         if (1 <= n)
         {
-            if (1 === n) return self;
+            if ((1 === n) || self.equ(0) || self.equ(1)) return self;
             m = self.m;
             primitive = self.primitive(true);
             content = primitive[1];
             primitive = primitive[0];
-            p = primitive.p.div(content);
+            if (content.isInt())
+            {
+                p = self.p;
+                content = p.ring.One();
+            }
+            else
+            {
+                p = primitive.p.div(content);
+            }
             // radical may, in general, not be part of the quotient ring
             // methods like Newton's method and Groebner bases may be used,
             // but may be inefficient, inexact and/or need more assumptions
@@ -3725,7 +3733,7 @@ MultiPolynomialMod = Abacus.MultiPolynomialMod = Class(Poly, {
             // all candidate terms
             var all_terms = [array(p.symbol.length, 0)].concat(Tensor(p.symbol.map(function(xi) {
                     return m.reduce(function(deg, mj) {return stdMath.max(deg, mj.maxdeg(xi));}, 1);
-                })).get()),
+                })).filterBy(function(e) {return 0 < e.reduce(addn, 0);}).get()),
 
                 // all factors => all combinations of all candidate terms
                 all_factors = Tensor(all_terms.length, 2, {type:"tuple"}),
