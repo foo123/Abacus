@@ -85,3 +85,12 @@ See the comments in the code for algorithms and references used.
 * [Unification and Anti-Unification, Erik Jacobsen](https://erikjacobsen.com/pdf/unification.pdf)
 * [Faster Linear Unification Algorithm, Dennis de Champeaux](https://raw.githubusercontent.com/ddccc/Unification/a5975a47bca1be3f7bf0afe9ad3595a707a29ea4/LinUnify3.pdf)
 <!--* [A general matrix eigenvalue algorithm, Charles F. Van Loan](https://www.cs.cornell.edu/cv/ResearchPDF/Gen.Matrix.EigenV.Algorithm.pdf)-->
+
+
+**Related Posts on Stack Overflow/Stack Exchange**
+
+* [Iterator to produce unique random order?, SO](https://stackoverflow.com/a/28996561/3591273)
+* [Faster algorithm for a specific inversion, CS.SE](https://cs.stackexchange.com/a/142184/17369)
+* [Faster algorithm for specific inversion count (part 2), CS.SE](https://cs.stackexchange.com/a/142189/17369)
+* [Algorithm to compute nth root (radical) of polynomial, Math.SE](https://math.stackexchange.com/a/3552397/139391)
+* [Fast algorithm to find factor of a term that is a perfect power, CS.SE](https://cs.stackexchange.com/a/176124/17369)
